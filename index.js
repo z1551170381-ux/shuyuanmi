@@ -2162,7 +2162,7 @@ function modalShell(id, title, icon){
   // ===== 小手机模块（phone.js 独立加载）=====
   (function(){
     var s = document.createElement("script");
-    s.src = "https://cdn.jsdelivr.net/gh/z1551170381-ux/shuyuanmi@main/phone.js";
+    s.src = "https://raw.githubusercontent.com/z1551170381-ux/shuyuanmi/main/phone.js";
     s.onerror = function(){ try{ toast("⚠️ 小手机模块加载失败"); }catch(e){} };
     document.head.appendChild(s);
   })();
@@ -3769,7 +3769,81 @@ function openAPISettingsPanel() {
 }
 
 
-  // ===== 浮窗按钮挂载 =====
+  // ===== 长按定位 + 悬浮按钮 =====
+  // ===================== 交互：长按定位 / 单击菜单 / 定位后单击编辑 =====================
+  let pickedMes = null;
+  let pickedRatio = 0.5;
+  let pickedSnippet = '';
+  let pickMode = false;
+
+  function setArmed(on){
+    try {
+      const b = doc.getElementById(ID_BTN);
+      if (!b) return;
+      if (on) b.classList.add('armed');
+      else b.classList.remove('armed');
+    } catch(e){}
+  }
+
+  function enterPickMode(){
+    if (pickMode) return;
+    pickMode = true;
+    pickedMes = null;
+    pickedSnippet = '';
+    pickedRatio = 0.5;
+    setArmed(false);
+    toast('点一下想编辑的那条消息（尽量点在目标句子附近）');
+
+    const handler = (ev) => {
+      try {
+        const p = ev.touches ? ev.touches[0] : ev;
+
+        const hit = mesFromPoint(p.clientX, p.clientY);
+        if (!hit || !hit.mes) {
+          toast('没点到消息，再点一次');
+          return;
+        }
+
+        const mes = hit.mes;
+        const r = mes.getBoundingClientRect();
+        let ratio = (p.clientY - r.top) / Math.max(1, r.height);
+        ratio = Math.max(0.05, Math.min(0.95, ratio));
+
+        // 抓一个“附近片段”当锚点（越准越不飘）
+        const showText = (mes.querySelector('.mes_text')?.innerText || mes.innerText || '').trim();
+        if (showText) {
+          const pick = Math.floor(showText.length * ratio);
+          pickedSnippet = showText.slice(Math.max(0, pick - 20), Math.min(showText.length, pick + 20));
+        } else {
+          pickedSnippet = '';
+        }
+
+        pickedMes = mes;
+        pickedRatio = ratio;
+        pickMode = false;
+
+        setArmed(true);
+        toast('已锁定：再点✏️进入精准编辑');
+
+        // 收尾：移除监听（捕获阶段）
+        doc.removeEventListener('touchstart', handler, true);
+        doc.removeEventListener('mousedown', handler, true);
+
+        ev.preventDefault();
+        ev.stopPropagation();
+      } catch(e){
+        pickMode = false;
+        doc.removeEventListener('touchstart', handler, true);
+        doc.removeEventListener('mousedown', handler, true);
+      }
+    };
+
+    // 捕获阶段：尽量顶掉折叠控件的吞点击
+    doc.addEventListener('touchstart', handler, true);
+    doc.addEventListener('mousedown', handler, true);
+  }
+
+  // ===================== 悬浮按钮：拖动/单击/长按 =====================
   function mount(){
     ({ W, doc } = pickHost());
 
@@ -3917,6 +3991,11 @@ function openAPISettingsPanel() {
       s.onerror = function(){ try{ toast('⚠️ '+name+' 加载失败'); }catch(e){} };
       document.head.appendChild(s);
     });
+    // 小手机
+    var sp = document.createElement('script');
+    sp.src = base + 'phone.js';
+    sp.onerror = function(){ try{ toast('⚠️ 小手机模块加载失败'); }catch(e){} };
+    document.head.appendChild(sp);
   })();
 
   let ok = mount();
