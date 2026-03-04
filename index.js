@@ -3910,7 +3910,7 @@ function openAPISettingsPanel() {
 
   // ===== 模块动态加载 =====
   (function(){
-    var base = 'https://raw.githubusercontent.com/z1551170381-ux/shuyuanmi/main/';
+    var base = 'https://cdn.jsdelivr.net/gh/z1551170381-ux/shuyuanmi@main/';
     ['worldbook.js','summary.js','diary.js'].forEach(function(name){
       var s = document.createElement('script');
       s.src = base + name;
