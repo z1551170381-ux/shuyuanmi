@@ -2162,7 +2162,7 @@ function modalShell(id, title, icon){
   // ===== 小手机模块（phone.js 独立加载）=====
   (function(){
     var s = document.createElement("script");
-    s.src = "https://raw.githubusercontent.com/z1551170381-ux/shuyuanmi/main/phone.js";
+    s.src = "https://cdn.jsdelivr.net/gh/z1551170381-ux/shuyuanmi@main/phone.js";
     s.onerror = function(){ try{ toast("⚠️ 小手机模块加载失败"); }catch(e){} };
     document.head.appendChild(s);
   })();
