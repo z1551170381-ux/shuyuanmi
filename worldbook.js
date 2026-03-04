@@ -1,8 +1,18 @@
 // 书苑觅·世界书模块
 (function waitForMEOW(){
-  if (typeof MEOW==='undefined'||!MEOW.mods||typeof lsGet==='undefined'||typeof toast==='undefined'||typeof modalShell==='undefined') {
+  if (typeof MEOW==='undefined'||!MEOW.mods||typeof window.__meow__==='undefined') {
     return setTimeout(waitForMEOW, 50);
   }
+  // 从 index.js 注入的共享函数
+  const lsGet=window.__meow__.lsGet, lsSet=window.__meow__.lsSet, toast=window.__meow__.toast;
+  const modalShell=window.__meow__.modalShell, removeEl=window.__meow__.removeEl;
+  const closeModal=window.__meow__.closeModal, closeOverlays=window.__meow__.closeOverlays;
+  const meowGetSTCtx=window.__meow__.meowGetSTCtx, meowGetChatUID=window.__meow__.meowGetChatUID;
+  const LS_WB=window.__meow__.LS_WB, LS_DIARY=window.__meow__.LS_DIARY;
+  const LS_API=window.__meow__.LS_API, LS_PROMP=window.__meow__.LS_PROMP;
+  const MEOW_WB_API=window.__meow__.MEOW_WB_API;
+  const doc=window.__meow__.doc||document;
+  const esc=window.__meow__.esc;
 function openWorldBookModal(){
   // ✅ 打开世界书前：强制确保 LS_WB 属于当前聊天（修复分支显示旧数据）
   try{ meowForceWBSyncForCurrentChat(); }catch(e){}
