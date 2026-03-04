@@ -3982,6 +3982,16 @@ function openAPISettingsPanel() {
   }
 
 
+
+  // ===== 暴露共享函数给子模块 =====
+  window.__meow__ = {
+    lsGet, lsSet, lsSetRaw, toast, esc: (typeof esc==='function'?esc:s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')),
+    modalShell, removeEl, closeModal, closeOverlays, ensureMask,
+    meowGetSTCtx, meowGetChatUID,
+    LS_WB, LS_DIARY, LS_API, LS_PROMP, LS_PRE, MEOW_WB_API,
+    doc: (typeof doc!=='undefined'?doc:document),
+  };
+
   // ===== 模块动态加载 =====
   (function(){
     var base = 'https://cdn.jsdelivr.net/gh/z1551170381-ux/shuyuanmi@main/';
