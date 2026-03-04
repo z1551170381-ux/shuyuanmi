@@ -1,6 +1,6 @@
 // 书苑觅·日记模块
 (function waitForMEOW(){
-  if (typeof MEOW === 'undefined' || !MEOW.mods || typeof lsGet === 'undefined' || typeof toast === 'undefined') {
+  if (typeof MEOW==='undefined'||!MEOW.mods||typeof lsGet==='undefined'||typeof toast==='undefined'||typeof modalShell==='undefined') {
     return setTimeout(waitForMEOW, 50);
   }
   function openDiaryModal(){
@@ -403,5 +403,6 @@
       if (mount() || tries > 10) clearInterval(t);
     }, 500);
   }
-  try{ MEOW.mods.register('diary', { title:'日记', open: ()=>{ try{ openDiaryModal(); }catch(e){ try{ toast('日记未就绪'); }catch(_){} } } }); }catch(e){}
+
+  try{ MEOW.mods.register('diary',{title:'日记',open:()=>{try{openDiaryModal();}catch(e){try{toast('日记未就绪');}catch(_){}}}}); }catch(e){}
 })();
