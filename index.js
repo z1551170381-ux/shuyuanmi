@@ -3769,6 +3769,145 @@ function openAPISettingsPanel() {
 }
 
 
+  // ===== 浮窗按钮挂载 =====
+  function mount(){
+    ({ W, doc } = pickHost());
+
+    // 清旧
+    try { doc.getElementById(ID_BTN)?.remove?.(); } catch(e){}
+
+    if (!doc.body && doc.readyState === 'loading') return false;
+
+    const b = doc.createElement('div');
+    b.id = ID_BTN;
+
+    // 更好看的图标（你要的“好看+存在感低”）
+    b.innerHTML = `<span class="ico">✧</span>`;
+
+    const saved = lsGet(KEY_POS, null);
+    let x = saved?.x ?? (doc.documentElement.clientWidth - 52);
+    let y = saved?.y ?? (doc.documentElement.clientHeight * 0.55 - 20);
+    b.style.left = `${normPx(x, doc.documentElement.clientWidth)}px`;
+    b.style.top  = `${normPx(y, doc.documentElement.clientHeight)}px`;
+
+    let dragging=false, moved=false;
+    let startX=0,startY=0, baseX=0, baseY=0;
+    const DRAG_THRESHOLD = 6;
+
+    let pressTimer = null;
+    const LONGPRESS_MS = 520; // 给你足够时间“进入定位”，不会点一下就编辑
+    let longPressed = false;
+
+    function clearPress(){
+      if (pressTimer){ clearTimeout(pressTimer); pressTimer = null; }
+    }
+
+    function onDown(ev){
+      const p = ev.touches ? ev.touches[0] : ev;
+      dragging=true; moved=false; longPressed=false;
+
+      startX=p.clientX; startY=p.clientY;
+      baseX=parseFloat(b.style.left)||0;
+      baseY=parseFloat(b.style.top)||0;
+
+      clearPress();
+      pressTimer = setTimeout(() => {
+        pressTimer = null;
+        longPressed = true;
+        closeOverlays();
+        enterPickMode();
+      }, LONGPRESS_MS);
+
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+
+    function onMove(ev){
+      if (!dragging) return;
+      const p = ev.touches ? ev.touches[0] : ev;
+      const dx = p.clientX - startX;
+      const dy = p.clientY - startY;
+
+      if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD){
+        moved = true;
+        clearPress(); // 一旦拖动就取消长按
+      }
+
+      const nx = normPx(baseX + dx, doc.documentElement.clientWidth);
+      const ny = normPx(baseY + dy, doc.documentElement.clientHeight);
+      b.style.left = `${nx}px`;
+      b.style.top  = `${ny}px`;
+
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+
+    function onUp(ev){
+      if (!dragging) return;
+      dragging=false;
+
+      const nx = parseFloat(b.style.left)||0;
+      const ny = parseFloat(b.style.top)||0;
+      lsSet(KEY_POS, { x:nx, y:ny });
+
+      // 结束时清定时器（但别误触发）
+      clearPress();
+
+      // 拖动就只是拖动
+      if (moved) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        return;
+      }
+
+      // 长按刚触发过：抬手不做任何事（避免“长按一下就进编辑”）
+      if (longPressed) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        return;
+      }
+
+      // 普通单击逻辑：
+      // 1) 如果已经锁定了目标消息 -> 进入精准编辑
+      // 2) 否则 -> 打开菜单（三功能）
+      if (pickedMes) {
+        closeOverlays();
+        openEdit(pickedMes, pickedRatio, pickedSnippet || '');
+        // 进编辑后解除 armed
+        setTimeout(() => { pickedMes = null; setArmed(false); }, 300);
+      } else {
+  toggleMenu(b);
+}
+
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+
+    b.addEventListener('touchstart', onDown, {passive:false});
+    b.addEventListener('touchmove',  onMove, {passive:false});
+    b.addEventListener('touchend',   onUp,   {passive:false});
+
+    b.addEventListener('mousedown', onDown, {passive:false});
+    doc.addEventListener('mousemove', onMove, {passive:false});
+    doc.addEventListener('mouseup',   onUp,   {passive:false});
+
+    (doc.body || doc.documentElement).appendChild(b);
+
+    W.addEventListener('resize', () => {
+      try{
+        const bb = doc.getElementById(ID_BTN);
+        if (!bb) return;
+        const nx2 = normPx(parseFloat(bb.style.left)||0, doc.documentElement.clientWidth);
+        const ny2 = normPx(parseFloat(bb.style.top)||0, doc.documentElement.clientHeight);
+        bb.style.left = `${nx2}px`;
+        bb.style.top  = `${ny2}px`;
+      } catch(e){}
+    });
+
+    return true;
+  }
+
+
   // ===== 模块动态加载 =====
   (function(){
     var base = 'https://raw.githubusercontent.com/z1551170381-ux/shuyuanmi/main/';
