@@ -133,36 +133,46 @@
    */
   function extractCleanText(el) {
     try {
-      const clone = el.cloneNode(true);
-      // 移除不需要朗读的子元素：图片、代码块、隐藏元素、消息编辑工具栏等
-      const removeSelectors = [
-        'img', 'figure', 'code', 'pre',
-        '.mes_img_container', '.mes_reasoning', '.mes_timer',
-        '.icon', '.fa', '[style*="display:none"]', '[style*="visibility:hidden"]',
-        'script', 'style', 'svg',
-      ];
-      removeSelectors.forEach(sel => {
-        try { clone.querySelectorAll(sel).forEach(n => n.remove()); } catch(e) {}
-      });
+      // ── 核心策略：直接读 innerHTML，手动剥离所有 HTML 标签 ──
+      // 原因：ST 的美化正则把 【时间】 转成了嵌套 <div>，
+      // cloneNode 后脱离文档，innerText 在离线节点上会失效返回空字符串。
+      // 用 innerHTML → 剥 HTML → 纯文字 是最可靠的方案。
 
-      // 提取文字：优先 innerText（尊重可见性），回退 textContent
-      let text = (clone.innerText || clone.textContent || '').trim();
+      let html = el.innerHTML || '';
 
-      // DOM 级别已经清理，再做字符级别二次清理
-      text =       text = text.replace(/[\u0000-\u001F\u007F\u200B-\u200F\u2028\u2029\uFEFF]/g, ' ');
-      text = text.replace(/[\u0000-\u001F\u007F\u200B-\u200F\u2028\u2029\uFEFF]/g, ' ');
-      // 去掉 HTML 实体残留（如 &nbsp;）
-      text = text.replace(/&[a-z]+;/gi, ' ');
-      // 去掉 【】 及全形/半形方括号（无论 ST 是否已转成 HTML）
-      text = text.replace(/【[^】]*】/g, '');   // 整个 【...】 直接删
-      text = text.replace(/[【】\[\]]/g, ' ');  // 残余括号变空格
-      // 多余空白收拢
-      text = text.replace(/\s{2,}/g, ' ').trim();
+      // 1. 把块级标签换成换行（div/p/br/li/tr），保留段落结构
+      html = html.replace(/<\/(div|p|li|tr|h[1-6])>/gi, '\n');
+      html = html.replace(/<br\s*\/?>/gi, '\n');
 
-      return text;
+      // 2. 剥掉所有 HTML 标签（包括 ST 美化生成的 <span style="...">）
+      html = html.replace(/<[^>]+>/g, '');
+
+      // 3. HTML 实体解码（&amp; &nbsp; &lt; 等）
+      html = html.replace(/&nbsp;/gi, ' ')
+                 .replace(/&amp;/gi, '&')
+                 .replace(/&lt;/gi, '<')
+                 .replace(/&gt;/gi, '>')
+                 .replace(/&[a-z#0-9]+;/gi, ' ');
+
+      // 4. 字符级清理：控制字符 / 零宽字符
+      html = html.replace(/[\u0000-\u001F\u007F\u200B-\u200F\u2028\u2029\uFEFF]/g, ' ');
+
+      // 5. 【...】 整块删（ST 美化后括号本身可能还残留在文字里）
+      html = html.replace(/\u3010[^\u3011]*\u3011/g, '');   // 【...】
+      html = html.replace(/[\u3010\u3011\[\]]/g, ' ');       // 残余括号
+
+      // 6. emoji / 图标字符（ST 美化插入的 🗓 📍 等）—— 保留，TTS 会忽略或读出来都无所谓
+
+      // 7. 多余空白收拢
+      html = html.replace(/\n{2,}/g, '\n').replace(/[ \t]{2,}/g, ' ').trim();
+
+      return html;
     } catch(e) {
-      // 兜底：直接 textContent
-      return (el.textContent || '').replace(/【[^】]*】/g, '').replace(/[【】]/g, ' ').trim();
+      // 终极兜底
+      return (el.textContent || '')
+        .replace(/\u3010[^\u3011]*\u3011/g, '')
+        .replace(/[\u3010\u3011]/g, ' ')
+        .replace(/\s{2,}/g, ' ').trim();
     }
   }
 
