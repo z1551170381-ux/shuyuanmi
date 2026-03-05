@@ -1358,11 +1358,11 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   position:fixed;
   width:220px; height:220px;
   border-radius:50%;
-  background:rgba(245,242,236,.28);
-  border:1px solid rgba(255,255,255,.38);
-  box-shadow:0 12px 40px rgba(0,0,0,.12);
-  backdrop-filter:blur(18px) saturate(1.08);
-  -webkit-backdrop-filter:blur(18px) saturate(1.08);
+  background:rgba(245,242,236,.12);
+  border:1px solid rgba(255,255,255,.24);
+  box-shadow:0 8px 30px rgba(0,0,0,.10);
+  backdrop-filter:blur(16px) saturate(1.05);
+  -webkit-backdrop-filter:blur(16px) saturate(1.05);
   z-index:2147483200;
   overflow:visible;
   pointer-events:auto;
@@ -1405,13 +1405,13 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   transition:transform .18s ease, box-shadow .18s ease;
 }
 #${ID_MENU} .rotaryItem.sel{
-  background:rgba(255,253,248,.72);
-  border-color:rgba(210,198,172,.55);
+  background:rgba(255,254,250,.65);
+  border-color:rgba(222,210,185,.50);
   transform:scale(1.10) !important;
   box-shadow:
-    0 0 0 2.5px rgba(212,198,168,.45),
-    0 0 14px 4px rgba(220,206,172,.32),
-    0 4px 14px rgba(0,0,0,.07);
+    0 0 0 3px rgba(230,218,190,.40),
+    0 0 16px 6px rgba(230,215,180,.20),
+    0 3px 10px rgba(0,0,0,.05);
   z-index:3;
 }
 #${ID_MENU} .rotaryItem .i{
@@ -1449,28 +1449,11 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   transform:translate(-50%,-50%) scale(.93);
 }
 #${ID_MENU} .rotaryCenter .rc-star{
-  font-size:20px;
-  color:rgba(80,68,52,.70);
-  line-height:1;
+  display:flex; align-items:center; justify-content:center;
+  color:rgba(80,68,52,.62);
   pointer-events:none;
 }
-/* 关闭按钮 */
-#${ID_MENU} .rotaryClose{
-  position:absolute;
-  top:12px; right:12px;
-  width:24px; height:24px;
-  border-radius:50%;
-  background:rgba(255,255,255,.30);
-  border:1px solid rgba(255,255,255,.40);
-  font-size:13px; font-weight:900;
-  color:rgba(46,38,30,.40);
-  display:flex; align-items:center; justify-content:center;
-  cursor:pointer;
-  pointer-events:auto;
-  z-index:5;
-  transition:background .12s;
-}
-#${ID_MENU} .rotaryClose:active{ background:rgba(28,24,18,.12); }
+
 
 /* =========================================================
    9) 统一交互鼠标/触控反馈（保持你现在的体验）
@@ -1479,7 +1462,6 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
 .meowModal button,
 #${ID_MENU} .rotaryItem,
 #${ID_MENU} .rotaryCenter,
-#${ID_MENU} .rotaryClose,
 #${ID_MENU} .item,
 .meowModal summary,
 .meowModal .close{
@@ -1929,7 +1911,7 @@ function toggleMenu(btnEl){
   const center = doc.createElement('button');
   center.type = 'button';
   center.className = 'rotaryCenter';
-  center.innerHTML = `<div class="rc-star">✧</div>`;
+  center.innerHTML = `<div class="rc-star"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5.64 5.64l2.83 2.83M15.54 15.54l2.83 2.83M5.64 18.36l2.83-2.83M15.54 8.46l2.83-2.83"/></svg></div>`;
   center.addEventListener('click', e => {
     e.preventDefault(); e.stopPropagation();
     closeOverlays();
@@ -1937,15 +1919,7 @@ function toggleMenu(btnEl){
   }, { passive: false });
   menu.appendChild(center);
 
-  const closeEl = doc.createElement('button');
-  closeEl.type = 'button';
-  closeEl.className = 'rotaryClose';
-  closeEl.textContent = '\u00d7';
-  closeEl.addEventListener('click', e => {
-    e.preventDefault(); e.stopPropagation();
-    closeOverlays();
-  }, { passive: false });
-  menu.appendChild(closeEl);
+  // 关闭转盘：点中心按钮即可关闭（无需独立关闭按钮）
 
   let angle = 0;
 
