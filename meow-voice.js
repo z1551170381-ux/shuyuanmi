@@ -133,49 +133,38 @@
    */
   function extractCleanText(el) {
     try {
-      // ── 核心策略：直接读 innerHTML，手动剥离所有 HTML 标签 ──
-      // 原因：ST 的美化正则把 【时间】 转成了嵌套 <div>，
-      // cloneNode 后脱离文档，innerText 在离线节点上会失效返回空字符串。
-      // 用 innerHTML → 剥 HTML → 纯文字 是最可靠的方案。
+      // textContent 直接读原生 DOM 文字，不依赖渲染树，永远可靠。
+      // ST 的美化正则生成的 <div style=".../* 注释 */..."> 里的
+      // CSS 注释文字也会被 textContent 包含进来，所以要做清洗。
+      let text = el.textContent || '';
 
-      let html = el.innerHTML || '';
+      // 1. 去掉 CSS 注释内容（/* ... */），防止 style 属性内联注释泄漏
+      text = text.replace(/\/\*[\s\S]*?\*\//g, '');
 
-      // 1. 把块级标签换成换行（div/p/br/li/tr），保留段落结构
-      html = html.replace(/<\/(div|p|li|tr|h[1-6])>/gi, '\n');
-      html = html.replace(/<br\s*\/?>/gi, '\n');
+      // 2. 去掉 CSS 属性片段（color: #xxx; / display: flex; 等）
+      //    特征：含冒号且前后是 ASCII 字母/数字/# 的行
+      text = text.replace(/[a-z-]+\s*:\s*[^;\n]{0,80};/gi, '');
 
-      // 2. 剥掉所有 HTML 标签（包括 ST 美化生成的 <span style="...">）
-      html = html.replace(/<[^>]+>/g, '');
+      // 3. 去 【...】 整块
+      text = text.replace(/\u3010[^\u3011\n]{0,100}\u3011/g, '');
+      text = text.replace(/[\u3010\u3011\[\]]/g, ' ');
 
-      // 3. HTML 实体解码（&amp; &nbsp; &lt; 等）
-      html = html.replace(/&nbsp;/gi, ' ')
-                 .replace(/&amp;/gi, '&')
-                 .replace(/&lt;/gi, '<')
-                 .replace(/&gt;/gi, '>')
-                 .replace(/&[a-z#0-9]+;/gi, ' ');
+      // 4. 去控制字符 / 零宽字符
+      text = text.replace(/[\u0000-\u001F\u007F\u200B-\u200F\u2028\u2029\uFEFF]/g, ' ');
 
-      // 4. 字符级清理：控制字符 / 零宽字符
-      html = html.replace(/[\u0000-\u001F\u007F\u200B-\u200F\u2028\u2029\uFEFF]/g, ' ');
+      // 5. 去 HTML 实体残留
+      text = text.replace(/&[a-z#0-9]+;/gi, ' ');
 
-      // 5. 【...】 整块删（ST 美化后括号本身可能还残留在文字里）
-      html = html.replace(/\u3010[^\u3011]*\u3011/g, '');   // 【...】
-      html = html.replace(/[\u3010\u3011\[\]]/g, ' ');       // 残余括号
+      // 6. 去多余空白
+      text = text.replace(/[ \t]{2,}/g, ' ')
+                 .replace(/\n{2,}/g, '\n')
+                 .trim();
 
-      // 6. emoji / 图标字符（ST 美化插入的 🗓 📍 等）—— 保留，TTS 会忽略或读出来都无所谓
-
-      // 7. 多余空白收拢
-      html = html.replace(/\n{2,}/g, '\n').replace(/[ \t]{2,}/g, ' ').trim();
-
-      return html;
+      return text;
     } catch(e) {
-      // 终极兜底
-      return (el.textContent || '')
-        .replace(/\u3010[^\u3011]*\u3011/g, '')
-        .replace(/[\u3010\u3011]/g, ' ')
-        .replace(/\s{2,}/g, ' ').trim();
+      return (el.textContent || '').replace(/\u3010[^\u3011]*\u3011/g, '').trim();
     }
   }
-
   function processText(raw, c) {
     let text = String(raw || '').trim();
     // ── TTS前清理：去掉 Markdown + 让TTS引擎友好读 ──
