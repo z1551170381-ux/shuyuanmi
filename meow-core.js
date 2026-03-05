@@ -1377,17 +1377,16 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   opacity:1;
   transform:scale(1);
 }
-/* 顶部选中指示器 ▼ */
+/* 指示器：JS动态旋转，始终指向最近屏幕边缘 */
 #${ID_MENU} .rotaryPtr{
   position:absolute;
-  top:8px; left:50%;
-  transform:translateX(-50%);
   width:0; height:0;
   border-left:4px solid transparent;
   border-right:4px solid transparent;
-  border-top:7px solid rgba(180,165,135,.70);
+  border-bottom:8px solid rgba(180,165,135,.75);
   pointer-events:none;
   z-index:5;
+  transform-origin:center center;
 }
 /* 功能按钮（JS 动态定位） */
 #${ID_MENU} .rotaryItem{
@@ -1890,6 +1889,24 @@ function toggleMenu(btnEl){
   const ptr = doc.createElement('div');
   ptr.className = 'rotaryPtr';
   menu.appendChild(ptr);
+
+  // 计算转盘中心距哪条屏幕边最近，指示器放在那条边上朝外
+  {
+    const cx = lx + R_DISC, cy = ly + R_DISC;
+    const distTop    = cy;
+    const distBottom = vh - cy;
+    const distLeft   = cx;
+    const distRight  = vw - cx;
+    const minDist    = Math.min(distTop, distBottom, distLeft, distRight);
+    let pLeft, pTop, rot;
+    if (minDist === distTop)    { pLeft = R_DISC - 4;  pTop  = 4;           rot = 0;   }  // 指向上
+    else if (minDist === distBottom) { pLeft = R_DISC - 4;  pTop  = R_DISC*2-12; rot = 180; }  // 指向下
+    else if (minDist === distLeft)   { pLeft = 4;           pTop  = R_DISC - 4;  rot = 270; }  // 指向左
+    else                             { pLeft = R_DISC*2-12; pTop  = R_DISC - 4;  rot = 90;  }  // 指向右
+    ptr.style.left      = pLeft + 'px';
+    ptr.style.top       = pTop  + 'px';
+    ptr.style.transform = `rotate(${rot}deg)`;
+  }
 
   let selIdx = 0;
   const step = 360 / N;
