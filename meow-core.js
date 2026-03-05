@@ -1358,16 +1358,16 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   position:fixed;
   width:220px; height:220px;
   border-radius:50%;
-  background:rgba(245,242,236,.80);
-  border:1px solid rgba(255,255,255,.60);
-  box-shadow:0 20px 60px rgba(0,0,0,.18), 0 0 0 1px rgba(28,24,18,.05) inset;
-  backdrop-filter:blur(22px) saturate(1.1);
-  -webkit-backdrop-filter:blur(22px) saturate(1.1);
+  background:rgba(245,242,236,.28);
+  border:1px solid rgba(255,255,255,.38);
+  box-shadow:0 12px 40px rgba(0,0,0,.12);
+  backdrop-filter:blur(18px) saturate(1.08);
+  -webkit-backdrop-filter:blur(18px) saturate(1.08);
   z-index:2147483200;
   overflow:visible;
   pointer-events:auto;
   opacity:0;
-  transform:scale(.82);
+  transform:scale(.84);
   transition:opacity .18s ease, transform .2s cubic-bezier(.2,.8,.3,1);
   touch-action:none;
   user-select:none;
@@ -1377,24 +1377,15 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   opacity:1;
   transform:scale(1);
 }
-/* 内圈刻度环 */
-#${ID_MENU}.meowRotary::before{
-  content:'';
-  position:absolute;
-  inset:10px;
-  border-radius:50%;
-  border:1px solid rgba(28,24,18,.07);
-  pointer-events:none;
-}
 /* 顶部选中指示器 ▼ */
 #${ID_MENU} .rotaryPtr{
   position:absolute;
-  top:6px; left:50%;
+  top:8px; left:50%;
   transform:translateX(-50%);
   width:0; height:0;
-  border-left:5px solid transparent;
-  border-right:5px solid transparent;
-  border-top:8px solid rgba(139,115,85,.65);
+  border-left:4px solid transparent;
+  border-right:4px solid transparent;
+  border-top:7px solid rgba(180,165,135,.70);
   pointer-events:none;
   z-index:5;
 }
@@ -1406,18 +1397,21 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
   gap:2px;
-  background:rgba(255,255,255,.70);
-  border:1px solid rgba(255,255,255,.60);
-  box-shadow:0 4px 12px rgba(0,0,0,.08);
+  background:rgba(255,255,255,.55);
+  border:1px solid rgba(255,255,255,.50);
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
   pointer-events:auto;
   cursor:pointer;
-  transition:transform .18s ease, background .18s ease, box-shadow .18s ease;
+  transition:transform .18s ease, box-shadow .18s ease;
 }
 #${ID_MENU} .rotaryItem.sel{
-  background:rgba(198,186,164,.44);
-  border-color:rgba(139,115,85,.30);
-  transform:scale(1.14) !important;
-  box-shadow:0 6px 20px rgba(0,0,0,.14);
+  background:rgba(255,253,248,.72);
+  border-color:rgba(210,198,172,.55);
+  transform:scale(1.10) !important;
+  box-shadow:
+    0 0 0 2.5px rgba(212,198,168,.45),
+    0 0 14px 4px rgba(220,206,172,.32),
+    0 4px 14px rgba(0,0,0,.07);
   z-index:3;
 }
 #${ID_MENU} .rotaryItem .i{
@@ -1428,57 +1422,55 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
 #${ID_MENU} .rotaryItem .t{
   font-size:11px; font-weight:900;
   letter-spacing:.2px;
-  color:rgba(80,68,52,.82);
+  color:rgba(80,68,52,.78);
   pointer-events:none;
 }
 #${ID_MENU} .rotaryItem.sel .t{
-  color:rgba(60,48,32,1);
+  color:rgba(100,82,54,1);
 }
-/* 中心按钮 */
+/* 中心按钮（固定星星图标，不随选中项变） */
 #${ID_MENU} .rotaryCenter{
   position:absolute;
   left:50%; top:50%;
   transform:translate(-50%,-50%);
-  width:64px; height:64px;
+  width:60px; height:60px;
   border-radius:50%;
-  background:rgba(255,255,255,.88);
-  border:1px solid rgba(28,24,18,.12);
-  box-shadow:0 8px 24px rgba(0,0,0,.13);
-  display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
-  gap:2px;
+  background:rgba(255,255,255,.72);
+  border:1px solid rgba(255,255,255,.55);
+  box-shadow:0 4px 18px rgba(0,0,0,.10);
+  display:flex; align-items:center; justify-content:center;
   pointer-events:auto;
   cursor:pointer;
   z-index:4;
   transition:background .14s, transform .12s;
 }
-#${ID_MENU} .rotaryCenter:active{ background:rgba(198,186,164,.45); transform:translate(-50%,-50%) scale(.94); }
-#${ID_MENU} .rotaryCenter .rc-i{
-  display:flex; align-items:center; justify-content:center;
-  color:rgba(35,35,35,.72);
+#${ID_MENU} .rotaryCenter:active{
+  background:rgba(240,234,220,.80);
+  transform:translate(-50%,-50%) scale(.93);
 }
-#${ID_MENU} .rotaryCenter .rc-t{
-  font-size:10px; font-weight:900;
-  color:rgba(80,68,52,.86);
-  letter-spacing:.2px;
+#${ID_MENU} .rotaryCenter .rc-star{
+  font-size:20px;
+  color:rgba(80,68,52,.70);
+  line-height:1;
+  pointer-events:none;
 }
 /* 关闭按钮 */
 #${ID_MENU} .rotaryClose{
   position:absolute;
-  top:10px; right:10px;
-  width:26px; height:26px;
+  top:12px; right:12px;
+  width:24px; height:24px;
   border-radius:50%;
-  background:rgba(28,24,18,.08);
-  border:1px solid rgba(28,24,18,.07);
+  background:rgba(255,255,255,.30);
+  border:1px solid rgba(255,255,255,.40);
   font-size:13px; font-weight:900;
-  color:rgba(46,38,30,.45);
+  color:rgba(46,38,30,.40);
   display:flex; align-items:center; justify-content:center;
   cursor:pointer;
   pointer-events:auto;
   z-index:5;
   transition:background .12s;
 }
-#${ID_MENU} .rotaryClose:active{ background:rgba(28,24,18,.16); }
+#${ID_MENU} .rotaryClose:active{ background:rgba(28,24,18,.12); }
 
 /* =========================================================
    9) 统一交互鼠标/触控反馈（保持你现在的体验）
@@ -1899,10 +1891,13 @@ function toggleMenu(btnEl){
   const vw  = doc.documentElement.clientWidth;
   const vh  = doc.documentElement.clientHeight;
 
+  // 以悬浮按钮为圆心，允许转盘贴边/超出屏幕（像图3那样藏一半）
+  // 只保证按钮本身在视口内，盘子不做额外 clamp
   let lx = br.left + br.width / 2 - R_DISC;
   let ly = br.top  + br.height / 2 - R_DISC;
-  lx = Math.max(6, Math.min(vw - R_DISC * 2 - 6, lx));
-  ly = Math.max(6, Math.min(vh - R_DISC * 2 - 6, ly));
+  // 仅防止转盘完全移出视口（保留至少 40px 可见）
+  lx = Math.max(-(R_DISC * 2 - 40), Math.min(vw - 40, lx));
+  ly = Math.max(-(R_DISC * 2 - 40), Math.min(vh - 40, ly));
 
   const menu = doc.createElement('div');
   menu.id = ID_MENU;
@@ -1934,7 +1929,7 @@ function toggleMenu(btnEl){
   const center = doc.createElement('button');
   center.type = 'button';
   center.className = 'rotaryCenter';
-  center.innerHTML = `<div class="rc-i"></div><div class="rc-t"></div>`;
+  center.innerHTML = `<div class="rc-star">✧</div>`;
   center.addEventListener('click', e => {
     e.preventDefault(); e.stopPropagation();
     closeOverlays();
@@ -1968,8 +1963,7 @@ function toggleMenu(btnEl){
     });
     selIdx = newSel;
     itemEls[selIdx].classList.add('sel');
-    center.querySelector('.rc-i').innerHTML   = items[selIdx].iconHTML;
-    center.querySelector('.rc-t').textContent = items[selIdx].label;
+    // 中心固定显示星星，不跟随选中项
   }
 
   let animId = null;

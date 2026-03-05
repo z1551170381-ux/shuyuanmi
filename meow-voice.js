@@ -1,9 +1,9 @@
 // =====================================================================
-//  meow-voice.js · 喵喵语音朗读  独立版 v1.1
-//  ✅ 零依赖：可单独作为 SillyTavern 扩展加载
-//  ✅ 有 meow-core v8+ 时：通过 MEOW.addMenuItem 注入转盘菜单
-//  ✅ 独立模式：显示可拖动悬浮按钮
-//  ✅ 手动播放：在输入框左侧注入播放/停止快捷按钮
+//  meow-voice.js · 喵喵语音朗读  独立版 v1.2
+//  ✅ 输入框按钮：点击展开模式选项（全部/仅对话/仅旁白/自定义）
+//  ✅ 播放视口内最可见的消息（不只是最后一条）
+//  ✅ 修复：cancel() 后延迟 speak() 避免浏览器噪音 bug
+//  ✅ 有 meow-core 时通过 MEOW.addMenuItem 注入转盘菜单
 // =====================================================================
 
 (() => {
@@ -80,6 +80,7 @@
     MASK:     'meow-voice-mask',
     SOLO_BTN: 'meow-voice-solo-btn',
     PLAY_BTN: 'meow-voice-play-btn',
+    MODE_POP: 'meow-voice-mode-pop',
   };
 
   function cfg() {
@@ -98,18 +99,29 @@
     };
   }
 
+  const MODE_LABELS = {
+    all:       '📄 全部文本',
+    dialogue:  '💬 仅对话',
+    narration: '📝 仅旁白',
+    custom:    '✂️ 自定义',
+  };
+
   // ════════════════════════════════════════════════════════════════════
   //  § 3  语音引擎
   // ════════════════════════════════════════════════════════════════════
 
   const synth = window.speechSynthesis;
   let isReading = false;
+  let _pendingSpeak = null; // 用于延迟speak，防止cancel噪音
 
   function getVoices() {
     return new Promise(resolve => {
       let v = synth?.getVoices() || [];
       if (v.length) return resolve(v);
-      const t = setInterval(() => { v = synth.getVoices(); if (v.length) { clearInterval(t); resolve(v); } }, 100);
+      const t = setInterval(() => {
+        v = synth.getVoices();
+        if (v.length) { clearInterval(t); resolve(v); }
+      }, 100);
       setTimeout(() => { clearInterval(t); resolve(synth?.getVoices() || []); }, 3000);
     });
   }
@@ -136,6 +148,8 @@
   }
 
   function stopReading() {
+    // 清除待执行的 speak
+    if (_pendingSpeak) { clearTimeout(_pendingSpeak); _pendingSpeak = null; }
     try { synth.cancel(); } catch(e) {}
     isReading = false;
     updateAllBtns(false);
@@ -143,53 +157,124 @@
 
   async function speakText(rawText, charName) {
     if (!synth) { toast('🔇 当前环境不支持语音合成'); return; }
-    stopReading();
+
+    // ── 关键修复：先 cancel，然后延迟 80ms 再 speak，避免浏览器噪音 bug ──
+    if (_pendingSpeak) { clearTimeout(_pendingSpeak); _pendingSpeak = null; }
+    try { synth.cancel(); } catch(e) {}
+    isReading = false;
+
     const c     = cfg();
     const text  = processText(rawText, c);
-    if (!text) return;
+    if (!text || text.length < 2) { updateAllBtns(false); return; }
+
     const voices   = await getVoices();
     const voiceURI = (charName && c.charMap[charName]) ? c.charMap[charName] : c.defVoice;
     const voice    = voices.find(v => v.voiceURI === voiceURI) || null;
-    const utter    = new SpeechSynthesisUtterance(text);
-    utter.rate   = Math.max(0.1, Math.min(10,  +c.rate   || 1.0));
-    utter.pitch  = Math.max(0,   Math.min(2,   +c.pitch  || 1.0));
-    utter.volume = Math.max(0,   Math.min(1,   +c.volume || 1.0));
-    if (voice) utter.voice = voice;
-    utter.onstart = () => { isReading = true;  updateAllBtns(true);  };
-    utter.onend   = () => { isReading = false; updateAllBtns(false); };
-    utter.onerror = () => { isReading = false; updateAllBtns(false); };
-    synth.speak(utter);
+
+    _pendingSpeak = setTimeout(() => {
+      _pendingSpeak = null;
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate   = Math.max(0.1, Math.min(10,  +c.rate   || 1.0));
+      utter.pitch  = Math.max(0,   Math.min(2,   +c.pitch  || 1.0));
+      utter.volume = Math.max(0,   Math.min(1,   +c.volume || 1.0));
+      if (voice) utter.voice = voice;
+      utter.onstart = () => { isReading = true;  updateAllBtns(true);  };
+      utter.onend   = () => { isReading = false; updateAllBtns(false); };
+      utter.onerror = (e) => {
+        // 忽略 interrupted 错误（cancel 产生的）
+        if (e.error === 'interrupted') return;
+        isReading = false; updateAllBtns(false);
+      };
+      try { synth.speak(utter); } catch(err) { updateAllBtns(false); }
+    }, 80);
   }
 
-  /** 朗读当前聊天中最后一条 AI 消息 */
-  function speakLastAIMessage() {
-    const msgs = Array.from(
-      doc.querySelectorAll('.mes[is_user="false"], .mes_block[is_user="false"]')
-    );
-    const last = msgs[msgs.length - 1];
-    if (!last) { toast('没有找到可朗读的消息'); return; }
-    const charName = (last.querySelector('.name_text') || last.querySelector('.ch_name'))?.textContent?.trim() || '';
-    const textEl   = last.querySelector('.mes_text');
+  // ════════════════════════════════════════════════════════════════════
+  //  § 4  找视口内最可见的 AI 消息
+  // ════════════════════════════════════════════════════════════════════
+
+  function getViewportMessage() {
+    // 找所有 AI 消息
+    const msgs = Array.from(doc.querySelectorAll(
+      '.mes[is_user="false"], .mes_block[is_user="false"], [is_user="false"].mes'
+    ));
+    if (!msgs.length) return null;
+
+    const vh = doc.documentElement.clientHeight;
+    let bestEl = null, bestVis = -1;
+
+    for (const el of msgs) {
+      const r = el.getBoundingClientRect();
+      // 计算在视口内的可见高度比例
+      const top    = Math.max(0, r.top);
+      const bottom = Math.min(vh, r.bottom);
+      const vis    = Math.max(0, bottom - top);
+      if (vis > bestVis) { bestVis = vis; bestEl = el; }
+    }
+    return bestEl;
+  }
+
+  /** 朗读视口内最可见的 AI 消息，用指定 mode 覆盖配置 */
+  function speakViewportMessage(overrideMode) {
+    const el = getViewportMessage();
+    if (!el) { toast('没有找到可朗读的消息'); return; }
+    const charName = (el.querySelector('.name_text') || el.querySelector('.ch_name'))?.textContent?.trim() || '';
+    const textEl   = el.querySelector('.mes_text');
     const rawText  = textEl ? (textEl.innerText || textEl.textContent || '') : '';
     if (!rawText.trim()) { toast('消息内容为空'); return; }
-    speakText(rawText, charName);
+
+    // 临时覆盖 mode（不写 localStorage）
+    if (overrideMode) {
+      const c     = cfg();
+      const saved = c.mode;
+      c.mode = overrideMode;
+      // 直接用临时 cfg 处理
+      _speakWithCfg(rawText, charName, c);
+    } else {
+      speakText(rawText, charName);
+    }
+  }
+
+  async function _speakWithCfg(rawText, charName, c) {
+    if (!synth) return;
+    if (_pendingSpeak) { clearTimeout(_pendingSpeak); _pendingSpeak = null; }
+    try { synth.cancel(); } catch(e) {}
+    isReading = false;
+
+    const text = processText(rawText, c);
+    if (!text || text.length < 2) { updateAllBtns(false); return; }
+
+    const voices   = await getVoices();
+    const voiceURI = (charName && c.charMap[charName]) ? c.charMap[charName] : c.defVoice;
+    const voice    = voices.find(v => v.voiceURI === voiceURI) || null;
+
+    _pendingSpeak = setTimeout(() => {
+      _pendingSpeak = null;
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate   = Math.max(0.1, Math.min(10,  +c.rate   || 1.0));
+      utter.pitch  = Math.max(0,   Math.min(2,   +c.pitch  || 1.0));
+      utter.volume = Math.max(0,   Math.min(1,   +c.volume || 1.0));
+      if (voice) utter.voice = voice;
+      utter.onstart = () => { isReading = true;  updateAllBtns(true);  };
+      utter.onend   = () => { isReading = false; updateAllBtns(false); };
+      utter.onerror = (e) => { if (e.error === 'interrupted') return; isReading = false; updateAllBtns(false); };
+      try { synth.speak(utter); } catch(err) { updateAllBtns(false); }
+    }, 80);
   }
 
   // ════════════════════════════════════════════════════════════════════
-  //  § 4  SVG 图标
+  //  § 5  SVG 图标
   // ════════════════════════════════════════════════════════════════════
 
-  const ICON_VOICE = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
-  const ICON_STOP  = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`;
-  // 转盘菜单用的稍大版
+  const ICON_VOICE = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
+  const ICON_STOP  = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`;
   const ICON_VOICE_BIG = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>`;
 
   // ════════════════════════════════════════════════════════════════════
-  //  § 5  更新所有按钮状态
+  //  § 6  更新所有按钮状态
   // ════════════════════════════════════════════════════════════════════
 
   function updateAllBtns(playing) {
-    // 独立悬浮按钮
     try {
       const b = doc.getElementById(ID.SOLO_BTN);
       if (b) {
@@ -197,20 +282,18 @@
         b.style.background = playing ? 'rgba(220,100,80,.22)' : 'rgba(255,255,255,.18)';
       }
     } catch(e) {}
-
-    // 输入框旁手动播放按钮
     try {
       const pb = doc.getElementById(ID.PLAY_BTN);
       if (pb) {
-        pb.innerHTML = playing ? ICON_STOP : ICON_VOICE;
-        pb.title = playing ? '停止朗读' : '朗读最新消息';
-        pb.style.color = playing ? 'rgba(200,80,60,.8)' : 'rgba(46,38,30,.48)';
+        pb.querySelector('.mv-pbico').innerHTML = playing ? ICON_STOP : ICON_VOICE;
+        pb.style.color = playing ? 'rgba(200,80,60,.85)' : 'rgba(46,38,30,.48)';
+        pb.title = playing ? '停止朗读' : '朗读当前消息';
       }
     } catch(e) {}
   }
 
   // ════════════════════════════════════════════════════════════════════
-  //  § 6  自动朗读：监听新消息
+  //  § 7  自动朗读：监听新消息
   // ════════════════════════════════════════════════════════════════════
 
   let lastReadId = '';
@@ -239,7 +322,8 @@
         for (const node of mut.addedNodes) {
           if (node?.nodeType !== 1) continue;
           if (node.classList?.contains('mes') || node.hasAttribute?.('mesid')) {
-            setTimeout(() => tryAutoRead(node), 400);
+            // 等待消息内容写入完成再读（ST 流式输出时会不断更新 DOM）
+            setTimeout(() => tryAutoRead(node), 600);
           }
         }
       }
@@ -249,13 +333,100 @@
   setTimeout(bindChatObserver, 1200);
 
   // ════════════════════════════════════════════════════════════════════
-  //  § 7  手动播放按钮（输入框左侧）
+  //  § 8  模式选项气泡（播放按钮点击展开）
+  // ════════════════════════════════════════════════════════════════════
+
+  function showModePop(anchor) {
+    // 关闭已存在的
+    closeModePop();
+
+    const pop = doc.createElement('div');
+    pop.id = ID.MODE_POP;
+
+    const c = cfg();
+    const modes = ['all','dialogue','narration','custom'];
+
+    // 样式
+    Object.assign(pop.style, {
+      position: 'fixed',
+      zIndex: '2147483500',
+      background: 'rgba(245,242,237,.92)',
+      border: '1px solid rgba(28,24,18,.10)',
+      borderRadius: '12px',
+      boxShadow: '0 8px 32px rgba(0,0,0,.14)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      padding: '6px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '2px',
+      minWidth: '140px',
+    });
+
+    modes.forEach(mode => {
+      const row = doc.createElement('button');
+      row.type = 'button';
+      const isCurrent = c.mode === mode;
+      Object.assign(row.style, {
+        display: 'flex', alignItems: 'center', gap: '8px',
+        padding: '8px 10px', borderRadius: '8px', border: 'none',
+        background: isCurrent ? 'rgba(198,186,164,.35)' : 'transparent',
+        color: 'rgba(46,38,30,.82)', fontSize: '13px', fontWeight: isCurrent ? '700' : '500',
+        cursor: 'pointer', textAlign: 'left', width: '100%',
+        transition: 'background .12s',
+      });
+      row.textContent = MODE_LABELS[mode];
+      if (isCurrent) {
+        const dot = doc.createElement('span');
+        dot.textContent = '✓';
+        Object.assign(dot.style, { marginLeft:'auto', color:'rgba(139,115,85,.8)', fontSize:'12px' });
+        row.appendChild(dot);
+      }
+      row.addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation();
+        closeModePop();
+        if (mode === 'custom') {
+          // 自定义模式直接打开设置弹窗
+          openModal();
+        } else {
+          lsSet(LS.MODE, mode);
+          speakViewportMessage(mode);
+        }
+      });
+      row.addEventListener('mouseover', () => { if (!isCurrent) row.style.background = 'rgba(198,186,164,.18)'; });
+      row.addEventListener('mouseout',  () => { if (!isCurrent) row.style.background = 'transparent'; });
+      pop.appendChild(row);
+    });
+
+    // 位置：在 anchor 上方
+    doc.body.appendChild(pop);
+    const ar = anchor.getBoundingClientRect();
+    const pr = pop.getBoundingClientRect();
+    let left = ar.left + ar.width / 2 - pr.width / 2;
+    let top  = ar.top - pr.height - 8;
+    // 防止超出视口
+    left = Math.max(8, Math.min(doc.documentElement.clientWidth - pr.width - 8, left));
+    if (top < 8) top = ar.bottom + 8;
+    pop.style.left = left + 'px';
+    pop.style.top  = top  + 'px';
+
+    // 点外面关闭
+    setTimeout(() => {
+      doc.addEventListener('click', closeModePop, { once: true, capture: true });
+    }, 50);
+  }
+
+  function closeModePop() {
+    doc.getElementById(ID.MODE_POP)?.remove();
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  //  § 9  手动播放按钮（输入框左侧）
   // ════════════════════════════════════════════════════════════════════
 
   function injectPlayBtn() {
     if (doc.getElementById(ID.PLAY_BTN)) return;
 
-    // 找 ST 的发送按钮区域，兼容多个版本
     const candidates = [
       '#send_but_sheld', '#rightSendForm', '#leftSendForm',
       '#sendFormWrapper', '#form_sheld', '.mes_send',
@@ -265,20 +436,21 @@
       const el = doc.querySelector(sel);
       if (el) { container = el; break; }
     }
-    // 兜底：找发送按钮的父级
     if (!container) {
       const sendBtn = doc.querySelector('#send_but') || doc.querySelector('[id*="send_but"]');
       if (sendBtn) container = sendBtn.parentElement;
     }
     if (!container) { setTimeout(injectPlayBtn, 2000); return; }
 
+    const wrap = doc.createElement('div');
+    wrap.style.cssText = 'display:flex;align-items:center;flex-shrink:0;position:relative;';
+
     const btn = doc.createElement('button');
     btn.id        = ID.PLAY_BTN;
     btn.type      = 'button';
-    btn.title     = '朗读最新消息';
-    btn.innerHTML = ICON_VOICE;
+    btn.title     = '朗读当前消息';
+    btn.innerHTML = `<span class="mv-pbico">${ICON_VOICE}</span>`;
     Object.assign(btn.style, {
-      flexShrink: '0',
       width: '32px', height: '32px',
       borderRadius: '8px', border: 'none',
       background: 'transparent',
@@ -287,30 +459,68 @@
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       transition: 'color .15s, background .15s',
       padding: '0', margin: '0 2px',
+      flexShrink: '0',
     });
 
-    btn.addEventListener('click', () => {
-      if (isReading) stopReading();
-      else speakLastAIMessage();
-    });
-    btn.addEventListener('mouseover', () => {
-      if (!isReading) btn.style.color = 'rgba(46,38,30,.75)';
-    });
-    btn.addEventListener('mouseout', () => {
-      if (!isReading) btn.style.color = 'rgba(46,38,30,.48)';
+    // 单击：若正在播放则停止，否则直接朗读当前模式
+    // 长按（或右键）展开模式选择
+    let pressTimer = null;
+
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (isReading) { stopReading(); return; }
+      speakViewportMessage();
     });
 
-    // 插在容器最前面（最左侧）
-    container.insertBefore(btn, container.firstChild);
+    // 长按展开选项（移动端友好）
+    btn.addEventListener('touchstart', e => {
+      pressTimer = setTimeout(() => {
+        pressTimer = null;
+        showModePop(btn);
+      }, 500);
+    }, { passive: true });
+    btn.addEventListener('touchend', () => {
+      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    });
+
+    // 右键展开选项（桌面端）
+    btn.addEventListener('contextmenu', e => {
+      e.preventDefault();
+      showModePop(btn);
+    });
+
+    btn.addEventListener('mouseover', () => { if (!isReading) btn.style.color = 'rgba(46,38,30,.75)'; });
+    btn.addEventListener('mouseout',  () => { if (!isReading) btn.style.color = 'rgba(46,38,30,.48)'; });
+
+    // 下拉箭头（展开模式选项）
+    const arrow = doc.createElement('button');
+    arrow.type = 'button';
+    arrow.title = '朗读模式选择';
+    arrow.innerHTML = `<svg viewBox="0 0 10 6" width="8" height="5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 1l4 4 4-4"/></svg>`;
+    Object.assign(arrow.style, {
+      width: '14px', height: '32px',
+      border: 'none', background: 'transparent',
+      color: 'rgba(46,38,30,.30)', cursor: 'pointer',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '0', margin: '0', marginLeft: '-4px',
+      flexShrink: '0',
+    });
+    arrow.addEventListener('click', e => {
+      e.stopPropagation();
+      showModePop(btn);
+    });
+
+    wrap.appendChild(btn);
+    wrap.appendChild(arrow);
+    container.insertBefore(wrap, container.firstChild);
   }
 
-  // 保持按钮存在（ST 有时会重建输入区域）
   function keepPlayBtn() {
     if (!doc.getElementById(ID.PLAY_BTN)) injectPlayBtn();
   }
 
   // ════════════════════════════════════════════════════════════════════
-  //  § 8  私有 CSS
+  //  § 10  私有 CSS
   // ════════════════════════════════════════════════════════════════════
 
   function injectCSS() {
@@ -319,7 +529,6 @@
     const s = doc.createElement('style');
     s.id = sid;
     s.textContent = `
-/* ── 独立悬浮按钮 ── */
 #${ID.SOLO_BTN}{
   position:fixed; width:40px; height:40px; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
@@ -329,13 +538,9 @@
   cursor:pointer; color:rgba(46,38,30,.78); transition:background .15s;
 }
 #${ID.SOLO_BTN} .mv-ico{ display:flex; align-items:center; justify-content:center; }
-
-/* ── 遮罩（独立模式用） ── */
 #${ID.MASK}{
   position:fixed; inset:0; z-index:2147483300; background:rgba(0,0,0,.07);
 }
-
-/* ── 弹窗 ── */
 #${ID.MODAL}{
   position:fixed;
   inset:max(10px,env(safe-area-inset-top,0px)) 10px
@@ -344,11 +549,9 @@
   overflow:auto; -webkit-overflow-scrolling:touch;
   background:var(--meow-bg-strong,rgba(245,242,237,.92));
   border:1px solid var(--meow-line,rgba(28,24,18,.12));
-  border-radius:16px;
-  box-shadow:0 20px 60px rgba(0,0,0,.14);
+  border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,.14);
   z-index:2147483400;
-  backdrop-filter:blur(18px) saturate(1.1);
-  -webkit-backdrop-filter:blur(18px) saturate(1.1);
+  backdrop-filter:blur(18px) saturate(1.1); -webkit-backdrop-filter:blur(18px) saturate(1.1);
   color:var(--meow-text,rgba(46,38,30,.82));
 }
 #${ID.MODAL} .mv-hd{
@@ -359,8 +562,7 @@
   border-bottom:1px solid var(--meow-line,rgba(28,24,18,.1));
 }
 #${ID.MODAL} .mv-title{
-  font-size:16px; font-weight:900;
-  color:var(--meow-text,rgba(46,38,30,.82));
+  font-size:16px; font-weight:900; color:var(--meow-text,rgba(46,38,30,.82));
   display:flex; align-items:center; gap:8px;
 }
 #${ID.MODAL} .mv-close{
@@ -377,26 +579,20 @@
   border-radius:14px; padding:12px 14px; margin-bottom:10px;
 }
 #${ID.MODAL} .mv-sec h3{
-  font-size:13px; font-weight:700;
-  color:var(--meow-text,rgba(46,38,30,.82));
+  font-size:13px; font-weight:700; color:var(--meow-text,rgba(46,38,30,.82));
   margin:0 0 10px; display:flex; align-items:center; gap:6px;
 }
-#${ID.MODAL} .mv-row{
-  display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap;
-}
+#${ID.MODAL} .mv-row{ display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
 #${ID.MODAL} .mv-lbl{ font-size:12px; color:var(--meow-text,rgba(46,38,30,.82)); min-width:60px; }
 #${ID.MODAL} .mv-val{ font-size:12px; color:rgba(46,38,30,.45); min-width:34px; text-align:right; }
 #${ID.MODAL} input[type=range]{ flex:1; min-width:80px; accent-color:var(--meow-accent,#8b7355); }
 #${ID.MODAL} select, #${ID.MODAL} input[type=text]{
   background:var(--meow-bg-strong,rgba(255,255,255,.72));
   border:1px solid var(--meow-line,rgba(28,24,18,.12));
-  border-radius:10px; padding:8px 10px;
-  font-size:13px; color:var(--meow-text,rgba(46,38,30,.82));
-  outline:none; width:100%; box-sizing:border-box;
+  border-radius:10px; padding:8px 10px; font-size:13px;
+  color:var(--meow-text,rgba(46,38,30,.82)); outline:none; width:100%; box-sizing:border-box;
 }
-#${ID.MODAL} .mv-toggle{
-  display:flex; align-items:center; justify-content:space-between; padding:6px 0; cursor:pointer;
-}
+#${ID.MODAL} .mv-toggle{ display:flex; align-items:center; justify-content:space-between; padding:6px 0; cursor:pointer; }
 #${ID.MODAL} .mv-toggle > span{ font-size:13px; color:var(--meow-text,rgba(46,38,30,.82)); }
 #${ID.MODAL} .mv-sw{ position:relative; width:42px; height:24px; flex-shrink:0; }
 #${ID.MODAL} .mv-sw input{ opacity:0; width:0; height:0; position:absolute; }
@@ -412,12 +608,10 @@
 #${ID.MODAL} .mv-sw input:checked + .mv-slider::before{ transform:translateX(18px); }
 #${ID.MODAL} .mv-mode-grid{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px; }
 #${ID.MODAL} .mv-mode-card{
-  border:1px solid var(--meow-line,rgba(28,24,18,.1));
-  border-radius:10px; padding:9px 10px;
+  border:1px solid var(--meow-line,rgba(28,24,18,.1)); border-radius:10px; padding:9px 10px;
   cursor:pointer; font-size:12px; text-align:center;
   background:var(--meow-bg-strong,rgba(255,255,255,.5));
-  color:var(--meow-text,rgba(46,38,30,.82));
-  transition:all .15s; user-select:none; line-height:1.5;
+  color:var(--meow-text,rgba(46,38,30,.82)); transition:all .15s; user-select:none; line-height:1.5;
 }
 #${ID.MODAL} .mv-mode-card.active{
   border-color:var(--meow-accent,#8b7355) !important;
@@ -427,8 +621,7 @@
   padding:8px 14px; border-radius:10px; font-size:13px; font-weight:600;
   border:1px solid var(--meow-line,rgba(28,24,18,.1));
   background:var(--meow-card,rgba(255,255,255,.5));
-  color:var(--meow-text,rgba(46,38,30,.82));
-  cursor:pointer; white-space:nowrap; transition:opacity .15s;
+  color:var(--meow-text,rgba(46,38,30,.82)); cursor:pointer; white-space:nowrap; transition:opacity .15s;
 }
 #${ID.MODAL} .mv-btn.primary{ background:var(--meow-accent,#8b7355); color:#fff; border-color:transparent; }
 #${ID.MODAL} .mv-btn:active{ opacity:.72; }
@@ -441,12 +634,13 @@
   }
 
   // ════════════════════════════════════════════════════════════════════
-  //  § 9  设置弹窗
+  //  § 11  设置弹窗
   // ════════════════════════════════════════════════════════════════════
 
   function openModal() {
     injectCSS();
     doc.getElementById(ID.MODAL)?.remove();
+    closeModePop();
     let mask = doc.getElementById('meow-pencil-mask') || doc.getElementById(ID.MASK);
     if (!mask) {
       mask = doc.createElement('div');
@@ -559,11 +753,9 @@
     const q = id => box.querySelector('#' + id);
     box.querySelector('.mv-close').addEventListener('click', closeModal);
     q('mvCloseBtn').addEventListener('click', closeModal);
-
     q('mvRate').addEventListener('input',   e => q('mvRateVal').textContent   = (+e.target.value).toFixed(1)+'x');
     q('mvPitch').addEventListener('input',  e => q('mvPitchVal').textContent  = (+e.target.value).toFixed(1));
     q('mvVolume').addEventListener('input', e => q('mvVolumeVal').textContent = Math.round(+e.target.value*100)+'%');
-
     q('mvModeGrid').addEventListener('click', e => {
       const card = e.target.closest('.mv-mode-card');
       if (!card) return;
@@ -571,18 +763,14 @@
       card.classList.add('active');
       q('mvCustomWrap').style.display = card.dataset.mode === 'custom' ? '' : 'none';
     });
-
     q('mvTestBtn').addEventListener('click', () => testSpeak(
       q('mvTestTxt').value || '你好，这是语音朗读测试。',
       q('mvDefVoice').value, +q('mvRate').value, +q('mvPitch').value, +q('mvVolume').value
     ));
     q('mvStopBtn').addEventListener('click', stopReading);
-
-    q('mvRefreshChars').addEventListener('click', async () => {
-      const map2 = lsGet(LS.CHAR_MAP, {});
-      q('mvCharList').innerHTML = charRows(getActiveCharNames(), map2);
+    q('mvRefreshChars').addEventListener('click', () => {
+      q('mvCharList').innerHTML = charRows(getActiveCharNames(), lsGet(LS.CHAR_MAP, {}));
     });
-
     q('mvSave').addEventListener('click', () => {
       const mode   = box.querySelector('.mv-mode-card.active')?.dataset.mode || 'all';
       const newMap = { ...lsGet(LS.CHAR_MAP, {}) };
@@ -612,16 +800,21 @@
 
   async function testSpeak(text, voiceURI, rate, pitch, volume) {
     if (!synth) return;
-    stopReading();
+    if (_pendingSpeak) { clearTimeout(_pendingSpeak); _pendingSpeak = null; }
+    try { synth.cancel(); } catch(e) {}
+    isReading = false;
     const voices = await getVoices();
     const voice  = voices.find(v => v.voiceURI === voiceURI) || null;
-    const utter  = new SpeechSynthesisUtterance(text);
-    utter.rate = rate; utter.pitch = pitch; utter.volume = volume;
-    if (voice) utter.voice = voice;
-    utter.onstart = () => { isReading = true;  updateAllBtns(true);  };
-    utter.onend   = () => { isReading = false; updateAllBtns(false); };
-    utter.onerror = () => { isReading = false; updateAllBtns(false); };
-    synth.speak(utter);
+    _pendingSpeak = setTimeout(() => {
+      _pendingSpeak = null;
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = rate; utter.pitch = pitch; utter.volume = volume;
+      if (voice) utter.voice = voice;
+      utter.onstart = () => { isReading = true;  updateAllBtns(true);  };
+      utter.onend   = () => { isReading = false; updateAllBtns(false); };
+      utter.onerror = (e) => { if (e.error === 'interrupted') return; isReading = false; updateAllBtns(false); };
+      try { synth.speak(utter); } catch(err) { updateAllBtns(false); }
+    }, 80);
   }
 
   function getActiveCharNames() {
@@ -644,7 +837,7 @@
   function escAttr(s) { return String(s||'').replace(/"/g,'&quot;'); }
 
   // ════════════════════════════════════════════════════════════════════
-  //  § 10  独立悬浮按钮（无 meow-core 时）
+  //  § 12  独立悬浮按钮
   // ════════════════════════════════════════════════════════════════════
 
   function mountSoloBtn() {
@@ -658,26 +851,10 @@
     b.style.top  = `${saved?.y ?? Math.round(doc.documentElement.clientHeight * 0.65)}px`;
 
     let dragging=false, moved=false, sx=0, sy=0, bx=0, by=0;
-    function onDown(e) {
-      const p=e.touches?e.touches[0]:e; dragging=true; moved=false;
-      sx=p.clientX; sy=p.clientY; bx=parseFloat(b.style.left)||0; by=parseFloat(b.style.top)||0;
-      e.preventDefault(); e.stopPropagation();
-    }
-    function onMove(e) {
-      if (!dragging) return;
-      const p=e.touches?e.touches[0]:e; const dx=p.clientX-sx, dy=p.clientY-sy;
-      if (Math.abs(dx)>5||Math.abs(dy)>5) moved=true;
-      const vw2=doc.documentElement.clientWidth, vh2=doc.documentElement.clientHeight;
-      b.style.left=`${Math.max(4,Math.min(vw2-44,bx+dx))}px`;
-      b.style.top =`${Math.max(4,Math.min(vh2-44,by+dy))}px`;
-      e.preventDefault();
-    }
-    function onUp(e) {
-      if (!dragging) return; dragging=false;
-      lsSet(LS.POS, {x:parseFloat(b.style.left),y:parseFloat(b.style.top)});
-      if (!moved) { if (isReading) stopReading(); else openModal(); }
-      e.preventDefault();
-    }
+    const onDown = e => { const p=e.touches?e.touches[0]:e; dragging=true; moved=false; sx=p.clientX; sy=p.clientY; bx=parseFloat(b.style.left)||0; by=parseFloat(b.style.top)||0; e.preventDefault(); e.stopPropagation(); };
+    const onMove = e => { if (!dragging) return; const p=e.touches?e.touches[0]:e; const dx=p.clientX-sx, dy=p.clientY-sy; if (Math.abs(dx)>5||Math.abs(dy)>5) moved=true; b.style.left=`${Math.max(4,Math.min(doc.documentElement.clientWidth-44,bx+dx))}px`; b.style.top=`${Math.max(4,Math.min(doc.documentElement.clientHeight-44,by+dy))}px`; e.preventDefault(); };
+    const onUp   = e => { if (!dragging) return; dragging=false; lsSet(LS.POS,{x:parseFloat(b.style.left),y:parseFloat(b.style.top)}); if (!moved) { if (isReading) stopReading(); else openModal(); } e.preventDefault(); };
+
     b.addEventListener('touchstart',onDown,{passive:false});
     b.addEventListener('touchmove', onMove,{passive:false});
     b.addEventListener('touchend',  onUp,  {passive:false});
@@ -688,7 +865,7 @@
   }
 
   // ════════════════════════════════════════════════════════════════════
-  //  § 11  启动
+  //  § 13  启动
   // ════════════════════════════════════════════════════════════════════
 
   function registerMenuItem() {
@@ -706,28 +883,18 @@
     const hasMeowCore = !!(window.MEOW?.core && window.MEOW?.mods);
 
     if (hasMeowCore) {
-      // 尝试注册；若 addMenuItem 还没就绪则轮询
       if (!registerMenuItem()) {
         let tries = 0;
-        const t = setInterval(() => {
-          if (registerMenuItem() || tries++ > 20) clearInterval(t);
-        }, 200);
+        const t = setInterval(() => { if (registerMenuItem() || tries++ > 20) clearInterval(t); }, 200);
       }
     } else {
-      // 独立模式
       if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', mountSoloBtn);
       else mountSoloBtn();
     }
 
-    // 手动播放按钮（总是注入，无论是否有 meow-core）
-    if (doc.readyState === 'loading') {
-      doc.addEventListener('DOMContentLoaded', () => {
-        setTimeout(injectPlayBtn, 1000);
-      });
-    } else {
-      setTimeout(injectPlayBtn, 1000);
-    }
-    // 每30秒检查一次，防止 ST 重建输入区域
+    // 手动播放按钮
+    if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', () => setTimeout(injectPlayBtn, 1200));
+    else setTimeout(injectPlayBtn, 1200);
     setInterval(keepPlayBtn, 30000);
 
     window.meowVoice = { open: openModal, stop: stopReading, speak: speakText };
