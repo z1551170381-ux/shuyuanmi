@@ -2021,7 +2021,25 @@ function _builtinMenuItems(){
     { id:'diary',     label:'\u65e5\u8bb0',   iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 7h10"/><path d="M7 11h10"/><path d="M7 15h7"/></svg>', action:()=>{ try{ openDiaryModal(); }catch(e){ try{ toast('\u65e5\u8bb0\u6a21\u5757\u672a\u5c31\u7eea'); }catch(_){} } } },
     { id:'worldbook', label:'\u4e16\u754c\u4e66', iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19a2 2 0 0 1 2-2h14"/><path d="M4 5a2 2 0 0 1 2-2h14v18"/></svg>', action:()=>{ try{ openWorldbookModal(); }catch(e){ try{ toast('\u4e16\u754c\u4e66\u6a21\u5757\u672a\u5c31\u7eea'); }catch(_){} } } },
     { id:'summary',   label:'\u603b\u7ed3',   iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>', action:()=>{ try{ openSummaryModal(); }catch(e){ try{ toast('\u603b\u7ed3\u6a21\u5757\u672a\u5c31\u7eea'); }catch(_){} } } },
-    { id:'phone',     label:'\u5c0f\u624b\u673a', iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M10 5.5h4"/><path d="M12 19h.01"/></svg>', action:()=>{ try{ if(window.MEOW?.phone?.showFull) return window.MEOW.phone.showFull(); if(window.MEOW?.mods?.get?.('phone')) return window.MEOW.mods.open('phone'); if(typeof window.meowOpenPhone==='function') return window.meowOpenPhone(); toast('\u5c0f\u624b\u673a\u6a21\u5757\u672a\u5c31\u7eea'); }catch(e){} } },
+    { id:'phone',     label:'\u5c0f\u624b\u673a', iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M10 5.5h4"/><path d="M12 19h.01"/></svg>', action:()=>{
+  // 尝试直接调用，若未就绪则等待最多 3s（每 200ms 重试一次）
+  function tryOpen(){
+    try{
+      if(window.MEOW?.phone?.showFull){ window.MEOW.phone.showFull(); return true; }
+      if(window.MEOW?.mods?.get?.('phone')){ window.MEOW.mods.open('phone'); return true; }
+      if(typeof window.meowOpenPhone==='function'){ window.meowOpenPhone(); return true; }
+    }catch(e){}
+    return false;
+  }
+  if(tryOpen()) return;
+  // 未就绪：轮询等待
+  let tries=0;
+  const t=setInterval(()=>{
+    tries++;
+    if(tryOpen()){ clearInterval(t); return; }
+    if(tries>=15){ clearInterval(t); try{toast('小手机模块未就绪，请检查 meow-phone.js 是否加载成功');}catch(_){} }
+  },200);
+} },
   ];
 }
 function modalShell(id, title, icon){
@@ -2072,6 +2090,10 @@ function modalShell(id, title, icon){
       lsGet, lsSet,
       modalShell,
       closeMenuOnly, closeOverlays, closeModal, ensureMask,
+      // phone.js 需要的函数引用
+      meowGetSTCtx:   typeof meowGetSTCtx   === 'function' ? meowGetSTCtx   : ()=>null,
+      meowGetChatUID: function(){ return typeof meowGetChatUID==='function' ? meowGetChatUID() : ''; },
+      MEOW_WB_API:    typeof MEOW_WB_API    !== 'undefined' ? MEOW_WB_API   : {},
     });
   }catch(e){}
 
@@ -2186,7 +2208,23 @@ function modalShell(id, title, icon){
   );
   MEOW.addMenuItem('phone', '小手机',
     '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M10 5.5h4"/><path d="M12 19h.01"/></svg>',
-    ()=>{ try{ if(window.MEOW?.phone?.showFull) return window.MEOW.phone.showFull(); if(window.MEOW?.mods?.get?.('phone')) return window.MEOW.mods.open('phone'); if(typeof window.meowOpenPhone==='function') return window.meowOpenPhone(); toast('小手机模块未就绪'); }catch(e){} }
+    ()=>{
+  function tryOpen(){
+    try{
+      if(window.MEOW?.phone?.showFull){ window.MEOW.phone.showFull(); return true; }
+      if(window.MEOW?.mods?.get?.('phone')){ window.MEOW.mods.open('phone'); return true; }
+      if(typeof window.meowOpenPhone==='function'){ window.meowOpenPhone(); return true; }
+    }catch(e){}
+    return false;
+  }
+  if(tryOpen()) return;
+  let tries=0;
+  const t=setInterval(()=>{
+    tries++;
+    if(tryOpen()){ clearInterval(t); return; }
+    if(tries>=15){ clearInterval(t); try{toast('小手机模块未就绪，请检查 meow-phone.js 是否加载成功');}catch(_){} }
+  },200);
+}
   );
 })();
 
