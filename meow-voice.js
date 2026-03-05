@@ -126,6 +126,46 @@
     });
   }
 
+  /**
+   * extractCleanText: 从 mes_text DOM 元素里提取适合 TTS 的纯文字
+   * - 克隆节点，移除 ST 美化产生的装饰/元数据子元素
+   * - 对 【】 等特殊格式做 DOM 级别清理
+   */
+  function extractCleanText(el) {
+    try {
+      const clone = el.cloneNode(true);
+      // 移除不需要朗读的子元素：图片、代码块、隐藏元素、消息编辑工具栏等
+      const removeSelectors = [
+        'img', 'figure', 'code', 'pre',
+        '.mes_img_container', '.mes_reasoning', '.mes_timer',
+        '.icon', '.fa', '[style*="display:none"]', '[style*="visibility:hidden"]',
+        'script', 'style', 'svg',
+      ];
+      removeSelectors.forEach(sel => {
+        try { clone.querySelectorAll(sel).forEach(n => n.remove()); } catch(e) {}
+      });
+
+      // 提取文字：优先 innerText（尊重可见性），回退 textContent
+      let text = (clone.innerText || clone.textContent || '').trim();
+
+      // DOM 级别已经清理，再做字符级别二次清理
+      text =       text = text.replace(/[\u0000-\u001F\u007F\u200B-\u200F\u2028\u2029\uFEFF]/g, ' ');
+      text = text.replace(/[\u0000-\u001F\u007F\u200B-\u200F\u2028\u2029\uFEFF]/g, ' ');
+      // 去掉 HTML 实体残留（如 &nbsp;）
+      text = text.replace(/&[a-z]+;/gi, ' ');
+      // 去掉 【】 及全形/半形方括号（无论 ST 是否已转成 HTML）
+      text = text.replace(/【[^】]*】/g, '');   // 整个 【...】 直接删
+      text = text.replace(/[【】\[\]]/g, ' ');  // 残余括号变空格
+      // 多余空白收拢
+      text = text.replace(/\s{2,}/g, ' ').trim();
+
+      return text;
+    } catch(e) {
+      // 兜底：直接 textContent
+      return (el.textContent || '').replace(/【[^】]*】/g, '').replace(/[【】]/g, ' ').trim();
+    }
+  }
+
   function processText(raw, c) {
     let text = String(raw || '').trim();
     // ── TTS前清理：去掉 Markdown + 让TTS引擎友好读 ──
@@ -227,7 +267,7 @@
     if (!el) { toast('没有找到可朗读的消息'); return; }
     const charName = (el.querySelector('.name_text') || el.querySelector('.ch_name'))?.textContent?.trim() || '';
     const textEl   = el.querySelector('.mes_text');
-    const rawText  = textEl ? (textEl.innerText || textEl.textContent || '') : '';
+    const rawText  = textEl ? extractCleanText(textEl) : '';
     if (!rawText.trim()) { toast('消息内容为空'); return; }
 
     // 临时覆盖 mode（不写 localStorage）
@@ -324,7 +364,7 @@
 
       const charName = (node.querySelector('.name_text') || node.querySelector('.ch_name'))?.textContent?.trim() || '';
       const textEl   = node.querySelector('.mes_text');
-      const rawText  = textEl ? (textEl.innerText || textEl.textContent || '') : '';
+      const rawText  = textEl ? extractCleanText(textEl) : '';
       if (!rawText.trim()) return;
 
       speakText(rawText, charName);
