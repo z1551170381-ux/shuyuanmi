@@ -1944,10 +1944,23 @@ function toggleMenu(btnEl){
     el.type = 'button';
     el.className = 'rotaryItem';
     el.innerHTML = `<div class="i">${item.iconHTML}</div><div class="t">${item.label}</div>`;
-    el.addEventListener('click', e => {
+    // 移动端用 touchend 代替 click，避免 300ms 延迟和误触
+    let _itemTouchMoved = false;
+    el.addEventListener('touchstart', () => { _itemTouchMoved = false; }, { passive: true });
+    el.addEventListener('touchmove',  () => { _itemTouchMoved = true;  }, { passive: true });
+    el.addEventListener('touchend', e => {
+      if (_itemTouchMoved) return;
       e.preventDefault(); e.stopPropagation();
       closeOverlays();
       try { item.action(); } catch(err) {}
+    }, { passive: false });
+    el.addEventListener('click', e => {
+      // 桌面端保留 click
+      if (e.sourceCapabilities && !e.sourceCapabilities.firesTouchEvents) {
+        e.preventDefault(); e.stopPropagation();
+        closeOverlays();
+        try { item.action(); } catch(err) {}
+      }
     }, { passive: false });
     menu.appendChild(el);
     return el;
@@ -1957,10 +1970,21 @@ function toggleMenu(btnEl){
   center.type = 'button';
   center.className = 'rotaryCenter';
   center.innerHTML = `<div class="rc-star"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5.64 5.64l2.83 2.83M15.54 15.54l2.83 2.83M5.64 18.36l2.83-2.83M15.54 8.46l2.83-2.83"/></svg></div>`;
-  center.addEventListener('click', e => {
+  let _centerTouchMoved = false;
+  center.addEventListener('touchstart', () => { _centerTouchMoved = false; }, { passive: true });
+  center.addEventListener('touchmove',  () => { _centerTouchMoved = true;  }, { passive: true });
+  center.addEventListener('touchend', e => {
+    if (_centerTouchMoved) return;
     e.preventDefault(); e.stopPropagation();
     closeOverlays();
     try { items[selIdx].action(); } catch(err) {}
+  }, { passive: false });
+  center.addEventListener('click', e => {
+    if (e.sourceCapabilities && !e.sourceCapabilities.firesTouchEvents) {
+      e.preventDefault(); e.stopPropagation();
+      closeOverlays();
+      try { items[selIdx].action(); } catch(err) {}
+    }
   }, { passive: false });
   menu.appendChild(center);
 
@@ -2028,15 +2052,34 @@ function toggleMenu(btnEl){
   }
   function onEnd(e) {
     if (!dragging) return;
-    dragging = false; angle += vel * 3; snap(); e.preventDefault();
+    dragging = false;
+    // 菜单还在 DOM 里才执行 snap
+    if (doc.getElementById(ID_MENU)) {
+      angle += vel * 3;
+      snap();
+    }
+    e.preventDefault();
   }
 
+  // 用 AbortController 统一管理 doc 级监听，菜单销毁时一次性移除
+  const _ctrl = new AbortController();
+  const _sig  = { signal: _ctrl.signal };
+
   menu.addEventListener('touchstart', onStart, { passive: false });
-  doc.addEventListener('touchmove',   onMove,  { passive: false });
-  doc.addEventListener('touchend',    onEnd,   { passive: false });
   menu.addEventListener('mousedown',  onStart, { passive: false });
-  doc.addEventListener('mousemove',   onMove);
-  doc.addEventListener('mouseup',     onEnd);
+  doc.addEventListener('touchmove',   onMove,  { passive: false, ..._sig });
+  doc.addEventListener('touchend',    onEnd,   { passive: false, ..._sig });
+  doc.addEventListener('mousemove',   onMove,  _sig);
+  doc.addEventListener('mouseup',     onEnd,   _sig);
+
+  // MutationObserver 监听菜单被移除，自动清理 doc 级监听
+  const _mo = new MutationObserver(() => {
+    if (!doc.getElementById(ID_MENU)) {
+      _ctrl.abort();
+      _mo.disconnect();
+    }
+  });
+  _mo.observe(doc.documentElement, { childList: true, subtree: false });
 
   doc.documentElement.appendChild(menu);
   render();
