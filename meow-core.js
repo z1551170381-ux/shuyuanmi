@@ -1352,130 +1352,142 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
 }
 
 /* =========================================================
-   8) 扇形菜单 · Frosted Arc（保持你现在的图2/图3效果）
+   8) 转盘菜单 · Rotary Dial
    ========================================================= */
-#${ID_MENU}.meowFanMenu{
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 0;
-  height: 0;
-  z-index: 2147483647;
-  overflow: visible !important;
-  pointer-events: none;
-
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-#${ID_MENU}.meowFanMenu .fanBg{
-  position:absolute;
-  left:calc(var(--cx) * 1px);
-  top: calc(var(--cy) * 1px);
-  width:calc(var(--bgR) * 2px);
-  height:calc(var(--bgR) * 2px);
-  transform:translate(calc(var(--bgR) * -1px), calc(var(--bgR) * -1px));
-  border-radius:999px;
-
-  background:
-    conic-gradient(
-      from calc((var(--from) - 90) * 1deg),
-      rgba(255,255,255,.00) 0deg,
-      rgba(255,255,255,.00) calc(var(--gap) * 1deg),
-      rgba(255,255,255,.55) calc(var(--gap) * 1deg),
-      rgba(255,255,255,.32) calc((var(--gap) + var(--span)) * 1deg),
-      rgba(255,255,255,.00) calc((var(--gap) + var(--span)) * 1deg)
-    );
-
-  -webkit-mask: radial-gradient(
-    farthest-side,
-    transparent calc(100% - var(--ring)),
-    #000 calc(100% - var(--ring) + 1px)
-  );
-  mask: radial-gradient(
-    farthest-side,
-    transparent calc(100% - var(--ring)),
-    #000 calc(100% - var(--ring) + 1px)
-  );
-
-  backdrop-filter: blur(14px) saturate(1.06);
-  -webkit-backdrop-filter: blur(14px) saturate(1.06);
-
-  filter: drop-shadow(0 18px 40px rgba(0,0,0,.18));
-  border:1px solid rgba(255,255,255,.38);
-  box-shadow: 0 0 0 1px rgba(0,0,0,.08) inset, 0 16px 34px rgba(0,0,0,.16);
-
+#${ID_MENU}.meowRotary{
+  position:fixed;
+  width:220px; height:220px;
+  border-radius:50%;
+  background:rgba(245,242,236,.80);
+  border:1px solid rgba(255,255,255,.60);
+  box-shadow:0 20px 60px rgba(0,0,0,.18), 0 0 0 1px rgba(28,24,18,.05) inset;
+  backdrop-filter:blur(22px) saturate(1.1);
+  -webkit-backdrop-filter:blur(22px) saturate(1.1);
+  z-index:2147483200;
+  overflow:visible;
+  pointer-events:auto;
   opacity:0;
-  transition: opacity .14s ease;
+  transform:scale(.82);
+  transition:opacity .18s ease, transform .2s cubic-bezier(.2,.8,.3,1);
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+#${ID_MENU}.meowRotary.show{
+  opacity:1;
+  transform:scale(1);
+}
+/* 内圈刻度环 */
+#${ID_MENU}.meowRotary::before{
+  content:'';
+  position:absolute;
+  inset:10px;
+  border-radius:50%;
+  border:1px solid rgba(28,24,18,.07);
   pointer-events:none;
 }
-#${ID_MENU}.meowFanMenu.show .fanBg{ opacity:1; }
-
-#${ID_MENU}.meowFanMenu .fanItem{
-  background: rgba(255,255,255,.72) !important;
-  border: 1px solid rgba(255,255,255,.55) !important;
-  box-shadow: none !important;
-}
-#${ID_MENU} .fanBtn .i{ color:rgba(35,35,35,.72); }
-#${ID_MENU} .fanBtn{
-  box-shadow:none !important;
-  border:1px solid rgba(255,255,255,.55) !important;
-  background:rgba(255,255,255,.72) !important;
-}
-
-#${ID_MENU}.meowFanMenu .fanCenter{
+/* 顶部选中指示器 ▼ */
+#${ID_MENU} .rotaryPtr{
   position:absolute;
-  left:calc(var(--cx) * 1px);
-  top: calc(var(--cy) * 1px);
-  transform:translate(-50%,-50%);
-  width:56px; height:56px;
-  border-radius:999px;
-  border:1px solid rgba(28,24,18,.14);
-  background: rgba(255,255,255,.72);
-  box-shadow: 0 10px 26px rgba(0,0,0,.12);
-  color: rgba(46,38,30,.78);
-  font-weight:900;
-  pointer-events:auto;
+  top:6px; left:50%;
+  transform:translateX(-50%);
+  width:0; height:0;
+  border-left:5px solid transparent;
+  border-right:5px solid transparent;
+  border-top:8px solid rgba(139,115,85,.65);
+  pointer-events:none;
+  z-index:5;
 }
-
-#${ID_MENU}.meowFanMenu .fanBtn{
+/* 功能按钮（JS 动态定位） */
+#${ID_MENU} .rotaryItem{
   position:absolute;
-  left:calc(var(--cx) * 1px);
-  top: calc(var(--cy) * 1px);
-  transform:translate(-50%,-50%) translate(calc(var(--x) * 1px), calc(var(--y) * 1px));
   width:54px; height:54px;
-  border-radius:999px;
-  border:1px solid rgba(120,110,95,.16);
-  background: rgba(255,255,255,.62);
-  box-shadow: 0 12px 26px rgba(0,0,0,.10);
+  border-radius:50%;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  gap:2px;
+  background:rgba(255,255,255,.70);
+  border:1px solid rgba(255,255,255,.60);
+  box-shadow:0 4px 12px rgba(0,0,0,.08);
+  pointer-events:auto;
+  cursor:pointer;
+  transition:transform .18s ease, background .18s ease, box-shadow .18s ease;
+}
+#${ID_MENU} .rotaryItem.sel{
+  background:rgba(198,186,164,.44);
+  border-color:rgba(139,115,85,.30);
+  transform:scale(1.14) !important;
+  box-shadow:0 6px 20px rgba(0,0,0,.14);
+  z-index:3;
+}
+#${ID_MENU} .rotaryItem .i{
+  font-size:18px; line-height:18px;
+  color:rgba(35,35,35,.72);
+  display:flex; align-items:center; justify-content:center;
+}
+#${ID_MENU} .rotaryItem .t{
+  font-size:11px; font-weight:900;
+  letter-spacing:.2px;
+  color:rgba(80,68,52,.82);
+  pointer-events:none;
+}
+#${ID_MENU} .rotaryItem.sel .t{
+  color:rgba(60,48,32,1);
+}
+/* 中心按钮 */
+#${ID_MENU} .rotaryCenter{
+  position:absolute;
+  left:50%; top:50%;
+  transform:translate(-50%,-50%);
+  width:64px; height:64px;
+  border-radius:50%;
+  background:rgba(255,255,255,.88);
+  border:1px solid rgba(28,24,18,.12);
+  box-shadow:0 8px 24px rgba(0,0,0,.13);
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
   gap:2px;
   pointer-events:auto;
-
-  opacity:0;
-  transform-origin:center;
-  transition: opacity .14s ease, transform .16s ease;
+  cursor:pointer;
+  z-index:4;
+  transition:background .14s, transform .12s;
 }
-#${ID_MENU}.meowFanMenu.show .fanBtn{ opacity:1; }
-
-#${ID_MENU}.meowFanMenu .fanBtn .i{ font-size:18px; line-height:18px; }
-#${ID_MENU}.meowFanMenu .fanBtn .t{
-  font-size:12px;
-  font-weight:900;
+#${ID_MENU} .rotaryCenter:active{ background:rgba(198,186,164,.45); transform:translate(-50%,-50%) scale(.94); }
+#${ID_MENU} .rotaryCenter .rc-i{
+  display:flex; align-items:center; justify-content:center;
+  color:rgba(35,35,35,.72);
+}
+#${ID_MENU} .rotaryCenter .rc-t{
+  font-size:10px; font-weight:900;
+  color:rgba(80,68,52,.86);
   letter-spacing:.2px;
-  color: rgba(80,68,52,.86);
 }
+/* 关闭按钮 */
+#${ID_MENU} .rotaryClose{
+  position:absolute;
+  top:10px; right:10px;
+  width:26px; height:26px;
+  border-radius:50%;
+  background:rgba(28,24,18,.08);
+  border:1px solid rgba(28,24,18,.07);
+  font-size:13px; font-weight:900;
+  color:rgba(46,38,30,.45);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+  pointer-events:auto;
+  z-index:5;
+  transition:background .12s;
+}
+#${ID_MENU} .rotaryClose:active{ background:rgba(28,24,18,.16); }
 
 /* =========================================================
    9) 统一交互鼠标/触控反馈（保持你现在的体验）
    ========================================================= */
 .meowModal .btn,
 .meowModal button,
-#${ID_MENU} .fanBtn,
-#${ID_MENU} .fanCenter,
+#${ID_MENU} .rotaryItem,
+#${ID_MENU} .rotaryCenter,
+#${ID_MENU} .rotaryClose,
 #${ID_MENU} .item,
 .meowModal summary,
 .meowModal .close{
@@ -1870,154 +1882,162 @@ function ensureMask(){
 
 
 function toggleMenu(btnEl){
-  // 已开就关
   if (doc.getElementById(ID_MENU)) { closeOverlays(); return; }
-
   closeOverlays();
   ensureMask();
 
+  // 菜单项：优先读 MEOW.menuItems（外部模块可注册），否则用内置兜底
+  const items = (window.MEOW?.menuItems?.length) ? window.MEOW.menuItems : _builtinMenuItems();
+  if (!items.length) return;
+
+  const N      = items.length;
+  const R_DISC = 110;
+  const R_ITEM = 74;
+  const ITEM_H = 27;
+
+  const br  = btnEl.getBoundingClientRect();
+  const vw  = doc.documentElement.clientWidth;
+  const vh  = doc.documentElement.clientHeight;
+
+  let lx = br.left + br.width / 2 - R_DISC;
+  let ly = br.top  + br.height / 2 - R_DISC;
+  lx = Math.max(6, Math.min(vw - R_DISC * 2 - 6, lx));
+  ly = Math.max(6, Math.min(vh - R_DISC * 2 - 6, ly));
+
   const menu = doc.createElement('div');
   menu.id = ID_MENU;
-  menu.className = 'meowFanMenu';
+  menu.className = 'meowRotary';
+  menu.style.left = lx + 'px';
+  menu.style.top  = ly + 'px';
 
-  // 取按钮中心点（视口坐标）
-  const r = btnEl.getBoundingClientRect();
-  let cx = r.left + r.width/2;
-  let cy = r.top  + r.height/2;
+  const ptr = doc.createElement('div');
+  ptr.className = 'rotaryPtr';
+  menu.appendChild(ptr);
 
-  const vw = doc.documentElement.clientWidth;
-  const vh = doc.documentElement.clientHeight;
+  let selIdx = 0;
+  const step = 360 / N;
 
-  // ===== 自适应方向：优先往“空的那边”开扇形 =====
-  // from：扇形起始角（度），span：扇形角度范围，gap：起始留空角
-  let from = 210, span = 120, gap = 14; // 默认：朝上（更常用）
-  if (cx < vw * 0.22 && cy < vh * 0.22) { from = 330; span = 120; }
-  else if (cx > vw * 0.78 && cy < vh * 0.22) { from = 60; span = 120; }
-  else if (cx < vw * 0.22 && cy > vh * 0.78) { from = 240; span = 120; }
-  else if (cx > vw * 0.78 && cy > vh * 0.78) { from = 150; span = 120; }
-  else if (cy < vh * 0.32) { from = 30;  span = 120; }         // 顶部：朝下
-  else if (cy > vh * 0.74) { from = 210; span = 120; }         // 底部：朝上
-  else if (cx < vw * 0.45) { from = 300; span = 120; }         // 偏左：朝右
-  else { from = 120; span = 120; }                             // 偏右：朝左
-
-  // ===== 扇形按钮数量（现在是 4 个：日记/世界书/总结/小手机）=====
-  const STEPS = 4;
-
-  // ===== 尺寸参数（保持你的动画/样式，只做“防撞”几何）=====
-  const BTN_SIZE = 54;      // 对齐你 CSS 里 .fanBtn 的 54×54
-  const BTN_GAP  = 10;      // 你想更松就 12~14
-  let   R        = 98;      // 原来 86，4 个按钮会挤；稍微拉开
-  const ring     = 18;
-
-  // 背景半径：跟随 R 稍微放大一点
-  let bgR = Math.max(120, R + 30);
-
-  // ===== 防撞：确保“相邻按钮中心的弧长” >= BTN_SIZE + BTN_GAP =====
-  // 弧长 = R * (span/steps) * (π/180)  => span >= (steps * minArc / R) * (180/π)
-  const minArc = BTN_SIZE + BTN_GAP;
-  const minSpanDeg = Math.ceil((STEPS * minArc / R) * (180 / Math.PI));
-  span = Math.max(span, Math.min(170, minSpanDeg)); // 170 以内避免太夸张
-
-
-
-  // 写入 CSS 变量（配合你 CSS 里 #meow-pencil-menu.meowFanMenu）
-  menu.style.setProperty('--cx', cx);
-  menu.style.setProperty('--cy', cy);
-  menu.style.setProperty('--bgR', bgR);
-  menu.style.setProperty('--ring', ring);
-  menu.style.setProperty('--from', from);
-  menu.style.setProperty('--span', span);
-  menu.style.setProperty('--gap',  gap);
-
-  // 背景弧形轨道
-  const bg = doc.createElement('div');
-  bg.className = 'fanBg';
-  menu.appendChild(bg);
-
-  // 中心关闭
-  const center = doc.createElement('button');
-  center.type = 'button';
-  center.className = 'fanCenter';
-  center.textContent = '×';
-  center.addEventListener('click', (e)=>{
-    e.preventDefault(); e.stopPropagation();
-    closeOverlays();
-  }, {passive:false});
-  menu.appendChild(center);
-
-  // 扇形按钮（4个均分）：日记 / 世界书 / 总结 / 小手机
-  function addFanBtn(icon, label, idx, onClick){
-    const b = doc.createElement('button');
-    b.type = 'button';
-    b.className = 'fanBtn';
-
-    // 均分角度（idx=0..STEPS-1）
-    const t = (idx + 0.5) / STEPS;                 // 0~1
-    const ang = (from + gap + t * span) * Math.PI / 180;
-
-    const x = Math.cos(ang) * R;
-    const y = Math.sin(ang) * R;
-
-    b.style.setProperty('--x', x);
-    b.style.setProperty('--y', y);
-
-    // 图标（保持你原风格）
-    const ICONS = {
-      sum: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 18h6"/><path d="M10 22h4"/>
-              <path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/>
-            </svg>`,
-      wb:  `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 19a2 2 0 0 1 2-2h14"/><path d="M4 5a2 2 0 0 1 2-2h14v18"/>
-            </svg>`,
-      diary:`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M7 3h10a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-              <path d="M7 7h10"/><path d="M7 11h10"/><path d="M7 15h7"/>
-            </svg>`,
-      phone:`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="7" y="2.5" width="10" height="19" rx="2"/>
-              <path d="M10 5.5h4"/><path d="M12 19h.01"/>
-            </svg>`
-    };
-
-    const key =
-      label === '总结'   ? 'sum' :
-      label === '世界书' ? 'wb'  :
-      label === '日记'   ? 'diary' :
-      (label === '小手机' || label === '手机') ? 'phone' :
-      null;
-
-    const iconHTML = key ? ICONS[key] : `${icon}`;
-    b.innerHTML = `<div class="i">${iconHTML}</div><div class="t">${label}</div>`;
-
-    b.addEventListener('click', (e)=>{
+  const itemEls = items.map((item, i) => {
+    const el = doc.createElement('button');
+    el.type = 'button';
+    el.className = 'rotaryItem';
+    el.innerHTML = `<div class="i">${item.iconHTML}</div><div class="t">${item.label}</div>`;
+    el.addEventListener('click', e => {
       e.preventDefault(); e.stopPropagation();
       closeOverlays();
-      try { onClick && onClick(); } catch(err){}
-    }, {passive:false});
-
-    menu.appendChild(b);
-  }
-
-  // 你的四个按钮（顺序：日记 → 世界书 → 总结 → 小手机）
-  addFanBtn('', '日记',   0, () => { try{ openDiaryModal(); }catch(e){ try{ toast('日记模块未就绪'); }catch(_){ } } });
-  addFanBtn('', '世界书', 1, () => { try{ openWorldbookModal(); }catch(e){ try{ toast('世界书模块未就绪'); }catch(_){ } } });
-  addFanBtn('', '总结',   2, () => { try{ openSummaryModal(); }catch(e){ try{ toast('总结模块未就绪'); }catch(_){ } } });
-
-  // 小手机：优先走 MEOW.mods.open('phone')，没有就回退 meowOpenPhone
-  addFanBtn('', '小手机', 3, () => {
-    try{
-      if (window.MEOW?.mods?.open) return window.MEOW.mods.open('phone');
-      if (typeof window.meowOpenPhone === 'function') return window.meowOpenPhone();
-      if (typeof window.meowOpenPhone === 'function') return window.meowOpenPhone();
-    }catch(e){}
-    try{ toast('小手机模块未注册'); }catch(_){}
+      try { item.action(); } catch(err) {}
+    }, { passive: false });
+    menu.appendChild(el);
+    return el;
   });
 
-  doc.documentElement.appendChild(menu);
+  const center = doc.createElement('button');
+  center.type = 'button';
+  center.className = 'rotaryCenter';
+  center.innerHTML = `<div class="rc-i"></div><div class="rc-t"></div>`;
+  center.addEventListener('click', e => {
+    e.preventDefault(); e.stopPropagation();
+    closeOverlays();
+    try { items[selIdx].action(); } catch(err) {}
+  }, { passive: false });
+  menu.appendChild(center);
 
-  // 触发动画
-  requestAnimationFrame(()=> menu.classList.add('show'));
+  const closeEl = doc.createElement('button');
+  closeEl.type = 'button';
+  closeEl.className = 'rotaryClose';
+  closeEl.textContent = '\u00d7';
+  closeEl.addEventListener('click', e => {
+    e.preventDefault(); e.stopPropagation();
+    closeOverlays();
+  }, { passive: false });
+  menu.appendChild(closeEl);
+
+  let angle = 0;
+
+  function render() {
+    let newSel = 0, minDist = Infinity;
+    itemEls.forEach((el, i) => {
+      const deg = angle + i * step - 90;
+      const rad = deg * Math.PI / 180;
+      el.style.left = (R_DISC + R_ITEM * Math.cos(rad) - ITEM_H) + 'px';
+      el.style.top  = (R_DISC + R_ITEM * Math.sin(rad) - ITEM_H) + 'px';
+      const norm = ((deg % 360) + 360) % 360;
+      const dist = Math.min(Math.abs(norm - 270), 360 - Math.abs(norm - 270));
+      if (dist < minDist) { minDist = dist; newSel = i; }
+      el.classList.remove('sel');
+    });
+    selIdx = newSel;
+    itemEls[selIdx].classList.add('sel');
+    center.querySelector('.rc-i').innerHTML   = items[selIdx].iconHTML;
+    center.querySelector('.rc-t').textContent = items[selIdx].label;
+  }
+
+  let animId = null;
+  function snapTo(target) {
+    if (animId) cancelAnimationFrame(animId);
+    const start = angle, t0 = performance.now(), DUR = 260;
+    let diff = target - start;
+    while (diff >  180) diff -= 360;
+    while (diff < -180) diff += 360;
+    (function tick(now) {
+      const t    = Math.min(1, (now - t0) / DUR);
+      const ease = 1 - Math.pow(1 - t, 3);
+      angle = start + diff * ease;
+      render();
+      if (t < 1) animId = requestAnimationFrame(tick);
+    })(performance.now());
+  }
+
+  function snap() {
+    snapTo(Math.round(-angle / step) * (-step));
+  }
+
+  let dragging = false, lastAng = 0, lastT = 0, vel = 0;
+
+  function evAng(e) {
+    const p = e.touches ? e.touches[0] : e;
+    return Math.atan2(p.clientY - (ly + R_DISC), p.clientX - (lx + R_DISC)) * 180 / Math.PI;
+  }
+  function onStart(e) {
+    dragging = true; lastAng = evAng(e); lastT = performance.now(); vel = 0;
+    if (animId) { cancelAnimationFrame(animId); animId = null; }
+    e.preventDefault(); e.stopPropagation();
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    const cur = evAng(e), now = performance.now();
+    let d = cur - lastAng;
+    if (d >  180) d -= 360;
+    if (d < -180) d += 360;
+    vel = d / Math.max(1, now - lastT) * 16;
+    angle += d; lastAng = cur; lastT = now;
+    render(); e.preventDefault();
+  }
+  function onEnd(e) {
+    if (!dragging) return;
+    dragging = false; angle += vel * 3; snap(); e.preventDefault();
+  }
+
+  menu.addEventListener('touchstart', onStart, { passive: false });
+  doc.addEventListener('touchmove',   onMove,  { passive: false });
+  doc.addEventListener('touchend',    onEnd,   { passive: false });
+  menu.addEventListener('mousedown',  onStart, { passive: false });
+  doc.addEventListener('mousemove',   onMove);
+  doc.addEventListener('mouseup',     onEnd);
+
+  doc.documentElement.appendChild(menu);
+  render();
+  requestAnimationFrame(() => menu.classList.add('show'));
+}
+
+// 内置兜底菜单项
+function _builtinMenuItems(){
+  return [
+    { id:'diary',     label:'\u65e5\u8bb0',   iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 7h10"/><path d="M7 11h10"/><path d="M7 15h7"/></svg>', action:()=>{ try{ openDiaryModal(); }catch(e){ try{ toast('\u65e5\u8bb0\u6a21\u5757\u672a\u5c31\u7eea'); }catch(_){} } } },
+    { id:'worldbook', label:'\u4e16\u754c\u4e66', iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19a2 2 0 0 1 2-2h14"/><path d="M4 5a2 2 0 0 1 2-2h14v18"/></svg>', action:()=>{ try{ openWorldbookModal(); }catch(e){ try{ toast('\u4e16\u754c\u4e66\u6a21\u5757\u672a\u5c31\u7eea'); }catch(_){} } } },
+    { id:'summary',   label:'\u603b\u7ed3',   iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>', action:()=>{ try{ openSummaryModal(); }catch(e){ try{ toast('\u603b\u7ed3\u6a21\u5757\u672a\u5c31\u7eea'); }catch(_){} } } },
+    { id:'phone',     label:'\u5c0f\u624b\u673a', iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M10 5.5h4"/><path d="M12 19h.01"/></svg>', action:()=>{ try{ if(window.MEOW?.mods?.open) return window.MEOW.mods.open('phone'); if(typeof window.meowOpenPhone==='function') return window.meowOpenPhone(); }catch(e){} try{ toast('\u5c0f\u624b\u673a\u6a21\u5757\u672a\u6ce8\u518c'); }catch(_){} } },
+  ];
 }
 function modalShell(id, title, icon){
   // ✅ 只关菜单，不要全关（避免开二级弹窗时误杀上级）
@@ -2151,6 +2171,39 @@ function modalShell(id, title, icon){
     });
   } catch(e){}
 
+
+
+// ── 转盘菜单项注册系统（供外部模块如 meow-voice.js 调用） ──
+(function initMenuItems(){
+  const G = (typeof window !== 'undefined') ? window : W;
+  const MEOW = (G.MEOW = G.MEOW || {});
+  if (MEOW.__MENU_ITEMS_INIT__) return;
+  MEOW.__MENU_ITEMS_INIT__ = true;
+  if (!Array.isArray(MEOW.menuItems)) MEOW.menuItems = [];
+  MEOW.addMenuItem = function(id, label, iconHTML, action){
+    const arr = MEOW.menuItems;
+    const idx = arr.findIndex(x => x.id === id);
+    if (idx >= 0) arr.splice(idx, 1);
+    arr.push({ id: String(id), label: String(label), iconHTML: String(iconHTML||''), action: action });
+  };
+  // 注册内置4个
+  MEOW.addMenuItem('diary', '日记',
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 7h10"/><path d="M7 11h10"/><path d="M7 15h7"/></svg>',
+    ()=>{ try{ openDiaryModal(); }catch(e){ try{ toast('日记模块未就绪'); }catch(_){} } }
+  );
+  MEOW.addMenuItem('worldbook', '世界书',
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19a2 2 0 0 1 2-2h14"/><path d="M4 5a2 2 0 0 1 2-2h14v18"/></svg>',
+    ()=>{ try{ openWorldbookModal(); }catch(e){ try{ toast('世界书模块未就绪'); }catch(_){} } }
+  );
+  MEOW.addMenuItem('summary', '总结',
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>',
+    ()=>{ try{ openSummaryModal(); }catch(e){ try{ toast('总结模块未就绪'); }catch(_){} } }
+  );
+  MEOW.addMenuItem('phone', '小手机',
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M10 5.5h4"/><path d="M12 19h.01"/></svg>',
+    ()=>{ try{ if(window.MEOW?.mods?.open) return window.MEOW.mods.open('phone'); if(typeof window.meowOpenPhone==='function') return window.meowOpenPhone(); }catch(e){} try{ toast('小手机模块未注册'); }catch(_){} }
+  );
+})();
 
 })();
 
