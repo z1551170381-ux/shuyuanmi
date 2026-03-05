@@ -6,6 +6,34 @@
   // ===================== 加载提示 =====================
   setTimeout(function(){ try{ toast('✦ 喵喵套件已加载'); }catch(e){} }, 1500);
 
+  // ── 小手机模块自动兜底注册（解决 meow-phone.js 注册失败问题）──
+  // 每 500ms 检查一次，最多等 8 秒。
+  // 只要 MEOW.phone 被 meow-phone.js 设置成功，就自动注册进 mods。
+  (function autoRegisterPhone(){
+    let tries = 0;
+    const t = setInterval(function(){
+      tries++;
+      try{
+        const M = window.MEOW;
+        if (!M) { if(tries>16){ clearInterval(t); } return; }
+        // phone 已就绪但未注册 → 自动注册
+        if (M.phone && M.mods && !M.mods.get('phone')) {
+          M.mods.register('phone', {
+            title: '小手机',
+            initOnce: function(){ try{ M.phone.initOnce(); }catch(e){} },
+            open:     function(){ try{ M.phone.showFull(); }catch(e){} }
+          });
+          console.log('[MEOW Core] ✓ 小手机已自动注册到 mods');
+          clearInterval(t);
+          return;
+        }
+        // phone 和 mods 都就绪 → 已注册，停止轮询
+        if (M.phone && M.mods?.get('phone')) { clearInterval(t); return; }
+      }catch(e){}
+      if (tries > 16) { clearInterval(t); }
+    }, 500);
+  })();
+
   // ===================== 基础 =====================
   const ID_BTN  = 'meow-float-pencil';
   const KEY_POS = 'meow_pencil_pos_suite_v1';
