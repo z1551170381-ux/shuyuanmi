@@ -301,24 +301,45 @@
 
   // ════════════════════════════════════════════════════════════════════
   //  § 7  自动朗读：监听新消息
+  //
+  //  关键设计：
+  //  ① WeakSet 记录已处理节点，彻底防止同一节点重复触发
+  //  ② 防抖（debounce）：聊天加载时会批量添加很多历史消息，
+  //     只取最后一条处理，避免互相 cancel() 产生噪音
   // ════════════════════════════════════════════════════════════════════
 
-  let lastReadId = '';
+  const _readNodes   = new WeakSet(); // 已处理过的 DOM 节点
+  let   _autoTimer   = null;          // 防抖 timer
+  let   _pendingNode = null;          // 等待朗读的节点
 
-  function tryAutoRead(node) {
+  function _doAutoRead(node) {
     try {
+      if (!node || _readNodes.has(node)) return;
+      _readNodes.add(node);
+
       if (!cfg().enabled) return;
-      const mid  = node.getAttribute('mesid') || node.dataset?.mesid || '';
-      if (mid && mid === lastReadId) return;
+
       const isUser = node.getAttribute('is_user') === 'true' || node.classList.contains('user_mes');
       if (isUser && !cfg().readUser) return;
+
       const charName = (node.querySelector('.name_text') || node.querySelector('.ch_name'))?.textContent?.trim() || '';
       const textEl   = node.querySelector('.mes_text');
       const rawText  = textEl ? (textEl.innerText || textEl.textContent || '') : '';
       if (!rawText.trim()) return;
-      lastReadId = mid;
+
       speakText(rawText, charName);
     } catch(e) {}
+  }
+
+  function _scheduleAutoRead(node) {
+    // 防抖：连续触发时只保留最新节点，800ms 内静止后再朗读
+    _pendingNode = node;
+    clearTimeout(_autoTimer);
+    _autoTimer = setTimeout(() => {
+      const n = _pendingNode;
+      _pendingNode = null;
+      _doAutoRead(n);
+    }, 800);
   }
 
   function bindChatObserver() {
@@ -329,8 +350,7 @@
         for (const node of mut.addedNodes) {
           if (node?.nodeType !== 1) continue;
           if (node.classList?.contains('mes') || node.hasAttribute?.('mesid')) {
-            // 等待消息内容写入完成再读（ST 流式输出时会不断更新 DOM）
-            setTimeout(() => tryAutoRead(node), 600);
+            _scheduleAutoRead(node);
           }
         }
       }
