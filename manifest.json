@@ -1,0 +1,12 @@
+{
+  "display_name": "喵喵套件",
+  "loading_order": 100,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "",
+  "author": "shuyuanmi",
+  "version": "1.0.0",
+  "homePage": "https://github.com/shuyuanmi/meow-",
+  "auto_update": true
+}
