@@ -6,6 +6,34 @@
   // ===================== 加载提示 =====================
   setTimeout(function(){ try{ toast('✦ 喵喵套件已加载'); }catch(e){} }, 1500);
 
+  // ── 小手机模块自动兜底注册（解决 meow-phone.js 注册失败问题）──
+  // 每 500ms 检查一次，最多等 8 秒。
+  // 只要 MEOW.phone 被 meow-phone.js 设置成功，就自动注册进 mods。
+  (function autoRegisterPhone(){
+    let tries = 0;
+    const t = setInterval(function(){
+      tries++;
+      try{
+        const M = window.MEOW;
+        if (!M) { if(tries>16){ clearInterval(t); } return; }
+        // phone 已就绪但未注册 → 自动注册
+        if (M.phone && M.mods && !M.mods.get('phone')) {
+          M.mods.register('phone', {
+            title: '小手机',
+            initOnce: function(){ try{ M.phone.initOnce(); }catch(e){} },
+            open:     function(){ try{ M.phone.showFull(); }catch(e){} }
+          });
+          console.log('[MEOW Core] ✓ 小手机已自动注册到 mods');
+          clearInterval(t);
+          return;
+        }
+        // phone 和 mods 都就绪 → 已注册，停止轮询
+        if (M.phone && M.mods?.get('phone')) { clearInterval(t); return; }
+      }catch(e){}
+      if (tries > 16) { clearInterval(t); }
+    }, 500);
+  })();
+
   // ===================== 基础 =====================
   const ID_BTN  = 'meow-float-pencil';
   const KEY_POS = 'meow_pencil_pos_suite_v1';
@@ -1352,130 +1380,115 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
 }
 
 /* =========================================================
-   8) 扇形菜单 · Frosted Arc（保持你现在的图2/图3效果）
+   8) 转盘菜单 · Rotary Dial
    ========================================================= */
-#${ID_MENU}.meowFanMenu{
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 0;
-  height: 0;
-  z-index: 2147483647;
-  overflow: visible !important;
-  pointer-events: none;
-
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-#${ID_MENU}.meowFanMenu .fanBg{
-  position:absolute;
-  left:calc(var(--cx) * 1px);
-  top: calc(var(--cy) * 1px);
-  width:calc(var(--bgR) * 2px);
-  height:calc(var(--bgR) * 2px);
-  transform:translate(calc(var(--bgR) * -1px), calc(var(--bgR) * -1px));
-  border-radius:999px;
-
-  background:
-    conic-gradient(
-      from calc((var(--from) - 90) * 1deg),
-      rgba(255,255,255,.00) 0deg,
-      rgba(255,255,255,.00) calc(var(--gap) * 1deg),
-      rgba(255,255,255,.55) calc(var(--gap) * 1deg),
-      rgba(255,255,255,.32) calc((var(--gap) + var(--span)) * 1deg),
-      rgba(255,255,255,.00) calc((var(--gap) + var(--span)) * 1deg)
-    );
-
-  -webkit-mask: radial-gradient(
-    farthest-side,
-    transparent calc(100% - var(--ring)),
-    #000 calc(100% - var(--ring) + 1px)
-  );
-  mask: radial-gradient(
-    farthest-side,
-    transparent calc(100% - var(--ring)),
-    #000 calc(100% - var(--ring) + 1px)
-  );
-
-  backdrop-filter: blur(14px) saturate(1.06);
-  -webkit-backdrop-filter: blur(14px) saturate(1.06);
-
-  filter: drop-shadow(0 18px 40px rgba(0,0,0,.18));
-  border:1px solid rgba(255,255,255,.38);
-  box-shadow: 0 0 0 1px rgba(0,0,0,.08) inset, 0 16px 34px rgba(0,0,0,.16);
-
-  opacity:0;
-  transition: opacity .14s ease;
-  pointer-events:none;
-}
-#${ID_MENU}.meowFanMenu.show .fanBg{ opacity:1; }
-
-#${ID_MENU}.meowFanMenu .fanItem{
-  background: rgba(255,255,255,.72) !important;
-  border: 1px solid rgba(255,255,255,.55) !important;
-  box-shadow: none !important;
-}
-#${ID_MENU} .fanBtn .i{ color:rgba(35,35,35,.72); }
-#${ID_MENU} .fanBtn{
-  box-shadow:none !important;
-  border:1px solid rgba(255,255,255,.55) !important;
-  background:rgba(255,255,255,.72) !important;
-}
-
-#${ID_MENU}.meowFanMenu .fanCenter{
-  position:absolute;
-  left:calc(var(--cx) * 1px);
-  top: calc(var(--cy) * 1px);
-  transform:translate(-50%,-50%);
-  width:56px; height:56px;
-  border-radius:999px;
-  border:1px solid rgba(28,24,18,.14);
-  background: rgba(255,255,255,.72);
-  box-shadow: 0 10px 26px rgba(0,0,0,.12);
-  color: rgba(46,38,30,.78);
-  font-weight:900;
+#${ID_MENU}.meowRotary{
+  position:fixed;
+  width:220px; height:220px;
+  border-radius:50%;
+  background:rgba(245,242,236,.12);
+  border:1px solid rgba(255,255,255,.24);
+  box-shadow:0 8px 30px rgba(0,0,0,.10);
+  backdrop-filter:blur(16px) saturate(1.05);
+  -webkit-backdrop-filter:blur(16px) saturate(1.05);
+  z-index:2147483200;
+  overflow:visible;
   pointer-events:auto;
+  opacity:0;
+  transform:scale(.84);
+  transition:opacity .18s ease, transform .2s cubic-bezier(.2,.8,.3,1);
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
 }
-
-#${ID_MENU}.meowFanMenu .fanBtn{
+#${ID_MENU}.meowRotary.show{
+  opacity:1;
+  transform:scale(1);
+}
+/* 指示器：JS动态旋转，始终指向最近屏幕边缘 */
+#${ID_MENU} .rotaryPtr{
   position:absolute;
-  left:calc(var(--cx) * 1px);
-  top: calc(var(--cy) * 1px);
-  transform:translate(-50%,-50%) translate(calc(var(--x) * 1px), calc(var(--y) * 1px));
+  width:0; height:0;
+  border-left:4px solid transparent;
+  border-right:4px solid transparent;
+  border-bottom:8px solid rgba(180,165,135,.75);
+  pointer-events:none;
+  z-index:5;
+  transform-origin:center center;
+}
+/* 功能按钮（JS 动态定位） */
+#${ID_MENU} .rotaryItem{
+  position:absolute;
   width:54px; height:54px;
-  border-radius:999px;
-  border:1px solid rgba(120,110,95,.16);
-  background: rgba(255,255,255,.62);
-  box-shadow: 0 12px 26px rgba(0,0,0,.10);
+  border-radius:50%;
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
   gap:2px;
+  background:rgba(255,255,255,.55);
+  border:1px solid rgba(255,255,255,.50);
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
   pointer-events:auto;
-
-  opacity:0;
-  transform-origin:center;
-  transition: opacity .14s ease, transform .16s ease;
+  cursor:pointer;
+  transition:transform .18s ease, box-shadow .18s ease;
 }
-#${ID_MENU}.meowFanMenu.show .fanBtn{ opacity:1; }
-
-#${ID_MENU}.meowFanMenu .fanBtn .i{ font-size:18px; line-height:18px; }
-#${ID_MENU}.meowFanMenu .fanBtn .t{
-  font-size:12px;
-  font-weight:900;
+#${ID_MENU} .rotaryItem.sel{
+  background:rgba(255,254,250,.65);
+  border-color:rgba(222,210,185,.50);
+  transform:scale(1.10) !important;
+  box-shadow:
+    0 0 0 3px rgba(230,218,190,.40),
+    0 0 16px 6px rgba(230,215,180,.20),
+    0 3px 10px rgba(0,0,0,.05);
+  z-index:3;
+}
+#${ID_MENU} .rotaryItem .i{
+  font-size:18px; line-height:18px;
+  color:rgba(35,35,35,.72);
+  display:flex; align-items:center; justify-content:center;
+}
+#${ID_MENU} .rotaryItem .t{
+  font-size:11px; font-weight:900;
   letter-spacing:.2px;
-  color: rgba(80,68,52,.86);
+  color:rgba(80,68,52,.78);
+  pointer-events:none;
 }
+#${ID_MENU} .rotaryItem.sel .t{
+  color:rgba(100,82,54,1);
+}
+/* 中心按钮（固定星星图标，不随选中项变） */
+#${ID_MENU} .rotaryCenter{
+  position:absolute;
+  left:50%; top:50%;
+  transform:translate(-50%,-50%);
+  width:60px; height:60px;
+  border-radius:50%;
+  background:rgba(255,255,255,.72);
+  border:1px solid rgba(255,255,255,.55);
+  box-shadow:0 4px 18px rgba(0,0,0,.10);
+  display:flex; align-items:center; justify-content:center;
+  pointer-events:auto;
+  cursor:pointer;
+  z-index:4;
+  transition:background .14s, transform .12s;
+}
+#${ID_MENU} .rotaryCenter:active{
+  background:rgba(240,234,220,.80);
+  transform:translate(-50%,-50%) scale(.93);
+}
+#${ID_MENU} .rotaryCenter .rc-star{
+  display:flex; align-items:center; justify-content:center;
+  color:rgba(80,68,52,.62);
+  pointer-events:none;
+}
+
 
 /* =========================================================
    9) 统一交互鼠标/触控反馈（保持你现在的体验）
    ========================================================= */
 .meowModal .btn,
 .meowModal button,
-#${ID_MENU} .fanBtn,
-#${ID_MENU} .fanCenter,
+#${ID_MENU} .rotaryItem,
+#${ID_MENU} .rotaryCenter,
 #${ID_MENU} .item,
 .meowModal summary,
 .meowModal .close{
@@ -1870,154 +1883,192 @@ function ensureMask(){
 
 
 function toggleMenu(btnEl){
-  // 已开就关
   if (doc.getElementById(ID_MENU)) { closeOverlays(); return; }
-
   closeOverlays();
   ensureMask();
 
+  // 菜单项：优先读 MEOW.menuItems（外部模块可注册），否则用内置兜底
+  const items = (window.MEOW?.menuItems?.length) ? window.MEOW.menuItems : _builtinMenuItems();
+  if (!items.length) return;
+
+  const N      = items.length;
+  const R_DISC = 110;
+  const R_ITEM = 74;
+  const ITEM_H = 27;
+
+  const br  = btnEl.getBoundingClientRect();
+  const vw  = doc.documentElement.clientWidth;
+  const vh  = doc.documentElement.clientHeight;
+
+  // 以悬浮按钮为圆心，允许转盘贴边/超出屏幕（像图3那样藏一半）
+  // 只保证按钮本身在视口内，盘子不做额外 clamp
+  let lx = br.left + br.width / 2 - R_DISC;
+  let ly = br.top  + br.height / 2 - R_DISC;
+  // 仅防止转盘完全移出视口（保留至少 40px 可见）
+  lx = Math.max(-(R_DISC * 2 - 40), Math.min(vw - 40, lx));
+  ly = Math.max(-(R_DISC * 2 - 40), Math.min(vh - 40, ly));
+
   const menu = doc.createElement('div');
   menu.id = ID_MENU;
-  menu.className = 'meowFanMenu';
+  menu.className = 'meowRotary';
+  menu.style.left = lx + 'px';
+  menu.style.top  = ly + 'px';
 
-  // 取按钮中心点（视口坐标）
-  const r = btnEl.getBoundingClientRect();
-  let cx = r.left + r.width/2;
-  let cy = r.top  + r.height/2;
+  const ptr = doc.createElement('div');
+  ptr.className = 'rotaryPtr';
+  menu.appendChild(ptr);
 
-  const vw = doc.documentElement.clientWidth;
-  const vh = doc.documentElement.clientHeight;
-
-  // ===== 自适应方向：优先往“空的那边”开扇形 =====
-  // from：扇形起始角（度），span：扇形角度范围，gap：起始留空角
-  let from = 210, span = 120, gap = 14; // 默认：朝上（更常用）
-  if (cx < vw * 0.22 && cy < vh * 0.22) { from = 330; span = 120; }
-  else if (cx > vw * 0.78 && cy < vh * 0.22) { from = 60; span = 120; }
-  else if (cx < vw * 0.22 && cy > vh * 0.78) { from = 240; span = 120; }
-  else if (cx > vw * 0.78 && cy > vh * 0.78) { from = 150; span = 120; }
-  else if (cy < vh * 0.32) { from = 30;  span = 120; }         // 顶部：朝下
-  else if (cy > vh * 0.74) { from = 210; span = 120; }         // 底部：朝上
-  else if (cx < vw * 0.45) { from = 300; span = 120; }         // 偏左：朝右
-  else { from = 120; span = 120; }                             // 偏右：朝左
-
-  // ===== 扇形按钮数量（现在是 4 个：日记/世界书/总结/小手机）=====
-  const STEPS = 4;
-
-  // ===== 尺寸参数（保持你的动画/样式，只做“防撞”几何）=====
-  const BTN_SIZE = 54;      // 对齐你 CSS 里 .fanBtn 的 54×54
-  const BTN_GAP  = 10;      // 你想更松就 12~14
-  let   R        = 98;      // 原来 86，4 个按钮会挤；稍微拉开
-  const ring     = 18;
-
-  // 背景半径：跟随 R 稍微放大一点
-  let bgR = Math.max(120, R + 30);
-
-  // ===== 防撞：确保“相邻按钮中心的弧长” >= BTN_SIZE + BTN_GAP =====
-  // 弧长 = R * (span/steps) * (π/180)  => span >= (steps * minArc / R) * (180/π)
-  const minArc = BTN_SIZE + BTN_GAP;
-  const minSpanDeg = Math.ceil((STEPS * minArc / R) * (180 / Math.PI));
-  span = Math.max(span, Math.min(170, minSpanDeg)); // 170 以内避免太夸张
-
-
-
-  // 写入 CSS 变量（配合你 CSS 里 #meow-pencil-menu.meowFanMenu）
-  menu.style.setProperty('--cx', cx);
-  menu.style.setProperty('--cy', cy);
-  menu.style.setProperty('--bgR', bgR);
-  menu.style.setProperty('--ring', ring);
-  menu.style.setProperty('--from', from);
-  menu.style.setProperty('--span', span);
-  menu.style.setProperty('--gap',  gap);
-
-  // 背景弧形轨道
-  const bg = doc.createElement('div');
-  bg.className = 'fanBg';
-  menu.appendChild(bg);
-
-  // 中心关闭
-  const center = doc.createElement('button');
-  center.type = 'button';
-  center.className = 'fanCenter';
-  center.textContent = '×';
-  center.addEventListener('click', (e)=>{
-    e.preventDefault(); e.stopPropagation();
-    closeOverlays();
-  }, {passive:false});
-  menu.appendChild(center);
-
-  // 扇形按钮（4个均分）：日记 / 世界书 / 总结 / 小手机
-  function addFanBtn(icon, label, idx, onClick){
-    const b = doc.createElement('button');
-    b.type = 'button';
-    b.className = 'fanBtn';
-
-    // 均分角度（idx=0..STEPS-1）
-    const t = (idx + 0.5) / STEPS;                 // 0~1
-    const ang = (from + gap + t * span) * Math.PI / 180;
-
-    const x = Math.cos(ang) * R;
-    const y = Math.sin(ang) * R;
-
-    b.style.setProperty('--x', x);
-    b.style.setProperty('--y', y);
-
-    // 图标（保持你原风格）
-    const ICONS = {
-      sum: `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 18h6"/><path d="M10 22h4"/>
-              <path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/>
-            </svg>`,
-      wb:  `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 19a2 2 0 0 1 2-2h14"/><path d="M4 5a2 2 0 0 1 2-2h14v18"/>
-            </svg>`,
-      diary:`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M7 3h10a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
-              <path d="M7 7h10"/><path d="M7 11h10"/><path d="M7 15h7"/>
-            </svg>`,
-      phone:`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="7" y="2.5" width="10" height="19" rx="2"/>
-              <path d="M10 5.5h4"/><path d="M12 19h.01"/>
-            </svg>`
-    };
-
-    const key =
-      label === '总结'   ? 'sum' :
-      label === '世界书' ? 'wb'  :
-      label === '日记'   ? 'diary' :
-      (label === '小手机' || label === '手机') ? 'phone' :
-      null;
-
-    const iconHTML = key ? ICONS[key] : `${icon}`;
-    b.innerHTML = `<div class="i">${iconHTML}</div><div class="t">${label}</div>`;
-
-    b.addEventListener('click', (e)=>{
-      e.preventDefault(); e.stopPropagation();
-      closeOverlays();
-      try { onClick && onClick(); } catch(err){}
-    }, {passive:false});
-
-    menu.appendChild(b);
+  // 计算转盘中心距哪条屏幕边最近，指示器放在那条边上朝外
+  {
+    const cx = lx + R_DISC, cy = ly + R_DISC;
+    const distTop    = cy;
+    const distBottom = vh - cy;
+    const distLeft   = cx;
+    const distRight  = vw - cx;
+    const minDist    = Math.min(distTop, distBottom, distLeft, distRight);
+    let pLeft, pTop, rot;
+    if (minDist === distTop)    { pLeft = R_DISC - 4;  pTop  = 4;           rot = 0;   }  // 指向上
+    else if (minDist === distBottom) { pLeft = R_DISC - 4;  pTop  = R_DISC*2-12; rot = 180; }  // 指向下
+    else if (minDist === distLeft)   { pLeft = 4;           pTop  = R_DISC - 4;  rot = 270; }  // 指向左
+    else                             { pLeft = R_DISC*2-12; pTop  = R_DISC - 4;  rot = 90;  }  // 指向右
+    ptr.style.left      = pLeft + 'px';
+    ptr.style.top       = pTop  + 'px';
+    ptr.style.transform = `rotate(${rot}deg)`;
   }
 
-  // 你的四个按钮（顺序：日记 → 世界书 → 总结 → 小手机）
-  addFanBtn('', '日记',   0, () => { try{ openDiaryModal(); }catch(e){ try{ toast('日记模块未就绪'); }catch(_){ } } });
-  addFanBtn('', '世界书', 1, () => { try{ openWorldbookModal(); }catch(e){ try{ toast('世界书模块未就绪'); }catch(_){ } } });
-  addFanBtn('', '总结',   2, () => { try{ openSummaryModal(); }catch(e){ try{ toast('总结模块未就绪'); }catch(_){ } } });
+  let selIdx = 0;
+  const step = 360 / N;
 
-  // 小手机：优先走 MEOW.mods.open('phone')，没有就回退 meowOpenPhone
-  addFanBtn('', '小手机', 3, () => {
-    try{
-      if (window.MEOW?.mods?.open) return window.MEOW.mods.open('phone');
-      if (typeof window.meowOpenPhone === 'function') return window.meowOpenPhone();
-      if (typeof window.meowOpenPhone === 'function') return window.meowOpenPhone();
-    }catch(e){}
-    try{ toast('小手机模块未注册'); }catch(_){}
+  const itemEls = items.map((item, i) => {
+    const el = doc.createElement('button');
+    el.type = 'button';
+    el.className = 'rotaryItem';
+    el.innerHTML = `<div class="i">${item.iconHTML}</div><div class="t">${item.label}</div>`;
+    el.addEventListener('click', e => {
+      e.preventDefault(); e.stopPropagation();
+      closeOverlays();
+      try { item.action(); } catch(err) {}
+    }, { passive: false });
+    menu.appendChild(el);
+    return el;
   });
 
-  doc.documentElement.appendChild(menu);
+  const center = doc.createElement('button');
+  center.type = 'button';
+  center.className = 'rotaryCenter';
+  center.innerHTML = `<div class="rc-star"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5.64 5.64l2.83 2.83M15.54 15.54l2.83 2.83M5.64 18.36l2.83-2.83M15.54 8.46l2.83-2.83"/></svg></div>`;
+  center.addEventListener('click', e => {
+    e.preventDefault(); e.stopPropagation();
+    closeOverlays();
+    try { items[selIdx].action(); } catch(err) {}
+  }, { passive: false });
+  menu.appendChild(center);
 
-  // 触发动画
-  requestAnimationFrame(()=> menu.classList.add('show'));
+  // 关闭转盘：点中心按钮即可关闭（无需独立关闭按钮）
+
+  let angle = 0;
+
+  function render() {
+    let newSel = 0, minDist = Infinity;
+    itemEls.forEach((el, i) => {
+      const deg = angle + i * step - 90;
+      const rad = deg * Math.PI / 180;
+      el.style.left = (R_DISC + R_ITEM * Math.cos(rad) - ITEM_H) + 'px';
+      el.style.top  = (R_DISC + R_ITEM * Math.sin(rad) - ITEM_H) + 'px';
+      const norm = ((deg % 360) + 360) % 360;
+      const dist = Math.min(Math.abs(norm - 270), 360 - Math.abs(norm - 270));
+      if (dist < minDist) { minDist = dist; newSel = i; }
+      el.classList.remove('sel');
+    });
+    selIdx = newSel;
+    itemEls[selIdx].classList.add('sel');
+    // 中心固定显示星星，不跟随选中项
+  }
+
+  let animId = null;
+  function snapTo(target) {
+    if (animId) cancelAnimationFrame(animId);
+    const start = angle, t0 = performance.now(), DUR = 260;
+    let diff = target - start;
+    while (diff >  180) diff -= 360;
+    while (diff < -180) diff += 360;
+    (function tick(now) {
+      const t    = Math.min(1, (now - t0) / DUR);
+      const ease = 1 - Math.pow(1 - t, 3);
+      angle = start + diff * ease;
+      render();
+      if (t < 1) animId = requestAnimationFrame(tick);
+    })(performance.now());
+  }
+
+  function snap() {
+    snapTo(Math.round(-angle / step) * (-step));
+  }
+
+  let dragging = false, lastAng = 0, lastT = 0, vel = 0;
+
+  function evAng(e) {
+    const p = e.touches ? e.touches[0] : e;
+    return Math.atan2(p.clientY - (ly + R_DISC), p.clientX - (lx + R_DISC)) * 180 / Math.PI;
+  }
+  function onStart(e) {
+    dragging = true; lastAng = evAng(e); lastT = performance.now(); vel = 0;
+    if (animId) { cancelAnimationFrame(animId); animId = null; }
+    e.preventDefault(); e.stopPropagation();
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    const cur = evAng(e), now = performance.now();
+    let d = cur - lastAng;
+    if (d >  180) d -= 360;
+    if (d < -180) d += 360;
+    vel = d / Math.max(1, now - lastT) * 16;
+    angle += d; lastAng = cur; lastT = now;
+    render(); e.preventDefault();
+  }
+  function onEnd(e) {
+    if (!dragging) return;
+    dragging = false; angle += vel * 3; snap(); e.preventDefault();
+  }
+
+  menu.addEventListener('touchstart', onStart, { passive: false });
+  doc.addEventListener('touchmove',   onMove,  { passive: false });
+  doc.addEventListener('touchend',    onEnd,   { passive: false });
+  menu.addEventListener('mousedown',  onStart, { passive: false });
+  doc.addEventListener('mousemove',   onMove);
+  doc.addEventListener('mouseup',     onEnd);
+
+  doc.documentElement.appendChild(menu);
+  render();
+  requestAnimationFrame(() => menu.classList.add('show'));
+}
+
+// 内置兜底菜单项
+function _builtinMenuItems(){
+  return [
+    { id:'diary',     label:'\u65e5\u8bb0',   iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 7h10"/><path d="M7 11h10"/><path d="M7 15h7"/></svg>', action:()=>{ try{ openDiaryModal(); }catch(e){ try{ toast('\u65e5\u8bb0\u6a21\u5757\u672a\u5c31\u7eea'); }catch(_){} } } },
+    { id:'worldbook', label:'\u4e16\u754c\u4e66', iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19a2 2 0 0 1 2-2h14"/><path d="M4 5a2 2 0 0 1 2-2h14v18"/></svg>', action:()=>{ try{ openWorldbookModal(); }catch(e){ try{ toast('\u4e16\u754c\u4e66\u6a21\u5757\u672a\u5c31\u7eea'); }catch(_){} } } },
+    { id:'summary',   label:'\u603b\u7ed3',   iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>', action:()=>{ try{ openSummaryModal(); }catch(e){ try{ toast('\u603b\u7ed3\u6a21\u5757\u672a\u5c31\u7eea'); }catch(_){} } } },
+    { id:'phone',     label:'\u5c0f\u624b\u673a', iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M10 5.5h4"/><path d="M12 19h.01"/></svg>', action:()=>{
+  // 尝试直接调用，若未就绪则等待最多 3s（每 200ms 重试一次）
+  function tryOpen(){
+    try{
+      if(window.MEOW?.phone?.showFull){ window.MEOW.phone.showFull(); return true; }
+      if(window.MEOW?.mods?.get?.('phone')){ window.MEOW.mods.open('phone'); return true; }
+      if(typeof window.meowOpenPhone==='function'){ window.meowOpenPhone(); return true; }
+    }catch(e){}
+    return false;
+  }
+  if(tryOpen()) return;
+  // 未就绪：轮询等待
+  let tries=0;
+  const t=setInterval(()=>{
+    tries++;
+    if(tryOpen()){ clearInterval(t); return; }
+    if(tries>=15){ clearInterval(t); try{toast('小手机模块未就绪，请检查 meow-phone.js 是否加载成功');}catch(_){} }
+  },200);
+} },
+  ];
 }
 function modalShell(id, title, icon){
   // ✅ 只关菜单，不要全关（避免开二级弹窗时误杀上级）
@@ -2067,6 +2118,10 @@ function modalShell(id, title, icon){
       lsGet, lsSet,
       modalShell,
       closeMenuOnly, closeOverlays, closeModal, ensureMask,
+      // phone.js 需要的函数引用
+      meowGetSTCtx:   typeof meowGetSTCtx   === 'function' ? meowGetSTCtx   : ()=>null,
+      meowGetChatUID: function(){ return typeof meowGetChatUID==='function' ? meowGetChatUID() : ''; },
+      MEOW_WB_API:    typeof MEOW_WB_API    !== 'undefined' ? MEOW_WB_API   : {},
     });
   }catch(e){}
 
@@ -2151,6 +2206,55 @@ function modalShell(id, title, icon){
     });
   } catch(e){}
 
+
+
+// ── 转盘菜单项注册系统（供外部模块如 meow-voice.js 调用） ──
+(function initMenuItems(){
+  const G = (typeof window !== 'undefined') ? window : W;
+  const MEOW = (G.MEOW = G.MEOW || {});
+  if (MEOW.__MENU_ITEMS_INIT__) return;
+  MEOW.__MENU_ITEMS_INIT__ = true;
+  if (!Array.isArray(MEOW.menuItems)) MEOW.menuItems = [];
+  MEOW.addMenuItem = function(id, label, iconHTML, action){
+    const arr = MEOW.menuItems;
+    const idx = arr.findIndex(x => x.id === id);
+    if (idx >= 0) arr.splice(idx, 1);
+    arr.push({ id: String(id), label: String(label), iconHTML: String(iconHTML||''), action: action });
+  };
+  // 注册内置4个
+  MEOW.addMenuItem('diary', '日记',
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10a2 2 0 0 1 2 2v16H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 7h10"/><path d="M7 11h10"/><path d="M7 15h7"/></svg>',
+    ()=>{ try{ openDiaryModal(); }catch(e){ try{ toast('日记模块未就绪'); }catch(_){} } }
+  );
+  MEOW.addMenuItem('worldbook', '世界书',
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19a2 2 0 0 1 2-2h14"/><path d="M4 5a2 2 0 0 1 2-2h14v18"/></svg>',
+    ()=>{ try{ openWorldbookModal(); }catch(e){ try{ toast('世界书模块未就绪'); }catch(_){} } }
+  );
+  MEOW.addMenuItem('summary', '总结',
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.5.5 1 1.5 1 2h6c0-.5.5-1.5 1-2a7 7 0 0 0-4-12z"/></svg>',
+    ()=>{ try{ openSummaryModal(); }catch(e){ try{ toast('总结模块未就绪'); }catch(_){} } }
+  );
+  MEOW.addMenuItem('phone', '小手机',
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M10 5.5h4"/><path d="M12 19h.01"/></svg>',
+    ()=>{
+  function tryOpen(){
+    try{
+      if(window.MEOW?.phone?.showFull){ window.MEOW.phone.showFull(); return true; }
+      if(window.MEOW?.mods?.get?.('phone')){ window.MEOW.mods.open('phone'); return true; }
+      if(typeof window.meowOpenPhone==='function'){ window.meowOpenPhone(); return true; }
+    }catch(e){}
+    return false;
+  }
+  if(tryOpen()) return;
+  let tries=0;
+  const t=setInterval(()=>{
+    tries++;
+    if(tryOpen()){ clearInterval(t); return; }
+    if(tries>=15){ clearInterval(t); try{toast('小手机模块未就绪，请检查 meow-phone.js 是否加载成功');}catch(_){} }
+  },200);
+}
+  );
+})();
 
 })();
 
