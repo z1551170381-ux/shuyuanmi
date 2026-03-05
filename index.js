@@ -1,5 +1,5 @@
 // 喵喵套件 · SillyTavern 扩展入口
-// 作用：按顺序加载 meow-core.js → meow-phone.js
+// 作用：按顺序加载 meow-core.js → meow-phone.js → meow-voice.js
 
 (async function () {
   // 自动检测扩展所在文件夹路径
@@ -25,6 +25,7 @@
   try {
     await loadScript('meow-core.js');
     await loadScript('meow-phone.js');
+    await loadScript('meow-voice.js');
     console.log('[喵喵套件] 全部插件加载完成 ✓');
   } catch (e) {
     console.error('[喵喵套件] 加载出错:', e);
