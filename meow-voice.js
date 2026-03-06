@@ -1160,7 +1160,6 @@ ${t}
     const o = Object.assign({ cfg: cfg(), playbackRate: 1, withBgm: false }, opts || {});
     const c = o.cfg || cfg();
     const runGen = ++_apiPlayGen;
-    const LOOKAHEAD = 4;
     isReading = true;
     updateAllBtns(true);
 
@@ -1169,21 +1168,18 @@ ${t}
       catch(err) { toast('BGM 未启用：' + ((err && err.message) || err || '未知错误')); }
     }
 
-    const blobPromises = new Array((jobs || []).length);
-    function ensureBlob(idx) {
-      if (idx < 0 || idx >= jobs.length) return null;
-      if (!blobPromises[idx]) blobPromises[idx] = _apiOnce(jobs[idx].text, jobs[idx].voiceId, c);
-      return blobPromises[idx];
-    }
-
+    let nextBlobPromise = null;
     try {
       if (!jobs || !jobs.length) return;
-      for (let i = 0; i < Math.min(LOOKAHEAD, jobs.length); i++) ensureBlob(i);
+      nextBlobPromise = _apiOnce(jobs[0].text, jobs[0].voiceId, c);
 
       for (let i = 0; i < jobs.length; i++) {
         if (runGen !== _apiPlayGen) break;
-        for (let j = i + 1; j <= Math.min(jobs.length - 1, i + LOOKAHEAD); j++) ensureBlob(j);
-        const blob = await ensureBlob(i);
+        const job = jobs[i];
+        const blob = await nextBlobPromise;
+        nextBlobPromise = (i + 1 < jobs.length)
+          ? _apiOnce(jobs[i + 1].text, jobs[i + 1].voiceId, c)
+          : null;
 
         await new Promise((resolve, reject) => {
           if (runGen !== _apiPlayGen) { resolve(); return; }
@@ -1332,7 +1328,7 @@ ${t}
     // 🐱 调试日志（排查完毕后可改为 false）
     const _DRAMA_DEBUG = false;
 
-    function detectSpeaker(rawText, qStart, qEnd, dialogueStr, prevSpeaker, interNar) {
+    function detectSpeaker(rawText, qStart, qEnd, dialogueStr, prevSpeaker, interNar, prevDialogueStr) {
       const b8  = rawText.slice(Math.max(0, qStart - 8),  qStart);
       const a8  = rawText.slice(qEnd, Math.min(rawText.length, qEnd + 8));
       const b30 = rawText.slice(Math.max(0, qStart - 30), qStart);
@@ -1357,7 +1353,12 @@ ${t}
 
       // 贴着引号结束位置的超近距离规则：优先修“阿文。” / “给。”这类短句
       const USER_DIRECT_AFTER_RX = /^[\s\n—-]*我(?:叫他的名字|叫|唤|喊|问|说|开口|出声|低声问|轻声问|笑着问|笑着说|半开玩笑地(?:说|问)?|试探地(?:说|问)?|打趣地(?:说|问)?|调侃道|朝|对)/;
-      const CHAR_DIRECT_AFTER_RX = /^[\s\n—-]*[他她][^，。！？\n]{0,16}(?:应了?一声|小声|低声|轻声|咕哝|嘀咕|喃喃|开口|出声|打破沉默|接着说|继续道|补了?一句|像是鼓起[^，。！？\n]{0,10}勇气|清了?清嗓子|顿了?顿|抿了?抿唇|舔了?舔唇|咬了?咬唇|吸了?口气|呼出一口气|递|塞|拿|伸|俯|弯|靠|凑|偏|抬|低|望|看|盯|笑|停|走|迈|上前|后退|把)/;
+      const CHAR_DIRECT_AFTER_RX = /^[\s\n—-]*[他她][^，。！？\n]{0,18}(?:应了?一声|小声|低声|轻声|咕哝|嘀咕|喃喃|开口|出声|打破沉默|接着说|继续道|补了?一句|像是鼓起[^，。！？\n]{0,10}勇气|清了清嗓子|压低了?一些|微微睁大眼睛|睁大眼睛|低下头|抬起头|皱起眉|扫过|看向|转过身|挡在|传来|警告|递|塞|拿|伸|俯|弯|靠|凑|偏|抬|低|望|看|盯|笑|停|走|把)/;
+      const USER_CONTINUE_AFTER_RX = /^[\s\n—-]*我[^。！？\n]{0,28}(?:没有让空气安静太久|语调|语气|平视|视线|切换回|复盘|晃了晃|抬了抬|笑了笑|拨弄|仰视|看着前方|工作)/;
+      const CHAR_NARRATION_CUE_RX = /(?:^|[。！？\n，、；：])(?:他(?:的声音|的语气|的目光|的视线|的警告)|耳边传来他|他[^。！？\n]{0,20}(?:清了清嗓子|压低了?一些|微微睁大眼睛|睁大眼睛|低下头|抬起头|应了?一声|小声|低声|轻声|咕哝|嘀咕|喃喃|开口|出声|打破沉默|继续|接着|补了?一句|转过身|挡在|看向|扫过|警告))/;
+      const USER_NARRATION_CUE_RX = /(?:^|[。！？\n，、；：])我[^。！？\n]{0,28}(?:叫他的名字|没有让空气安静太久|语调|语气|视线|平视|切换回|半开玩笑地|笑着|低声|轻声|工作复盘|晃了晃|抬了抬|拨弄|仰视)/;
+      const CHAR_BEFORE_ACTION_RX = /[他她][^。！？\n]{0,26}(?:清了清嗓子|压低了?一些|微微睁大眼睛|睁大眼睛|低下头|抬起头|应了?一声|小声|低声|轻声|咕哝|嘀咕|喃喃|开口|出声|打破沉默|继续|接着|补了?一句|转过身|挡在|看向|扫过|警告|传来|手|胸膛|目光|视线|声音)/;
+      const USER_BEFORE_ACTION_RX = /我[^。！？\n]{0,26}(?:叫他的名字|没有让空气安静太久|语调|语气|平视|视线|切换回|半开玩笑地|笑着|低声|轻声|晃了晃|抬了抬|拨弄|仰视)/;
 
       // “引号后面是我在反应”——通常表示前一句是角色说的
       const REACT_VERBS = /^[\n\s]*[我][^，。！？\n]{0,3}(?:看|想|站|走|停|愣|怔|转|抬|低|伸|退|回|望|盯|跟|跑|坐|起|笑|皱|叹|吸|呼|点|摇|握|抓|攥)/;
@@ -1383,25 +1384,39 @@ ${t}
         const hit = findSpeechVerb(text);
         return hit && hit !== (userName || '我') ? hit : null;
       }
+      function isShortAnswerLike(text) {
+        const t = String(text || '').trim();
+        const n = t.replace(/[。！？，、…\s]/g, '');
+        return !!n && n.length <= 8 && /^(?:没有|没事|没撞到|不是|嗯|好|好的|行|可以|谢谢|我没事|没关系|还好|你呢|看到了|是|不是啊?)$/.test(n);
+      }
+      function otherSpeaker(sp) {
+        if (sp === (userName || '我')) return resolvePronounChar();
+        if (sp) return userName || '我';
+        return null;
+      }
 
-      // ── P0：先吃掉最常见、最容易误判的贴边短句 ──
-      if (USER_DIRECT_AFTER_RX.test(a30)) {
+      // ── P0：先吃掉最常见、最容易误判的贴边短句 / 连续发言提示 ──
+      if (USER_DIRECT_AFTER_RX.test(a30) || USER_CONTINUE_AFTER_RX.test(a30)) {
         return logHit('P0-紧跟玩家动作', userName || '我');
       }
-      if ((dialogueStr && dialogueStr.replace(/\s/g, '').length <= 8) &&
+
+      // 上一句是疑问句，本句是极短回答时，优先视为轮到另一方回应
+      if (prevDialogueStr && /[？?]/.test(prevDialogueStr) && isShortAnswerLike(dialogueStr)) {
+        const alt = otherSpeaker(prevSpeaker);
+        if (alt) return logHit('P0.5-问答换人', alt);
+      }
+
+      if (CHAR_NARRATION_CUE_RX.test(a30) || CHAR_NARRATION_CUE_RX.test(interNar || '')) {
+        const rc = resolvePronounChar();
+        if (rc) return logHit('P0-角色叙述提示', rc);
+      }
+      if ((dialogueStr && dialogueStr.replace(/\s/g, '').length <= 12) &&
           !/[？?]/.test(dialogueStr || '') &&
-          CHAR_DIRECT_AFTER_RX.test(a30) &&
-          !USER_DIRECT_AFTER_RX.test(a30)) {
+          (CHAR_DIRECT_AFTER_RX.test(a30) || CHAR_BEFORE_ACTION_RX.test(b30)) &&
+          !USER_DIRECT_AFTER_RX.test(a30) &&
+          !USER_BEFORE_ACTION_RX.test(b30)) {
         const rc = resolvePronounChar();
         if (rc) return logHit('P0-紧跟角色动作', rc);
-      }
-      // 修“我……”这类第一人称短句：引号后立刻是‘他清了清嗓子 / 他往前走了一步’等角色动作时，优先判给角色
-      if ((dialogueStr && dialogueStr.replace(/\s/g, '').length <= 12) &&
-          /^[我][…~～—-]*$/.test((dialogueStr || '').trim()) &&
-          CHAR_DIRECT_AFTER_RX.test(a30) &&
-          !USER_DIRECT_AFTER_RX.test(a30)) {
-        const rc = resolvePronounChar();
-        if (rc) return logHit('P0.5-第一人称短句后接角色动作', rc);
       }
 
       // ── P1：最近 8 字内的明确归因（最可信）──
@@ -1428,8 +1443,13 @@ ${t}
       if (interNar) {
         const nar = lastSentence(interNar);
 
-        if (USER_STRONG_RX.test(nar)) {
+        if (USER_NARRATION_CUE_RX.test(interNar) || USER_STRONG_RX.test(nar)) {
           return logHit('P2-旁白玩家', userName || '我');
+        }
+
+        if (CHAR_NARRATION_CUE_RX.test(interNar)) {
+          const rc = resolvePronounChar();
+          if (rc) return logHit('P2-旁白角色提示', rc);
         }
 
         const p2 = explicitCharByName(nar) || findSpeechVerb(nar);
@@ -1508,15 +1528,19 @@ ${t}
         const is我们 = 我idx >= 0 && b30[我idx + 1] === '们';
         if (!is我们) {
           const charInB30 = kwList.some(kw => b30.includes(kw) && !isObject(b30, kw));
-          if (!charInB30) return logHit('P7', userName || '我');
+          if (!charInB30 && !CHAR_BEFORE_ACTION_RX.test(b30) && !CHAR_NARRATION_CUE_RX.test(a30)) {
+            return logHit('P7', userName || '我');
+          }
         }
       }
 
-      // ── P8：台词自己以“我”开头，且周围没有明确角色归因 → 玩家 ──
+      // ── P8：台词自己以“我”开头，且周围没有明确角色归因 → 玩家
+      // 但若引号前后都明显在写“他”的连续发言，则不要被“我...”第一人称内容误吸走
       if (dialogueStr && /^[我]/.test(dialogueStr.trim())) {
         const wide = b30 + a30;
         const charVerb = findSpeechVerb(wide);
-        if (!charVerb || charVerb === (userName || '我')) {
+        if (!CHAR_BEFORE_ACTION_RX.test(b30) && !CHAR_NARRATION_CUE_RX.test(a30) &&
+            (!charVerb || charVerb === (userName || '我'))) {
           return logHit('P8', userName || '我');
         }
       }
@@ -1532,6 +1556,7 @@ ${t}
     const blockRx   = /⟪MV_NARR_BLOCK⟫([\s\S]*?)⟪\/MV_NARR_BLOCK⟫/g;
     let prevQEnd    = 0;
     let prevSpeaker;
+    let prevDialogueStr = null;
 
     function pushNarration(text) {
       const t = String(text || '').trim();
@@ -1551,12 +1576,13 @@ ${t}
         const globalEnd   = globalStart + m[0].length;
         const interNar    = prevQEnd > 0 ? rawText.slice(prevQEnd, globalStart).trim() : null;
         const dialogueStr = m[0].slice(1, -1).trim();
-        const speaker     = detectSpeaker(rawText, globalStart, globalEnd, dialogueStr, prevSpeaker, interNar);
+        const speaker     = detectSpeaker(rawText, globalStart, globalEnd, dialogueStr, prevSpeaker, interNar, prevDialogueStr);
         if (dialogueStr) segments.push({ type: 'dialogue', speaker, text: dialogueStr });
 
-        prevSpeaker = speaker;
-        prevQEnd    = globalEnd;
-        lastIdx     = m.index + m[0].length;
+        prevSpeaker    = speaker;
+        prevDialogueStr = dialogueStr;
+        prevQEnd       = globalEnd;
+        lastIdx        = m.index + m[0].length;
       }
       const narAfter = piece.slice(lastIdx).trim();
       if (narAfter) pushNarration(narAfter);
@@ -1571,9 +1597,10 @@ ${t}
       const blockText = (bm[1] || '').trim();
       if (blockText) pushNarration(blockText);
 
-      cursor      = bm.index + bm[0].length;
-      prevQEnd    = 0;
-      prevSpeaker = undefined;
+      cursor         = bm.index + bm[0].length;
+      prevQEnd       = 0;
+      prevSpeaker    = undefined;
+      prevDialogueStr = null;
     }
 
     const tail = rawText.slice(cursor);
