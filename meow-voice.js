@@ -275,8 +275,8 @@
     const kwList = Object.keys(kwMap).sort((a, b) => b.length - a.length);
 
     // 说话归因动词（允许中间有至多4个修饰字，如"低低地说/轻声道"）
-    const VERBS = '说|道|答|嗯|哼|叹|叫|开口|喊|吼|嘟囔|嘀咕|喃喃|低语|呢喃|问|应|嚷|吩咐|催|劝|提醒|咕哝|咕噜|嘟嘴|低声|小声|轻声';
-    // "笑" 单独处理：仅在 "笑着说/笑道" 等复合形式中才算说话动词
+    // ※ "笑" 不在此列表，单独处理复合形式（笑着说/笑道），避免"开玩笑"误判
+    const VERBS = '说|道|答|嗯|哼|叹|叫|开口|喊|吼|嘟囔|嘀咕|喃喃|低语|呢喃|问|应|嚷|吩咐|催|劝|提醒|咕哝|咕噜|低声|小声|轻声';
     const LAUGH_SPEAK_RX = /笑[着了]?(?:说|道|答|问|叫|嚷)/;
     function makeKwRx(kw) {
       const esc = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -297,8 +297,9 @@
         if (new RegExp(esc + '[^，。！？\n]{0,4}' + LAUGH_SPEAK_RX.source).test(text)) return kwMap[kw];
       }
       if (new RegExp('[我][^，。！？\n]{0,4}(?:' + VERBS + ')|(?:' + VERBS + ')[^，。！？\n]{0,2}[我]').test(text)) {
-        // 排除 "我们" 误判：如果匹配到的"我"后面紧跟"们"，不算说话归因
-        const m我 = text.match(/[我]([^，。！？\n]{0,4})(?:说|道|答|嗯|哼|叹|叫|开口|喊|吼|嘟囔|嘀咕|喃喃|低语|呢喃|问|应|嚷|吩咐|催|劝|提醒|咕哝|咕噜|嘟嘴|低声|小声|轻声)/);
+        // 排除 "我们" 误判：匹配到的 "我" 后紧跟 "们" 时不算说话归因
+        const rx我 = new RegExp('[我]([^，。！？\n]{0,4})(?:' + VERBS + ')');
+        const m我 = text.match(rx我);
         if (m我) {
           const idx我 = text.indexOf(m我[0]);
           if (idx我 >= 0 && text[idx我 + 1] === '们') return null;
@@ -308,13 +309,12 @@
       return null;
     }
 
-    // 在 text 中查找代词 "他/她" + 说话动词 → 代指角色
-    // 返回 '__pronoun_char__'（代词角色标记）或 null
+    // 代词 "他/她" + 说话动词 → 代指角色
     const PRONOUN_SPEAK_RX = new RegExp('[他她][^，。！？\n]{0,4}(?:' + VERBS + '|' + LAUGH_SPEAK_RX.source + ')|(?:' + VERBS + ')[^，。！？\n]{0,2}[他她]');
     function findPronounSpeech(text) {
-      return PRONOUN_SPEAK_RX.test(text) ? '__pronoun_char__' : null;
+      return PRONOUN_SPEAK_RX.test(text) ? true : false;
     }
-    // 辅助：解析代词角色 → 返回第一个角色名（优先 kwList 里有名字的）
+    // 解析代词角色 → 返回第一个注册的角色名
     function resolvePronounChar() {
       return charNames.length > 0 ? charNames[0] : null;
     }
@@ -333,31 +333,29 @@
       const b30 = rawText.slice(Math.max(0, qStart - 30), qStart);
       const a30 = rawText.slice(qEnd, Math.min(rawText.length, qEnd + 30));
 
-      // ── P1: before8 / after8 有"kw+动词"组合（最高可信）──
+      // ── P1: before8 / after8 有 "角色名+动词" 组合（最高可信）──
       const p1 = findSpeechVerb(b8) || findSpeechVerb(a8);
       if (p1) return p1;
 
-      // ── P1.5: before8 / after8 有 "他/她+动词" → 角色在说话 ──
+      // ── P1.5: before8 / after8 有 "他/她+说话动词"（如"他小声咕哝"）→ 角色 ──
       if (findPronounSpeech(b8) || findPronounSpeech(a8)) {
         const rc = resolvePronounChar();
         if (rc) return rc;
       }
 
-      // ── P1.7: after8 以 "他/她" 作主语开头（紧跟引号后） → 角色刚说完话 ──
-      //    典型模式："给。"\n他递过来… / "好。"\n她转身离开…
-      //    排除 before8 有"我"开头的情况（"我说……"他递过来"的结构不同）
+      // ── P1.7: after8 以 "他/她" 作主语紧跟引号（如 "给。"\n他递过来…）→ 角色 ──
+      //    排除 before8 有 "我" 的情况（避免 "…我说…" 后的 "他" 被误判）
       if (/^[\n\s]*[他她]/.test(a8) && !/[我]/.test(b8)) {
         const rc = resolvePronounChar();
         if (rc) return rc;
       }
 
-      // ── P2: 两段引号之间的旁白（interNar）—— 只取最靠近当前引号的一句 ──
+      // ── P2: 两段引号之间的旁白 —— 只取最靠近当前引号的一句，避免远距离误判 ──
       if (interNar) {
-        // 取 interNar 最后一个句号/换行之后的部分（最近的一句），避免远处的"我+笑"等误判
         const lastSentence = interNar.replace(/^[\s\S]*(?:[。！？\n])\s*/, '') || interNar;
         const p2 = findSpeechVerb(lastSentence);
         if (p2) return p2;
-        // 也检查代词归因
+        // 代词归因
         if (findPronounSpeech(lastSentence)) {
           const rc = resolvePronounChar();
           if (rc) return rc;
@@ -413,9 +411,8 @@
       }
 
       // ── P5: before30 有"我"且不是宾语 → 玩家是旁白主语，刚才也在说话 ──
-      // 排除 "我们" —— "我们往前走" 不代表"我"在说话
+      // 排除 "我们" —— "我们往前走" 不代表 "我" 在说话
       if (b30.includes('我') && !isObject(b30, '我')) {
-        // 检查匹配到的"我"是否其实是"我们"
         const 我idx = b30.indexOf('我');
         const is我们 = 我idx >= 0 && b30[我idx + 1] === '们';
         if (!is我们) {
