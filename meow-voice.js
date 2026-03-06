@@ -151,11 +151,28 @@
    * - 对 【】 等特殊格式做 DOM 级别清理
    */
   function extractCleanText(el) {
+    const NARR_BLOCK_OPEN  = '⟪MV_NARR_BLOCK⟫';
+    const NARR_BLOCK_CLOSE = '⟪/MV_NARR_BLOCK⟫';
     try {
+      const root = el.cloneNode(true);
+
+      // 先把代码块 / 引用块保护起来，后续广播剧模式会强制按旁白处理。
+      root.querySelectorAll('pre, blockquote').forEach(node => {
+        const txt = (node.textContent || '').replace(/\u00A0/g, ' ').trim();
+        const ph  = doc.createTextNode(`\n${NARR_BLOCK_OPEN}\n${txt}\n${NARR_BLOCK_CLOSE}\n`);
+        try { node.replaceWith(ph); } catch(e) {}
+      });
+      root.querySelectorAll('code').forEach(node => {
+        try { if (node.closest('pre')) return; } catch(e) {}
+        const txt = (node.textContent || '').replace(/\u00A0/g, ' ').trim();
+        const ph  = doc.createTextNode(` ${NARR_BLOCK_OPEN} ${txt} ${NARR_BLOCK_CLOSE} `);
+        try { node.replaceWith(ph); } catch(e) {}
+      });
+
       // textContent 直接读原生 DOM 文字，不依赖渲染树，永远可靠。
       // ST 的美化正则生成的 <div style=".../* 注释 */..."> 里的
       // CSS 注释文字也会被 textContent 包含进来，所以要做清洗。
-      let text = el.textContent || '';
+      let text = root.textContent || '';
 
       // 1. 去掉 CSS 注释内容（/* ... */），防止 style 属性内联注释泄漏
       text = text.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -168,15 +185,15 @@
       text = text.replace(/\u3010[^\u3011\n]{0,100}\u3011/g, '');
       text = text.replace(/[\u3010\u3011\[\]]/g, ' ');
 
-      // 4. 去控制字符 / 零宽字符
+      // 4. 去控制字符 / 零宽字符（保护标记本身保留）
       text = text.replace(/[\u0000-\u001F\u007F\u200B-\u200F\u2028\u2029\uFEFF]/g, ' ');
 
       // 5. 去 HTML 实体残留
       text = text.replace(/&[a-z#0-9]+;/gi, ' ');
 
-      // 6. 去多余空白
+      // 6. 去多余空白（保留保护块）
       text = text.replace(/[ \t]{2,}/g, ' ')
-                 .replace(/\n{2,}/g, '\n')
+                 .replace(/\n{3,}/g, '\n\n')
                  .trim();
 
       return text;
@@ -264,6 +281,8 @@
 
   // ── 广播剧模式：把文本切成 [{type, speaker, text}] 段落 ──
   function _parseDramaSegments(rawText, charNames, userName, dramaMap) {
+    const NARR_BLOCK_OPEN  = '⟪MV_NARR_BLOCK⟫';
+    const NARR_BLOCK_CLOSE = '⟪/MV_NARR_BLOCK⟫';
     // 构建 keyword → charName 映射
     const kwMap = {};
     for (const name of charNames) {
@@ -353,6 +372,10 @@
       // “短句 + 后接玩家动作”专用：比如“阿文。”后面跟“我叫他的名字”
       const USER_AFTER_ACTION_RX = /^[\s\n—-]*我[^，。！？\n]{0,12}(?:叫|问|说|唤|朝|对|看|望|晃|接|伸|抬|低|笑|走|停|跟)/;
 
+      // 贴着引号结束位置的超近距离规则：优先修“阿文。” / “给。”这类短句
+      const USER_DIRECT_AFTER_RX = /^[\s\n—-]*我(?:叫他的名字|叫|唤|喊|问|说|开口|出声|低声问|轻声问|笑着问|笑着说|半开玩笑地(?:说|问)?|试探地(?:说|问)?|打趣地(?:说|问)?|调侃道|朝|对)/;
+      const CHAR_DIRECT_AFTER_RX = /^[\s\n—-]*[他她][^，。！？\n]{0,12}(?:应了?一声|小声|低声|轻声|咕哝|嘀咕|喃喃|开口|出声|打破沉默|接着说|继续道|补了?一句|像是鼓起[^，。！？\n]{0,10}勇气|递|塞|拿|伸|俯|弯|靠|凑|偏|抬|低|望|看|盯|笑|停|走|把)/;
+
       // “引号后面是我在反应”——通常表示前一句是角色说的
       const REACT_VERBS = /^[\n\s]*[我][^，。！？\n]{0,3}(?:看|想|站|走|停|愣|怔|转|抬|低|伸|退|回|望|盯|跟|跑|坐|起|笑|皱|叹|吸|呼|点|摇|握|抓|攥)/;
 
@@ -376,6 +399,18 @@
       function explicitCharByName(text) {
         const hit = findSpeechVerb(text);
         return hit && hit !== (userName || '我') ? hit : null;
+      }
+
+      // ── P0：先吃掉最常见、最容易误判的贴边短句 ──
+      if (USER_DIRECT_AFTER_RX.test(a30)) {
+        return logHit('P0-紧跟玩家动作', userName || '我');
+      }
+      if ((dialogueStr && dialogueStr.replace(/\s/g, '').length <= 8) &&
+          !/[？?]/.test(dialogueStr || '') &&
+          CHAR_DIRECT_AFTER_RX.test(a30) &&
+          !USER_DIRECT_AFTER_RX.test(a30)) {
+        const rc = resolvePronounChar();
+        if (rc) return logHit('P0-紧跟角色动作', rc);
       }
 
       // ── P1：最近 8 字内的明确归因（最可信）──
@@ -502,29 +537,56 @@
     }
 
     const segments  = [];
-    const rx        = /(\u201c[\s\S]*?\u201d|"[^"]*?")/g;
-    let lastIdx     = 0;
+    const rx        = /(\u201c[\s\S]*?\u201d|\u300c[\s\S]*?\u300d|\u300e[\s\S]*?\u300f|"[^"]*?")/g;
+    const blockRx   = /⟪MV_NARR_BLOCK⟫([\s\S]*?)⟪\/MV_NARR_BLOCK⟫/g;
     let prevQEnd    = 0;
     let prevSpeaker;
-    let m;
-    while ((m = rx.exec(rawText)) !== null) {
-      const narBefore = rawText.slice(lastIdx, m.index).trim();
-      if (narBefore) segments.push({ type: 'narration', speaker: null, text: narBefore });
 
-      // 两段引号之间的旁白（用于 P2 判断连续发言）
-      const interNar = prevQEnd > 0 ? rawText.slice(prevQEnd, m.index).trim() : null;
-
-      const dialogueStr = m[0].slice(1, -1).trim();
-      const speaker = detectSpeaker(rawText, m.index, m.index + m[0].length,
-                                    dialogueStr, prevSpeaker, interNar);
-      if (dialogueStr) segments.push({ type: 'dialogue', speaker, text: dialogueStr });
-
-      prevSpeaker = speaker;
-      prevQEnd    = m.index + m[0].length;
-      lastIdx     = m.index + m[0].length;
+    function pushNarration(text) {
+      const t = String(text || '').trim();
+      if (t) segments.push({ type: 'narration', speaker: null, text: t });
     }
-    const narAfter = rawText.slice(lastIdx).trim();
-    if (narAfter) segments.push({ type: 'narration', speaker: null, text: narAfter });
+
+    function parseNormalPiece(piece, baseIdx) {
+      if (!piece) return;
+      rx.lastIndex = 0;
+      let lastIdx = 0;
+      let m;
+      while ((m = rx.exec(piece)) !== null) {
+        const narBefore = piece.slice(lastIdx, m.index).trim();
+        if (narBefore) pushNarration(narBefore);
+
+        const globalStart = baseIdx + m.index;
+        const globalEnd   = globalStart + m[0].length;
+        const interNar    = prevQEnd > 0 ? rawText.slice(prevQEnd, globalStart).trim() : null;
+        const dialogueStr = m[0].slice(1, -1).trim();
+        const speaker     = detectSpeaker(rawText, globalStart, globalEnd, dialogueStr, prevSpeaker, interNar);
+        if (dialogueStr) segments.push({ type: 'dialogue', speaker, text: dialogueStr });
+
+        prevSpeaker = speaker;
+        prevQEnd    = globalEnd;
+        lastIdx     = m.index + m[0].length;
+      }
+      const narAfter = piece.slice(lastIdx).trim();
+      if (narAfter) pushNarration(narAfter);
+    }
+
+    let cursor = 0;
+    let bm;
+    while ((bm = blockRx.exec(rawText)) !== null) {
+      const normal = rawText.slice(cursor, bm.index);
+      if (normal) parseNormalPiece(normal, cursor);
+
+      const blockText = (bm[1] || '').trim();
+      if (blockText) pushNarration(blockText);
+
+      cursor      = bm.index + bm[0].length;
+      prevQEnd    = 0;
+      prevSpeaker = undefined;
+    }
+
+    const tail = rawText.slice(cursor);
+    if (tail) parseNormalPiece(tail, cursor);
     return segments;
   }
 
@@ -546,10 +608,11 @@
 
   function _dramaVoiceFor(seg, c) {
     const dm = c.dramaMap || {};
-    if (seg.type === 'narration')  return _dramEntryVoice(dm['__narration__']) || c.apiVoice || '';
+    if (seg.type === 'narration') return _dramEntryVoice(dm['__narration__']) || c.apiVoice || '';
     if (seg.speaker === (c.userName || '我')) return _dramEntryVoice(dm['__user__']) || c.apiVoice || '';
     if (seg.speaker && dm[seg.speaker]) return _dramEntryVoice(dm[seg.speaker]) || c.apiVoice || '';
-    return c.apiVoice || '';
+    // 归因失败的引号句，宁可走旁白，也不要误落到角色默认音色。
+    return _dramEntryVoice(dm['__narration__']) || c.apiVoice || '';
   }
 
   // 广播剧模式朗读（API）
