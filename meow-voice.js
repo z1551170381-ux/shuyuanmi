@@ -327,7 +327,7 @@
       return OBJ_CHARS.has(prevChar);
     }
 
-    // 🐱 调试日志开关（排查完毕后可删除或设为 false）
+    // 🐱 调试日志（排查完毕后可改为 false）
     const _DRAMA_DEBUG = true;
 
     function detectSpeaker(rawText, qStart, qEnd, dialogueStr, prevSpeaker, interNar) {
@@ -336,57 +336,55 @@
       const b30 = rawText.slice(Math.max(0, qStart - 30), qStart);
       const a30 = rawText.slice(qEnd, Math.min(rawText.length, qEnd + 30));
 
-      let _rule = '';
-
       // ── P1: before8 / after8 有 "角色名+动词" 组合（最高可信）──
       const p1 = findSpeechVerb(b8) || findSpeechVerb(a8);
-      if (p1) { _rule = 'P1'; if (_DRAMA_DEBUG) console.log(`[DRAMA] "${dialogueStr.slice(0,15)}" → ${p1} (${_rule}) | b8="${b8}" a8="${a8}"`); return p1; }
+      if (p1) { if (_DRAMA_DEBUG) console.log('[DRAMA] "' + dialogueStr.slice(0,15) + '" → ' + p1 + ' (P1)'); return p1; }
 
       // ── P1.5: before8 / after8 有 "他/她+说话动词"（如"他小声咕哝"）→ 角色 ──
       if (findPronounSpeech(b8) || findPronounSpeech(a8)) {
         const rc = resolvePronounChar();
-        if (rc) { _rule = 'P1.5-pronoun'; if (_DRAMA_DEBUG) console.log(`[DRAMA] "${dialogueStr.slice(0,15)}" → ${rc} (${_rule}) | b8="${b8}" a8="${a8}"`); return rc; }
+        if (rc) { if (_DRAMA_DEBUG) console.log('[DRAMA] "' + dialogueStr.slice(0,15) + '" → ' + rc + ' (P1.5-代词)'); return rc; }
       }
 
       // ── P1.7: after8 以 "他/她" 作主语紧跟引号（如 "给。"\n他递过来…）→ 角色 ──
       //    排除 before8 有 "我" 的情况（避免 "…我说…" 后的 "他" 被误判）
       if (/^[\n\s]*[他她]/.test(a8) && !/[我]/.test(b8)) {
         const rc = resolvePronounChar();
-        if (rc) { _rule = 'P1.7-他她开头'; if (_DRAMA_DEBUG) console.log(`[DRAMA] "${dialogueStr.slice(0,15)}" → ${rc} (${_rule}) | b8="${b8}" a8="${a8}"`); return rc; }
+        if (rc) { if (_DRAMA_DEBUG) console.log('[DRAMA] "' + dialogueStr.slice(0,15) + '" → ' + rc + ' (P1.7-他她开头)'); return rc; }
       }
 
       // ── P2: 两段引号之间的旁白 —— 只取最靠近当前引号的一句，避免远距离误判 ──
       if (interNar) {
         const lastSentence = interNar.replace(/^[\s\S]*(?:[。！？\n])\s*/, '') || interNar;
         const p2 = findSpeechVerb(lastSentence);
-        if (p2) { _rule = 'P2'; if (_DRAMA_DEBUG) console.log(`[DRAMA] "${dialogueStr.slice(0,15)}" → ${p2} (${_rule}) | lastSentence="${lastSentence.slice(0,30)}"`); return p2; }
+        if (p2) { if (_DRAMA_DEBUG) console.log('[DRAMA] "' + dialogueStr.slice(0,15) + '" → ' + p2 + ' (P2)'); return p2; }
         // 代词归因
         if (findPronounSpeech(lastSentence)) {
           const rc = resolvePronounChar();
-          if (rc) { _rule = 'P2-pronoun'; if (_DRAMA_DEBUG) console.log(`[DRAMA] "${dialogueStr.slice(0,15)}" → ${rc} (${_rule}) | lastSentence="${lastSentence.slice(0,30)}"`); return rc; }
+          if (rc) { if (_DRAMA_DEBUG) console.log('[DRAMA] "' + dialogueStr.slice(0,15) + '" → ' + rc + ' (P2-代词)'); return rc; }
         }
       }
 
       // ── P3: before30 有"kw+动词"（稍远但仍可信）──
       const p3 = findSpeechVerb(b30);
-      if (p3) { _rule = 'P3'; if (_DRAMA_DEBUG) console.log(`[DRAMA] "${dialogueStr.slice(0,15)}" → ${p3} (${_rule})`); return p3; }
+      if (p3) { if (_DRAMA_DEBUG) console.log('[DRAMA] "' + dialogueStr.slice(0,15) + '" → ' + p3 + ' (P3)'); return p3; }
 
       // ── P3.5: before30 / after30 有代词说话归因 ──
       if (findPronounSpeech(b30) || findPronounSpeech(a30)) {
         const rc = resolvePronounChar();
-        if (rc) { _rule = 'P3.5-pronoun'; if (_DRAMA_DEBUG) console.log(`[DRAMA] "${dialogueStr.slice(0,15)}" → ${rc} (${_rule})`); return rc; }
+        if (rc) { if (_DRAMA_DEBUG) console.log('[DRAMA] "' + dialogueStr.slice(0,15) + '" → ' + rc + ' (P3.5-代词)'); return rc; }
       }
 
       // ── P4: after8 里有明确归因动词 → 说话者 ──
       const REACT_VERBS = /^[\n\s]*[我][^，。！？\n]{0,3}(?:看|想|站|走|停|愣|怔|转|抬|低|伸|退|回|望|盯|跟|跑|坐|起|笑|皱|叹|吸|呼|点|摇|握|抓|攥)/;
       const p4speech = findSpeechVerb(a8);
-      if (p4speech) { _rule = 'P4-speech'; if (_DRAMA_DEBUG) console.log(`[DRAMA] "${dialogueStr.slice(0,15)}" → ${p4speech} (${_rule})`); return p4speech; }
+      if (p4speech) { if (_DRAMA_DEBUG) console.log('[DRAMA] "' + dialogueStr.slice(0,15) + '" → ' + p4speech + ' (P4-speech)'); return p4speech; }
       // after8 以"我+反应动词"开头 → 玩家在接收，角色是说话者
       if (REACT_VERBS.test(a8)) {
         // ── 规则A：对话内容含角色关键词 → 玩家在对角色说话 ──
         if (dialogueStr) {
           for (const kw of kwList) {
-            if (dialogueStr.includes(kw)) { _rule = 'P4-A'; if (_DRAMA_DEBUG) console.log(`[DRAMA] "${dialogueStr.slice(0,15)}" → ${userName||'我'} (${_rule})`); return userName || '我'; }
+            if (dialogueStr.includes(kw)) { if (_DRAMA_DEBUG) console.log('[DRAMA] "' + dialogueStr.slice(0,15) + '" → ' + (userName||'我') + ' (P4-A)'); return userName || '我'; }
           }
         }
 
@@ -407,10 +405,10 @@
           }
         }
         if (firstChar < (first我 < 0 ? Infinity : first我)) {
-          _rule = 'P4-B-char'; if (_DRAMA_DEBUG) console.log(`[DRAMA] "${dialogueStr.slice(0,15)}" → ${kwMap[firstCharName]} (${_rule})`);
+          if (_DRAMA_DEBUG) console.log('[DRAMA] "' + dialogueStr.slice(0,15) + '" → ' + kwMap[firstCharName] + ' (P4-B-char)');
           return kwMap[firstCharName];
         }
-        _rule = 'P4-B-我'; if (_DRAMA_DEBUG) console.log(`[DRAMA] "${dialogueStr.slice(0,15)}" → ${userName||'我'} (${_rule})`);
+        if (_DRAMA_DEBUG) console.log('[DRAMA] "' + dialogueStr.slice(0,15) + '" → ' + (userName||'我') + ' (P4-B-我)');
         return userName || '我';
       }
 
@@ -421,7 +419,7 @@
         const is我们 = 我idx >= 0 && b30[我idx + 1] === '们';
         if (!is我们) {
           const charInB30 = kwList.some(kw => b30.includes(kw) && !isObject(b30, kw));
-          if (!charInB30) { _rule = 'P5'; if (_DRAMA_DEBUG) console.log(`[DRAMA] "${dialogueStr.slice(0,15)}" → ${userName||'我'} (${_rule}) | b30="${b30}"`); return userName || '我'; }
+          if (!charInB30) { if (_DRAMA_DEBUG) console.log('[DRAMA] "' + dialogueStr.slice(0,15) + '" → ' + (userName||'我') + ' (P5)'); return userName || '我'; }
         }
       }
 
@@ -429,13 +427,13 @@
       if (dialogueStr && /^[我]/.test(dialogueStr.trim())) {
         const wide = b30 + a30;
         const charVerb = findSpeechVerb(wide);
-        if (!charVerb || charVerb === (userName || '我')) { _rule = 'P6'; if (_DRAMA_DEBUG) console.log(`[DRAMA] "${dialogueStr.slice(0,15)}" → ${userName||'我'} (${_rule})`); return userName || '我'; }
+        if (!charVerb || charVerb === (userName || '我')) { if (_DRAMA_DEBUG) console.log('[DRAMA] "' + dialogueStr.slice(0,15) + '" → ' + (userName||'我') + ' (P6)'); return userName || '我'; }
       }
 
       // ── P7: 继承上一句归因（同一段旁白内的连续发言默认同人）──
-      if (prevSpeaker !== undefined) { _rule = 'P7'; if (_DRAMA_DEBUG) console.log(`[DRAMA] "${dialogueStr.slice(0,15)}" → ${prevSpeaker} (${_rule})`); return prevSpeaker; }
+      if (prevSpeaker !== undefined) { if (_DRAMA_DEBUG) console.log('[DRAMA] "' + dialogueStr.slice(0,15) + '" → ' + prevSpeaker + ' (P7)'); return prevSpeaker; }
 
-      if (_DRAMA_DEBUG) console.log(`[DRAMA] "${dialogueStr.slice(0,15)}" → null (无规则命中)`);
+      if (_DRAMA_DEBUG) console.log('[DRAMA] "' + dialogueStr.slice(0,15) + '" → null (无规则命中)');
       return null;
     }
 
@@ -480,14 +478,6 @@
   async function speakDramaApi(rawText, charNames, dramaMap) {
     const c    = cfg();
     const segs = _parseDramaSegments(rawText, charNames, c.userName, dramaMap || c.dramaMap);
-    // 🐱 调试日志
-    console.log('[DRAMA-PLAY] charNames=', charNames, 'userName=', c.userName, 'dramaMap=', JSON.stringify(c.dramaMap));
-    for (const seg of segs) {
-      if (seg.type === 'dialogue') {
-        const vid = _dramaVoiceFor(seg, c);
-        console.log(`[DRAMA-PLAY] "${seg.text.slice(0,20)}" speaker=${seg.speaker} → voice=${vid}`);
-      }
-    }
     const gen  = ++_apiPlayGen;
     isReading  = true; updateAllBtns(true);
     for (const seg of segs) {
