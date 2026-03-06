@@ -323,17 +323,23 @@
       const p3 = findSpeechVerb(b30);
       if (p3) return p3;
 
-      // ── P4: after8 里谁先出现（我 vs 角色），先出现者是刚说完话的人 ──
-      let firstMe  = a8.indexOf('我');
-      let firstChar = Infinity, firstCharName = null;
-      for (const kw of kwList) {
-        const i = a8.indexOf(kw);
-        if (i >= 0 && i < firstChar && !isObject(a8, kw)) {
-          firstChar = i; firstCharName = kw;
+      // ── P4: after8 里有明确归因动词 → 说话者 ──
+      const REACT_VERBS = /^[\n\s]*[我][^，。！？\n]{0,3}(?:看|想|站|走|停|愣|怔|转|抬|低|伸|退|回|望|盯|跟|跑|坐|起|笑|皱|叹|吸|呼|点|摇|握|抓|攥)/;
+      const p4speech = findSpeechVerb(a8);
+      if (p4speech) return p4speech;
+      // after8 以"我+反应动词"开头 → 玩家在接收，角色是说话者
+      // 搜索范围：前60字 + after8（含 "我停在他身前" 这种情况）
+      if (REACT_VERBS.test(a8)) {
+        // 只在 before 区域找角色（after 里的角色是行动对象，不是说话者）
+        // 若 before60 有角色 → 角色刚说完话，玩家在接收；若没有 → 玩家在说话
+        const b60 = rawText.slice(Math.max(0, qStart - 60), qStart);
+        let foundChar = null;
+        for (const kw of kwList) {
+          if (b60.includes(kw) && !isObject(b60, kw)) { foundChar = kwMap[kw]; break; }
         }
+        if (foundChar) return foundChar;   // 角色在 before60 里有出现 → 角色说的
+        return userName || '我';           // before60 里没角色 → 玩家说的
       }
-      if (firstMe >= 0 && firstMe < firstChar) return userName || '我';
-      if (firstCharName !== null && firstChar < (firstMe < 0 ? Infinity : firstMe)) return kwMap[firstCharName];
 
       // ── P5: before30 有"我"且不是宾语 → 玩家是旁白主语，刚才也在说话 ──
       if (b30.includes('我') && !isObject(b30, '我')) {
