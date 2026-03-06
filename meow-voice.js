@@ -226,7 +226,8 @@
   }
 
   // ── 外接 TTS API（OpenAI 兼容接口）──
-  async function speakViaApi(text) {
+  // 单次请求 TTS API，返回 Promise
+  async function _apiOnce(text) {
     const c   = cfg();
     const url = (c.apiUrl || '').trim();
     if (!url) throw new Error('未填写 API 地址');
@@ -242,19 +243,47 @@
     });
     if (!resp.ok) {
       let msg = ''; try { msg = await resp.text(); } catch(_) {}
-      throw new Error('API ' + resp.status + (msg ? ': ' + msg.slice(0,200) : ''));
+      throw new Error('API ' + resp.status + (msg ? ': ' + msg.slice(0, 200) : ''));
     }
-    const blob = await resp.blob();
-    const objUrl = URL.createObjectURL(blob);
-    return new Promise((resolve, reject) => {
-      const audio = new Audio(url);
-      audio.onended  = () => { URL.revokeObjectURL(url); isReading = false; updateAllBtns(false); resolve(); };
-      audio.onerror  = (e) => { URL.revokeObjectURL(url); isReading = false; updateAllBtns(false); reject(e); };
-      audio.onplay   = () => { isReading = true; updateAllBtns(true); };
-      // 存到全局方便 stopReading 调用
-      W._meowAudio = audio;
-      audio.play().catch(reject);
-    });
+    return resp.blob();
+  }
+
+  // 把长文本按句子切成 ≤400字的块，逐块朗读
+  function _splitChunks(text, maxLen) {
+    maxLen = maxLen || 400;
+    const sentences = text.split(/(?<=[。！？…\n.!?])\s*/);
+    const chunks = [];
+    let cur = '';
+    for (const s of sentences) {
+      if (!s.trim()) continue;
+      if (cur.length + s.length > maxLen && cur) { chunks.push(cur.trim()); cur = s; }
+      else cur += s;
+    }
+    if (cur.trim()) chunks.push(cur.trim());
+    return chunks.length ? chunks : [text.slice(0, maxLen)];
+  }
+
+  async function speakViaApi(text) {
+    const chunks = _splitChunks(text);
+    isReading = true; updateAllBtns(true);
+    for (const chunk of chunks) {
+      if (!isReading) break;  // stopReading 被调用时退出
+      try {
+        const blob    = await _apiOnce(chunk);
+        const objUrl  = URL.createObjectURL(blob);
+        await new Promise((resolve, reject) => {
+          const audio = new Audio(objUrl);
+          W._meowAudio = audio;
+          audio.onended  = () => { URL.revokeObjectURL(objUrl); resolve(); };
+          audio.onerror  = (e) => { URL.revokeObjectURL(objUrl); reject(e); };
+          audio.play().catch(reject);
+        });
+      } catch(err) {
+        isReading = false; updateAllBtns(false);
+        throw err;
+      }
+    }
+    isReading = false; updateAllBtns(false);
   }
 
   function stopReading() {
@@ -1041,16 +1070,29 @@ async function _speakWithCfg(rawText, charName, c) {
       const apiKey = q('mvApiKey')?.value.trim() || '';
       const hint   = q('mvApiHint');
       if (!rawUrl) { toast('请先填写 API 地址'); return; }
-      // 推断 /voices 端点：把 /audio/speech 替换成 /voices
-      const base = rawUrl.replace(/\/audio\/speech\/?$/, '').replace(/\/$/, '');
-      const voicesUrl = base + '/voices';
+      // 尝试多种 /voices 端点路径
+      const base = rawUrl.replace(/\/(audio\/speech|tts)\/?$/, '').replace(/\/$/, '');
+      const voicesCandidates = [
+        base + '/voices',
+        base + '/audio/voices',
+        rawUrl.replace(/\/tts$/, '/voices'),
+        rawUrl.replace(/\/audio\/speech$/, '/voices'),
+      ];
       if (hint) hint.textContent = '⏳ 获取中…';
+      let data = null, triedUrls = [];
+      for (const voicesUrl of voicesCandidates) {
+        try {
+          triedUrls.push(voicesUrl);
+          const resp = await fetch(voicesUrl, {
+            headers: apiKey ? { 'Authorization': 'Bearer ' + apiKey } : {},
+          });
+          if (!resp.ok) continue;
+          data = await resp.json();
+          break;
+        } catch(_) { continue; }
+      }
       try {
-        const resp = await fetch(voicesUrl, {
-          headers: apiKey ? { 'Authorization': 'Bearer ' + apiKey } : {},
-        });
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        const data = await resp.json();
+        if (!data) throw new Error('所有路径均失败，请手动填写音色 ID\n尝试过：' + triedUrls.join('\n'));
         const list = Array.isArray(data) ? data : (data.voices || data.data || []);
         if (!list.length) throw new Error('返回列表为空');
         const sel = q('mvApiVoiceSel');
