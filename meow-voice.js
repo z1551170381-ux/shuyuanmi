@@ -565,6 +565,18 @@ ${t}
     if (persist) lsSet(LS.BGM_DOCK_POS, { x, y, side, peek });
   }
 
+  function _resetBgmDockPos(forceOpen) {
+    const root = _getBgmDock();
+    if (!root) return;
+    _bgmState.closed = false;
+    root.style.display = '';
+    if (forceOpen === true) lsSet(LS.BGM_DOCK_COLLAPSED, false);
+    else lsSet(LS.BGM_DOCK_COLLAPSED, true);
+    _renderBgmDock();
+    const pos = _bgmDockDefaultPos(root);
+    _applyBgmDockPos(root, pos, true);
+  }
+
   function _getBgmDock() {
     let root = doc.getElementById('meow-voice-bgm-dock');
     if (root) return root;
@@ -899,6 +911,11 @@ ${t}
       const node = doc.getElementById('meow-voice-bgm-dock');
       if (!node || node.style.display === 'none') return;
       _applyBgmDockPos(node, lsGet(LS.BGM_DOCK_POS, null), false);
+      const rect = node.getBoundingClientRect();
+      const vp = _bgmDockViewport();
+      if (rect.right < 12 || rect.left > vp.w - 12 || rect.bottom < 12 || rect.top > vp.h - 12) {
+        _applyBgmDockPos(node, _bgmDockDefaultPos(node), true);
+      }
     };
     W.addEventListener('resize', relayoutDock);
     if (W.visualViewport) W.visualViewport.addEventListener('resize', relayoutDock);
@@ -923,6 +940,11 @@ ${t}
     root.classList.toggle('compact', (dockVW <= 760));
     root.classList.toggle('mini', (dockVW <= 460));
     _applyBgmDockPos(root, lsGet(LS.BGM_DOCK_POS, null), false);
+    const rectNow = root.getBoundingClientRect();
+    const vpNow = _bgmDockViewport();
+    if (rectNow.right < 12 || rectNow.left > vpNow.w - 12 || rectNow.bottom < 12 || rectNow.top > vpNow.h - 12) {
+      _applyBgmDockPos(root, _bgmDockDefaultPos(root), true);
+    }
     root.querySelector('.mv-bgm-name').textContent = title;
     root.querySelector('.mv-bgm-sub').textContent = sub;
     const playBtn = root.querySelector('.mv-bgm-play');
@@ -2448,6 +2470,7 @@ async function _speakWithCfg(rawText, charName, c) {
                 <button type="button" class="mv-btn" id="mvBgmDeleteTrack" style="font-size:12px">－ 删除当前曲</button>
                 <button type="button" class="mv-btn" id="mvBgmTest" style="font-size:12px">▶ 试听 BGM</button>
                 <button type="button" class="mv-btn" id="mvBgmStop" style="font-size:12px">■ 停止 BGM</button>
+                <button type="button" class="mv-btn" id="mvBgmResetDock" style="font-size:12px">↺ 复位唱片机</button>
               </div>
               <div id="mvBgmLibraryList" style="max-height:180px;overflow:auto;padding-right:2px;border:1px solid rgba(28,24,18,.06);border-radius:12px;background:rgba(255,255,255,.42);padding:8px"></div>
               <div class="mv-hint" style="margin-top:6px;font-size:11px">这里的歌单会同步到正文右侧贴边唱片机。直链音乐能用播放器按钮完整控制；网易云歌曲页 / outchain 会以嵌入播放器方式播放。</div>
