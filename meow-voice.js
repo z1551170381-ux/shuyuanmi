@@ -328,7 +328,7 @@
     }
 
     // 🐱 调试日志（排查完毕后可改为 false）
-    const _DRAMA_DEBUG = true;
+    const _DRAMA_DEBUG = false;
 
     function detectSpeaker(rawText, qStart, qEnd, dialogueStr, prevSpeaker, interNar) {
       const b8  = rawText.slice(Math.max(0, qStart - 8),  qStart);
@@ -530,6 +530,20 @@
 
   function _dramEntryVoice(entry) { return typeof entry === 'string' ? entry : (entry?.voice || ''); }
 
+  function getDramaCharNames(c) {
+    const names = new Set();
+    try { getActiveCharNames().forEach(n => { const k = String(n || '').trim(); if (k) names.add(k); }); } catch(e) {}
+    try {
+      Object.keys(c?.dramaMap || {}).forEach(k => {
+        if (k !== '__narration__' && k !== '__user__') {
+          const n = String(k || '').trim();
+          if (n) names.add(n);
+        }
+      });
+    } catch(e) {}
+    return [...names].filter(Boolean);
+  }
+
   function _dramaVoiceFor(seg, c) {
     const dm = c.dramaMap || {};
     if (seg.type === 'narration')  return _dramEntryVoice(dm['__narration__']) || c.apiVoice || '';
@@ -627,7 +641,7 @@
 
     // 广播剧模式（API）
     if (c.apiEnabled && c.apiUrl && c.dramaMode) {
-      const charNames = Object.keys(c.dramaMap || {}).filter(k => k !== '__narration__' && k !== '__user__');
+      const charNames = getDramaCharNames(c);
       try { await speakDramaApi(text, charNames, c.dramaMap); }
       catch(err) { isReading = false; updateAllBtns(false); toast('🔇 广播剧朗读失败：' + (err.message||err)); }
       return;
@@ -737,7 +751,7 @@ async function _speakWithCfg(rawText, charName, c) {
 
     // 广播剧模式（API）
     if (c.apiEnabled && c.apiUrl && c.dramaMode) {
-      const charNames = Object.keys(c.dramaMap || {}).filter(k => k !== '__narration__' && k !== '__user__');
+      const charNames = getDramaCharNames(c);
       try { await speakDramaApi(text, charNames, c.dramaMap); }
       catch(err) { isReading = false; updateAllBtns(false); toast('🔇 广播剧朗读失败：' + (err.message||err)); }
       return;
