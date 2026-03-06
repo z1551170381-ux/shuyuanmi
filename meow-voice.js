@@ -514,10 +514,11 @@ ${t}
   }
 
   function _bgmDockPeek(root) {
-    if (!root) return 56;
-    if (root.classList.contains('mini')) return 44;
-    if (root.classList.contains('compact')) return 50;
-    return 56;
+    if (!root) return 34;
+    // 收起时只露出半张左右的唱片，更贴边
+    if (root.classList.contains('mini')) return 28;
+    if (root.classList.contains('compact')) return 32;
+    return 34;
   }
 
   function _bgmDockDefaultPos(root) {
@@ -527,6 +528,7 @@ ${t}
     const peek = _bgmDockPeek(root);
     const collapsed = root.classList.contains('collapsed');
     const side = 'right';
+    // 默认只吸附右边；收起时只露出一半左右的唱片
     const x = collapsed ? Math.round(vp.w - peek) : Math.max(8, vp.w - w - 8);
     const y = Math.max(72, Math.min(vp.h - h - 12, vp.h - (root.classList.contains('mini') ? 166 : 208)));
     return { x, y, side, peek };
@@ -547,9 +549,9 @@ ${t}
     const maxY = Math.max(minY, vp.h - Math.min(h, vp.h - 8) - 6);
     y = Math.max(minY, Math.min(maxY, y));
     if (collapsed) {
-      x = (side === 'left')
-        ? Math.round(-(w - peek))
-        : Math.round(vp.w - peek);
+      // 不再吸附左侧，避免拖到左边飞出去；统一吸附右侧
+      side = 'right';
+      x = Math.round(vp.w - peek);
     } else {
       const minX = 4;
       const maxX = Math.max(minX, vp.w - w - 4);
@@ -893,7 +895,8 @@ ${t}
       const w = Math.round(root.offsetWidth || parseFloat(getComputedStyle(root).width) || 288);
       const currentX = parseFloat(root.style.left) || 0;
       const currentY = parseFloat(root.style.top) || 0;
-      const side = (currentX + w / 2) < (vp.w / 2) ? 'left' : 'right';
+      // 只吸附右边，不再吸附左边，防止左拖后飞出屏幕
+      const side = 'right';
       _applyBgmDockPos(root, { x: currentX, y: currentY, side }, true);
       setTimeout(() => { delete root.dataset.dragging; }, 40);
     };
@@ -2669,6 +2672,29 @@ async function _speakWithCfg(rawText, charName, c) {
     });
     q('mvBgmStop')?.addEventListener('click', async () => {
       try { await _setDramaBgmActive(false, Object.assign({}, cfg(), { bgmEnabled: false })); } catch(e) {}
+    });
+    q('mvBgmResetDock')?.addEventListener('click', async () => {
+      try {
+        const current = cfg();
+        const title = q('mvBgmTitle')?.value.trim() || current.bgmTitle || '背景音乐';
+        const url = q('mvBgmUrl')?.value.trim() || current.bgmUrl || '';
+        const gid = q('mvBgmGroupSel')?.value || lsGet(LS.BGM_GROUP, '') || '';
+        const tid = lsGet(LS.BGM_TRACK, '') || '';
+        if (gid || tid || title || url) _setBgmSelection(gid, tid, title, url);
+        _bgmState.closed = false;
+        _resetBgmDockPos(false);
+        const root = _getBgmDock();
+        if (root) {
+          root.style.display = '';
+          root.classList.add('collapsed');
+          root.classList.remove('dragging');
+          _applyBgmDockPos(root, _bgmDockDefaultPos(root), true);
+        }
+        _renderBgmDock(Object.assign({}, current, { bgmTitle: title, bgmUrl: url }));
+        toast('已复位唱片机');
+      } catch(err) {
+        toast('复位失败：' + ((err && err.message) || err || '未知错误'));
+      }
     });
 
     // 保存设置
