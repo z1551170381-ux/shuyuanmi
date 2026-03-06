@@ -263,25 +263,37 @@
   }
 
   // ── 广播剧模式：把文本切成 [{type:'dialogue'|'narration', speaker, text}] 段落 ──
-  // 判断规则：引号 "..." 前后5个字中含有人名 → 该人说话；含 "我/我说/我道" → 玩家说话；其余为旁白
-  function _parseDramaSegments(rawText, charNames, userName) {
+  // charNames = 角色注册名列表，dramaMap 含 aliases 信息
+  function _parseDramaSegments(rawText, charNames, userName, dramaMap) {
+    // 构建 keyword → charName 映射（包含角色名本身 + 别名）
+    const kwMap = {};   // keyword → charName
+    for (const name of charNames) {
+      kwMap[name] = name;  // 角色名本身
+      const entry = dramaMap ? dramaMap[name] : null;
+      const aliases = typeof entry === 'object' ? (entry?.aliases || '') : '';
+      aliases.split(/[,，、\s]+/).forEach(kw => {
+        const k = kw.trim();
+        if (k) kwMap[k] = name;
+      });
+    }
+    // 按 keyword 长度降序排列，优先匹配较长的（避免"他"匹配掉"他们"）
+    const kwList = Object.keys(kwMap).sort((a, b) => b.length - a.length);
+
     const segments = [];
-    // 匹配引号段落（弯引号/直引号）和引号外旁白
     const rx = /(\u201c[\s\S]*?\u201d|"[^"]*?")/g;
     let lastIdx = 0, m;
     while ((m = rx.exec(rawText)) !== null) {
       const narBefore = rawText.slice(lastIdx, m.index).trim();
       if (narBefore) segments.push({ type: 'narration', speaker: null, text: narBefore });
-      const dialogueStr = m[0].slice(1, -1).trim(); // 去掉引号
-      // 取引号前后各5字判断说话者
-      const ctx = rawText.slice(Math.max(0, m.index - 8), m.index + m[0].length + 8);
+      const dialogueStr = m[0].slice(1, -1).trim();
+      // 取引号前后各 10 字做上下文判断
+      const ctx = rawText.slice(Math.max(0, m.index - 10), m.index + m[0].length + 10);
       let speaker = null;
-      // 优先匹配角色名
-      for (const name of charNames) {
-        if (ctx.includes(name)) { speaker = name; break; }
+      for (const kw of kwList) {
+        if (ctx.includes(kw)) { speaker = kwMap[kw]; break; }
       }
-      // 含"我"字且不含角色名 → 玩家
-      if (!speaker && /[我](?:说|道|回|答|问|轻声|低声)?/.test(ctx)) {
+      // 含"我"字且未匹配到角色 → 玩家
+      if (!speaker && /[我](?:说|道|回|答|问|嗯|轻声|低声)?/.test(ctx)) {
         speaker = userName || '我';
       }
       if (dialogueStr) segments.push({ type: 'dialogue', speaker, text: dialogueStr });
@@ -292,19 +304,20 @@
     return segments;
   }
 
-  // 根据段落类型和说话者选 voiceId（dramaMap：{角色名: voiceId, __narration__: voiceId, __user__: voiceId}）
+  function _dramEntryVoice(entry) { return typeof entry === 'string' ? entry : (entry?.voice || ''); }
+
   function _dramaVoiceFor(seg, c) {
     const dm = c.dramaMap || {};
-    if (seg.type === 'narration')  return dm['__narration__'] || c.apiVoice || '';
-    if (seg.speaker === (c.userName || '我')) return dm['__user__'] || c.apiVoice || '';
-    if (seg.speaker && dm[seg.speaker]) return dm[seg.speaker];
-    return c.apiVoice || '';  // 未知角色用默认
+    if (seg.type === 'narration')  return _dramEntryVoice(dm['__narration__']) || c.apiVoice || '';
+    if (seg.speaker === (c.userName || '我')) return _dramEntryVoice(dm['__user__']) || c.apiVoice || '';
+    if (seg.speaker && dm[seg.speaker]) return _dramEntryVoice(dm[seg.speaker]) || c.apiVoice || '';
+    return c.apiVoice || '';
   }
 
   // 广播剧模式朗读（API）
-  async function speakDramaApi(rawText, charNames) {
+  async function speakDramaApi(rawText, charNames, dramaMap) {
     const c    = cfg();
-    const segs = _parseDramaSegments(rawText, charNames, c.userName);
+    const segs = _parseDramaSegments(rawText, charNames, c.userName, dramaMap || c.dramaMap);
     const gen  = ++_apiPlayGen;
     isReading  = true; updateAllBtns(true);
     for (const seg of segs) {
@@ -391,7 +404,7 @@
     // 广播剧模式（API）
     if (c.apiEnabled && c.apiUrl && c.dramaMode) {
       const charNames = Object.keys(c.dramaMap || {}).filter(k => k !== '__narration__' && k !== '__user__');
-      try { await speakDramaApi(text, charNames); }
+      try { await speakDramaApi(text, charNames, c.dramaMap); }
       catch(err) { isReading = false; updateAllBtns(false); toast('🔇 广播剧朗读失败：' + (err.message||err)); }
       return;
     }
@@ -501,7 +514,7 @@ async function _speakWithCfg(rawText, charName, c) {
     // 广播剧模式（API）
     if (c.apiEnabled && c.apiUrl && c.dramaMode) {
       const charNames = Object.keys(c.dramaMap || {}).filter(k => k !== '__narration__' && k !== '__user__');
-      try { await speakDramaApi(text, charNames); }
+      try { await speakDramaApi(text, charNames, c.dramaMap); }
       catch(err) { isReading = false; updateAllBtns(false); toast('🔇 广播剧朗读失败：' + (err.message||err)); }
       return;
     }
@@ -958,16 +971,33 @@ async function _speakWithCfg(rawText, charName, c) {
       if (other.length) h += `<optgroup label="── 其他 ──">${other.map(v => `<option value="${escAttr(v.voiceURI)}" ${v.voiceURI===sel?'selected':''}>${esc(v.name)} (${v.lang})</option>`).join('')}</optgroup>`;
       return h;
     }
+    // dramaMap[name] 结构：{ voice: string, aliases: string } 或旧版 string
+    function _dmVoice(entry) { return typeof entry === 'string' ? entry : (entry?.voice || ''); }
+    function _dmAliases(entry) { return typeof entry === 'string' ? '' : (entry?.aliases || ''); }
+
     function dramaCharRows(dramaMap, names) {
       if (!names.length) return '<p class="mv-hint" style="margin:4px 0">暂无 AI 角色，开始对话后会自动检测</p>';
-      return names.map(name => `
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
-          <span style="font-size:13px;font-weight:600;min-width:80px">${esc(name)}</span>
-          <input type="text" data-drama-char="${escAttr(name)}" class="mv-drama-char-voice"
-            placeholder="音色 ID（留空用默认）"
-            value="${esc(dramaMap[name]||'')}"
-            style="flex:1;min-width:120px">
-        </div>`).join('');
+      return names.map(name => {
+        const entry = dramaMap[name] || {};
+        return `
+        <div style="background:rgba(240,236,228,.35);border-radius:8px;padding:8px 10px;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--meow-text,rgba(46,38,30,.85))">${esc(name)}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+            <div>
+              <label style="font-size:11px;opacity:.6;display:block;margin-bottom:2px">音色 ID</label>
+              <input type="text" data-drama-char="${escAttr(name)}" data-drama-field="voice" class="mv-drama-char-voice"
+                placeholder="留空用默认"
+                value="${esc(_dmVoice(entry))}">
+            </div>
+            <div>
+              <label style="font-size:11px;opacity:.6;display:block;margin-bottom:2px">触发关键词 <span style="opacity:.55">（逗号分隔，如：他,秦彻,阿文）</span></label>
+              <input type="text" data-drama-char="${escAttr(name)}" data-drama-field="aliases" class="mv-drama-char-aliases"
+                placeholder="例：他,秦彻,阿文"
+                value="${esc(_dmAliases(entry))}">
+            </div>
+          </div>
+        </div>`;
+      }).join('');
     }
 
     function charRows(names, map) {
@@ -1187,10 +1217,21 @@ async function _speakWithCfg(rawText, charName, c) {
       const newDramaMap = { ...lsGet(LS.DRAMA_MAP, {}) };
       newDramaMap['__narration__'] = q('mvNarratorVoice')?.value.trim() || '';
       newDramaMap['__user__']      = q('mvUserVoice')?.value.trim() || '';
+      // 合并 voice + aliases 为对象
+      const _dramaTmp = {};
       box.querySelectorAll('.mv-drama-char-voice').forEach(inp => {
         const char = inp.dataset.dramaChar;
-        if (char) newDramaMap[char] = inp.value.trim();
+        if (!char) return;
+        if (!_dramaTmp[char]) _dramaTmp[char] = {};
+        _dramaTmp[char].voice = inp.value.trim();
       });
+      box.querySelectorAll('.mv-drama-char-aliases').forEach(inp => {
+        const char = inp.dataset.dramaChar;
+        if (!char) return;
+        if (!_dramaTmp[char]) _dramaTmp[char] = {};
+        _dramaTmp[char].aliases = inp.value.trim();
+      });
+      Object.assign(newDramaMap, _dramaTmp);
       lsSet(LS.DRAMA_MAP, newDramaMap);
       toast('✅ 语音设置已保存');
       closeModal();
