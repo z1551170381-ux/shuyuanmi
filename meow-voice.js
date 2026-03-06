@@ -514,11 +514,10 @@ ${t}
   }
 
   function _bgmDockPeek(root) {
-    if (!root) return 16;
-    // 收起时进一步藏进去，只保留接近半张唱片可见
-    if (root.classList.contains('mini')) return 12;
-    if (root.classList.contains('compact')) return 14;
-    return 16;
+    if (!root) return 56;
+    if (root.classList.contains('mini')) return 44;
+    if (root.classList.contains('compact')) return 50;
+    return 56;
   }
 
   function _bgmDockDefaultPos(root) {
@@ -528,7 +527,6 @@ ${t}
     const peek = _bgmDockPeek(root);
     const collapsed = root.classList.contains('collapsed');
     const side = 'right';
-    // 默认只吸附右边；收起时只露出一半左右的唱片
     const x = collapsed ? Math.round(vp.w - peek) : Math.max(8, vp.w - w - 8);
     const y = Math.max(72, Math.min(vp.h - h - 12, vp.h - (root.classList.contains('mini') ? 166 : 208)));
     return { x, y, side, peek };
@@ -549,9 +547,9 @@ ${t}
     const maxY = Math.max(minY, vp.h - Math.min(h, vp.h - 8) - 6);
     y = Math.max(minY, Math.min(maxY, y));
     if (collapsed) {
-      // 不再吸附左侧，避免拖到左边飞出去；统一吸附右侧
-      side = 'right';
-      x = Math.round(vp.w - peek);
+      x = (side === 'left')
+        ? Math.round(-(w - peek))
+        : Math.round(vp.w - peek);
     } else {
       const minX = 4;
       const maxX = Math.max(minX, vp.w - w - 4);
@@ -761,7 +759,6 @@ ${t}
       }
       if (e.target.closest('.mv-bgm-disc-hit')) {
         if (rootNow.dataset.dragging === '1') return;
-        if (rootNow.dataset.justTap === '1' && e.detail > 0) return;
         const next = !rootNow.classList.contains('collapsed');
         lsSet(LS.BGM_DOCK_COLLAPSED, next);
         _renderBgmDock();
@@ -770,7 +767,6 @@ ${t}
       }
       if (e.target.closest('.mv-bgm-tonearm')) {
         if (rootNow.dataset.dragging === '1') return;
-        if (rootNow.dataset.justTap === '1' && e.detail > 0) return;
         const sel = _resolveBgmSelection(cfg());
         if (!sel) { toast('请先在设置里添加歌曲'); return; }
         if ((_bgmAudio && !_bgmAudio.paused) || (_bgmState.active && _bgmState.parsedKind === 'netease_iframe')) {
@@ -863,17 +859,14 @@ ${t}
 
     const dragTarget = root.querySelector('.mv-bgm-disc-wrap');
     let dragging = false, moved = false, sx = 0, sy = 0, bx = 0, by = 0;
-    let dragStartTarget = null, dragWasTouch = false;
     const onDragStart = (e) => {
       const p = e.touches ? e.touches[0] : e;
-      dragWasTouch = !!e.touches;
-      dragStartTarget = e.target || null;
       dragging = true; moved = false; root.dataset.dragging = '0';
       sx = p.clientX; sy = p.clientY;
       bx = parseFloat(root.style.left) || 0;
       by = parseFloat(root.style.top) || 0;
       root.style.transition = 'none';
-      if (dragWasTouch && e.cancelable) e.preventDefault();
+      if (e.cancelable) e.preventDefault();
       e.stopPropagation();
     };
     const onDragMove = (e) => {
@@ -890,31 +883,19 @@ ${t}
       root.style.top = ny + 'px';
       root.style.right = 'auto';
       root.style.bottom = 'auto';
-      if (dragWasTouch && e.cancelable) e.preventDefault();
+      if (e.cancelable) e.preventDefault();
     };
-    const onDragEnd = (e) => {
+    const onDragEnd = () => {
       if (!dragging) return;
       dragging = false;
       root.style.transition = 'transform .28s ease, left .18s ease, top .18s ease';
+      const vp = _bgmDockViewport();
+      const w = Math.round(root.offsetWidth || parseFloat(getComputedStyle(root).width) || 288);
       const currentX = parseFloat(root.style.left) || 0;
       const currentY = parseFloat(root.style.top) || 0;
-      // 只吸附右边，不再吸附左边，防止左拖后飞出屏幕
-      const side = 'right';
+      const side = (currentX + w / 2) < (vp.w / 2) ? 'left' : 'right';
       _applyBgmDockPos(root, { x: currentX, y: currentY, side }, true);
-      if (!moved && dragStartTarget) {
-        root.dataset.dragging = '0';
-        root.dataset.justTap = '1';
-        const tonearm = dragStartTarget.closest && dragStartTarget.closest('.mv-bgm-tonearm');
-        const discHit = dragStartTarget.closest && dragStartTarget.closest('.mv-bgm-disc-hit');
-        if (tonearm) {
-          try { tonearm.click(); } catch(err) {}
-        } else if (discHit || (dragStartTarget.closest && dragStartTarget.closest('.mv-bgm-disc-wrap'))) {
-          const hit = root.querySelector('.mv-bgm-disc-hit');
-          try { if (hit) hit.click(); } catch(err) {}
-        }
-        setTimeout(() => { delete root.dataset.justTap; }, 120);
-      }
-      setTimeout(() => { delete root.dataset.dragging; dragStartTarget = null; }, 40);
+      setTimeout(() => { delete root.dataset.dragging; }, 40);
     };
     if (dragTarget) {
       dragTarget.addEventListener('mousedown', onDragStart);
