@@ -82,6 +82,11 @@
     DRAMA_MAP:    'meow_voice_drama_map_v1',
     USER_NAME:    'meow_voice_user_name_v1',
     AUTO_MODE:    'meow_voice_auto_mode_v1',
+    DRAMA_RATE:   'meow_voice_drama_rate_v1',
+    BGM_ENABLED:  'meow_voice_bgm_enabled_v1',
+    BGM_URL:      'meow_voice_bgm_url_v1',
+    BGM_VOLUME:   'meow_voice_bgm_volume_v1',
+    BGM_LOOP:     'meow_voice_bgm_loop_v1',
   };
 
   const ID = {
@@ -114,6 +119,11 @@
       dramaMap:     lsGet(LS.DRAMA_MAP,     {}),
       userName:     lsGet(LS.USER_NAME,     '我'),
       autoMode:     lsGet(LS.AUTO_MODE,     'manual'),
+      dramaRate:    lsGet(LS.DRAMA_RATE,    1.0),
+      bgmEnabled:   lsGet(LS.BGM_ENABLED,   false),
+      bgmUrl:       lsGet(LS.BGM_URL,       ''),
+      bgmVolume:    lsGet(LS.BGM_VOLUME,    0.18),
+      bgmLoop:      lsGet(LS.BGM_LOOP,      true),
     };
   }
 
@@ -129,9 +139,10 @@
   // ════════════════════════════════════════════════════════════════════
 
   const synth = window.speechSynthesis;
-  let isReading    = false;
-  let _apiPlayGen  = 0;   // stopReading 时自增，speakViaApi 检测后退出
+  let isReading     = false;
+  let _apiPlayGen   = 0;   // stopReading 时自增，speakViaApi 检测后退出
   let _pendingSpeak = null; // 用于延迟speak，防止cancel噪音
+  let _bgmAudio     = null;
 
   function getVoices() {
     return new Promise(resolve => {
@@ -300,12 +311,19 @@ ${t}
 
   // ── 外接 TTS API（OpenAI 兼容接口）──
   // 单次请求 TTS API，返回 Promise
-  async function _apiOnce(text) {
-    const c   = cfg();
+  function _clampNum(v, min, max, fallback) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.max(min, Math.min(max, n));
+  }
+
+  async function _apiOnce(text, voiceId, cArg) {
+    const c   = cArg || cfg();
     const url = (c.apiUrl || '').trim();
     if (!url) throw new Error('未填写 API 地址');
     const body = { model: c.apiModel || 'tts-1', input: text };
-    if (c.apiVoice) body.voice = c.apiVoice;
+    const useVoice = (voiceId ?? c.apiVoice ?? '').toString().trim();
+    if (useVoice) body.voice = useVoice;
     const resp = await fetch(url, {
       method: 'POST',
       headers: {
@@ -676,68 +694,33 @@ ${t}
   async function speakDramaApi(rawText, charNames, dramaMap) {
     const c    = cfg();
     const segs = _parseDramaSegments(rawText, charNames, c.userName, dramaMap || c.dramaMap);
-    const gen  = ++_apiPlayGen;
-    isReading  = true; updateAllBtns(true);
+    const jobs = [];
     for (const seg of segs) {
-      if (gen !== _apiPlayGen || !isReading) break;
-      const chunks  = _splitChunks(seg.text, 400);
       const voiceId = _dramaVoiceFor(seg, c);
+      const chunks  = _splitChunks(seg.text, 400);
       for (const chunk of chunks) {
-        if (gen !== _apiPlayGen || !isReading) break;
-        try {
-          const origVoice = c.apiVoice;
-          // 临时覆盖 apiVoice 来调用 _apiOnce
-          const tempCfg = Object.assign({}, c, { apiVoice: voiceId });
-          const resp = await fetch((c.apiUrl || '').trim(), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (c.apiKey || '') },
-            body: JSON.stringify({ model: c.apiModel || 'tts-1', input: chunk, ...(voiceId ? { voice: voiceId } : {}) }),
-          });
-          if (!resp.ok) { let msg=''; try{msg=await resp.text();}catch(_){} throw new Error('API '+resp.status+(msg?': '+msg.slice(0,100):'')); }
-          const blob   = await resp.blob();
-          const objUrl = URL.createObjectURL(blob);
-          await new Promise((resolve, reject) => {
-            const audio  = new Audio(objUrl);
-            W._meowAudio = audio;
-            audio.onended  = () => { URL.revokeObjectURL(objUrl); resolve(); };
-            audio.onerror  = (e) => { URL.revokeObjectURL(objUrl); reject(e); };
-            audio.play().catch(reject);
-          });
-        } catch(err) {
-          if (gen !== _apiPlayGen) break;
-          isReading = false; updateAllBtns(false);
-          throw err;
-        }
+        jobs.push({ text: chunk, voiceId });
       }
     }
-    if (gen === _apiPlayGen) { isReading = false; updateAllBtns(false); }
+    if (!jobs.length) return;
+    await _playApiJobSequence(jobs, {
+      cfg: c,
+      playbackRate: c.dramaRate || 1,
+      withBgm: true,
+    });
   }
 
   async function speakViaApi(text) {
-    const gen    = ++_apiPlayGen;              // 本次播放的 token
-    const chunks = _splitChunks(text);
-    isReading = true; updateAllBtns(true);
-    for (const chunk of chunks) {
-      if (gen !== _apiPlayGen || !isReading) break;  // 被 stopReading 打断
-      try {
-        const blob   = await _apiOnce(chunk);
-        if (gen !== _apiPlayGen) { URL.revokeObjectURL(URL.createObjectURL(blob)); break; }
-        const objUrl = URL.createObjectURL(blob);
-        await new Promise((resolve, reject) => {
-          const audio  = new Audio(objUrl);
-          W._meowAudio = audio;
-          audio.onended  = () => { URL.revokeObjectURL(objUrl); resolve(); };
-          audio.onerror  = (e) => { URL.revokeObjectURL(objUrl); reject(e); };
-          audio.play().catch(reject);
-        });
-      } catch(err) {
-        if (gen !== _apiPlayGen) break;  // 被中断不报错
-        isReading = false; updateAllBtns(false);
-        throw err;
-      }
-    }
-    if (gen === _apiPlayGen) { isReading = false; updateAllBtns(false); }
+    const c = cfg();
+    const jobs = _splitChunks(text).map(chunk => ({ text: chunk, voiceId: c.apiVoice || '' }));
+    if (!jobs.length) return;
+    await _playApiJobSequence(jobs, {
+      cfg: c,
+      playbackRate: 1,
+      withBgm: false,
+    });
   }
+
 
   function stopReading() {
     if (_pendingSpeak) { clearTimeout(_pendingSpeak); _pendingSpeak = null; }
@@ -745,6 +728,7 @@ ${t}
     // 中断 API 分段播放
     _apiPlayGen++;   // 让进行中的 speakViaApi 循环检测到版本变化后退出
     if (W._meowAudio) { try { W._meowAudio.pause(); W._meowAudio = null; } catch(e) {} }
+    if (W._meowBgmAudio) { try { W._meowBgmAudio.pause(); } catch(e) {} }
     isReading = false;
     updateAllBtns(false);
   }
@@ -1500,6 +1484,41 @@ async function _speakWithCfg(rawText, charName, c) {
                 <input type="text" id="mvUserVoice" placeholder="留空用默认" value="${esc((c.dramaMap||{}).__user__||'')}" style="flex:1">
               </div>
             </div>
+            <div style="margin:10px 0 12px">
+              <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">广播剧整体语速</label>
+              <div style="display:flex;gap:10px;align-items:center">
+                <input type="range" id="mvDramaRate" min="0.7" max="1.5" step="0.05" value="${Number(c.dramaRate||1).toFixed(2)}" style="flex:1">
+                <span class="mv-val" id="mvDramaRateVal">${Number(c.dramaRate||1).toFixed(2)}x</span>
+              </div>
+              <div class="mv-hint" style="margin-top:4px;font-size:11px">仅作用于广播剧 API 播放阶段</div>
+            </div>
+            <div style="margin:12px 0;padding:12px;border:1px solid rgba(28,24,18,.08);border-radius:14px;background:rgba(255,255,255,.38)">
+              <div style="font-size:12px;font-weight:700;margin-bottom:8px">背景音乐</div>
+              <label class="mv-toggle" style="margin-bottom:10px">
+                <span>启用背景音乐</span>
+                <div class="mv-sw"><input type="checkbox" id="mvBgmEnabled" ${c.bgmEnabled?'checked':''}><div class="mv-slider"></div></div>
+              </label>
+              <div style="margin-bottom:8px">
+                <label style="font-size:12px;display:block;margin-bottom:4px">音频链接</label>
+                <input type="text" id="mvBgmUrl" placeholder="填写可直接播放的 mp3 / m4a / ogg 链接" value="${esc(c.bgmUrl||'')}">
+              </div>
+              <div style="margin-bottom:8px">
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">背景音乐音量</label>
+                <div style="display:flex;gap:10px;align-items:center">
+                  <input type="range" id="mvBgmVolume" min="0" max="1" step="0.01" value="${_clampNum(c.bgmVolume,0,1,0.18)}" style="flex:1">
+                  <span class="mv-val" id="mvBgmVolumeVal">${Math.round(_clampNum(c.bgmVolume,0,1,0.18)*100)}%</span>
+                </div>
+              </div>
+              <label class="mv-toggle" style="margin-bottom:10px">
+                <span>循环播放</span>
+                <div class="mv-sw"><input type="checkbox" id="mvBgmLoop" ${c.bgmLoop!==false?'checked':''}><div class="mv-slider"></div></div>
+              </label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button type="button" class="mv-btn" id="mvBgmTest" style="font-size:12px">▶ 试听 BGM</button>
+                <button type="button" class="mv-btn" id="mvBgmStop" style="font-size:12px">■ 停止 BGM</button>
+              </div>
+              <div class="mv-hint" style="margin-top:6px;font-size:11px">普通歌曲分享页通常不是直接音频流；是否能播，取决于你填的是不是浏览器能直接访问的音频地址。</div>
+            </div>
             <div id="mvDramaCharList" style="margin-top:8px">
               ${dramaCharRows(c.dramaMap||{}, getActiveCharNames())}
             </div>
@@ -1544,6 +1563,35 @@ async function _speakWithCfg(rawText, charName, c) {
     q('mvRefreshChars').addEventListener('click', () => {
       q('mvCharList').innerHTML = charRows(getActiveCharNames(), lsGet(LS.CHAR_MAP, {}));
     });
+    q('mvDramaRate')?.addEventListener('input', e => {
+      q('mvDramaRateVal').textContent = Number(e.target.value).toFixed(2) + 'x';
+    });
+    q('mvBgmVolume')?.addEventListener('input', e => {
+      const v = _clampNum(e.target.value, 0, 1, 0.18);
+      q('mvBgmVolumeVal').textContent = Math.round(v * 100) + '%';
+      if (W._meowBgmAudio) {
+        try { W._meowBgmAudio.volume = v; } catch(e) {}
+      }
+    });
+    q('mvBgmTest')?.addEventListener('click', async () => {
+      const url = q('mvBgmUrl')?.value.trim() || '';
+      if (!url) { toast('请先填写背景音乐链接'); return; }
+      try {
+        const tmpCfg = Object.assign({}, cfg(), {
+          bgmEnabled: true,
+          bgmUrl: url,
+          bgmVolume: _clampNum(q('mvBgmVolume')?.value, 0, 1, 0.18),
+          bgmLoop: !!q('mvBgmLoop')?.checked,
+        });
+        await _setDramaBgmActive(true, tmpCfg);
+        toast('▶ 背景音乐已开始');
+      } catch(err) {
+        toast('BGM 试听失败：' + ((err && err.message) || err || '未知错误'));
+      }
+    });
+    q('mvBgmStop')?.addEventListener('click', () => {
+      if (W._meowBgmAudio) { try { W._meowBgmAudio.pause(); } catch(e) {} }
+    });
 
     // 保存设置
     q('mvSave').addEventListener('click', () => {
@@ -1572,6 +1620,11 @@ async function _speakWithCfg(rawText, charName, c) {
       const dramaEnabled = q('mvDramaEnabled')?.checked || false;
       lsSet(LS.DRAMA_MODE, dramaEnabled);
       lsSet(LS.USER_NAME,  q('mvUserName')?.value.trim() || '我');
+      lsSet(LS.DRAMA_RATE, _clampNum(q('mvDramaRate')?.value, 0.7, 1.5, 1.0));
+      lsSet(LS.BGM_ENABLED, !!q('mvBgmEnabled')?.checked);
+      lsSet(LS.BGM_URL, q('mvBgmUrl')?.value.trim() || '');
+      lsSet(LS.BGM_VOLUME, _clampNum(q('mvBgmVolume')?.value, 0, 1, 0.18));
+      lsSet(LS.BGM_LOOP, !!q('mvBgmLoop')?.checked);
       const newDramaMap = { ...lsGet(LS.DRAMA_MAP, {}) };
       newDramaMap['__narration__'] = q('mvNarratorVoice')?.value.trim() || '';
       newDramaMap['__user__']      = q('mvUserVoice')?.value.trim() || '';
