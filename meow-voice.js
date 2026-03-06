@@ -83,17 +83,59 @@
     USER_NAME:    'meow_voice_user_name_v1',
     AUTO_MODE:    'meow_voice_auto_mode_v1',
     DRAMA_RATE:   'meow_voice_drama_rate_v1',
-    BGM_ENABLED:  'meow_voice_bgm_enabled_v1',
-    BGM_TITLE:    'meow_voice_bgm_title_v1',
-    BGM_URL:      'meow_voice_bgm_url_v1',
-    BGM_VOLUME:   'meow_voice_bgm_volume_v1',
-    BGM_LOOP:     'meow_voice_bgm_loop_v1',
-    BGM_LIBRARY:  'meow_voice_bgm_library_v1',
-    BGM_GROUP:    'meow_voice_bgm_group_v1',
-    BGM_TRACK:    'meow_voice_bgm_track_v1',
-    BGM_DOCK_COLLAPSED: 'meow_voice_bgm_dock_collapsed_v1',
-    BGM_DOCK_POS: 'meow_voice_bgm_dock_pos_v1',
+    BGM_ENABLED:  'meow_voice_bgm_enabled_v2',
+    BGM_TITLE:    'meow_voice_bgm_title_v2',
+    BGM_URL:      'meow_voice_bgm_url_v2',
+    BGM_VOLUME:   'meow_voice_bgm_volume_v2',
+    BGM_LOOP:     'meow_voice_bgm_loop_v2',
+    BGM_LIBRARY:  'meow_voice_bgm_library_v2',
+    BGM_GROUP:    'meow_voice_bgm_group_v2',
+    BGM_TRACK:    'meow_voice_bgm_track_v2',
+    BGM_DOCK_COLLAPSED: 'meow_voice_bgm_dock_collapsed_v2',
+    BGM_DOCK_POS: 'meow_voice_bgm_dock_pos_v2',
   };
+
+
+  function _migrateBgmStorageV2() {
+    try {
+      const oldKeys = {
+        enabled: 'meow_voice_bgm_enabled_v1',
+        title: 'meow_voice_bgm_title_v1',
+        url: 'meow_voice_bgm_url_v1',
+        volume: 'meow_voice_bgm_volume_v1',
+        loop: 'meow_voice_bgm_loop_v1',
+        library: 'meow_voice_bgm_library_v1',
+        group: 'meow_voice_bgm_group_v1',
+        track: 'meow_voice_bgm_track_v1',
+        dockCollapsed: 'meow_voice_bgm_dock_collapsed_v1',
+        dockPos: 'meow_voice_bgm_dock_pos_v1',
+      };
+      const newKeys = {
+        enabled: LS.BGM_ENABLED,
+        title: LS.BGM_TITLE,
+        url: LS.BGM_URL,
+        volume: LS.BGM_VOLUME,
+        loop: LS.BGM_LOOP,
+        library: LS.BGM_LIBRARY,
+        group: LS.BGM_GROUP,
+        track: LS.BGM_TRACK,
+        dockCollapsed: LS.BGM_DOCK_COLLAPSED,
+        dockPos: LS.BGM_DOCK_POS,
+      };
+      const hasNew = W.localStorage.getItem(newKeys.library) !== null;
+      if (hasNew) return;
+      const oldLib = W.localStorage.getItem(oldKeys.library);
+      if (oldLib == null) return;
+      Object.keys(oldKeys).forEach(k => {
+        const ov = W.localStorage.getItem(oldKeys[k]);
+        if (ov !== null && W.localStorage.getItem(newKeys[k]) === null) {
+          W.localStorage.setItem(newKeys[k], ov);
+        }
+      });
+    } catch(e) {}
+  }
+
+  _migrateBgmStorageV2();
 
   const ID = {
     MODAL:    'meow-voice-modal',
@@ -375,7 +417,16 @@ ${t}
   }
 
   function _saveBgmLibrary(lib) {
-    lsSet(LS.BGM_LIBRARY, _ensureBgmLibrary(lib));
+    const safe = _ensureBgmLibrary(lib).map(g => ({
+      id: String(g?.id || _uid('g_')),
+      name: String(g?.name || '未命名分组').trim() || '未命名分组',
+      tracks: _bgmTrackList(g).map(t => ({
+        id: String(t?.id || _uid('t_')),
+        title: String(t?.title || '未命名曲目').trim() || '未命名曲目',
+        url: String(t?.url || '').trim(),
+      })).filter(t => t.url),
+    }));
+    lsSet(LS.BGM_LIBRARY, JSON.parse(JSON.stringify(safe)));
   }
 
   function _findBgmGroup(lib, groupId) {
