@@ -92,6 +92,7 @@
     BGM_GROUP:    'meow_voice_bgm_group_v1',
     BGM_TRACK:    'meow_voice_bgm_track_v1',
     BGM_DOCK_COLLAPSED: 'meow_voice_bgm_dock_collapsed_v1',
+    BGM_DOCK_POS: 'meow_voice_bgm_dock_pos_v1',
   };
 
   const ID = {
@@ -520,11 +521,69 @@ ${t}
     return lines.join('\n');
   }
 
+
+  function _bgmDockViewport() {
+    const vv = W.visualViewport;
+    const w = Math.round((vv && vv.width) || W.innerWidth || doc.documentElement.clientWidth || 0);
+    const h = Math.round((vv && vv.height) || W.innerHeight || doc.documentElement.clientHeight || 0);
+    return { w: Math.max(220, w), h: Math.max(220, h) };
+  }
+
+  function _bgmDockPeek(root) {
+    if (!root) return 82;
+    if (root.classList.contains('mini')) return 82;
+    if (root.classList.contains('compact')) return 82;
+    return 92;
+  }
+
+  function _bgmDockDefaultPos(root) {
+    const vp = _bgmDockViewport();
+    const w = Math.round(root.offsetWidth || parseFloat(getComputedStyle(root).width) || 320);
+    const h = Math.round(root.offsetHeight || 120);
+    const peek = _bgmDockPeek(root);
+    const collapsed = root.classList.contains('collapsed');
+    const side = 'right';
+    const x = collapsed ? Math.max(4, vp.w - w - 4) : Math.max(8, vp.w - w - 8);
+    const y = Math.max(86, Math.min(vp.h - h - 10, vp.h - (root.classList.contains('mini') ? 174 : 218)));
+    return { x, y, side, peek };
+  }
+
+  function _applyBgmDockPos(root, pos, persist) {
+    if (!root) return;
+    const vp = _bgmDockViewport();
+    const w = Math.round(root.offsetWidth || parseFloat(getComputedStyle(root).width) || 320);
+    const h = Math.round(root.offsetHeight || 120);
+    const collapsed = root.classList.contains('collapsed');
+    const peek = _bgmDockPeek(root);
+    let p = pos && typeof pos === 'object' ? Object.assign({}, pos) : (lsGet(LS.BGM_DOCK_POS, null) || null);
+    if (!p || typeof p.x !== 'number' || typeof p.y !== 'number') p = _bgmDockDefaultPos(root);
+    let side = (p.side === 'left') ? 'left' : 'right';
+    let x = Number(p.x || 0), y = Number(p.y || 0);
+    const minY = 54;
+    const maxY = Math.max(minY, vp.h - Math.min(h, vp.h - 8) - 6);
+    y = Math.max(minY, Math.min(maxY, y));
+    if (collapsed) {
+      x = (side === 'left') ? 4 : Math.max(4, vp.w - w - 4);
+    } else {
+      const minX = 4;
+      const maxX = Math.max(minX, vp.w - w - 4);
+      x = Math.max(minX, Math.min(maxX, x));
+    }
+    root.classList.toggle('edge-left', side === 'left');
+    root.classList.toggle('edge-right', side !== 'left');
+    root.style.left = x + 'px';
+    root.style.top = y + 'px';
+    root.style.right = 'auto';
+    root.style.bottom = 'auto';
+    if (persist) lsSet(LS.BGM_DOCK_POS, { x, y, side, peek });
+  }
+
   function _getBgmDock() {
     let root = doc.getElementById('meow-voice-bgm-dock');
     if (root) return root;
     root = doc.createElement('div');
     root.id = 'meow-voice-bgm-dock';
+    root.className = 'edge-right';
     root.innerHTML = `
       <div class="mv-bgm-shell">
         <button type="button" class="mv-bgm-close" title="隐藏唱片机" aria-label="隐藏唱片机">×</button>
@@ -567,20 +626,23 @@ ${t}
     `;
     Object.assign(root.style, {
       position: 'fixed',
-      right: '8px',
-      bottom: '84px',
+      left: '0px',
+      top: '0px',
+      right: 'auto',
+      bottom: 'auto',
       width: '320px',
       maxWidth: 'calc(100vw - 8px)',
       zIndex: '2147483646',
       display: 'none',
       background: 'transparent',
       pointerEvents: 'auto',
-      transition: 'transform .28s ease',
+      transition: 'transform .28s ease, left .18s ease, top .18s ease',
+      touchAction: 'none',
     });
     const style = doc.createElement('style');
     style.id = 'meow-voice-bgm-dock-style';
     style.textContent = `
-      #meow-voice-bgm-dock{font-family:inherit;color:#26353a;overflow:visible}
+      #meow-voice-bgm-dock{font-family:inherit;color:#26353a;overflow:visible;--mv-bgm-peek:92px}
       #meow-voice-bgm-dock .mv-bgm-shell{position:relative;min-height:122px;padding-left:50px}
       #meow-voice-bgm-dock .mv-bgm-close{position:absolute;right:10px;top:2px;width:28px;height:28px;border:0;border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 8px 18px rgba(40,40,40,.10);cursor:pointer;color:#516068;font-size:14px;z-index:8}
       #meow-voice-bgm-dock .mv-bgm-disc-wrap{position:absolute;left:-18px;top:12px;width:116px;height:116px;display:flex;align-items:center;justify-content:center;pointer-events:auto;z-index:6}
@@ -601,8 +663,8 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-arm-bar{position:absolute;right:13px;top:12px;width:35px;height:4px;border-radius:999px;background:linear-gradient(180deg,#f6f4ef,#cfcac2);transform:rotate(44deg);transform-origin:100% 50%;box-shadow:0 1px 2px rgba(0,0,0,.14)}
       #meow-voice-bgm-dock .mv-bgm-arm-head{position:absolute;left:12px;top:39px;width:18px;height:8px;border-radius:999px;background:linear-gradient(180deg,#f7f6f2,#d6d0c8);transform:rotate(44deg);box-shadow:0 1px 2px rgba(0,0,0,.16)}
       #meow-voice-bgm-dock.playing:not(.collapsed) .mv-bgm-tonearm{transform:rotate(-31deg)}
-      #meow-voice-bgm-dock.playing.collapsed .mv-bgm-tonearm{transform:rotate(-22deg)}
-      #meow-voice-bgm-dock.collapsed:not(.playing) .mv-bgm-tonearm{transform:rotate(8deg)}
+      #meow-voice-bgm-dock.playing.collapsed .mv-bgm-tonearm{transform:rotate(-31deg)}
+      #meow-voice-bgm-dock.collapsed:not(.playing) .mv-bgm-tonearm{transform:rotate(12deg)}
       #meow-voice-bgm-dock:not(.playing):not(.collapsed) .mv-bgm-tonearm{transform:rotate(-6deg)}
       #meow-voice-bgm-dock .mv-bgm-panel{position:relative;min-height:118px;padding:12px 12px 10px 54px;border-radius:22px;background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(244,244,240,.64));border:1px solid rgba(214,214,206,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 16px 34px rgba(0,0,0,.10);overflow:visible}
       #meow-voice-bgm-dock .mv-bgm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding-right:34px}
@@ -629,12 +691,13 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-embed{margin-top:8px}
       #meow-voice-bgm-dock .mv-bgm-embed iframe{display:block;width:100%;height:104px;border:0;border-radius:14px;background:rgba(255,255,255,.84)}
       #meow-voice-bgm-dock .mv-bgm-embed.empty{display:none}
-      #meow-voice-bgm-dock.collapsed{transform:translate3d(calc(100% - 92px),0,0)}
+      #meow-voice-bgm-dock.edge-right.collapsed{transform:translate3d(calc(100% - var(--mv-bgm-peek)),0,0)}
+      #meow-voice-bgm-dock.edge-left.collapsed{transform:translate3d(calc(-100% + var(--mv-bgm-peek)),0,0)}
       #meow-voice-bgm-dock.collapsed .mv-bgm-panel{opacity:0;pointer-events:none}
       #meow-voice-bgm-dock.collapsed .mv-bgm-close{display:none}
       #meow-voice-bgm-dock.collapsed .mv-bgm-shell{min-height:112px}
       #meow-voice-bgm-dock.collapsed .mv-bgm-open-settings{right:58px;top:8px}
-      #meow-voice-bgm-dock.compact{width:268px !important;right:2px !important;bottom:104px !important}
+      #meow-voice-bgm-dock.compact{width:268px !important;--mv-bgm-peek:82px}
       #meow-voice-bgm-dock.compact .mv-bgm-shell{min-height:100px;padding-left:38px}
       #meow-voice-bgm-dock.compact .mv-bgm-disc-wrap{left:-20px;top:10px;width:92px;height:92px}
       #meow-voice-bgm-dock.compact .mv-bgm-disc{width:82px;height:82px}
@@ -647,8 +710,8 @@ ${t}
       #meow-voice-bgm-dock.compact .mv-bgm-sub{max-width:138px}
       #meow-voice-bgm-dock.compact .mv-bgm-controls button{width:30px;height:30px}
       #meow-voice-bgm-dock.compact .mv-bgm-play{width:34px;height:34px}
-      #meow-voice-bgm-dock.compact.collapsed{transform:translate3d(calc(100% - 82px),0,0)}
-      #meow-voice-bgm-dock.mini{width:196px !important;max-width:calc(100vw - 2px) !important;right:-6px !important;bottom:122px !important}
+      
+      #meow-voice-bgm-dock.mini{width:196px !important;max-width:calc(100vw - 2px) !important;--mv-bgm-peek:82px}
       #meow-voice-bgm-dock.mini .mv-bgm-shell{padding-left:24px;min-height:82px}
       #meow-voice-bgm-dock.mini .mv-bgm-disc-wrap{left:-14px;top:8px;width:76px;height:76px}
       #meow-voice-bgm-dock.mini .mv-bgm-disc{width:66px;height:66px}
@@ -668,9 +731,9 @@ ${t}
       #meow-voice-bgm-dock.mini .mv-bgm-track-select{padding:5px 8px;font-size:10px}
       #meow-voice-bgm-dock.mini .mv-bgm-lyric{min-height:38px;padding:7px 8px;font-size:10px}
       #meow-voice-bgm-dock.mini .mv-bgm-list{max-height:86px}
-      #meow-voice-bgm-dock.mini.collapsed{transform:translate3d(calc(100% - 72px),0,0)}
+      
       @media (max-width: 640px){
-        #meow-voice-bgm-dock{width:254px !important;max-width:calc(100vw - 8px) !important;right:2px !important;bottom:62px !important}
+        #meow-voice-bgm-dock{width:254px !important;max-width:calc(100vw - 8px) !important;--mv-bgm-peek:82px}
         #meow-voice-bgm-dock .mv-bgm-shell{padding-left:34px;min-height:96px}
         #meow-voice-bgm-dock .mv-bgm-disc-wrap{left:-18px;top:8px;width:88px;height:88px}
         #meow-voice-bgm-dock .mv-bgm-disc{width:78px;height:78px}
@@ -681,7 +744,7 @@ ${t}
         #meow-voice-bgm-dock .mv-bgm-close{right:8px;top:4px;width:26px;height:26px}
         #meow-voice-bgm-dock .mv-bgm-group-chip{padding:4px 8px;font-size:10px}
         #meow-voice-bgm-dock .mv-bgm-lyric{min-height:42px;padding:8px 9px}
-        #meow-voice-bgm-dock.collapsed{transform:translate3d(calc(100% - 82px),0,0)}
+        
       }
       #meow-voice-bgm-dock input[type="range"]{accent-color:#727f86}
     `;
@@ -696,12 +759,15 @@ ${t}
         return;
       }
       if (e.target.closest('.mv-bgm-disc-hit')) {
+        if (rootNow.dataset.dragging === '1') return;
         const next = !rootNow.classList.contains('collapsed');
         lsSet(LS.BGM_DOCK_COLLAPSED, next);
         _renderBgmDock();
+        _applyBgmDockPos(rootNow, lsGet(LS.BGM_DOCK_POS, null), true);
         return;
       }
       if (e.target.closest('.mv-bgm-tonearm')) {
+        if (rootNow.dataset.dragging === '1') return;
         const sel = _resolveBgmSelection(cfg());
         if (!sel) { toast('请先在设置里添加歌曲'); return; }
         if ((_bgmAudio && !_bgmAudio.paused) || (_bgmState.active && _bgmState.parsedKind === 'netease_iframe')) {
@@ -791,6 +857,63 @@ ${t}
         _bgmAudio.currentTime = (_bgmAudio.duration * Number(seek.value || 0)) / 1000;
       } catch(err) {}
     });
+
+    const dragTarget = root.querySelector('.mv-bgm-disc-wrap');
+    let dragging = false, moved = false, sx = 0, sy = 0, bx = 0, by = 0;
+    const onDragStart = (e) => {
+      const p = e.touches ? e.touches[0] : e;
+      dragging = true; moved = false; root.dataset.dragging = '0';
+      sx = p.clientX; sy = p.clientY;
+      bx = parseFloat(root.style.left) || 0;
+      by = parseFloat(root.style.top) || 0;
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
+    };
+    const onDragMove = (e) => {
+      if (!dragging) return;
+      const p = e.touches ? e.touches[0] : e;
+      const dx = p.clientX - sx, dy = p.clientY - sy;
+      if (Math.abs(dx) > 5 || Math.abs(dy) > 5) { moved = true; root.dataset.dragging = '1'; }
+      const vp = _bgmDockViewport();
+      const w = Math.round(root.offsetWidth || parseFloat(getComputedStyle(root).width) || 320);
+      const h = Math.round(root.offsetHeight || 120);
+      const nx = Math.max(4, Math.min(vp.w - w - 4, bx + dx));
+      const ny = Math.max(54, Math.min(vp.h - h - 6, by + dy));
+      root.style.left = nx + 'px';
+      root.style.top = ny + 'px';
+      root.style.right = 'auto';
+      root.style.bottom = 'auto';
+      if (e.cancelable) e.preventDefault();
+    };
+    const onDragEnd = () => {
+      if (!dragging) return;
+      dragging = false;
+      const vp = _bgmDockViewport();
+      const w = Math.round(root.offsetWidth || parseFloat(getComputedStyle(root).width) || 320);
+      const currentX = parseFloat(root.style.left) || 0;
+      const currentY = parseFloat(root.style.top) || 0;
+      const side = (currentX + w / 2) < (vp.w / 2) ? 'left' : 'right';
+      _applyBgmDockPos(root, { x: currentX, y: currentY, side }, true);
+      setTimeout(() => { delete root.dataset.dragging; }, 40);
+    };
+    if (dragTarget) {
+      dragTarget.addEventListener('mousedown', onDragStart);
+      dragTarget.addEventListener('touchstart', onDragStart, { passive: false });
+      W.addEventListener('mousemove', onDragMove, { passive: false });
+      W.addEventListener('touchmove', onDragMove, { passive: false });
+      W.addEventListener('mouseup', onDragEnd);
+      W.addEventListener('touchend', onDragEnd);
+      W.addEventListener('touchcancel', onDragEnd);
+    }
+
+    const relayoutDock = () => {
+      const node = doc.getElementById('meow-voice-bgm-dock');
+      if (!node || node.style.display === 'none') return;
+      _applyBgmDockPos(node, lsGet(LS.BGM_DOCK_POS, null), false);
+    };
+    W.addEventListener('resize', relayoutDock);
+    if (W.visualViewport) W.visualViewport.addEventListener('resize', relayoutDock);
+
     (doc.documentElement || doc.body).appendChild(root);
     return root;
   }
@@ -810,6 +933,7 @@ ${t}
     const dockVW = (W.innerWidth || doc.documentElement.clientWidth || 0);
     root.classList.toggle('compact', (dockVW <= 760));
     root.classList.toggle('mini', (dockVW <= 460));
+    _applyBgmDockPos(root, lsGet(LS.BGM_DOCK_POS, null), false);
     root.querySelector('.mv-bgm-name').textContent = title;
     root.querySelector('.mv-bgm-sub').textContent = sub;
     const playBtn = root.querySelector('.mv-bgm-play');
