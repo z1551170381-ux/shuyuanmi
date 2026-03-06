@@ -474,6 +474,37 @@ ${t}
     return { kind: 'unknown', raw: txt };
   }
 
+  function _bgmKindLabel(kind) {
+    if (kind === 'netease_iframe') return '网易云播放器';
+    if (kind === 'audio') return '直链音频';
+    if (kind === 'page') return '网页链接';
+    return '背景音乐';
+  }
+
+  function _buildBgmCaption(cArg, group, track, tracks) {
+    const c = cArg || cfg();
+    const groupName = String(group?.name || '未分组').trim() || '未分组';
+    const titleRaw = String(track?.title || _bgmState.title || c.bgmTitle || '背景音乐').trim() || '背景音乐';
+    const bits = titleRaw.split(/\s*[｜|/·]|\s+-\s+|\s+—\s+/).map(s => String(s || '').trim()).filter(Boolean);
+    const mainTitle = bits[0] || titleRaw;
+    const subTitle = bits.slice(1).join(' · ');
+    const sourceKind = _bgmState.parsedKind || _parseDramaBgmSource(track?.url || _bgmState.sourceUrl || c.bgmUrl || '').kind || '';
+    const sourceLabel = _bgmKindLabel(sourceKind);
+    const lines = [];
+
+    if (tracks && tracks.length) {
+      lines.push('《' + mainTitle + '》');
+      if (subTitle) lines.push(subTitle);
+      lines.push((_bgmState.active ? '播放中' : '待播放') + ' · ' + groupName + ' · ' + sourceLabel);
+      lines.push('轻点唱片展开/收起，右上角可回语音主弹窗');
+      return lines.join('\n');
+    }
+
+    lines.push('自动识别区');
+    lines.push('当前分组：' + groupName);
+    lines.push('先点下方选择歌曲，或回语音设置把当前链接加入歌单');
+    return lines.join('\n');
+  }
 
   function _getBgmDock() {
     let root = doc.getElementById('meow-voice-bgm-dock');
@@ -482,18 +513,28 @@ ${t}
     root.id = 'meow-voice-bgm-dock';
     root.innerHTML = `
       <div class="mv-bgm-shell">
-        <button type="button" class="mv-bgm-mini-toggle" title="收起/展开" aria-label="收起/展开">⟷</button>
-        <button type="button" class="mv-bgm-close" title="隐藏" aria-label="隐藏">×</button>
-        <div class="mv-bgm-disc-wrap">
+        <button type="button" class="mv-bgm-close" title="隐藏唱片机" aria-label="隐藏唱片机">×</button>
+        <div class="mv-bgm-disc-wrap" title="展开 / 收起唱片机">
+          <div class="mv-bgm-sleeve"></div>
+          <button type="button" class="mv-bgm-disc-hit" aria-label="展开 / 收起唱片机"></button>
           <div class="mv-bgm-disc">
+            <div class="mv-bgm-disc-shine"></div>
             <div class="mv-bgm-disc-ring"></div>
             <div class="mv-bgm-disc-core"></div>
           </div>
+          <button type="button" class="mv-bgm-tonearm" title="展开 / 收起唱片机" aria-label="展开 / 收起唱片机">
+            <span class="mv-bgm-arm-knob"></span>
+            <span class="mv-bgm-arm-bar"></span>
+            <span class="mv-bgm-arm-head"></span>
+          </button>
         </div>
         <div class="mv-bgm-panel">
-          <div class="mv-bgm-meta">
-            <div class="mv-bgm-name">背景音乐</div>
-            <div class="mv-bgm-sub">未播放</div>
+          <div class="mv-bgm-head">
+            <div class="mv-bgm-meta">
+              <div class="mv-bgm-name">背景音乐</div>
+              <div class="mv-bgm-sub">未播放</div>
+            </div>
+            <button type="button" class="mv-bgm-open-settings" title="回语音主弹窗" aria-label="回语音主弹窗">♫</button>
           </div>
           <div class="mv-bgm-progress"><input type="range" class="mv-bgm-seek" min="0" max="1000" step="1" value="0"></div>
           <div class="mv-bgm-controls">
@@ -502,6 +543,10 @@ ${t}
             <button type="button" class="mv-bgm-next" title="下一首">⏭</button>
           </div>
           <div class="mv-bgm-groups"></div>
+          <div class="mv-bgm-pick-row">
+            <select class="mv-bgm-track-select" aria-label="选择歌曲"></select>
+          </div>
+          <div class="mv-bgm-lyric"></div>
           <div class="mv-bgm-list"></div>
           <div class="mv-bgm-embed"></div>
         </div>
@@ -509,10 +554,10 @@ ${t}
     `;
     Object.assign(root.style, {
       position: 'fixed',
-      right: '10px',
+      right: '-28px',
       bottom: '84px',
-      width: '404px',
-      maxWidth: '90vw',
+      width: '280px',
+      maxWidth: '82vw',
       zIndex: '2147483646',
       display: 'none',
       background: 'transparent',
@@ -522,70 +567,83 @@ ${t}
     const style = doc.createElement('style');
     style.id = 'meow-voice-bgm-dock-style';
     style.textContent = `
-      #meow-voice-bgm-dock{font-family:inherit;color:#12313a}
-      #meow-voice-bgm-dock .mv-bgm-shell{position:relative;min-height:184px;padding-left:108px}
-      #meow-voice-bgm-dock .mv-bgm-disc-wrap{position:absolute;left:0;top:16px;width:170px;height:170px;display:flex;align-items:center;justify-content:center;pointer-events:none}
-      #meow-voice-bgm-dock .mv-bgm-disc{position:relative;width:156px;height:156px;border-radius:50%;box-shadow:0 16px 34px rgba(0,0,0,.18), inset 0 0 0 1px rgba(255,255,255,.25);background:
-        radial-gradient(circle at 62% 38%, rgba(216,115,255,.22) 0 12%, rgba(216,115,255,0) 26%),
-        radial-gradient(circle at 34% 66%, rgba(255,255,255,.28) 0 10%, rgba(255,255,255,0) 36%),
-        radial-gradient(circle at 50% 50%, rgba(234,250,251,.85) 0 16%, rgba(214,248,248,.92) 16% 19%, rgba(14,201,214,.98) 19% 60%, rgba(5,180,198,.96) 60% 77%, rgba(7,163,181,.92) 77% 100%);
+      #meow-voice-bgm-dock{font-family:inherit;color:#26353a}
+      #meow-voice-bgm-dock .mv-bgm-shell{position:relative;min-height:122px;padding-left:58px}
+      #meow-voice-bgm-dock .mv-bgm-close{position:absolute;right:46px;top:2px;width:28px;height:28px;border:0;border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 8px 18px rgba(40,40,40,.10);cursor:pointer;color:#516068;font-size:14px;z-index:7}
+      #meow-voice-bgm-dock .mv-bgm-disc-wrap{position:absolute;left:0;top:12px;width:116px;height:116px;display:flex;align-items:center;justify-content:center;pointer-events:auto;z-index:4}
+      #meow-voice-bgm-dock .mv-bgm-disc-hit{position:absolute;inset:0;border:0;background:transparent;cursor:pointer;z-index:6}
+      #meow-voice-bgm-dock .mv-bgm-sleeve{position:absolute;left:0;top:12px;width:66px;height:90px;border-radius:16px 0 0 16px;background:linear-gradient(180deg, rgba(255,255,255,.54), rgba(238,238,234,.28));border:1px solid rgba(255,255,255,.46);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 12px 24px rgba(0,0,0,.08)}
+      #meow-voice-bgm-dock .mv-bgm-disc{position:relative;width:102px;height:102px;border-radius:50%;box-shadow:0 12px 26px rgba(0,0,0,.12), inset 0 0 0 1px rgba(255,255,255,.30);background:
+        radial-gradient(circle at 68% 30%, rgba(255,255,255,.26) 0 7%, rgba(255,255,255,0) 18%),
+        radial-gradient(circle at 50% 50%, rgba(246,246,242,.86) 0 18%, rgba(226,226,220,.94) 18% 21%, rgba(240,240,234,.54) 21% 56%, rgba(223,223,216,.38) 56% 77%, rgba(248,248,244,.70) 77% 100%);
         overflow:hidden}
-      #meow-voice-bgm-dock .mv-bgm-disc::before{content:'';position:absolute;inset:12px;border-radius:50%;border:1px solid rgba(255,255,255,.24);opacity:.7}
-      #meow-voice-bgm-dock .mv-bgm-disc::after{content:'';position:absolute;inset:26px;border-radius:50%;border:1px solid rgba(255,255,255,.18);opacity:.7}
-      #meow-voice-bgm-dock .mv-bgm-disc-ring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:rgba(245,250,250,.92);box-shadow:inset 0 0 0 1px rgba(6,102,112,.12)}
-      #meow-voice-bgm-dock .mv-bgm-disc-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:#d8ffff;box-shadow:0 0 0 3px rgba(12,146,162,.18)}
+      #meow-voice-bgm-dock .mv-bgm-disc::before{content:'';position:absolute;inset:10px;border-radius:50%;border:1px solid rgba(255,255,255,.22);opacity:.8}
+      #meow-voice-bgm-dock .mv-bgm-disc::after{content:'';position:absolute;inset:24px;border-radius:50%;border:1px solid rgba(255,255,255,.18);opacity:.7}
+      #meow-voice-bgm-dock .mv-bgm-disc-shine{position:absolute;inset:0;border-radius:50%;background:linear-gradient(120deg, rgba(255,255,255,.36), rgba(255,255,255,0) 42%, rgba(0,0,0,.03) 68%, rgba(255,255,255,.12));mix-blend-mode:screen;opacity:.78}
+      #meow-voice-bgm-dock .mv-bgm-disc-ring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:36px;height:36px;border-radius:50%;background:rgba(247,247,244,.94);box-shadow:inset 0 0 0 1px rgba(70,82,90,.10)}
+      #meow-voice-bgm-dock .mv-bgm-disc-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:9px;height:9px;border-radius:50%;background:#efefeb;box-shadow:0 0 0 4px rgba(197,204,206,.42)}
       #meow-voice-bgm-dock.playing .mv-bgm-disc{animation:mvBgmSpin 7.5s linear infinite}
       @keyframes mvBgmSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-      #meow-voice-bgm-dock .mv-bgm-panel{position:relative;min-height:176px;padding:18px 16px 14px 86px;border-radius:26px;background:linear-gradient(180deg, rgba(245,255,255,.92), rgba(235,249,249,.86));border:1px solid rgba(64,153,162,.16);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 14px 34px rgba(0,0,0,.12)}
-      #meow-voice-bgm-dock .mv-bgm-name{font-size:20px;line-height:1.1;font-weight:700;color:#1d3c44;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      #meow-voice-bgm-dock .mv-bgm-sub{font-size:12px;color:rgba(29,60,68,.58);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px}
-      #meow-voice-bgm-dock .mv-bgm-progress{margin-top:14px}
+      #meow-voice-bgm-dock .mv-bgm-tonearm{position:absolute;right:6px;top:2px;width:54px;height:54px;border:0;background:transparent;cursor:pointer;z-index:7;transform-origin:82% 18%;transition:transform .28s ease}
+      #meow-voice-bgm-dock .mv-bgm-arm-knob{position:absolute;right:8px;top:2px;width:12px;height:12px;border-radius:50%;background:linear-gradient(180deg,#faf9f7,#dfddd7);box-shadow:0 2px 4px rgba(0,0,0,.18)}
+      #meow-voice-bgm-dock .mv-bgm-arm-bar{position:absolute;right:14px;top:11px;width:30px;height:4px;border-radius:999px;background:linear-gradient(180deg,#f6f4ef,#cfcac2);transform:rotate(44deg);transform-origin:100% 50%;box-shadow:0 1px 2px rgba(0,0,0,.14)}
+      #meow-voice-bgm-dock .mv-bgm-arm-head{position:absolute;left:16px;top:33px;width:16px;height:8px;border-radius:999px;background:linear-gradient(180deg,#f7f6f2,#d6d0c8);transform:rotate(44deg);box-shadow:0 1px 2px rgba(0,0,0,.16)}
+      #meow-voice-bgm-dock.playing:not(.collapsed) .mv-bgm-tonearm{transform:rotate(-15deg)}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-tonearm{transform:rotate(12deg)}
+      #meow-voice-bgm-dock .mv-bgm-panel{position:relative;min-height:118px;padding:12px 12px 10px 46px;border-radius:22px;background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(244,244,240,.64));border:1px solid rgba(214,214,206,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 16px 34px rgba(0,0,0,.10)}
+      #meow-voice-bgm-dock .mv-bgm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+      #meow-voice-bgm-dock .mv-bgm-open-settings{width:28px;height:28px;border:0;border-radius:999px;background:rgba(255,255,255,.78);box-shadow:0 6px 14px rgba(0,0,0,.08);cursor:pointer;color:#56656d;font-size:13px;flex:none}
+      #meow-voice-bgm-dock .mv-bgm-name{font-size:15px;line-height:1.15;font-weight:700;color:#2c393f;max-width:138px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      #meow-voice-bgm-dock .mv-bgm-sub{font-size:11px;color:rgba(44,57,63,.55);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:156px}
+      #meow-voice-bgm-dock .mv-bgm-progress{margin-top:8px}
       #meow-voice-bgm-dock .mv-bgm-progress input{width:100%}
-      #meow-voice-bgm-dock .mv-bgm-controls{display:flex;align-items:center;gap:12px;margin-top:12px}
-      #meow-voice-bgm-dock .mv-bgm-controls button,#meow-voice-bgm-dock .mv-bgm-mini-toggle,#meow-voice-bgm-dock .mv-bgm-close{border:0;border-radius:999px;background:rgba(255,255,255,.76);box-shadow:0 6px 18px rgba(16,50,55,.10);cursor:pointer;color:#18363f}
-      #meow-voice-bgm-dock .mv-bgm-controls button{width:40px;height:40px;font-size:18px;line-height:1}
-      #meow-voice-bgm-dock .mv-bgm-play{width:50px;height:50px;font-size:22px;background:#143c45;color:#fff}
-      #meow-voice-bgm-dock .mv-bgm-mini-toggle,#meow-voice-bgm-dock .mv-bgm-close{position:absolute;top:0;width:32px;height:32px;font-size:14px;z-index:2}
-      #meow-voice-bgm-dock .mv-bgm-mini-toggle{right:44px}
-      #meow-voice-bgm-dock .mv-bgm-close{right:8px}
-      #meow-voice-bgm-dock .mv-bgm-groups{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
-      #meow-voice-bgm-dock .mv-bgm-group-chip{border:0;border-radius:999px;padding:5px 10px;background:rgba(20,60,69,.08);color:#1d3c44;cursor:pointer;font-size:11px}
-      #meow-voice-bgm-dock .mv-bgm-group-chip.active{background:#153f49;color:#fff}
-      #meow-voice-bgm-dock .mv-bgm-list{margin-top:10px;max-height:148px;overflow:auto;padding-right:2px}
-      #meow-voice-bgm-dock .mv-bgm-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:14px;background:rgba(255,255,255,.54);margin-bottom:6px;cursor:pointer;border:1px solid rgba(64,153,162,.08)}
-      #meow-voice-bgm-dock .mv-bgm-item.active{background:rgba(17,65,74,.12);border-color:rgba(17,65,74,.16)}
-      #meow-voice-bgm-dock .mv-bgm-item-title{font-size:12px;font-weight:600;color:#21444d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      #meow-voice-bgm-dock .mv-bgm-item-meta{font-size:10px;color:rgba(33,68,77,.52);margin-top:2px}
-      #meow-voice-bgm-dock .mv-bgm-item-play{border:0;border-radius:999px;background:#153f49;color:#fff;font-size:11px;padding:6px 10px;cursor:pointer;flex:none}
-      #meow-voice-bgm-dock .mv-bgm-embed{margin-top:10px}
-      #meow-voice-bgm-dock .mv-bgm-embed iframe{display:block;width:100%;height:110px;border:0;border-radius:16px;background:rgba(255,255,255,.84)}
+      #meow-voice-bgm-dock .mv-bgm-controls{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:9px}
+      #meow-voice-bgm-dock .mv-bgm-controls button{width:32px;height:32px;font-size:14px;line-height:1;border:0;border-radius:999px;background:rgba(255,255,255,.76);box-shadow:0 5px 14px rgba(16,50,55,.08);cursor:pointer;color:#3e4f56}
+      #meow-voice-bgm-dock .mv-bgm-play{width:38px;height:38px;font-size:17px;background:#3a474d;color:#fff}
+      #meow-voice-bgm-dock .mv-bgm-groups{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+      #meow-voice-bgm-dock .mv-bgm-group-chip{border:0;border-radius:999px;padding:4px 9px;background:rgba(72,82,86,.08);color:#44535a;cursor:pointer;font-size:10px}
+      #meow-voice-bgm-dock .mv-bgm-group-chip.active{background:#434f55;color:#fff}
+      #meow-voice-bgm-dock .mv-bgm-pick-row{margin-top:8px}
+      #meow-voice-bgm-dock .mv-bgm-track-select{width:100%;border:1px solid rgba(120,125,128,.18);border-radius:10px;padding:6px 10px;background:rgba(255,255,255,.74);font-size:11px;color:#334249;box-sizing:border-box}
+      #meow-voice-bgm-dock .mv-bgm-lyric{margin-top:8px;min-height:50px;padding:9px 10px;border-radius:14px;background:rgba(255,255,255,.42);border:1px solid rgba(225,225,219,.88);font-size:11px;line-height:1.65;color:rgba(51,66,73,.78);white-space:pre-line}
+      #meow-voice-bgm-dock .mv-bgm-list{margin-top:8px;max-height:104px;overflow:auto;padding-right:2px}
+      #meow-voice-bgm-dock .mv-bgm-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 8px;border-radius:12px;background:rgba(255,255,255,.52);margin-bottom:6px;cursor:pointer;border:1px solid rgba(80,88,92,.08)}
+      #meow-voice-bgm-dock .mv-bgm-item.active{background:rgba(64,73,78,.10);border-color:rgba(64,73,78,.14)}
+      #meow-voice-bgm-dock .mv-bgm-item-title{font-size:11px;font-weight:600;color:#394850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      #meow-voice-bgm-dock .mv-bgm-item-meta{font-size:10px;color:rgba(57,72,80,.48);margin-top:2px}
+      #meow-voice-bgm-dock .mv-bgm-item-play{border:0;border-radius:999px;background:#4a575d;color:#fff;font-size:10px;padding:5px 9px;cursor:pointer;flex:none}
+      #meow-voice-bgm-dock .mv-bgm-embed{margin-top:8px}
+      #meow-voice-bgm-dock .mv-bgm-embed iframe{display:block;width:100%;height:104px;border:0;border-radius:14px;background:rgba(255,255,255,.84)}
       #meow-voice-bgm-dock .mv-bgm-embed.empty{display:none}
-      #meow-voice-bgm-dock.collapsed{transform:translate3d(276px,0,0)}
+      #meow-voice-bgm-dock.collapsed{transform:translate3d(182px,0,0)}
       #meow-voice-bgm-dock.collapsed .mv-bgm-panel{opacity:0;pointer-events:none}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-mini-toggle{right:290px}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-close{right:254px}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-disc-wrap{pointer-events:auto}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-shell{min-height:170px}
-      #meow-voice-bgm-dock .mv-bgm-empty{font-size:11px;color:rgba(29,60,68,.55);padding:8px 2px}
-      #meow-voice-bgm-dock input[type="range"]{accent-color:#146f79}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-close{right:208px}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-shell{min-height:112px}
+      #meow-voice-bgm-dock input[type="range"]{accent-color:#727f86}
     `;
     if (!doc.getElementById(style.id)) (doc.head || doc.documentElement).appendChild(style);
     root.addEventListener('click', async (e) => {
-      const btn = e.target.closest('button, .mv-bgm-item');
-      if (!btn) return;
       const c = cfg();
       const lib = _getBgmLibrary();
       const rootNow = _getBgmDock();
+
+      if (e.target.closest('.mv-bgm-open-settings')) {
+        openModal();
+        return;
+      }
+      if (e.target.closest('.mv-bgm-disc-hit, .mv-bgm-tonearm')) {
+        const next = !rootNow.classList.contains('collapsed');
+        lsSet(LS.BGM_DOCK_COLLAPSED, next);
+        _renderBgmDock();
+        return;
+      }
+
+      const btn = e.target.closest('button, .mv-bgm-item');
+      if (!btn) return;
       if (btn.classList.contains('mv-bgm-close')) {
         _bgmState.closed = true;
         rootNow.style.display = 'none';
         try { await _setDramaBgmActive(false, c, { keepDock: true }); } catch(err) {}
-        return;
-      }
-      if (btn.classList.contains('mv-bgm-mini-toggle')) {
-        const next = !rootNow.classList.contains('collapsed');
-        lsSet(LS.BGM_DOCK_COLLAPSED, next);
-        _renderBgmDock();
         return;
       }
       if (btn.classList.contains('mv-bgm-group-chip')) {
@@ -635,6 +693,22 @@ ${t}
         return;
       }
     });
+    root.addEventListener('change', async (e) => {
+      const sel = e.target.closest('.mv-bgm-track-select');
+      if (!sel) return;
+      const gid = lsGet(LS.BGM_GROUP, '') || (_getBgmLibrary()[0]?.id || '');
+      const lib = _getBgmLibrary();
+      const track = _findBgmTrack(lib, gid, sel.value || '');
+      if (!track) return;
+      _setBgmSelection(gid, track.id, track.title, track.url);
+      const shouldPlay = !!((_bgmAudio && !_bgmAudio.paused) || (_bgmState.active && _bgmState.parsedKind === 'netease_iframe'));
+      if (shouldPlay) {
+        try { await _setDramaBgmActive(true, cfg(), { preview: true, sourceUrl: track.url, title: track.title, groupId: gid, trackId: track.id, restart: true }); }
+        catch(err) { toast('切歌失败：' + ((err && err.message) || err || '未知错误')); }
+      } else {
+        _renderBgmDock();
+      }
+    });
     root.addEventListener('input', (e) => {
       const seek = e.target.closest('.mv-bgm-seek');
       if (!seek || !_bgmAudio || !Number.isFinite(_bgmAudio.duration) || _bgmAudio.duration <= 0) return;
@@ -653,7 +727,7 @@ ${t}
     const selection = _resolveBgmSelection(c, _bgmState.sourceUrl ? { sourceUrl: _bgmState.sourceUrl, title: _bgmState.title, groupId: _bgmState.groupId, trackId: _bgmState.trackId } : null) || _resolveBgmSelection(c);
     const title = String(_bgmState.title || selection?.title || c.bgmTitle || '背景音乐').trim() || '背景音乐';
     const sub = _bgmState.active
-      ? (_bgmState.parsedKind === 'netease_iframe' ? '网易云播放器' : '播放中')
+      ? (_bgmState.parsedKind === 'netease_iframe' ? '网易云嵌入播放器' : '播放中')
       : (selection ? '待播放 · ' + ((_bgmState.parsedKind === 'netease_iframe') ? '网易云' : '本地/直链') : '未配置音源');
     root.style.display = selection ? '' : 'none';
     root.classList.toggle('collapsed', !!lsGet(LS.BGM_DOCK_COLLAPSED, true));
@@ -680,10 +754,24 @@ ${t}
     if (groupsWrap) {
       groupsWrap.innerHTML = lib.map(g => `<button type="button" class="mv-bgm-group-chip ${g.id===activeGroupId?'active':''}" data-group-id="${_safeAttr(g.id)}">${_safeAttr(g.name)}</button>`).join('');
     }
-    const listWrap = root.querySelector('.mv-bgm-list');
     const group = _findBgmGroup(lib, activeGroupId);
     const activeTrackId = lsGet(LS.BGM_TRACK, '') || selection?.trackId || '';
     const tracks = _bgmTrackList(group);
+    const currentTrack = tracks.find(t => t.id === activeTrackId) || tracks[0] || (selection ? { id: selection.trackId || '', title: selection.title || title, url: selection.url || '' } : null);
+
+    const trackSel = root.querySelector('.mv-bgm-track-select');
+    if (trackSel) {
+      trackSel.innerHTML = tracks.length
+        ? tracks.map(t => `<option value="${_safeAttr(t.id)}" ${t.id===activeTrackId?'selected':''}>${_safeAttr(t.title)}</option>`).join('')
+        : '<option value="">点击选择歌曲</option>';
+      trackSel.disabled = !tracks.length;
+      if (!trackSel.value && tracks[0]) trackSel.value = tracks[0].id;
+    }
+
+    const lyricWrap = root.querySelector('.mv-bgm-lyric');
+    if (lyricWrap) lyricWrap.textContent = _buildBgmCaption(c, group, currentTrack, tracks);
+
+    const listWrap = root.querySelector('.mv-bgm-list');
     if (listWrap) {
       listWrap.innerHTML = tracks.length
         ? tracks.map(t => `
@@ -694,7 +782,7 @@ ${t}
               </div>
               <button type="button" class="mv-bgm-item-play" data-track-id="${_safeAttr(t.id)}">播放</button>
             </div>`).join('')
-        : '<div class="mv-bgm-empty">这个分组还没有歌。去语音设置里的背景音乐区域，把当前链接加入歌单。</div>';
+        : '';
     }
     const embed = root.querySelector('.mv-bgm-embed');
     if (embed) {
@@ -1872,7 +1960,6 @@ async function _speakWithCfg(rawText, charName, c) {
   //  § 11  设置弹窗
   // ════════════════════════════════════════════════════════════════════
 
-
   function _renderBgmLibraryEditor(box) {
     if (!box) return;
     const q = id => box.querySelector('#' + id);
@@ -1885,11 +1972,19 @@ async function _speakWithCfg(rawText, charName, c) {
     }
     const currentGroupId = sel?.value || (lib[0]?.id || '');
     const group = _findBgmGroup(lib, currentGroupId);
+    const tracks = _bgmTrackList(group);
+    const activeTrack = lsGet(LS.BGM_TRACK, '') || tracks[0]?.id || '';
+    const trackSel = q('mvBgmTrackSel');
+    if (trackSel) {
+      trackSel.innerHTML = tracks.length
+        ? tracks.map(t => `<option value="${escAttr(t.id)}" ${t.id===activeTrack?'selected':''}>${esc(t.title)}</option>`).join('')
+        : '<option value="">点击选择歌曲</option>';
+      trackSel.disabled = !tracks.length;
+    }
     const list = q('mvBgmLibraryList');
     if (list) {
-      const activeTrack = lsGet(LS.BGM_TRACK, '');
-      list.innerHTML = _bgmTrackList(group).length
-        ? _bgmTrackList(group).map(t => `
+      list.innerHTML = tracks.length
+        ? tracks.map(t => `
             <div class="mv-bgm-row ${t.id===activeTrack?'active':''}" data-track-id="${escAttr(t.id)}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;background:${t.id===activeTrack?'rgba(17,65,74,.10)':'rgba(255,255,255,.55)'};margin-bottom:6px;border:1px solid rgba(28,24,18,.05)">
               <div style="min-width:0;flex:1">
                 <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.title)}</div>
@@ -1900,7 +1995,7 @@ async function _speakWithCfg(rawText, charName, c) {
                 <button type="button" class="mv-btn mv-bgm-lib-play" data-track-id="${escAttr(t.id)}" style="font-size:11px;padding:5px 10px">播放</button>
               </div>
             </div>`).join('')
-        : '<div class="mv-hint" style="font-size:11px">这个分组里还没有歌。先填上曲名和链接，再点“加入歌单”。</div>';
+        : '<div class="mv-hint" style="font-size:11px">这个分组现在还没有歌。你可以先切分组，或者把当前链接加入歌单。</div>';
     }
   }
 
@@ -2131,6 +2226,10 @@ async function _speakWithCfg(rawText, charName, c) {
                 </div>
               </div>
               <div style="margin-bottom:8px">
+                <label style="font-size:12px;display:block;margin-bottom:4px">点击选择歌曲</label>
+                <select id="mvBgmTrackSel"></select>
+              </div>
+              <div style="margin-bottom:8px">
                 <label style="font-size:12px;display:block;margin-bottom:4px">音乐链接 / iframe 代码</label>
                 <input type="text" id="mvBgmUrl" placeholder="支持 mp3 直链、网易云歌曲页、网易云 outchain iframe 代码" value="${esc(c.bgmUrl||'')}">
               </div>
@@ -2219,6 +2318,17 @@ async function _speakWithCfg(rawText, charName, c) {
       const group = _findBgmGroup(lib, e.target.value || '');
       lsSet(LS.BGM_TRACK, group?.tracks?.[0]?.id || '');
       _renderBgmLibraryEditor(box);
+    });
+    q('mvBgmTrackSel')?.addEventListener('change', e => {
+      const gid = q('mvBgmGroupSel')?.value || '';
+      const lib = _getBgmLibrary();
+      const track = _findBgmTrack(lib, gid, e.target.value || '');
+      if (!track) return;
+      lsSet(LS.BGM_TRACK, track.id || '');
+      q('mvBgmTitle').value = track.title || '';
+      q('mvBgmUrl').value = track.url || '';
+      _renderBgmLibraryEditor(box);
+      _renderBgmDock();
     });
     q('mvBgmAddGroup')?.addEventListener('click', () => {
       const name = q('mvBgmNewGroup')?.value.trim() || '';
@@ -2352,6 +2462,7 @@ async function _speakWithCfg(rawText, charName, c) {
       lsSet(LS.BGM_VOLUME, _clampNum(q('mvBgmVolume')?.value, 0, 1, 0.18));
       lsSet(LS.BGM_LOOP, !!q('mvBgmLoop')?.checked);
       lsSet(LS.BGM_GROUP, q('mvBgmGroupSel')?.value || '');
+      lsSet(LS.BGM_TRACK, q('mvBgmTrackSel')?.value || lsGet(LS.BGM_TRACK, '') || '');
       lsSet(LS.BGM_LIBRARY, _getBgmLibrary());
       const newDramaMap = { ...lsGet(LS.DRAMA_MAP, {}) };
       newDramaMap['__narration__'] = q('mvNarratorVoice')?.value.trim() || '';
