@@ -514,11 +514,11 @@ ${t}
   }
 
   function _bgmDockPeek(root) {
-    if (!root) return 34;
-    // 收起时只露出半张左右的唱片，更贴边
-    if (root.classList.contains('mini')) return 28;
-    if (root.classList.contains('compact')) return 32;
-    return 34;
+    if (!root) return 16;
+    // 收起时进一步藏进去，只保留接近半张唱片可见
+    if (root.classList.contains('mini')) return 12;
+    if (root.classList.contains('compact')) return 14;
+    return 16;
   }
 
   function _bgmDockDefaultPos(root) {
