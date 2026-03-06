@@ -586,11 +586,11 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-arm-knob{position:absolute;right:8px;top:2px;width:13px;height:13px;border-radius:50%;background:linear-gradient(180deg,#faf9f7,#dfddd7);box-shadow:0 2px 4px rgba(0,0,0,.18)}
       #meow-voice-bgm-dock .mv-bgm-arm-bar{position:absolute;right:13px;top:12px;width:35px;height:4px;border-radius:999px;background:linear-gradient(180deg,#f6f4ef,#cfcac2);transform:rotate(44deg);transform-origin:100% 50%;box-shadow:0 1px 2px rgba(0,0,0,.14)}
       #meow-voice-bgm-dock .mv-bgm-arm-head{position:absolute;left:12px;top:39px;width:18px;height:8px;border-radius:999px;background:linear-gradient(180deg,#f7f6f2,#d6d0c8);transform:rotate(44deg);box-shadow:0 1px 2px rgba(0,0,0,.16)}
-      #meow-voice-bgm-dock.playing:not(.collapsed) .mv-bgm-tonearm{transform:rotate(-31deg)}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-tonearm{transform:rotate(12deg)}
+      #meow-voice-bgm-dock.playing .mv-bgm-tonearm{transform:rotate(-31deg)}
+      #meow-voice-bgm-dock.collapsed:not(.playing) .mv-bgm-tonearm{transform:rotate(12deg)}
       #meow-voice-bgm-dock:not(.playing):not(.collapsed) .mv-bgm-tonearm{transform:rotate(-6deg)}
       #meow-voice-bgm-dock .mv-bgm-panel{position:relative;min-height:118px;padding:12px 12px 10px 54px;border-radius:22px;background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(244,244,240,.64));border:1px solid rgba(214,214,206,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 16px 34px rgba(0,0,0,.10);overflow:visible}
-      #meow-voice-bgm-dock .mv-bgm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+      #meow-voice-bgm-dock .mv-bgm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding-right:34px}
       #meow-voice-bgm-dock .mv-bgm-open-settings{width:28px;height:28px;border:0;border-radius:999px;background:rgba(255,255,255,.78);box-shadow:0 6px 14px rgba(0,0,0,.08);cursor:pointer;color:#56656d;font-size:13px;flex:none}
       #meow-voice-bgm-dock .mv-bgm-name{font-size:15px;line-height:1.15;font-weight:700;color:#2c393f;max-width:138px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       #meow-voice-bgm-dock .mv-bgm-sub{font-size:11px;color:rgba(44,57,63,.55);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:156px}
@@ -616,9 +616,17 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-embed.empty{display:none}
       #meow-voice-bgm-dock.collapsed{transform:translate3d(244px,0,0)}
       #meow-voice-bgm-dock.collapsed .mv-bgm-panel{opacity:0;pointer-events:none}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-close{right:250px}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-close{display:none}
       #meow-voice-bgm-dock.collapsed .mv-bgm-shell{min-height:112px}
       #meow-voice-bgm-dock input[type="range"]{accent-color:#727f86}
+      @media (max-width:520px){
+        #meow-voice-bgm-dock{right:4px!important;bottom:60px!important;width:calc(100vw - 8px)!important;max-width:calc(100vw - 8px)!important}
+        #meow-voice-bgm-dock .mv-bgm-disc-wrap{left:-10px}
+        #meow-voice-bgm-dock.collapsed{transform:translate3d(calc(100% - 72px),0,0)}
+        #meow-voice-bgm-dock .mv-bgm-panel{padding-left:44px}
+        #meow-voice-bgm-dock .mv-bgm-name{max-width:calc(100vw - 130px)}
+        #meow-voice-bgm-dock .mv-bgm-sub{max-width:calc(100vw - 130px)}
+      }
     `;
     if (!doc.getElementById(style.id)) (doc.head || doc.documentElement).appendChild(style);
     root.addEventListener('click', async (e) => {
@@ -2387,7 +2395,10 @@ async function _speakWithCfg(rawText, charName, c) {
       const trackSel = q('mvBgmTrackSel');
       if (trackSel) trackSel.value = tid;
       _renderBgmDock();
-      toast(existed ? '已更新到歌单' : '已加入歌单');
+      lsSet(LS.BGM_DOCK_COLLAPSED, false);
+      _bgmState.closed = false;
+      _renderBgmDock();
+      toast(existed ? '✅ 已更新到歌单' : '✅ 已加入歌单');
     });
     q('mvBgmDeleteTrack')?.addEventListener('click', () => {
       const gid = q('mvBgmGroupSel')?.value || '';
