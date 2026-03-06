@@ -426,16 +426,7 @@ ${t}
 
   function _bgmTracksForDisplay(lib, groupId) {
     const group = _findBgmGroup(lib, groupId);
-    const tracks = _bgmTrackList(group).slice();
-    const curGroupId = String(lsGet(LS.BGM_GROUP, '') || '');
-    const curTrackId = String(lsGet(LS.BGM_TRACK, '') || '');
-    const curTitle = String(lsGet(LS.BGM_TITLE, '') || '').trim();
-    const curUrl = String(lsGet(LS.BGM_URL, '') || '').trim();
-    if (curUrl && String(group?.id || '') === curGroupId) {
-      const exists = tracks.some(t => (curTrackId && String(t?.id || '') === curTrackId) || String(t?.url || '').trim() === curUrl);
-      if (!exists) tracks.unshift({ id: curTrackId || '__current__', title: curTitle || '当前曲目', url: curUrl });
-    }
-    return tracks;
+    return _bgmTrackList(group).slice();
   }
 
   function _parseDramaBgmSource(raw) {
@@ -1328,7 +1319,7 @@ ${t}
     // 🐱 调试日志（排查完毕后可改为 false）
     const _DRAMA_DEBUG = false;
 
-    function detectSpeaker(rawText, qStart, qEnd, dialogueStr, prevSpeaker, interNar, prevDialogueStr) {
+    function detectSpeaker(rawText, qStart, qEnd, dialogueStr, prevSpeaker, interNar) {
       const b8  = rawText.slice(Math.max(0, qStart - 8),  qStart);
       const a8  = rawText.slice(qEnd, Math.min(rawText.length, qEnd + 8));
       const b30 = rawText.slice(Math.max(0, qStart - 30), qStart);
@@ -1353,16 +1344,7 @@ ${t}
 
       // 贴着引号结束位置的超近距离规则：优先修“阿文。” / “给。”这类短句
       const USER_DIRECT_AFTER_RX = /^[\s\n—-]*我(?:叫他的名字|叫|唤|喊|问|说|开口|出声|低声问|轻声问|笑着问|笑着说|半开玩笑地(?:说|问)?|试探地(?:说|问)?|打趣地(?:说|问)?|调侃道|朝|对)/;
-      const CHAR_DIRECT_AFTER_RX = /^[\s\n—-]*[他她][^，。！？\n]{0,18}(?:应了?一声|小声|低声|轻声|咕哝|嘀咕|喃喃|开口|出声|打破沉默|接着说|继续道|补了?一句|像是鼓起[^，。！？\n]{0,10}勇气|清了清嗓子|压低了?一些|微微睁大眼睛|睁大眼睛|低下头|抬起头|皱起眉|扫过|看向|转过身|挡在|传来|警告|递|塞|拿|伸|俯|弯|靠|凑|偏|抬|低|望|看|盯|笑|停|走|把)/;
-      const USER_CONTINUE_AFTER_RX = /^[\s\n—-]*我[^。！？\n]{0,28}(?:没有让空气安静太久|语调|语气|平视|视线|切换回|复盘|晃了晃|抬了抬|笑了笑|拨弄|仰视|看着前方|工作)/;
-      const CHAR_NARRATION_CUE_RX = /(?:^|[。！？\n，、；：])(?:他(?:的声音|的语气|的目光|的视线|的警告)|耳边传来他|他[^。！？\n]{0,20}(?:清了清嗓子|压低了?一些|微微睁大眼睛|睁大眼睛|低下头|抬起头|应了?一声|小声|低声|轻声|咕哝|嘀咕|喃喃|开口|出声|打破沉默|继续|接着|补了?一句|转过身|挡在|看向|扫过|警告))/;
-      const USER_NARRATION_CUE_RX = /(?:^|[。！？\n，、；：])我[^。！？\n]{0,28}(?:叫他的名字|没有让空气安静太久|语调|语气|视线|平视|切换回|半开玩笑地|笑着|低声|轻声|工作复盘|晃了晃|抬了抬|拨弄|仰视)/;
-      const CHAR_BEFORE_ACTION_RX = /[他她][^。！？\n]{0,26}(?:清了清嗓子|压低了?一些|微微睁大眼睛|睁大眼睛|低下头|抬起头|应了?一声|小声|低声|轻声|咕哝|嘀咕|喃喃|开口|出声|打破沉默|继续|接着|补了?一句|转过身|挡在|看向|扫过|警告|传来|手|胸膛|目光|视线|声音)/;
-      const USER_BEFORE_ACTION_RX = /我[^。！？\n]{0,26}(?:叫他的名字|没有让空气安静太久|语调|语气|平视|视线|切换回|半开玩笑地|笑着|低声|轻声|晃了晃|抬了抬|拨弄|仰视)/;
-
-      // 更宽的前文连续发言线索：用于“引号前一整段都在写他/我”的场景
-      const CHAR_BEFORE_WIDE_RX = /(?:他(?:的声音|的语气|的目光|的视线|的警告|语气里|眼底|胸膛|手指)|他[^。！？\n]{0,48}(?:清了清嗓子|压低了?一些|微微睁大眼睛|睁大眼睛|低下头|抬起头|应了?一声|小声|低声|轻声|咕哝|嘀咕|喃喃|开口|出声|打破沉默|继续|接着|补了?一句|转过身|挡在|看向|扫过|警告|传来|自言自语|坦白|收敛了起来|恢复了|吸了?一口|深深地吸了?一口|目光重新落回|像是在))/;
-      const USER_BEFORE_WIDE_RX = /(?:我(?:的声音|的语气|的目光|的视线)|我[^。！？\n]{0,48}(?:叫他的名字|没有让空气安静太久|语调|语气|平视|视线|切换回|半开玩笑地|笑着|低声|轻声|晃了晃|抬了抬|拨弄|仰视|看着前方|工作复盘|插话|没有再用更多的言语|只是将))/;
+      const CHAR_DIRECT_AFTER_RX = /^[\s\n—-]*[他她][^，。！？\n]{0,12}(?:应了?一声|小声|低声|轻声|咕哝|嘀咕|喃喃|开口|出声|打破沉默|接着说|继续道|补了?一句|像是鼓起[^，。！？\n]{0,10}勇气|递|塞|拿|伸|俯|弯|靠|凑|偏|抬|低|望|看|盯|笑|停|走|把)/;
 
       // “引号后面是我在反应”——通常表示前一句是角色说的
       const REACT_VERBS = /^[\n\s]*[我][^，。！？\n]{0,3}(?:看|想|站|走|停|愣|怔|转|抬|低|伸|退|回|望|盯|跟|跑|坐|起|笑|皱|叹|吸|呼|点|摇|握|抓|攥)/;
@@ -1388,42 +1370,15 @@ ${t}
         const hit = findSpeechVerb(text);
         return hit && hit !== (userName || '我') ? hit : null;
       }
-      function isShortAnswerLike(text) {
-        const t = String(text || '').trim();
-        const n = t.replace(/[。！？，、…\s]/g, '');
-        return !!n && n.length <= 8 && /^(?:没有|没事|没撞到|不是|嗯|好|好的|行|可以|谢谢|我没事|没关系|还好|你呢|看到了|是|不是啊?)$/.test(n);
-      }
-      function otherSpeaker(sp) {
-        if (sp === (userName || '我')) return resolvePronounChar();
-        if (sp) return userName || '我';
-        return null;
-      }
 
-      // ── P0：先吃掉最常见、最容易误判的贴边短句 / 连续发言提示 ──
-      if (USER_DIRECT_AFTER_RX.test(a30) || USER_CONTINUE_AFTER_RX.test(a30)) {
+      // ── P0：先吃掉最常见、最容易误判的贴边短句 ──
+      if (USER_DIRECT_AFTER_RX.test(a30)) {
         return logHit('P0-紧跟玩家动作', userName || '我');
       }
-
-      // 上一句是疑问句，本句是极短回答时，优先视为轮到另一方回应
-      if (prevDialogueStr && /[？?]/.test(prevDialogueStr) && isShortAnswerLike(dialogueStr)) {
-        const alt = otherSpeaker(prevSpeaker);
-        if (alt) return logHit('P0.5-问答换人', alt);
-      }
-
-      if (CHAR_NARRATION_CUE_RX.test(a30) || CHAR_NARRATION_CUE_RX.test(interNar || '')) {
-        const rc = resolvePronounChar();
-        if (rc) return logHit('P0-角色叙述提示', rc);
-      }
-      // 引号前一整段都在写“他”的心理/声音/姿态，也要锁给角色
-      if (CHAR_BEFORE_WIDE_RX.test(b60) && !USER_BEFORE_WIDE_RX.test(b60) && !USER_NARRATION_CUE_RX.test(interNar || '')) {
-        const rc = resolvePronounChar();
-        if (rc) return logHit('P0-前文角色连续发言', rc);
-      }
-      if ((dialogueStr && dialogueStr.replace(/\s/g, '').length <= 12) &&
+      if ((dialogueStr && dialogueStr.replace(/\s/g, '').length <= 8) &&
           !/[？?]/.test(dialogueStr || '') &&
-          (CHAR_DIRECT_AFTER_RX.test(a30) || CHAR_BEFORE_ACTION_RX.test(b30)) &&
-          !USER_DIRECT_AFTER_RX.test(a30) &&
-          !USER_BEFORE_ACTION_RX.test(b30)) {
+          CHAR_DIRECT_AFTER_RX.test(a30) &&
+          !USER_DIRECT_AFTER_RX.test(a30)) {
         const rc = resolvePronounChar();
         if (rc) return logHit('P0-紧跟角色动作', rc);
       }
@@ -1452,13 +1407,8 @@ ${t}
       if (interNar) {
         const nar = lastSentence(interNar);
 
-        if (USER_NARRATION_CUE_RX.test(interNar) || USER_STRONG_RX.test(nar)) {
+        if (USER_STRONG_RX.test(nar)) {
           return logHit('P2-旁白玩家', userName || '我');
-        }
-
-        if (CHAR_NARRATION_CUE_RX.test(interNar)) {
-          const rc = resolvePronounChar();
-          if (rc) return logHit('P2-旁白角色提示', rc);
         }
 
         const p2 = explicitCharByName(nar) || findSpeechVerb(nar);
@@ -1537,19 +1487,15 @@ ${t}
         const is我们 = 我idx >= 0 && b30[我idx + 1] === '们';
         if (!is我们) {
           const charInB30 = kwList.some(kw => b30.includes(kw) && !isObject(b30, kw));
-          if (!charInB30 && !CHAR_BEFORE_ACTION_RX.test(b30) && !CHAR_NARRATION_CUE_RX.test(a30)) {
-            return logHit('P7', userName || '我');
-          }
+          if (!charInB30) return logHit('P7', userName || '我');
         }
       }
 
-      // ── P8：台词自己以“我”开头，且周围没有明确角色归因 → 玩家
-      // 但若引号前后都明显在写“他”的连续发言，则不要被“我...”第一人称内容误吸走
+      // ── P8：台词自己以“我”开头，且周围没有明确角色归因 → 玩家 ──
       if (dialogueStr && /^[我]/.test(dialogueStr.trim())) {
         const wide = b30 + a30;
         const charVerb = findSpeechVerb(wide);
-        if (!CHAR_BEFORE_ACTION_RX.test(b30) && !CHAR_NARRATION_CUE_RX.test(a30) &&
-            (!charVerb || charVerb === (userName || '我'))) {
+        if (!charVerb || charVerb === (userName || '我')) {
           return logHit('P8', userName || '我');
         }
       }
@@ -1565,7 +1511,6 @@ ${t}
     const blockRx   = /⟪MV_NARR_BLOCK⟫([\s\S]*?)⟪\/MV_NARR_BLOCK⟫/g;
     let prevQEnd    = 0;
     let prevSpeaker;
-    let prevDialogueStr = null;
 
     function pushNarration(text) {
       const t = String(text || '').trim();
@@ -1585,13 +1530,12 @@ ${t}
         const globalEnd   = globalStart + m[0].length;
         const interNar    = prevQEnd > 0 ? rawText.slice(prevQEnd, globalStart).trim() : null;
         const dialogueStr = m[0].slice(1, -1).trim();
-        const speaker     = detectSpeaker(rawText, globalStart, globalEnd, dialogueStr, prevSpeaker, interNar, prevDialogueStr);
+        const speaker     = detectSpeaker(rawText, globalStart, globalEnd, dialogueStr, prevSpeaker, interNar);
         if (dialogueStr) segments.push({ type: 'dialogue', speaker, text: dialogueStr });
 
-        prevSpeaker    = speaker;
-        prevDialogueStr = dialogueStr;
-        prevQEnd       = globalEnd;
-        lastIdx        = m.index + m[0].length;
+        prevSpeaker = speaker;
+        prevQEnd    = globalEnd;
+        lastIdx     = m.index + m[0].length;
       }
       const narAfter = piece.slice(lastIdx).trim();
       if (narAfter) pushNarration(narAfter);
@@ -1606,10 +1550,9 @@ ${t}
       const blockText = (bm[1] || '').trim();
       if (blockText) pushNarration(blockText);
 
-      cursor         = bm.index + bm[0].length;
-      prevQEnd       = 0;
-      prevSpeaker    = undefined;
-      prevDialogueStr = null;
+      cursor      = bm.index + bm[0].length;
+      prevQEnd    = 0;
+      prevSpeaker = undefined;
     }
 
     const tail = rawText.slice(cursor);
@@ -2240,28 +2183,50 @@ async function _speakWithCfg(rawText, charName, c) {
   //  § 11  设置弹窗
   // ════════════════════════════════════════════════════════════════════
 
+  function _bgmEditorState(box) {
+    const lib = _getBgmLibrary();
+    let groupId = String(box?.dataset?.bgmEditorGroup || lsGet(LS.BGM_GROUP, '') || (lib[0]?.id || ''));
+    let group = _findBgmGroup(lib, groupId);
+    if (!group && lib[0]) {
+      group = lib[0];
+      groupId = group.id;
+    }
+    const tracks = _bgmTrackList(group);
+    let trackId = String(box?.dataset?.bgmEditorTrack || lsGet(LS.BGM_TRACK, '') || '');
+    if (!tracks.some(t => String(t?.id || '') === trackId)) {
+      trackId = tracks[0]?.id || '';
+    }
+    return { lib, groupId, group, tracks, trackId };
+  }
+
   function _renderBgmLibraryEditor(box) {
     if (!box) return;
     const q = id => box.querySelector('#' + id);
-    const lib = _getBgmLibrary();
+    const st = _bgmEditorState(box);
+    const lib = st.lib;
+    const currentGroupId = st.groupId;
+    const group = st.group;
+    const tracks = st.tracks.slice();
+    const activeTrack = st.trackId || tracks[0]?.id || '';
+
+    box.dataset.bgmEditorGroup = currentGroupId || '';
+    box.dataset.bgmEditorTrack = activeTrack || '';
+
     const sel = q('mvBgmGroupSel');
     if (sel) {
-      const chosen = lsGet(LS.BGM_GROUP, '') || (lib[0]?.id || '');
-      sel.innerHTML = lib.map(g => `<option value="${escAttr(g.id)}" ${g.id===chosen?'selected':''}>${esc(g.name)}</option>`).join('');
-      if (!sel.value && lib[0]) sel.value = lib[0].id;
+      sel.innerHTML = lib.map(g => `<option value="${escAttr(g.id)}" ${g.id===currentGroupId?'selected':''}>${esc(g.name)}</option>`).join('');
+      if (!sel.value && lib[0]) sel.value = currentGroupId || lib[0].id;
     }
-    const currentGroupId = sel?.value || (lib[0]?.id || '');
-    const group = _findBgmGroup(lib, currentGroupId);
-    const tracks = _bgmTracksForDisplay(lib, currentGroupId);
-    const activeTrack = lsGet(LS.BGM_TRACK, '') || tracks[0]?.id || '';
+
     const trackSel = q('mvBgmTrackSel');
     if (trackSel) {
       trackSel.innerHTML = tracks.length
         ? tracks.map(t => `<option value="${escAttr(t.id)}" ${t.id===activeTrack?'selected':''}>${esc(t.title)}</option>`).join('')
         : '<option value="">点击选择歌曲</option>';
       trackSel.disabled = !tracks.length;
-      if (tracks.length && !tracks.some(t => t.id === trackSel.value)) trackSel.value = activeTrack || tracks[0].id;
+      if (tracks.length) trackSel.value = activeTrack || tracks[0].id;
     }
+
     const list = q('mvBgmLibraryList');
     if (list) {
       list.innerHTML = tracks.length
@@ -2276,9 +2241,10 @@ async function _speakWithCfg(rawText, charName, c) {
                 <button type="button" class="mv-btn mv-bgm-lib-play" data-track-id="${escAttr(t.id)}" style="font-size:11px;padding:5px 10px">播放</button>
               </div>
             </div>`).join('')
-        : '<div class="mv-hint" style="font-size:11px">自动识别区\n当前分组暂无歌曲，先把当前链接加入歌单，再从上方直接切歌。</div>';
+        : '<div class="mv-hint" style="font-size:11px">当前分组暂无歌曲，先把当前链接加入歌单，再从上方直接切歌。</div>';
     }
   }
+
 
   function openModal() {
     injectCSS();
@@ -2595,28 +2561,24 @@ async function _speakWithCfg(rawText, charName, c) {
 
     _renderBgmLibraryEditor(box);
     q('mvBgmGroupSel')?.addEventListener('change', e => {
-      lsSet(LS.BGM_GROUP, e.target.value || '');
+      const gid = String(e.target.value || '');
       const lib = _getBgmLibrary();
-      const group = _findBgmGroup(lib, e.target.value || '');
+      const group = _findBgmGroup(lib, gid);
       const firstTrack = _bgmTrackList(group)[0] || null;
-      lsSet(LS.BGM_TRACK, firstTrack?.id || '');
-      if (firstTrack) {
-        q('mvBgmTitle').value = firstTrack.title || '';
-        q('mvBgmUrl').value = firstTrack.url || '';
-      }
+      box.dataset.bgmEditorGroup = gid;
+      box.dataset.bgmEditorTrack = firstTrack?.id || '';
+      q('mvBgmTitle').value = firstTrack?.title || '';
+      q('mvBgmUrl').value = firstTrack?.url || '';
       _renderBgmLibraryEditor(box);
-      _renderBgmDock();
     });
     q('mvBgmTrackSel')?.addEventListener('change', e => {
-      const gid = q('mvBgmGroupSel')?.value || '';
+      const gid = box.dataset.bgmEditorGroup || q('mvBgmGroupSel')?.value || '';
       const lib = _getBgmLibrary();
       const track = _findBgmTrack(lib, gid, e.target.value || '');
-      if (!track) return;
-      lsSet(LS.BGM_TRACK, track.id || '');
-      q('mvBgmTitle').value = track.title || '';
-      q('mvBgmUrl').value = track.url || '';
+      box.dataset.bgmEditorTrack = track?.id || '';
+      q('mvBgmTitle').value = track?.title || '';
+      q('mvBgmUrl').value = track?.url || '';
       _renderBgmLibraryEditor(box);
-      _renderBgmDock();
     });
     q('mvBgmAddGroup')?.addEventListener('click', () => {
       const name = q('mvBgmNewGroup')?.value.trim() || '';
@@ -2626,15 +2588,18 @@ async function _speakWithCfg(rawText, charName, c) {
       const gid = exists ? exists.id : _uid('g_');
       if (!exists) lib.push({ id: gid, name, tracks: [] });
       _saveBgmLibrary(lib);
-      lsSet(LS.BGM_GROUP, gid);
+      box.dataset.bgmEditorGroup = gid;
+      box.dataset.bgmEditorTrack = '';
       q('mvBgmNewGroup').value = '';
+      q('mvBgmTitle').value = '';
+      q('mvBgmUrl').value = '';
       _renderBgmLibraryEditor(box);
       toast(exists ? '这个分组已经有了' : '已添加分组');
     });
     q('mvBgmAddTrack')?.addEventListener('click', () => {
       const title = q('mvBgmTitle')?.value.trim() || '未命名曲目';
       const url = q('mvBgmUrl')?.value.trim() || '';
-      let gid = q('mvBgmGroupSel')?.value || lsGet(LS.BGM_GROUP, '') || '';
+      let gid = box.dataset.bgmEditorGroup || q('mvBgmGroupSel')?.value || lsGet(LS.BGM_GROUP, '') || '';
       if (!url) { toast('先填音乐链接'); return; }
       let lib = _getBgmLibrary();
       if (!Array.isArray(lib) || !lib.length) lib = [{ id: 'g_default', name: '常用', tracks: [] }];
@@ -2651,19 +2616,20 @@ async function _speakWithCfg(rawText, charName, c) {
         existed.title = title;
         existed.url = url;
       } else {
-        group.tracks.unshift({ id: tid, title, url });
+        group.tracks.push({ id: tid, title, url });
       }
       group.tracks = group.tracks.filter((t, idx, arr) => t && t.url && arr.findIndex(x => String(x?.url || '').trim() === String(t.url || '').trim()) === idx);
       _saveBgmLibrary(lib);
+
       const savedLib = _getBgmLibrary();
       const savedGroup = savedLib.find(g => g && g.id === gid) || savedLib[0] || null;
       const savedTrack = (savedGroup?.tracks || []).find(t => String(t?.url || '').trim() === url) || (savedGroup?.tracks || []).find(t => t.id === tid) || null;
       const finalTid = savedTrack?.id || tid;
+
+      box.dataset.bgmEditorGroup = gid;
+      box.dataset.bgmEditorTrack = finalTid;
       _setBgmSelection(gid, finalTid, title, url);
-      lsSet(LS.BGM_GROUP, gid);
-      lsSet(LS.BGM_TRACK, finalTid);
-      lsSet(LS.BGM_TITLE, title);
-      lsSet(LS.BGM_URL, url);
+
       const groupSel = q('mvBgmGroupSel');
       if (groupSel) groupSel.value = gid;
       _renderBgmLibraryEditor(box);
@@ -2676,15 +2642,19 @@ async function _speakWithCfg(rawText, charName, c) {
       toast(existed ? '已更新到歌单' : '已加入歌单');
     });
     q('mvBgmDeleteTrack')?.addEventListener('click', () => {
-      const gid = q('mvBgmGroupSel')?.value || '';
-      const tid = lsGet(LS.BGM_TRACK, '');
+      const gid = box.dataset.bgmEditorGroup || q('mvBgmGroupSel')?.value || '';
+      const tid = box.dataset.bgmEditorTrack || q('mvBgmTrackSel')?.value || '';
       if (!gid || !tid) { toast('先在歌单里选一首歌'); return; }
       const lib = _getBgmLibrary();
       const group = _findBgmGroup(lib, gid);
       if (!group) return;
       group.tracks = _bgmTrackList(group).filter(t => t.id !== tid);
       _saveBgmLibrary(lib);
-      lsSet(LS.BGM_TRACK, group.tracks[0]?.id || '');
+      box.dataset.bgmEditorTrack = group.tracks[0]?.id || '';
+      if (lsGet(LS.BGM_GROUP, '') === gid && lsGet(LS.BGM_TRACK, '') === tid) {
+        const next = group.tracks[0] || null;
+        _setBgmSelection(gid, next?.id || '', next?.title || (q('mvBgmTitle')?.value || '背景音乐'), next?.url || '');
+      }
       _renderBgmLibraryEditor(box);
       _renderBgmDock();
       toast('已删除当前曲');
@@ -2695,10 +2665,12 @@ async function _speakWithCfg(rawText, charName, c) {
       const row = e.target.closest('[data-track-id]');
       const tid = useBtn?.dataset.trackId || playBtn?.dataset.trackId || row?.dataset.trackId || '';
       if (!tid) return;
-      const gid = q('mvBgmGroupSel')?.value || '';
+      const gid = box.dataset.bgmEditorGroup || q('mvBgmGroupSel')?.value || '';
       const lib = _getBgmLibrary();
       const track = _findBgmTrack(lib, gid, tid);
       if (!track) return;
+      box.dataset.bgmEditorGroup = gid;
+      box.dataset.bgmEditorTrack = track.id || '';
       _setBgmSelection(gid, track.id, track.title, track.url);
       q('mvBgmTitle').value = track.title || '';
       q('mvBgmUrl').value = track.url || '';
@@ -2794,8 +2766,8 @@ async function _speakWithCfg(rawText, charName, c) {
       lsSet(LS.BGM_URL, q('mvBgmUrl')?.value.trim() || '');
       lsSet(LS.BGM_VOLUME, _clampNum(q('mvBgmVolume')?.value, 0, 1, 0.18));
       lsSet(LS.BGM_LOOP, !!q('mvBgmLoop')?.checked);
-      lsSet(LS.BGM_GROUP, q('mvBgmGroupSel')?.value || '');
-      lsSet(LS.BGM_TRACK, q('mvBgmTrackSel')?.value || lsGet(LS.BGM_TRACK, '') || '');
+      lsSet(LS.BGM_GROUP, box.dataset.bgmEditorGroup || q('mvBgmGroupSel')?.value || '');
+      lsSet(LS.BGM_TRACK, box.dataset.bgmEditorTrack || q('mvBgmTrackSel')?.value || lsGet(LS.BGM_TRACK, '') || '');
       lsSet(LS.BGM_LIBRARY, _getBgmLibrary());
       const newDramaMap = { ...lsGet(LS.DRAMA_MAP, {}) };
       newDramaMap['__narration__'] = q('mvNarratorVoice')?.value.trim() || '';
