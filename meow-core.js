@@ -2001,7 +2001,9 @@ function toggleMenu(btnEl){
 
   // 关闭转盘：点中心按钮即可关闭（无需独立关闭按钮）
 
-  let angle = 0;
+  // 记住上次旋转角度，下次打开直接从上次位置开始
+  const KEY_ANGLE = 'meow_rotary_angle_v1';
+  let angle = lsGet(KEY_ANGLE, 0);
 
   function render() {
     let newSel = 0, minDist = Infinity;
@@ -2070,6 +2072,8 @@ function toggleMenu(btnEl){
     if (doc.getElementById(ID_MENU)) {
       angle += vel * 3;
       snap();
+      // snap 结束后保存角度
+      setTimeout(() => { try { lsSet(KEY_ANGLE, angle); } catch(_) {} }, 320);
     }
     e.preventDefault();
   }

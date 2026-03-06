@@ -107,7 +107,7 @@
       skipPattern:  lsGet(LS.SKIP_PATTERN, ''),
       readUser:     lsGet(LS.READ_USER,    false),
       apiEnabled:   lsGet(LS.API_ENABLED,  false),
-      apiUrl:       lsGet(LS.API_URL,      'https://api.openai.com/v1/audio/speech'),
+      apiUrl:       lsGet(LS.API_URL, ''),
       apiKey:       lsGet(LS.API_KEY,      ''),
       apiModel:     lsGet(LS.API_MODEL,    'tts-1'),
       apiVoice:     lsGet(LS.API_VOICE,    'alloy'),
@@ -227,18 +227,25 @@
 
   // ── 外接 TTS API（OpenAI 兼容接口）──
   async function speakViaApi(text) {
-    const c = cfg();
-    const resp = await fetch(c.apiUrl, {
+    const c   = cfg();
+    const url = (c.apiUrl || '').trim();
+    if (!url) throw new Error('未填写 API 地址');
+    const body = { model: c.apiModel || 'tts-1', input: text };
+    if (c.apiVoice) body.voice = c.apiVoice;
+    const resp = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${c.apiKey}`,
+        'Authorization': 'Bearer ' + (c.apiKey || ''),
       },
-      body: JSON.stringify({ model: c.apiModel, input: text, voice: c.apiVoice }),
+      body: JSON.stringify(body),
     });
-    if (!resp.ok) throw new Error(`API ${resp.status}: ${await resp.text()}`);
+    if (!resp.ok) {
+      let msg = ''; try { msg = await resp.text(); } catch(_) {}
+      throw new Error('API ' + resp.status + (msg ? ': ' + msg.slice(0,200) : ''));
+    }
     const blob = await resp.blob();
-    const url  = URL.createObjectURL(blob);
+    const objUrl = URL.createObjectURL(blob);
     return new Promise((resolve, reject) => {
       const audio = new Audio(url);
       audio.onended  = () => { URL.revokeObjectURL(url); isReading = false; updateAllBtns(false); resolve(); };
@@ -370,40 +377,8 @@
   }
 
   /** 外接 OpenAI 兼容 TTS API 朗读 */
-  async function _speakViaAPI(text, c) {
-    const url   = c.apiUrl.replace(/\/$/, '') + '/audio/speech';
-    const body  = JSON.stringify({
-      model: c.apiModel || 'tts-1',
-      input: text,
-      voice: c.apiVoice || 'alloy',
-      response_format: 'mp3',
-    });
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + c.apiKey,
-      },
-      body,
-    });
-    if (!res.ok) throw new Error('API ' + res.status);
-    const blob   = await res.blob();
-    const objUrl = URL.createObjectURL(blob);
 
-    // 停掉正在播放的
-    if (window._mvAudio) {
-      try { window._mvAudio.pause(); URL.revokeObjectURL(window._mvAudio.src); } catch(e) {}
-    }
-    const audio = new Audio(objUrl);
-    window._mvAudio = audio;
-    isReading = true; updateAllBtns(true);
-    audio.onended  = () => { isReading = false; updateAllBtns(false); URL.revokeObjectURL(objUrl); };
-    audio.onerror  = () => { isReading = false; updateAllBtns(false); URL.revokeObjectURL(objUrl); };
-    await audio.play();
-  }
-
-
-  async function _speakWithCfg(rawText, charName, c) {
+async function _speakWithCfg(rawText, charName, c) {
     if (_pendingSpeak) { clearTimeout(_pendingSpeak); _pendingSpeak = null; }
     try { synth?.cancel(); } catch(e) {}
     try { if (W._meowAudio) { W._meowAudio.pause(); W._meowAudio = null; } } catch(e) {}
@@ -946,34 +921,42 @@
         </div>
         <div class="mv-sec" id="mvApiSec">
           <h3>🔌 外接语音 API</h3>
-          <p class="mv-hint" style="margin-bottom:8px">兼容 OpenAI TTS 接口（如 OpenAI / Azure / 本地 ChatTTS 等）；开启后优先使用 API，失败自动回退本地语音</p>
+          <p class="mv-hint" style="margin-bottom:8px">兼容 OpenAI TTS 接口（volink / OpenAI / Azure 等），填写后优先使用 API 朗读</p>
           <label class="mv-toggle" style="margin-bottom:8px">
             <span>启用外接 API</span>
             <div class="mv-sw"><input type="checkbox" id="mvApiEnabled" ${c.apiEnabled?'checked':''}><div class="mv-slider"></div></div>
           </label>
           <div id="mvApiFields" style="${!c.apiEnabled?'display:none':''}">
             <div style="margin-bottom:8px">
-              <label style="font-size:12px;display:block;margin-bottom:4px;color:var(--meow-text,rgba(46,38,30,.82))">API 地址（如 https://api.openai.com/v1）</label>
-              <input type="text" id="mvApiUrl" placeholder="https://api.openai.com/v1" value="${esc(c.apiUrl)}">
+              <label style="font-size:12px;display:block;margin-bottom:4px">API 地址（完整 endpoint）</label>
+              <input type="text" id="mvApiUrl" placeholder="https://api.volink.org/v1/audio/speech" value="${esc(c.apiUrl)}">
             </div>
-            <div style="margin-bottom:8px;position:relative">
-              <label style="font-size:12px;display:block;margin-bottom:4px;color:var(--meow-text,rgba(46,38,30,.82))">API Key</label>
-              <div style="display:flex;gap:6px;align-items:center">
+            <div style="margin-bottom:8px">
+              <label style="font-size:12px;display:block;margin-bottom:4px">API Key</label>
+              <div style="display:flex;gap:6px">
                 <input type="password" id="mvApiKey" placeholder="sk-..." value="${esc(c.apiKey)}" style="flex:1">
-                <button type="button" class="mv-btn" id="mvApiKeyToggle" style="padding:6px 10px;font-size:11px;flex-shrink:0">显示</button>
+                <button type="button" class="mv-btn" id="mvApiKeyToggle" style="padding:6px 10px;font-size:11px">显示</button>
               </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
               <div>
-                <label style="font-size:12px;display:block;margin-bottom:4px;color:var(--meow-text,rgba(46,38,30,.82))">模型</label>
-                <input type="text" id="mvApiModel" placeholder="tts-1" value="${esc(c.apiModel||'tts-1')}">
+                <label style="font-size:12px;display:block;margin-bottom:4px">模型</label>
+                <input type="text" id="mvApiModel" placeholder="tts-1" value="${esc(c.apiModel)}">
               </div>
               <div>
-                <label style="font-size:12px;display:block;margin-bottom:4px;color:var(--meow-text,rgba(46,38,30,.82))">音色</label>
-                <input type="text" id="mvApiVoice" placeholder="alloy" value="${esc(c.apiVoice||'')}">
+                <label style="font-size:12px;display:block;margin-bottom:4px">
+                  音色 ID
+                  <button type="button" id="mvApiFetchVoices" style="margin-left:6px;font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid rgba(28,24,18,.15);background:transparent;cursor:pointer">获取列表</button>
+                </label>
+                <input type="text" id="mvApiVoice" placeholder="alloy（留空用默认）" value="${esc(c.apiVoice)}">
+                <select id="mvApiVoiceSel" style="display:none;width:100%;margin-top:4px"><option value="">— 选择音色 —</option></select>
               </div>
             </div>
-            <button class="mv-btn primary" id="mvApiTest" style="font-size:12px">▶ 测试 API</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <input type="text" id="mvApiTestTxt" placeholder="测试文本…" value="你好，这是朗读测试。" style="flex:1;min-width:100px">
+              <button type="button" class="mv-btn primary" id="mvApiTest" style="font-size:12px">▶ 测试</button>
+            </div>
+            <p id="mvApiHint" style="margin-top:6px;font-size:11px;color:rgba(120,100,70,.8);min-height:16px"></p>
           </div>
         </div>
         <div class="mv-footer">
@@ -1052,28 +1035,72 @@
       const inp = q('mvApiKey');
       if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
     });
-    // API 测试
-    q('mvApiTestBtn')?.addEventListener('click', async () => {
-      const url   = q('mvApiUrl')?.value?.trim();
-      const key   = q('mvApiKey')?.value?.trim();
-      const model = q('mvApiModel')?.value?.trim() || 'tts-1';
-      const voice = q('mvApiVoice')?.value?.trim() || 'alloy';
-      const text  = q('mvApiTestTxt')?.value?.trim() || '你好，这是 API 朗读测试。';
-      if (!url || !key) { toast('请先填写 API 地址和密钥'); return; }
+    // 获取音色列表
+    q('mvApiFetchVoices')?.addEventListener('click', async () => {
+      const rawUrl = q('mvApiUrl')?.value.trim() || '';
+      const apiKey = q('mvApiKey')?.value.trim() || '';
+      const hint   = q('mvApiHint');
+      if (!rawUrl) { toast('请先填写 API 地址'); return; }
+      // 推断 /voices 端点：把 /audio/speech 替换成 /voices
+      const base = rawUrl.replace(/\/audio\/speech\/?$/, '').replace(/\/$/, '');
+      const voicesUrl = base + '/voices';
+      if (hint) hint.textContent = '⏳ 获取中…';
       try {
-        toast('⏳ 请求中…');
-        const resp = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-          body: JSON.stringify({ model, input: text, voice }),
+        const resp = await fetch(voicesUrl, {
+          headers: apiKey ? { 'Authorization': 'Bearer ' + apiKey } : {},
         });
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const data = await resp.json();
+        const list = Array.isArray(data) ? data : (data.voices || data.data || []);
+        if (!list.length) throw new Error('返回列表为空');
+        const sel = q('mvApiVoiceSel');
+        if (sel) {
+          sel.innerHTML = '<option value="">— 选择音色 —</option>' + list.map(v => {
+            const id   = typeof v === 'string' ? v : (v.voice_id || v.id || v.name || '');
+            const name = typeof v === 'string' ? v : (v.name || v.voice_id || v.id || id);
+            return '<option value="' + id + '">' + name + '</option>';
+          }).join('');
+          sel.style.display = '';
+          sel.onchange = () => { const inp = q('mvApiVoice'); if (inp && sel.value) inp.value = sel.value; };
+        }
+        if (hint) hint.textContent = '✅ 共 ' + list.length + ' 个音色，点击选择';
+      } catch(err) {
+        if (hint) hint.textContent = '❌ ' + (err.message || err) + '（请手动填写音色 ID）';
+      }
+    });
+    // 测试 API
+    q('mvApiTest')?.addEventListener('click', async () => {
+      const apiUrl  = q('mvApiUrl')?.value.trim();
+      const apiKey  = q('mvApiKey')?.value.trim() || '';
+      const model   = q('mvApiModel')?.value.trim() || 'tts-1';
+      const voice   = q('mvApiVoice')?.value.trim();
+      const testTxt = q('mvApiTestTxt')?.value.trim() || '你好，这是朗读测试。';
+      const hint    = q('mvApiHint');
+      if (!apiUrl) { toast('请填写 API 地址'); return; }
+      if (hint) hint.textContent = '⏳ 请求中…';
+      try {
+        const bodyObj = { model, input: testTxt };
+        if (voice) bodyObj.voice = voice;
+        const resp = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+          body: JSON.stringify(bodyObj),
+        });
+        if (!resp.ok) {
+          const t = await resp.text();
+          throw new Error('HTTP ' + resp.status + ': ' + t.slice(0, 200));
+        }
         const blob  = await resp.blob();
         const audio = new Audio(URL.createObjectURL(blob));
-        audio.onended = () => toast('✅ API 朗读完成');
+        if (hint) {
+          hint.textContent = '▶ 播放中…';
+          audio.onended = () => { hint.textContent = '✅ 测试完成'; };
+        }
         audio.play();
       } catch(err) {
-        toast('❌ 测试失败：' + (err.message || err));
+        const msg = err.message || String(err);
+        if (hint) hint.textContent = '❌ ' + msg;
+        toast('API 失败：' + msg.slice(0, 80));
       }
     });
   }
