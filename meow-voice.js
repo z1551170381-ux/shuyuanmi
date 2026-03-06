@@ -1410,6 +1410,11 @@ ${t}
         const rc = resolvePronounChar();
         if (rc) return logHit('P0-角色叙述提示', rc);
       }
+      // 引号前一整段都在写“他”的心理/声音/姿态，也要锁给角色
+      if (CHAR_BEFORE_WIDE_RX.test(b60) && !USER_BEFORE_WIDE_RX.test(b60) && !USER_NARRATION_CUE_RX.test(interNar || '')) {
+        const rc = resolvePronounChar();
+        if (rc) return logHit('P0-前文角色连续发言', rc);
+      }
       if ((dialogueStr && dialogueStr.replace(/\s/g, '').length <= 12) &&
           !/[？?]/.test(dialogueStr || '') &&
           (CHAR_DIRECT_AFTER_RX.test(a30) || CHAR_BEFORE_ACTION_RX.test(b30)) &&
