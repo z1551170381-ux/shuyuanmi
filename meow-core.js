@@ -1918,9 +1918,9 @@ function toggleMenu(btnEl){
   ptr.className = 'rotaryPtr';
   menu.appendChild(ptr);
 
-  // 指示器放在 垂直于 最近屏幕边缘的方向（即平行于该边缘）
-  // 贴左/右 → 指示器在顶部（垂直于左右边缘 = 竖向）
-  // 贴上/下 → 指示器在右侧（垂直于上下边缘 = 横向）
+  // 指示器朝向 = 离最近屏幕边的 反方向（选中项在远离屏幕边一侧）
+  // 最近边=右 → 指向左(180°)  最近边=左 → 指向右(0°)
+  // 最近边=下 → 指向上(270°)  最近边=上 → 指向下(90°)
   let ptrTargetAngle = 270;
   {
     const cx = lx + R_DISC, cy = ly + R_DISC;
@@ -1930,12 +1930,18 @@ function toggleMenu(btnEl){
     const distRight  = vw - cx;
     const minDist    = Math.min(distTop, distBottom, distLeft, distRight);
     let pLeft, pTop, rot;
-    if (minDist === distLeft || minDist === distRight) {
-      // 最近边是竖边（左/右）→ 指示器放在顶部，朝上
-      pLeft = R_DISC - 4; pTop = 4; rot = 0; ptrTargetAngle = 270;
+    if (minDist === distRight) {
+      // 最近右边 → 指向左，指示器放左侧
+      pLeft = 4;           pTop = R_DISC - 4;   rot = 270; ptrTargetAngle = 180;
+    } else if (minDist === distLeft) {
+      // 最近左边 → 指向右，指示器放右侧
+      pLeft = R_DISC*2-13; pTop = R_DISC - 4;   rot = 90;  ptrTargetAngle = 0;
+    } else if (minDist === distBottom) {
+      // 最近下边 → 指向上，指示器放顶部
+      pLeft = R_DISC - 4;  pTop = 4;            rot = 0;   ptrTargetAngle = 270;
     } else {
-      // 最近边是横边（上/下）→ 指示器放在右侧，朝右
-      pLeft = R_DISC*2-13; pTop = R_DISC - 4; rot = 90; ptrTargetAngle = 0;
+      // 最近上边 → 指向下，指示器放底部
+      pLeft = R_DISC - 4;  pTop = R_DISC*2-13;  rot = 180; ptrTargetAngle = 90;
     }
     ptr.style.left      = pLeft + 'px';
     ptr.style.top       = pTop  + 'px';
@@ -2304,6 +2310,10 @@ function modalShell(id, title, icon){
     if(tries>=15){ clearInterval(t); try{toast('小手机模块未就绪，请检查 meow-phone.js 是否加载成功');}catch(_){} }
   },200);
 }
+  );
+  MEOW.addMenuItem('parallel', '平行界',
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7c3-2 6-2 9 0s6 2 9 0"/><path d="M3 12c3-2 6-2 9 0s6 2 9 0"/><path d="M3 17c3-2 6-2 9 0s6 2 9 0"/></svg>',
+    ()=>{ try{ toast('平行界即将上线，敬请期待'); }catch(_){} }
   );
 })();
 
