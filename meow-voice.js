@@ -156,17 +156,38 @@
     try {
       const root = el.cloneNode(true);
 
-      // 先把代码块 / 引用块保护起来，后续广播剧模式会强制按旁白处理。
-      root.querySelectorAll('pre, blockquote').forEach(node => {
-        const txt = (node.textContent || '').replace(/\u00A0/g, ' ').trim();
-        const ph  = doc.createTextNode(`\n${NARR_BLOCK_OPEN}\n${txt}\n${NARR_BLOCK_CLOSE}\n`);
+      function replaceAsNarration(node, inline) {
+        const txt = (node?.textContent || '').replace(/\u00A0/g, ' ').trim();
+        if (!txt) return;
+        const ph = doc.createTextNode(inline
+          ? ` ${NARR_BLOCK_OPEN} ${txt} ${NARR_BLOCK_CLOSE} `
+          : `\n${NARR_BLOCK_OPEN}\n${txt}\n${NARR_BLOCK_CLOSE}\n`);
         try { node.replaceWith(ph); } catch(e) {}
-      });
+      }
+
+      // 先把代码块 / 引用块保护起来，后续广播剧模式会强制按旁白处理。
+      root.querySelectorAll('pre, blockquote').forEach(node => replaceAsNarration(node, false));
       root.querySelectorAll('code').forEach(node => {
         try { if (node.closest('pre')) return; } catch(e) {}
-        const txt = (node.textContent || '').replace(/\u00A0/g, ' ').trim();
-        const ph  = doc.createTextNode(` ${NARR_BLOCK_OPEN} ${txt} ${NARR_BLOCK_CLOSE} `);
-        try { node.replaceWith(ph); } catch(e) {}
+        replaceAsNarration(node, true);
+      });
+
+      // 保护明显是“格式化展示”的 HTML 区块：带 style 的容器、表格、列表、详情块等。
+      // 只处理最外层命中的节点，避免嵌套块重复展开。
+      const fmtSel = [
+        'div[style]', 'section[style]', 'article[style]', 'aside[style]',
+        'p[style]', 'span[style]',
+        'table', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th',
+        'ul', 'ol', 'li', 'dl', 'dt', 'dd',
+        'details', 'summary'
+      ].join(',');
+      Array.from(root.querySelectorAll(fmtSel)).forEach(node => {
+        try {
+          if (node.closest('pre, blockquote, code')) return;
+          const parent = node.parentElement;
+          if (parent && parent !== root && parent.closest(fmtSel)) return;
+          replaceAsNarration(node, false);
+        } catch(e) {}
       });
 
       // textContent 直接读原生 DOM 文字，不依赖渲染树，永远可靠。
@@ -203,6 +224,42 @@
   }
   function processText(raw, c) {
     let text = String(raw || '').trim();
+
+    // 广播剧模式：把原始 HTML / 选择器 / 状态块先包成旁白保护块，后面统一按旁白读。
+    if (c.mode === 'drama') {
+      text = text.replace(/\[(?:Selector|selector)\]([\s\S]*?)\[\/(?:Selector|selector)\]/g, (m, inner) => {
+        const t = String(inner || '').trim();
+        return t ? `
+⟪MV_NARR_BLOCK⟫
+${t}
+⟪/MV_NARR_BLOCK⟫
+` : ' ';
+      });
+      text = text.replace(/\[(?:状态|state)\s*:[^\]]*\]/gi, (m) => {
+        const t = String(m || '').replace(/^\[/, '').replace(/\]$/, '').trim();
+        return t ? `
+⟪MV_NARR_BLOCK⟫
+${t}
+⟪/MV_NARR_BLOCK⟫
+` : ' ';
+      });
+      text = text.replace(/<(?:div|section|article|aside|table|thead|tbody|tfoot|tr|td|th|ul|ol|li|dl|dt|dd|details|summary|blockquote|pre|code)[^>]*>[\s\S]*?<\/(?:div|section|article|aside|table|thead|tbody|tfoot|tr|td|th|ul|ol|li|dl|dt|dd|details|summary|blockquote|pre|code)>/gi, (m) => {
+        const t = String(m || '')
+          .replace(/<br\s*\/?>/gi, '\n')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/&nbsp;/gi, ' ')
+          .replace(/&amp;/gi, '&')
+          .replace(/&lt;/gi, '<')
+          .replace(/&gt;/gi, '>')
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+        return t ? `
+⟪MV_NARR_BLOCK⟫
+${t}
+⟪/MV_NARR_BLOCK⟫
+` : ' ';
+      });
+    }
     // ── TTS前清理：去掉 Markdown + 让TTS引擎友好读 ──
     // 去 Markdown
     text = text.replace(/\*\*/g, '').replace(/\*/g, '').replace(/#{1,6}\s/g, '');
