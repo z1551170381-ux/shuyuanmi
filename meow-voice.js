@@ -976,40 +976,6 @@
             <button class="mv-btn primary" id="mvApiTest" style="font-size:12px">▶ 测试 API</button>
           </div>
         </div>
-        <div class="mv-sec">
-          <h3>🔌 外接语音 API（OpenAI 兼容）</h3>
-          <p class="mv-hint" style="margin-bottom:8px">填写后优先使用 API 朗读，留空则使用系统 TTS</p>
-          <label class="mv-toggle" style="margin-bottom:10px"><span>启用外接 API</span>
-            <div class="mv-sw"><input type="checkbox" id="mvApiEnabled" ${c.apiEnabled?'checked':''}><div class="mv-slider"></div></div>
-          </label>
-          <div id="mvApiFields" style="${c.apiEnabled?'':'opacity:.5;pointer-events:none'}">
-            <div class="mv-row" style="flex-direction:column;align-items:stretch;gap:6px">
-              <label style="font-size:12px;color:var(--meow-text,rgba(46,38,30,.82))">API 地址</label>
-              <input type="text" id="mvApiUrl" placeholder="https://api.openai.com/v1/audio/speech" value="${esc(c.apiUrl||'')}">
-            </div>
-            <div class="mv-row" style="flex-direction:column;align-items:stretch;gap:6px;margin-top:8px">
-              <label style="font-size:12px;color:var(--meow-text,rgba(46,38,30,.82))">API 密钥（加密隐藏）</label>
-              <div style="display:flex;gap:6px;align-items:center">
-                <input type="password" id="mvApiKey" placeholder="sk-..." value="${esc(c.apiKey||'')}" style="flex:1">
-                <button class="mv-btn" id="mvApiKeyToggle" type="button" style="padding:6px 10px;font-size:12px">👁</button>
-              </div>
-            </div>
-            <div class="mv-row" style="gap:8px;margin-top:8px;flex-wrap:wrap">
-              <div style="flex:1;min-width:120px">
-                <label style="font-size:12px;display:block;margin-bottom:4px;color:var(--meow-text,rgba(46,38,30,.82))">模型</label>
-                <input type="text" id="mvApiModel" placeholder="tts-1" value="${esc(c.apiModel||'tts-1')}">
-              </div>
-              <div style="flex:1;min-width:120px">
-                <label style="font-size:12px;display:block;margin-bottom:4px;color:var(--meow-text,rgba(46,38,30,.82))">音色 / Voice</label>
-                <input type="text" id="mvApiVoice" placeholder="alloy" value="${esc(c.apiVoice||'alloy')}">
-              </div>
-            </div>
-            <div class="mv-test-bar" style="margin-top:8px">
-              <input type="text" id="mvApiTestTxt" placeholder="测试文本…" value="你好，这是 API 朗读测试。">
-              <button class="mv-btn primary" id="mvApiTestBtn" type="button">▶ 测试</button>
-            </div>
-          </div>
-        </div>
         <div class="mv-footer">
           <button class="mv-btn primary" id="mvSave" style="flex:1">保存设置</button>
           <button class="mv-btn" id="mvCloseBtn">关闭</button>
@@ -1049,11 +1015,37 @@
       q('mvCharList').innerHTML = charRows(getActiveCharNames(), lsGet(LS.CHAR_MAP, {}));
     });
 
+    // 保存设置
+    q('mvSave').addEventListener('click', () => {
+      const mode   = box.querySelector('.mv-mode-card.active')?.dataset.mode || 'all';
+      const newMap = { ...lsGet(LS.CHAR_MAP, {}) };
+      box.querySelectorAll('.mv-char-sel').forEach(sel => {
+        if (sel.dataset.char) newMap[sel.dataset.char] = sel.value;
+      });
+      lsSet(LS.ENABLED,      q('mvAutoRead').checked);
+      lsSet(LS.READ_USER,    q('mvReadUser').checked);
+      lsSet(LS.RATE,         +q('mvRate').value);
+      lsSet(LS.PITCH,        +q('mvPitch').value);
+      lsSet(LS.VOLUME,       +q('mvVolume').value);
+      lsSet(LS.MODE,         mode);
+      lsSet(LS.DEF_VOICE,    q('mvDefVoice').value);
+      lsSet(LS.SKIP_STAR,    q('mvSkipStar').checked);
+      lsSet(LS.SKIP_BRACKET, q('mvSkipBracket').checked);
+      lsSet(LS.SKIP_PATTERN, q('mvSkipPattern')?.value || '');
+      lsSet(LS.CHAR_MAP,     newMap);
+      lsSet(LS.API_ENABLED,  q('mvApiEnabled')?.checked || false);
+      lsSet(LS.API_URL,      q('mvApiUrl')?.value.trim()   || '');
+      lsSet(LS.API_KEY,      q('mvApiKey')?.value.trim()   || '');
+      lsSet(LS.API_MODEL,    q('mvApiModel')?.value.trim() || 'tts-1');
+      lsSet(LS.API_VOICE,    q('mvApiVoice')?.value.trim() || 'alloy');
+      toast('✅ 语音设置已保存');
+      closeModal();
+    });
 
-    // API 启用开关联动
-    const apiFields = q('mvApiFields');
+    // API 开关联动
     q('mvApiEnabled')?.addEventListener('change', e => {
-      if (apiFields) apiFields.style.cssText = e.target.checked ? '' : 'opacity:.5;pointer-events:none';
+      const f = q('mvApiFields');
+      if (f) f.style.display = e.target.checked ? '' : 'none';
     });
     // 密钥显示/隐藏
     q('mvApiKeyToggle')?.addEventListener('click', () => {

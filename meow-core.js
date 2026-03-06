@@ -1918,8 +1918,10 @@ function toggleMenu(btnEl){
   ptr.className = 'rotaryPtr';
   menu.appendChild(ptr);
 
-  // 计算转盘中心距哪条屏幕边最近，指示器放在那条边上，且 snap/select 方向一致
-  let ptrTargetAngle = 270; // 默认顶部（270° = 12点方向）
+  // 指示器放在 垂直于 最近屏幕边缘的方向（即平行于该边缘）
+  // 贴左/右 → 指示器在顶部（垂直于左右边缘 = 竖向）
+  // 贴上/下 → 指示器在右侧（垂直于上下边缘 = 横向）
+  let ptrTargetAngle = 270;
   {
     const cx = lx + R_DISC, cy = ly + R_DISC;
     const distTop    = cy;
@@ -1928,14 +1930,12 @@ function toggleMenu(btnEl){
     const distRight  = vw - cx;
     const minDist    = Math.min(distTop, distBottom, distLeft, distRight);
     let pLeft, pTop, rot;
-    if (minDist === distTop) {
-      pLeft = R_DISC - 4; pTop = 4;            rot = 0;   ptrTargetAngle = 270; // 指向上（垂直顶边）
-    } else if (minDist === distBottom) {
-      pLeft = R_DISC - 4; pTop = R_DISC*2-13;  rot = 180; ptrTargetAngle = 90;  // 指向下（垂直底边）
-    } else if (minDist === distLeft) {
-      pLeft = 4;          pTop = R_DISC - 4;   rot = 270; ptrTargetAngle = 180; // 指向左（垂直左边）
+    if (minDist === distLeft || minDist === distRight) {
+      // 最近边是竖边（左/右）→ 指示器放在顶部，朝上
+      pLeft = R_DISC - 4; pTop = 4; rot = 0; ptrTargetAngle = 270;
     } else {
-      pLeft = R_DISC*2-13; pTop = R_DISC - 4;  rot = 90;  ptrTargetAngle = 0;   // 指向右（垂直右边）
+      // 最近边是横边（上/下）→ 指示器放在右侧，朝右
+      pLeft = R_DISC*2-13; pTop = R_DISC - 4; rot = 90; ptrTargetAngle = 0;
     }
     ptr.style.left      = pLeft + 'px';
     ptr.style.top       = pTop  + 'px';
@@ -2118,6 +2118,7 @@ function _builtinMenuItems(){
     if(tries>=15){ clearInterval(t); try{toast('小手机模块未就绪，请检查 meow-phone.js 是否加载成功');}catch(_){} }
   },200);
 } },
+    { id:'parallel', label:'平行界', iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7c3-2 6-2 9 0s6 2 9 0"/><path d="M3 12c3-2 6-2 9 0s6 2 9 0"/><path d="M3 17c3-2 6-2 9 0s6 2 9 0"/></svg>', action:()=>{ try{ toast('平行界即将上线，敬请期待'); }catch(_){} } },
   ];
 }
 function modalShell(id, title, icon){
