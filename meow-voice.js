@@ -426,16 +426,7 @@ ${t}
 
   function _bgmTracksForDisplay(lib, groupId) {
     const group = _findBgmGroup(lib, groupId);
-    const tracks = _bgmTrackList(group).slice();
-    const curGroupId = String(lsGet(LS.BGM_GROUP, '') || '');
-    const curTrackId = String(lsGet(LS.BGM_TRACK, '') || '');
-    const curTitle = String(lsGet(LS.BGM_TITLE, '') || '').trim();
-    const curUrl = String(lsGet(LS.BGM_URL, '') || '').trim();
-    if (curUrl && String(group?.id || '') === curGroupId) {
-      const exists = tracks.some(t => (curTrackId && String(t?.id || '') === curTrackId) || String(t?.url || '').trim() === curUrl);
-      if (!exists) tracks.unshift({ id: curTrackId || '__current__', title: curTitle || '当前曲目', url: curUrl });
-    }
-    return tracks;
+    return _bgmTrackList(group).slice();
   }
 
   function _parseDramaBgmSource(raw) {
@@ -620,6 +611,7 @@ ${t}
             <select class="mv-bgm-track-select" aria-label="选择歌曲"></select>
           </div>
           <div class="mv-bgm-lyric"></div>
+          <div class="mv-bgm-track-count" style="margin-top:6px;font-size:10px;color:rgba(57,72,80,.46)"></div>
           <div class="mv-bgm-list"></div>
           <div class="mv-bgm-embed"></div>
         </div>
@@ -683,12 +675,12 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-pick-row{margin-top:7px}
       #meow-voice-bgm-dock .mv-bgm-track-select{width:100%;border:1px solid rgba(120,125,128,.18);border-radius:10px;padding:6px 9px;background:rgba(255,255,255,.74);font-size:11px;color:#334249;box-sizing:border-box}
       #meow-voice-bgm-dock .mv-bgm-lyric{margin-top:8px;min-height:42px;padding:8px 9px;border-radius:14px;background:rgba(255,255,255,.42);border:1px solid rgba(225,225,219,.88);font-size:11px;line-height:1.65;color:rgba(51,66,73,.78);white-space:pre-line}#meow-voice-bgm-dock .mv-bgm-lyric:empty::before{content:'歌词';opacity:.32}
-      #meow-voice-bgm-dock .mv-bgm-list{margin-top:8px;max-height:92px;overflow:auto;padding-right:2px}
-      #meow-voice-bgm-dock .mv-bgm-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 8px;border-radius:12px;background:rgba(255,255,255,.52);margin-bottom:6px;cursor:pointer;border:1px solid rgba(80,88,92,.08)}
-      #meow-voice-bgm-dock .mv-bgm-item.active{background:rgba(64,73,78,.10);border-color:rgba(64,73,78,.14)}
-      #meow-voice-bgm-dock .mv-bgm-item-title{font-size:11px;font-weight:600;color:#394850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-      #meow-voice-bgm-dock .mv-bgm-item-meta{font-size:10px;color:rgba(57,72,80,.48);margin-top:2px}
-      #meow-voice-bgm-dock .mv-bgm-item-play{border:0;border-radius:999px;background:#4a575d;color:#fff;font-size:10px;padding:5px 9px;cursor:pointer;flex:none}
+      #meow-voice-bgm-dock .mv-bgm-list{display:none !important}
+      #meow-voice-bgm-dock .mv-bgm-item{display:none !important}
+      #meow-voice-bgm-dock .mv-bgm-item.active{display:none !important}
+      #meow-voice-bgm-dock .mv-bgm-item-title{display:none !important}
+      #meow-voice-bgm-dock .mv-bgm-item-meta{display:none !important}
+      #meow-voice-bgm-dock .mv-bgm-item-play{display:none !important}
       #meow-voice-bgm-dock .mv-bgm-embed{margin-top:8px}
       #meow-voice-bgm-dock .mv-bgm-embed iframe{display:block;width:100%;height:104px;border:0;border-radius:14px;background:rgba(255,255,255,.84)}
       #meow-voice-bgm-dock .mv-bgm-embed.empty{display:none}
@@ -1003,19 +995,11 @@ ${t}
     const lyricWrap = root.querySelector('.mv-bgm-lyric');
     if (lyricWrap) lyricWrap.textContent = _buildBgmCaption(c, group, currentTrack, tracks);
 
+    const countWrap = root.querySelector('.mv-bgm-track-count');
+    if (countWrap) countWrap.textContent = tracks.length ? `当前分组共 ${tracks.length} 首` : '当前分组暂无歌曲';
+
     const listWrap = root.querySelector('.mv-bgm-list');
-    if (listWrap) {
-      listWrap.innerHTML = tracks.length
-        ? tracks.map(t => `
-            <div class="mv-bgm-item ${t.id===activeTrackId?'active':''}" data-track-id="${_safeAttr(t.id)}">
-              <div style="min-width:0;flex:1">
-                <div class="mv-bgm-item-title">${_safeAttr(t.title)}</div>
-                <div class="mv-bgm-item-meta">${_safeAttr(group?.name || '')}</div>
-              </div>
-              <button type="button" class="mv-bgm-item-play" data-track-id="${_safeAttr(t.id)}">播放</button>
-            </div>`).join('')
-        : '';
-    }
+    if (listWrap) listWrap.innerHTML = '';
     const embed = root.querySelector('.mv-bgm-embed');
     if (embed) {
       if (_bgmState.active && _bgmState.parsedKind === 'netease_iframe' && _bgmState.embedSrc) {
@@ -2253,11 +2237,12 @@ async function _speakWithCfg(rawText, charName, c) {
 
     const trackSel = q('mvBgmTrackSel');
     if (trackSel) {
-      const opts = ['<option value="">点击从下方歌单选择，或直接填写链接后加入歌单</option>']
-        .concat(tracks.map(t => `<option value="${escAttr(t.id)}" ${t.id===activeTrackId?'selected':''}>${esc(t.title)}</option>`));
+      const opts = tracks.length
+        ? tracks.map(t => `<option value="${escAttr(t.id)}" ${t.id===activeTrackId?'selected':''}>${esc(t.title)}</option>`)
+        : ['<option value="">当前分组暂无歌曲</option>'];
       trackSel.innerHTML = opts.join('');
       trackSel.disabled = !tracks.length;
-      trackSel.value = activeTrackId && tracks.some(t => t.id === activeTrackId) ? activeTrackId : '';
+      trackSel.value = activeTrackId && tracks.some(t => t.id === activeTrackId) ? activeTrackId : (tracks[0]?.id || '');
     }
 
     const list = q('mvBgmLibraryList');
@@ -2518,7 +2503,7 @@ async function _speakWithCfg(rawText, charName, c) {
               </div>
               <div style="margin-bottom:8px">
                 <label style="font-size:12px;display:block;margin-bottom:4px">点击选择歌曲</label>
-                <select id="mvBgmTrackSel"></select>
+                <select id="mvBgmTrackSel" size="6" style="height:auto"></select>
               </div>
               <div style="margin-bottom:8px">
                 <label style="font-size:12px;display:block;margin-bottom:4px">音乐链接 / iframe 代码</label>
@@ -2652,20 +2637,24 @@ async function _speakWithCfg(rawText, charName, c) {
         gid = group.id;
       }
       if (!Array.isArray(group.tracks)) group.tracks = [];
-      const existed = group.tracks.find(t => String(t?.url || '').trim() === url);
-      const tid = existed ? existed.id : _uid('t_');
-      if (existed) {
-        existed.title = title;
-        existed.url = url;
-      } else {
-        group.tracks.push({ id: tid, title, url });
+
+      // 加入歌单默认始终追加，不再因为 URL 相同就静默覆盖旧歌。
+      // 只有当前编辑器明确选中了同一首曲目，且 URL / 标题都没变时，才提示已存在。
+      const currentTid = String(state.trackId || '');
+      const currentTrack = currentTid ? group.tracks.find(t => String(t?.id || '') === currentTid) : null;
+      if (currentTrack && String(currentTrack.url || '').trim() === url && String(currentTrack.title || '').trim() === title) {
+        toast('这首歌已经在当前分组里了');
+        return;
       }
+
+      const tid = _uid('t_');
+      group.tracks.push({ id: tid, title, url });
       _saveBgmLibrary(lib);
       const savedLib = _getBgmLibrary();
-      const savedTrack = _findBgmTrack(savedLib, gid, tid) || (_findBgmGroup(savedLib, gid)?.tracks || []).find(t => String(t?.url || '').trim() === url) || null;
+      const savedTrack = _findBgmTrack(savedLib, gid, tid) || null;
       _setBgmEditorSelection(box, gid, savedTrack?.id || tid, true);
       _renderBgmLibraryEditor(box);
-      toast(existed ? '已更新到歌单' : '已加入歌单');
+      toast('已加入歌单');
     });
     q('mvBgmDeleteTrack')?.addEventListener('click', () => {
       const state = _ensureBgmEditorState(box);
