@@ -643,7 +643,7 @@
     if (!container) { setTimeout(injectPlayBtn, 2000); return; }
 
     const wrap = doc.createElement('div');
-    wrap.style.cssText = 'display:flex;align-items:center;flex-shrink:0;position:relative;margin-right:10px;margin-left:4px;';
+    wrap.style.cssText = 'display:flex;align-items:center;flex-shrink:0;position:relative;margin-right:20px;margin-left:6px;';
 
     const btn = doc.createElement('button');
     btn.id        = ID.PLAY_BTN;
@@ -1021,9 +1021,18 @@
     const q = id => box.querySelector('#' + id);
     box.querySelector('.mv-close').addEventListener('click', closeModal);
     q('mvCloseBtn').addEventListener('click', closeModal);
-    q('mvRate').addEventListener('input',   e => q('mvRateVal').textContent   = (+e.target.value).toFixed(1)+'x');
-    q('mvPitch').addEventListener('input',  e => q('mvPitchVal').textContent  = (+e.target.value).toFixed(1));
-    q('mvVolume').addEventListener('input', e => q('mvVolumeVal').textContent = Math.round(+e.target.value*100)+'%');
+    q('mvRate').addEventListener('input', e => {
+      q('mvRateVal').textContent = (+e.target.value).toFixed(1)+'x';
+      lsSet(LS.RATE, +e.target.value);
+    });
+    q('mvPitch').addEventListener('input', e => {
+      q('mvPitchVal').textContent = (+e.target.value).toFixed(1);
+      lsSet(LS.PITCH, +e.target.value);
+    });
+    q('mvVolume').addEventListener('input', e => {
+      q('mvVolumeVal').textContent = Math.round(+e.target.value*100)+'%';
+      lsSet(LS.VOLUME, +e.target.value);
+    });
     q('mvModeGrid').addEventListener('click', e => {
       const card = e.target.closest('.mv-mode-card');
       if (!card) return;
@@ -1040,58 +1049,6 @@
       q('mvCharList').innerHTML = charRows(getActiveCharNames(), lsGet(LS.CHAR_MAP, {}));
     });
 
-    // API 设置绑定
-    try {
-      q('mvApiEnabled').addEventListener('change', e => {
-        const f = q('mvApiFields');
-        if (f) f.style.display = e.target.checked ? '' : 'none';
-      });
-      q('mvApiKeyToggle').addEventListener('click', () => {
-        const inp = q('mvApiKey');
-        const isHidden = inp.type === 'password';
-        inp.type = isHidden ? 'text' : 'password';
-        q('mvApiKeyToggle').textContent = isHidden ? '隐藏' : '显示';
-      });
-      q('mvApiTest').addEventListener('click', async () => {
-        const url   = q('mvApiUrl').value.trim();
-        const key   = q('mvApiKey').value.trim();
-        const model = q('mvApiModel').value.trim() || 'tts-1';
-        const voice = q('mvApiVoice').value.trim() || 'alloy';
-        if (!url || !key) { toast('请先填写 API 地址和 Key'); return; }
-        toast('⏳ 测试中…');
-        try {
-          await _speakViaAPI('你好，API 朗读测试。', { apiUrl: url, apiKey: key, apiModel: model, apiVoice: voice });
-          toast('✅ API 测试成功');
-        } catch(e) {
-          toast('❌ API 测试失败：' + (e.message || '未知错误'));
-        }
-      });
-    } catch(e) {}
-    q('mvSave').addEventListener('click', () => {
-      const mode   = box.querySelector('.mv-mode-card.active')?.dataset.mode || 'all';
-      const newMap = { ...lsGet(LS.CHAR_MAP, {}) };
-      box.querySelectorAll('.mv-char-sel').forEach(sel => {
-        if (sel.dataset.char) newMap[sel.dataset.char] = sel.value;
-      });
-      lsSet(LS.ENABLED,      q('mvAutoRead').checked);
-      lsSet(LS.READ_USER,    q('mvReadUser').checked);
-      lsSet(LS.RATE,         +q('mvRate').value);
-      lsSet(LS.PITCH,        +q('mvPitch').value);
-      lsSet(LS.VOLUME,       +q('mvVolume').value);
-      lsSet(LS.MODE,         mode);
-      lsSet(LS.DEF_VOICE,    q('mvDefVoice').value);
-      lsSet(LS.SKIP_STAR,    q('mvSkipStar').checked);
-      lsSet(LS.SKIP_BRACKET, q('mvSkipBracket').checked);
-      lsSet(LS.SKIP_PATTERN, q('mvSkipPattern')?.value || '');
-      lsSet(LS.CHAR_MAP,     newMap);
-      lsSet(LS.API_ENABLED,  q('mvApiEnabled')?.checked || false);
-      lsSet(LS.API_URL,      q('mvApiUrl')?.value.trim()  || '');
-      lsSet(LS.API_KEY,      q('mvApiKey')?.value.trim()  || '');
-      lsSet(LS.API_MODEL,    q('mvApiModel')?.value.trim() || 'tts-1');
-      lsSet(LS.API_VOICE,    q('mvApiVoice')?.value.trim() || '');
-      toast('✅ 语音设置已保存');
-      closeModal();
-    });
 
     // API 启用开关联动
     const apiFields = q('mvApiFields');

@@ -1460,11 +1460,11 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   position:absolute;
   left:50%; top:50%;
   transform:translate(-50%,-50%);
-  width:60px; height:60px;
+  width:44px; height:44px;
   border-radius:50%;
-  background:rgba(255,255,255,.72);
-  border:1px solid rgba(255,255,255,.55);
-  box-shadow:0 4px 18px rgba(0,0,0,.10);
+  background:rgba(255,255,255,.62);
+  border:1px solid rgba(255,255,255,.50);
+  box-shadow:0 3px 12px rgba(0,0,0,.09);
   display:flex; align-items:center; justify-content:center;
   pointer-events:auto;
   cursor:pointer;
@@ -1472,12 +1472,12 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   transition:background .14s, transform .12s;
 }
 #${ID_MENU} .rotaryCenter:active{
-  background:rgba(240,234,220,.80);
-  transform:translate(-50%,-50%) scale(.93);
+  background:rgba(240,234,220,.75);
+  transform:translate(-50%,-50%) scale(.90);
 }
 #${ID_MENU} .rotaryCenter .rc-star{
   display:flex; align-items:center; justify-content:center;
-  color:rgba(80,68,52,.62);
+  color:rgba(80,68,52,.55);
   pointer-events:none;
 }
 
@@ -1918,7 +1918,8 @@ function toggleMenu(btnEl){
   ptr.className = 'rotaryPtr';
   menu.appendChild(ptr);
 
-  // 计算转盘中心距哪条屏幕边最近，指示器放在那条边上朝外
+  // 计算转盘中心距哪条屏幕边最近，指示器放在那条边上，且 snap/select 方向一致
+  let ptrTargetAngle = 270; // 默认顶部（270° = 12点方向）
   {
     const cx = lx + R_DISC, cy = ly + R_DISC;
     const distTop    = cy;
@@ -1927,10 +1928,15 @@ function toggleMenu(btnEl){
     const distRight  = vw - cx;
     const minDist    = Math.min(distTop, distBottom, distLeft, distRight);
     let pLeft, pTop, rot;
-    if (minDist === distTop)    { pLeft = R_DISC - 4;  pTop  = 4;           rot = 0;   }  // 指向上
-    else if (minDist === distBottom) { pLeft = R_DISC - 4;  pTop  = R_DISC*2-12; rot = 180; }  // 指向下
-    else if (minDist === distLeft)   { pLeft = 4;           pTop  = R_DISC - 4;  rot = 270; }  // 指向左
-    else                             { pLeft = R_DISC*2-12; pTop  = R_DISC - 4;  rot = 90;  }  // 指向右
+    if (minDist === distTop) {
+      pLeft = R_DISC - 4; pTop = 4;            rot = 0;   ptrTargetAngle = 270; // 指向上（垂直顶边）
+    } else if (minDist === distBottom) {
+      pLeft = R_DISC - 4; pTop = R_DISC*2-13;  rot = 180; ptrTargetAngle = 90;  // 指向下（垂直底边）
+    } else if (minDist === distLeft) {
+      pLeft = 4;          pTop = R_DISC - 4;   rot = 270; ptrTargetAngle = 180; // 指向左（垂直左边）
+    } else {
+      pLeft = R_DISC*2-13; pTop = R_DISC - 4;  rot = 90;  ptrTargetAngle = 0;   // 指向右（垂直右边）
+    }
     ptr.style.left      = pLeft + 'px';
     ptr.style.top       = pTop  + 'px';
     ptr.style.transform = `rotate(${rot}deg)`;
@@ -1970,6 +1976,7 @@ function toggleMenu(btnEl){
   center.type = 'button';
   center.className = 'rotaryCenter';
   center.innerHTML = `<div class="rc-star"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5.64 5.64l2.83 2.83M15.54 15.54l2.83 2.83M5.64 18.36l2.83-2.83M15.54 8.46l2.83-2.83"/></svg></div>`;
+  // 中心按钮：点击 = 关闭转盘
   let _centerTouchMoved = false;
   center.addEventListener('touchstart', () => { _centerTouchMoved = false; }, { passive: true });
   center.addEventListener('touchmove',  () => { _centerTouchMoved = true;  }, { passive: true });
@@ -1977,13 +1984,11 @@ function toggleMenu(btnEl){
     if (_centerTouchMoved) return;
     e.preventDefault(); e.stopPropagation();
     closeOverlays();
-    try { items[selIdx].action(); } catch(err) {}
   }, { passive: false });
   center.addEventListener('click', e => {
     if (e.sourceCapabilities && !e.sourceCapabilities.firesTouchEvents) {
       e.preventDefault(); e.stopPropagation();
       closeOverlays();
-      try { items[selIdx].action(); } catch(err) {}
     }
   }, { passive: false });
   menu.appendChild(center);
@@ -2000,7 +2005,7 @@ function toggleMenu(btnEl){
       el.style.left = (R_DISC + R_ITEM * Math.cos(rad) - ITEM_H) + 'px';
       el.style.top  = (R_DISC + R_ITEM * Math.sin(rad) - ITEM_H) + 'px';
       const norm = ((deg % 360) + 360) % 360;
-      const dist = Math.min(Math.abs(norm - 270), 360 - Math.abs(norm - 270));
+      const dist = Math.min(Math.abs(norm - ptrTargetAngle), 360 - Math.abs(norm - ptrTargetAngle));
       if (dist < minDist) { minDist = dist; newSel = i; }
       el.classList.remove('sel');
     });
@@ -2026,7 +2031,9 @@ function toggleMenu(btnEl){
   }
 
   function snap() {
-    snapTo(Math.round(-angle / step) * (-step));
+    // 通用公式：使最近item落在 ptrTargetAngle 处
+    const iRound = Math.round((ptrTargetAngle + 90 - angle) / step);
+    snapTo(ptrTargetAngle + 90 - iRound * step);
   }
 
   let dragging = false, lastAng = 0, lastT = 0, vel = 0;
