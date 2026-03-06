@@ -330,176 +330,203 @@
     // 🐱 调试日志（排查完毕后可改为 false）
     const _DRAMA_DEBUG = true;
 
-function detectSpeaker(rawText, qStart, qEnd, dialogueStr, prevSpeaker, interNar) {
-  const b8  = rawText.slice(Math.max(0, qStart - 8),  qStart);
-  const a8  = rawText.slice(qEnd, Math.min(rawText.length, qEnd + 8));
-  const b30 = rawText.slice(Math.max(0, qStart - 30), qStart);
-  const a30 = rawText.slice(qEnd, Math.min(rawText.length, qEnd + 30));
-  const b60 = rawText.slice(Math.max(0, qStart - 60), qStart);
-  const a60 = rawText.slice(qEnd, Math.min(rawText.length, qEnd + 60));
+    function detectSpeaker(rawText, qStart, qEnd, dialogueStr, prevSpeaker, interNar) {
+      const b8  = rawText.slice(Math.max(0, qStart - 8),  qStart);
+      const a8  = rawText.slice(qEnd, Math.min(rawText.length, qEnd + 8));
+      const b30 = rawText.slice(Math.max(0, qStart - 30), qStart);
+      const a30 = rawText.slice(qEnd, Math.min(rawText.length, qEnd + 30));
+      const b60 = rawText.slice(Math.max(0, qStart - 60), qStart);
+      const a60 = rawText.slice(qEnd, Math.min(rawText.length, qEnd + 60));
 
-  // 强玩家发言线索：优先级高于“他/她”代词兜底
-  const USER_STRONG_RX = /(?:我[^，。！？\n]{0,12}(?:说|问|叫|唤|喊|开口|出声|低声问|轻声问|笑着问|笑着说|半开玩笑地(?:说|问)?|打趣地(?:说|问)?|试探地(?:说|问)?|调侃道)|我叫他的名字|我半开玩笑地[^，。！？\n]{0,8}(?:晃|问|说)|我笑着[^，。！？\n]{0,8}(?:问|说)|我朝[^，。！？\n]{0,8}(?:说|问)|我对[^，。！？\n]{0,8}(?:说|问))/;
+      // 强玩家发言线索：优先级高于“他/她”代词兜底
+      const USER_STRONG_RX = /(?:我[^，。！？\n]{0,12}(?:说|问|叫|唤|喊|开口|出声|低声问|轻声问|笑着问|笑着说|半开玩笑地(?:说|问)?|打趣地(?:说|问)?|试探地(?:说|问)?|调侃道)|我叫他的名字|我半开玩笑地[^，。！？\n]{0,8}(?:晃|问|说)|我笑着[^，。！？\n]{0,8}(?:问|说)|我朝[^，。！？\n]{0,8}(?:说|问)|我对[^，。！？\n]{0,8}(?:说|问))/;
 
-  // 玩家主动提问/主动搭话的弱一点线索
-  const USER_ACTIVE_RX = /(?:我[^，。！？\n]{0,12}(?:半开玩笑地|笑着|试探地|故意|忍不住|低声|轻声)[^，。！？\n]{0,8}(?:问|说|晃)|我叫他的名字|我问|我说|我朝[^，。！？\n]{0,8}(?:问|说)|我对[^，。！？\n]{0,8}(?:问|说))/;
+      // 玩家主动提问/主动搭话的弱一点线索
+      const USER_ACTIVE_RX = /(?:我[^，。！？\n]{0,12}(?:半开玩笑地|笑着|试探地|故意|忍不住|低声|轻声)[^，。！？\n]{0,8}(?:问|说|晃)|我叫他的名字|我问|我说|我朝[^，。！？\n]{0,8}(?:问|说)|我对[^，。！？\n]{0,8}(?:问|说))/;
 
-  // 强角色发言线索：只认“明确开口/应声/打破沉默”这类，不再因为“他递过来”就直接一刀判角色
-  const CHAR_STRONG_PRONOUN_RX = /(?:[他她][^，。！？\n]{0,12}(?:说|道|问|答|应|应了?一声|开口|出声|低声|轻声|小声|咕哝|嘀咕|喃喃|打破沉默|接着说|继续道|补了?一句)|[他她]像是鼓起[^，。！？\n]{0,10}勇气[^，。！？\n]{0,8}(?:开口|说道|说|道|打破沉默)?|[他她][^，。！？\n]{0,8}笑[着了]?(?:说|道|问))/;
+      // 强角色发言线索：只认“明确开口/应声/打破沉默”这类，不再因为“他递过来”就直接一刀判角色
+      const CHAR_STRONG_PRONOUN_RX = /(?:[他她][^，。！？\n]{0,12}(?:说|道|问|答|应|应了?一声|开口|出声|低声|轻声|小声|咕哝|嘀咕|喃喃|打破沉默|接着说|继续道|补了?一句)|[他她]像是鼓起[^，。！？\n]{0,10}勇气[^，。！？\n]{0,8}(?:开口|说道|说|道|打破沉默)?|[他她][^，。！？\n]{0,8}笑[着了]?(?:说|道|问))/;
 
-  // “短句 + 后接角色动作”专用：只给很短的台词用，比如“给。”
-  const CHAR_AFTER_ACTION_RX = /^[\s\n—-]*[他她][^，。！？\n]{0,12}(?:递|塞|拿|伸|俯|弯|靠|凑|偏|抬|低|望|看|盯|笑|应|点|摇|走|停|让|把)/;
+      // “短句 + 后接角色动作”专用：只给很短的台词用，比如“给。”
+      const CHAR_AFTER_ACTION_RX = /^[\s\n—-]*[他她][^，。！？\n]{0,12}(?:递|塞|拿|伸|俯|弯|靠|凑|偏|抬|低|望|看|盯|笑|应|点|摇|走|停|让|把)/;
 
-  // “短句 + 后接玩家动作”专用：比如“阿文。”后面跟“我叫他的名字”
-  const USER_AFTER_ACTION_RX = /^[\s\n—-]*我[^，。！？\n]{0,12}(?:叫|问|说|唤|朝|对|看|望|晃|接|伸|抬|低|笑|走|停|跟)/;
+      // “短句 + 后接玩家动作”专用：比如“阿文。”后面跟“我叫他的名字”
+      const USER_AFTER_ACTION_RX = /^[\s\n—-]*我[^，。！？\n]{0,12}(?:叫|问|说|唤|朝|对|看|望|晃|接|伸|抬|低|笑|走|停|跟)/;
 
-  // “引号后面是我在反应”——通常表示前一句是角色说的
-  const REACT_VERBS = /^[\n\s]*[我][^，。！？\n]{0,3}(?:看|想|站|走|停|愣|怔|转|抬|低|伸|退|回|望|盯|跟|跑|坐|起|笑|皱|叹|吸|呼|点|摇|握|抓|攥)/;
+      // “引号后面是我在反应”——通常表示前一句是角色说的
+      const REACT_VERBS = /^[\n\s]*[我][^，。！？\n]{0,3}(?:看|想|站|走|停|愣|怔|转|抬|低|伸|退|回|望|盯|跟|跑|坐|起|笑|皱|叹|吸|呼|点|摇|握|抓|攥)/;
 
-  function logHit(rule, who) {
-    if (_DRAMA_DEBUG) console.log('[DRAMA] "' + (dialogueStr || '').slice(0, 15) + '" → ' + who + ' (' + rule + ')');
-    return who;
-  }
-
-  function lastSentence(text) {
-    if (!text) return '';
-    const m = text.match(/([^。！？\n]+)[。！？\n]?\s*$/);
-    return (m ? m[1] : text).trim();
-  }
-
-  function hasNameInDialogue() {
-    if (!dialogueStr) return false;
-    return kwList.some(kw => kw && dialogueStr.includes(kw));
-  }
-
-  // 只要命中“角色名 + 发言动词”，并且不是“我”，就当成角色强线索
-  function explicitCharByName(text) {
-    const hit = findSpeechVerb(text);
-    return hit && hit !== (userName || '我') ? hit : null;
-  }
-
-  // ── P1：最近 8 字内的明确归因（最可信）──
-  const p1 = findSpeechVerb(b8) || findSpeechVerb(a8);
-  if (p1) return logHit('P1', p1);
-
-  // ── P1.1：近处出现“我说/我问/我叫/我叫他的名字/我半开玩笑地...” → 玩家 ──
-  if (USER_STRONG_RX.test(b30) || USER_STRONG_RX.test(a30)) {
-    return logHit('P1.1-玩家强线索', userName || '我');
-  }
-
-  // ── P1.2：近处出现“角色名 + 发言动词” → 角色 ──
-  const p1Char = explicitCharByName(b30) || explicitCharByName(a30);
-  if (p1Char) return logHit('P1.2-角色名强线索', p1Char);
-
-  // ── P1.3：近处出现“他/她 + 明确发言线索” → 角色
-  // 不再因为“他递过来/他看我/他停下脚步”这种纯动作句就直接判角色
-  if (CHAR_STRONG_PRONOUN_RX.test(b30) || CHAR_STRONG_PRONOUN_RX.test(a30)) {
-    const rc = resolvePronounChar();
-    if (rc) return logHit('P1.3-代词强线索', rc);
-  }
-
-  // ── P2：两段引号之间的旁白，只看最后一句，避免被远处叙事拖偏 ──
-  if (interNar) {
-    const nar = lastSentence(interNar);
-
-    if (USER_STRONG_RX.test(nar)) {
-      return logHit('P2-旁白玩家', userName || '我');
-    }
-
-    const p2 = explicitCharByName(nar) || findSpeechVerb(nar);
-    if (p2) return logHit('P2-旁白归因', p2);
-
-    if (CHAR_STRONG_PRONOUN_RX.test(nar) || findPronounSpeech(nar)) {
-      const rc = resolvePronounChar();
-      if (rc) return logHit('P2-旁白代词', rc);
-    }
-  }
-
-  // ── P3：短句后面紧跟“我叫他的名字 / 我问 / 我晃了晃...” → 玩家
-  // 专门修“阿文。”这种称呼句
-  if ((dialogueStr && dialogueStr.replace(/\s/g, '').length <= 6) && USER_STRONG_RX.test(a30)) {
-    return logHit('P3-短句后接玩家动作', userName || '我');
-  }
-
-  // ── P3.5：问句 / 点名句 + 附近有明显“我在主动搭话” → 玩家
-  // 专门修“你不出C的时候...”这类我对他说的话
-  if ((/[？?]/.test(dialogueStr || '') || hasNameInDialogue()) &&
-      USER_ACTIVE_RX.test(b60 + ' ' + (interNar || '') + ' ' + a60)) {
-    return logHit('P3.5-玩家主动提问', userName || '我');
-  }
-
-  // ── P4：极短台词 + 后面立刻是“他递过来/他伸手/他看我” → 角色
-  // 只给短句用，避免把长问题句误吸到角色上
-  if ((dialogueStr && dialogueStr.replace(/\s/g, '').length <= 6) &&
-      !/[？?]/.test(dialogueStr || '') &&
-      CHAR_AFTER_ACTION_RX.test(a30) &&
-      !USER_AFTER_ACTION_RX.test(a30) &&
-      !USER_STRONG_RX.test(b30)) {
-    const rc = resolvePronounChar();
-    if (rc) return logHit('P4-短句后接角色动作', rc);
-  }
-
-  // ── P5：before30 里有明确“角色名 + 动词” ──
-  const p3 = findSpeechVerb(b30);
-  if (p3) return logHit('P5', p3);
-
-  // ── P5.5：近处有“他/她 + 说话动词”才允许代词归因 ──
-  if (findPronounSpeech(b8) || findPronounSpeech(a8) || findPronounSpeech(b30) || findPronounSpeech(a30)) {
-    const rc = resolvePronounChar();
-    if (rc) return logHit('P5.5-代词说话', rc);
-  }
-
-  // ── P6：after8 以“我 + 反应动作”开头，通常表示这句是角色说的 ──
-  if (REACT_VERBS.test(a8)) {
-    // 若台词里直接提到角色名，则更可能是我在对他说
-    if (hasNameInDialogue()) return logHit('P6-A', userName || '我');
-
-    // 往前 120 字找更早的主语，维持你原来的兜底逻辑
-    const b120 = rawText.slice(Math.max(0, qStart - 120), qStart);
-    let first我 = b120.search(/[我]/);
-    let firstChar = Infinity, firstCharName = null;
-    for (const kw of kwList) {
-      let i = 0;
-      while (i < b120.length) {
-        const idx = b120.indexOf(kw, i);
-        if (idx < 0) break;
-        if (!isObject(b120.slice(0, idx + kw.length), kw)) {
-          if (idx < firstChar) { firstChar = idx; firstCharName = kw; }
-          break;
-        }
-        i = idx + 1;
+      function logHit(rule, who) {
+        if (_DRAMA_DEBUG) console.log('[DRAMA] "' + (dialogueStr || '').slice(0, 15) + '" → ' + who + ' (' + rule + ')');
+        return who;
       }
+
+      function lastSentence(text) {
+        if (!text) return '';
+        const m = text.match(/([^。！？\n]+)[。！？\n]?\s*$/);
+        return (m ? m[1] : text).trim();
+      }
+
+      function hasNameInDialogue() {
+        if (!dialogueStr) return false;
+        return kwList.some(kw => kw && dialogueStr.includes(kw));
+      }
+
+      // 只要命中“角色名 + 发言动词”，并且不是“我”，就当成角色强线索
+      function explicitCharByName(text) {
+        const hit = findSpeechVerb(text);
+        return hit && hit !== (userName || '我') ? hit : null;
+      }
+
+      // ── P1：最近 8 字内的明确归因（最可信）──
+      const p1 = findSpeechVerb(b8) || findSpeechVerb(a8);
+      if (p1) return logHit('P1', p1);
+
+      // ── P1.1：近处出现“我说/我问/我叫/我叫他的名字/我半开玩笑地...” → 玩家 ──
+      if (USER_STRONG_RX.test(b30) || USER_STRONG_RX.test(a30)) {
+        return logHit('P1.1-玩家强线索', userName || '我');
+      }
+
+      // ── P1.2：近处出现“角色名 + 发言动词” → 角色 ──
+      const p1Char = explicitCharByName(b30) || explicitCharByName(a30);
+      if (p1Char) return logHit('P1.2-角色名强线索', p1Char);
+
+      // ── P1.3：近处出现“他/她 + 明确发言线索” → 角色
+      // 不再因为“他递过来/他看我/他停下脚步”这种纯动作句就直接判角色
+      if (CHAR_STRONG_PRONOUN_RX.test(b30) || CHAR_STRONG_PRONOUN_RX.test(a30)) {
+        const rc = resolvePronounChar();
+        if (rc) return logHit('P1.3-代词强线索', rc);
+      }
+
+      // ── P2：两段引号之间的旁白，只看最后一句，避免被远处叙事拖偏 ──
+      if (interNar) {
+        const nar = lastSentence(interNar);
+
+        if (USER_STRONG_RX.test(nar)) {
+          return logHit('P2-旁白玩家', userName || '我');
+        }
+
+        const p2 = explicitCharByName(nar) || findSpeechVerb(nar);
+        if (p2) return logHit('P2-旁白归因', p2);
+
+        if (CHAR_STRONG_PRONOUN_RX.test(nar) || findPronounSpeech(nar)) {
+          const rc = resolvePronounChar();
+          if (rc) return logHit('P2-旁白代词', rc);
+        }
+      }
+
+      // ── P3：短句后面紧跟“我叫他的名字 / 我问 / 我晃了晃...” → 玩家
+      // 专门修“阿文。”这种称呼句
+      if ((dialogueStr && dialogueStr.replace(/\s/g, '').length <= 6) && USER_STRONG_RX.test(a30)) {
+        return logHit('P3-短句后接玩家动作', userName || '我');
+      }
+
+      // ── P3.5：问句 / 点名句 + 附近有明显“我在主动搭话” → 玩家
+      // 专门修“你不出C的时候...”这类我对他说的话
+      if ((/[？?]/.test(dialogueStr || '') || hasNameInDialogue()) &&
+          USER_ACTIVE_RX.test(b60 + ' ' + (interNar || '') + ' ' + a60)) {
+        return logHit('P3.5-玩家主动提问', userName || '我');
+      }
+
+      // ── P4：极短台词 + 后面立刻是“他递过来/他伸手/他看我” → 角色
+      // 只给短句用，避免把长问题句误吸到角色上
+      if ((dialogueStr && dialogueStr.replace(/\s/g, '').length <= 6) &&
+          !/[？?]/.test(dialogueStr || '') &&
+          CHAR_AFTER_ACTION_RX.test(a30) &&
+          !USER_AFTER_ACTION_RX.test(a30) &&
+          !USER_STRONG_RX.test(b30)) {
+        const rc = resolvePronounChar();
+        if (rc) return logHit('P4-短句后接角色动作', rc);
+      }
+
+      // ── P5：before30 里有明确“角色名 + 动词” ──
+      const p3 = findSpeechVerb(b30);
+      if (p3) return logHit('P5', p3);
+
+      // ── P5.5：近处有“他/她 + 说话动词”才允许代词归因 ──
+      if (findPronounSpeech(b8) || findPronounSpeech(a8) || findPronounSpeech(b30) || findPronounSpeech(a30)) {
+        const rc = resolvePronounChar();
+        if (rc) return logHit('P5.5-代词说话', rc);
+      }
+
+      // ── P6：after8 以“我 + 反应动作”开头，通常表示这句是角色说的 ──
+      if (REACT_VERBS.test(a8)) {
+        // 若台词里直接提到角色名，则更可能是我在对他说
+        if (hasNameInDialogue()) return logHit('P6-A', userName || '我');
+
+        // 往前 120 字找更早的主语，维持你原来的兜底逻辑
+        const b120 = rawText.slice(Math.max(0, qStart - 120), qStart);
+        let first我 = b120.search(/[我]/);
+        let firstChar = Infinity, firstCharName = null;
+        for (const kw of kwList) {
+          let i = 0;
+          while (i < b120.length) {
+            const idx = b120.indexOf(kw, i);
+            if (idx < 0) break;
+            if (!isObject(b120.slice(0, idx + kw.length), kw)) {
+              if (idx < firstChar) { firstChar = idx; firstCharName = kw; }
+              break;
+            }
+            i = idx + 1;
+          }
+        }
+        if (firstChar < (first我 < 0 ? Infinity : first我)) {
+          return logHit('P6-B-char', kwMap[firstCharName]);
+        }
+        return logHit('P6-B-我', userName || '我');
+      }
+
+      // ── P7：before30 有“我”且不是宾语，且没有角色主语 → 玩家 ──
+      if (b30.includes('我') && !isObject(b30, '我')) {
+        const 我idx = b30.indexOf('我');
+        const is我们 = 我idx >= 0 && b30[我idx + 1] === '们';
+        if (!is我们) {
+          const charInB30 = kwList.some(kw => b30.includes(kw) && !isObject(b30, kw));
+          if (!charInB30) return logHit('P7', userName || '我');
+        }
+      }
+
+      // ── P8：台词自己以“我”开头，且周围没有明确角色归因 → 玩家 ──
+      if (dialogueStr && /^[我]/.test(dialogueStr.trim())) {
+        const wide = b30 + a30;
+        const charVerb = findSpeechVerb(wide);
+        if (!charVerb || charVerb === (userName || '我')) {
+          return logHit('P8', userName || '我');
+        }
+      }
+
+      // ── P9：最后才继承上一句，避免一旦判错就串错一整段 ──
+      if (prevSpeaker !== undefined) return logHit('P9', prevSpeaker);
+
+      return logHit('无规则命中', null);
     }
-    if (firstChar < (first我 < 0 ? Infinity : first我)) {
-      return logHit('P6-B-char', kwMap[firstCharName]);
+
+    const segments  = [];
+    const rx        = /(\u201c[\s\S]*?\u201d|"[^"]*?")/g;
+    let lastIdx     = 0;
+    let prevQEnd    = 0;
+    let prevSpeaker;
+    let m;
+    while ((m = rx.exec(rawText)) !== null) {
+      const narBefore = rawText.slice(lastIdx, m.index).trim();
+      if (narBefore) segments.push({ type: 'narration', speaker: null, text: narBefore });
+
+      // 两段引号之间的旁白（用于 P2 判断连续发言）
+      const interNar = prevQEnd > 0 ? rawText.slice(prevQEnd, m.index).trim() : null;
+
+      const dialogueStr = m[0].slice(1, -1).trim();
+      const speaker = detectSpeaker(rawText, m.index, m.index + m[0].length,
+                                    dialogueStr, prevSpeaker, interNar);
+      if (dialogueStr) segments.push({ type: 'dialogue', speaker, text: dialogueStr });
+
+      prevSpeaker = speaker;
+      prevQEnd    = m.index + m[0].length;
+      lastIdx     = m.index + m[0].length;
     }
-    return logHit('P6-B-我', userName || '我');
+    const narAfter = rawText.slice(lastIdx).trim();
+    if (narAfter) segments.push({ type: 'narration', speaker: null, text: narAfter });
+    return segments;
   }
-
-  // ── P7：before30 有“我”且不是宾语，且没有角色主语 → 玩家 ──
-  if (b30.includes('我') && !isObject(b30, '我')) {
-    const 我idx = b30.indexOf('我');
-    const is我们 = 我idx >= 0 && b30[我idx + 1] === '们';
-    if (!is我们) {
-      const charInB30 = kwList.some(kw => b30.includes(kw) && !isObject(b30, kw));
-      if (!charInB30) return logHit('P7', userName || '我');
-    }
-  }
-
-  // ── P8：台词自己以“我”开头，且周围没有明确角色归因 → 玩家 ──
-  if (dialogueStr && /^[我]/.test(dialogueStr.trim())) {
-    const wide = b30 + a30;
-    const charVerb = findSpeechVerb(wide);
-    if (!charVerb || charVerb === (userName || '我')) {
-      return logHit('P8', userName || '我');
-    }
-  }
-
-  // ── P9：最后才继承上一句，避免一旦判错就串错一整段 ──
-  if (prevSpeaker !== undefined) return logHit('P9', prevSpeaker);
-
-  return logHit('无规则命中', null);
-}
 
   function _dramEntryVoice(entry) { return typeof entry === 'string' ? entry : (entry?.voice || ''); }
 
