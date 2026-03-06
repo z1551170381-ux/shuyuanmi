@@ -330,15 +330,35 @@
       // after8 以"我+反应动词"开头 → 玩家在接收，角色是说话者
       // 搜索范围：前60字 + after8（含 "我停在他身前" 这种情况）
       if (REACT_VERBS.test(a8)) {
-        // 只在 before 区域找角色（after 里的角色是行动对象，不是说话者）
-        // 若 before60 有角色 → 角色刚说完话，玩家在接收；若没有 → 玩家在说话
-        const b60 = rawText.slice(Math.max(0, qStart - 60), qStart);
-        let foundChar = null;
-        for (const kw of kwList) {
-          if (b60.includes(kw) && !isObject(b60, kw)) { foundChar = kwMap[kw]; break; }
+        // ── 规则A：对话内容含角色关键词 → 玩家在对角色说话 ──
+        if (dialogueStr) {
+          for (const kw of kwList) {
+            if (dialogueStr.includes(kw)) return userName || '我';
+          }
         }
-        if (foundChar) return foundChar;   // 角色在 before60 里有出现 → 角色说的
-        return userName || '我';           // before60 里没角色 → 玩家说的
+
+        // ── 规则B：往前120字找第一个主语（60字可能截断上一句）──
+        // "他/她" 先出现 → 角色是主动者，刚才在说话
+        // "我"    先出现 → 玩家是主动者，刚才在说话
+        const b120 = rawText.slice(Math.max(0, qStart - 120), qStart);
+        let first我 = b120.search(/[我]/);
+        let firstChar = Infinity, firstCharName = null;
+        for (const kw of kwList) {
+          let i = 0;
+          while (i < b120.length) {
+            const idx = b120.indexOf(kw, i);
+            if (idx < 0) break;
+            if (!isObject(b120.slice(0, idx + kw.length), kw)) {
+              if (idx < firstChar) { firstChar = idx; firstCharName = kw; }
+              break;
+            }
+            i = idx + 1;
+          }
+        }
+        if (firstChar < (first我 < 0 ? Infinity : first我)) {
+          return kwMap[firstCharName];  // 角色先出现 → 角色说的
+        }
+        return userName || '我';        // 我先出现或无角色 → 玩家说的
       }
 
       // ── P5: before30 有"我"且不是宾语 → 玩家是旁白主语，刚才也在说话 ──
