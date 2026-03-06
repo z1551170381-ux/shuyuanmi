@@ -262,7 +262,7 @@
     return chunks.length ? chunks : [text.slice(0, maxLen)];
   }
 
-  // ── 广播剧模式：把文本切成 [{type:'dialogue'|'narration', speaker, text}] 段落 ──
+  // ── 广播剧模式：把文本切成 [{type, speaker, text}] 段落 ──
   function _parseDramaSegments(rawText, charNames, userName, dramaMap) {
     // 构建 keyword → charName 映射
     const kwMap = {};
@@ -272,68 +272,110 @@
       const aliases = typeof entry === 'object' ? (entry?.aliases || '') : '';
       aliases.split(/[,，、\s]+/).forEach(kw => { const k = kw.trim(); if (k) kwMap[k] = name; });
     }
-    // 按 keyword 长度降序，优先匹配长词
     const kwList = Object.keys(kwMap).sort((a, b) => b.length - a.length);
 
-    // 归因动词正则：说/道/回/答/问/轻声/低声/嗯/哼/笑/叹 等
-    const VERB_RX = /(?:说|道|回答|回道|答道|问道|嗯|哼|笑|叹|轻声|低声|轻轻说|低低道)/;
-    // 判断"主语+动词"是否在紧邻引号的短文本里
-    // 优先级: 1) 紧贴引号前后5字中找"主语+动词" 2) 引号前后5字找主语 3) 扩大到前20字兜底
-    function detectSpeaker(rawText, qStart, qEnd, dialogueStr) {
-      // 紧贴引号前 6 字 + 引号后 6 字
-      const before6  = rawText.slice(Math.max(0, qStart - 6), qStart);
-      const after6   = rawText.slice(qEnd, Math.min(rawText.length, qEnd + 6));
-      const near12   = before6 + after6;
-      // 扩展前后20字用于兜底
-      const before20 = rawText.slice(Math.max(0, qStart - 20), qStart);
-      const after20  = rawText.slice(qEnd, Math.min(rawText.length, qEnd + 20));
-      const wide40   = before20 + after20;
+    // 说话归因动词（允许中间有至多4个修饰字，如"低低地说/轻声道"）
+    const VERBS = '说|道|答|嗯|哼|笑|叹|叫|开口';
+    function makeKwRx(kw) {
+      const esc = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // kw [修饰]{0,4} 动词  或  动词 [修饰]{0,2} kw
+      return new RegExp(esc + '[^，。！？\n]{0,4}(?:' + VERBS + ')|(?:' + VERBS + ')[^，。！？\n]{0,2}' + esc);
+    }
+    // 宾语动词：这些字后紧跟的代词是宾语，不是主语
+    const OBJ_CHARS = new Set('逗看让推拉帮揽拍摸牵握扯碰望盯瞥瞧爱恨怕惹撞跟随陪'.split(''));
 
-      // ── 零优先：引号内容本身以"我"开头 → 玩家 ──
-      if (dialogueStr && /^[我]/.test(dialogueStr.trim())) return userName || '我';
-
-      // ── 第一优先：near12 中找 "关键词+动词" 或 "动词+关键词" ──
+    // 在 text 中找 说话归因，返回 charName 或 '我' 或 null
+    function findSpeechVerb(text) {
       for (const kw of kwList) {
-        const rx = new RegExp(kw + VERB_RX.source + '|' + VERB_RX.source + kw);
-        if (rx.test(near12)) return kwMap[kw];
+        if (makeKwRx(kw).test(text)) return kwMap[kw];
       }
-      // "我" + 动词 in near12
-      if (new RegExp('[我]' + VERB_RX.source + '|' + VERB_RX.source + '[我]').test(near12)) {
+      if (new RegExp('[我][^，。！？\n]{0,4}(?:' + VERBS + ')|(?:' + VERBS + ')[^，。！？\n]{0,2}[我]').test(text)) {
         return userName || '我';
       }
-
-      // ── 第二优先：near12 中仅找关键词（无需动词），但排除玩家代词 ──
-      const playerKws = ['我'];
-      for (const kw of kwList) {
-        if (!playerKws.includes(kw) && near12.includes(kw)) return kwMap[kw];
-      }
-      // "我" 单字在 near12
-      if (near12.includes('我')) return userName || '我';
-
-      // ── 兜底：wide40 中找关键词+动词 ──
-      for (const kw of kwList) {
-        const rx = new RegExp(kw + VERB_RX.source + '|' + VERB_RX.source + kw);
-        if (rx.test(wide40)) return kwMap[kw];
-      }
-      if (new RegExp('[我]' + VERB_RX.source + '|' + VERB_RX.source + '[我]').test(wide40)) {
-        return userName || '我';
-      }
-
-      // 最终兜底：wide40 含"我"单字 → 玩家
-      if (wide40.includes('我')) return userName || '我';
       return null;
     }
 
-    const segments = [];
-    const rx = /(\u201c[\s\S]*?\u201d|"[^"]*?")/g;
-    let lastIdx = 0, m;
+    // 判断 text 中的 kw 是否是宾语（前一个字是宾语动词）
+    function isObject(text, kw) {
+      const i = text.indexOf(kw);
+      if (i < 0) return false;
+      const prevChar = i > 0 ? text[i - 1] : '';
+      return OBJ_CHARS.has(prevChar);
+    }
+
+    function detectSpeaker(rawText, qStart, qEnd, dialogueStr, prevSpeaker, interNar) {
+      const b8  = rawText.slice(Math.max(0, qStart - 8),  qStart);
+      const a8  = rawText.slice(qEnd, Math.min(rawText.length, qEnd + 8));
+      const b30 = rawText.slice(Math.max(0, qStart - 30), qStart);
+      const a30 = rawText.slice(qEnd, Math.min(rawText.length, qEnd + 30));
+
+      // ── P1: before8 / after8 有"kw+动词"组合（最高可信）──
+      const p1 = findSpeechVerb(b8) || findSpeechVerb(a8);
+      if (p1) return p1;
+
+      // ── P2: 两段引号之间的旁白（interNar）有归因动词 → 同一说话者继续 ──
+      if (interNar) {
+        const p2 = findSpeechVerb(interNar);
+        if (p2) return p2;
+      }
+
+      // ── P3: before30 有"kw+动词"（稍远但仍可信）──
+      const p3 = findSpeechVerb(b30);
+      if (p3) return p3;
+
+      // ── P4: after8 里谁先出现（我 vs 角色），先出现者是刚说完话的人 ──
+      let firstMe  = a8.indexOf('我');
+      let firstChar = Infinity, firstCharName = null;
+      for (const kw of kwList) {
+        const i = a8.indexOf(kw);
+        if (i >= 0 && i < firstChar && !isObject(a8, kw)) {
+          firstChar = i; firstCharName = kw;
+        }
+      }
+      if (firstMe >= 0 && firstMe < firstChar) return userName || '我';
+      if (firstCharName !== null && firstChar < (firstMe < 0 ? Infinity : firstMe)) return kwMap[firstCharName];
+
+      // ── P5: before30 有"我"且不是宾语 → 玩家是旁白主语，刚才也在说话 ──
+      if (b30.includes('我') && !isObject(b30, '我')) {
+        // 确认 before30 里没有角色关键词（排除"他也在场"的情况）
+        const charInB30 = kwList.some(kw => b30.includes(kw) && !isObject(b30, kw));
+        if (!charInB30) return userName || '我';
+      }
+
+      // ── P6: 引号内容以"我"开头，且前后60字内没有任何角色归因动词 → 玩家 ──
+      if (dialogueStr && /^[我]/.test(dialogueStr.trim())) {
+        const wide = b30 + a30;
+        const charVerb = findSpeechVerb(wide);
+        if (!charVerb || charVerb === (userName || '我')) return userName || '我';
+      }
+
+      // ── P7: 继承上一句归因（同一段旁白内的连续发言默认同人）──
+      if (prevSpeaker !== undefined) return prevSpeaker;
+
+      return null;
+    }
+
+    const segments  = [];
+    const rx        = /(\u201c[\s\S]*?\u201d|"[^"]*?")/g;
+    let lastIdx     = 0;
+    let prevQEnd    = 0;
+    let prevSpeaker;
+    let m;
     while ((m = rx.exec(rawText)) !== null) {
       const narBefore = rawText.slice(lastIdx, m.index).trim();
       if (narBefore) segments.push({ type: 'narration', speaker: null, text: narBefore });
+
+      // 两段引号之间的旁白（用于 P2 判断连续发言）
+      const interNar = prevQEnd > 0 ? rawText.slice(prevQEnd, m.index).trim() : null;
+
       const dialogueStr = m[0].slice(1, -1).trim();
-      const speaker = detectSpeaker(rawText, m.index, m.index + m[0].length, dialogueStr);
+      const speaker = detectSpeaker(rawText, m.index, m.index + m[0].length,
+                                    dialogueStr, prevSpeaker, interNar);
       if (dialogueStr) segments.push({ type: 'dialogue', speaker, text: dialogueStr });
-      lastIdx = m.index + m[0].length;
+
+      prevSpeaker = speaker;
+      prevQEnd    = m.index + m[0].length;
+      lastIdx     = m.index + m[0].length;
     }
     const narAfter = rawText.slice(lastIdx).trim();
     if (narAfter) segments.push({ type: 'narration', speaker: null, text: narAfter });
