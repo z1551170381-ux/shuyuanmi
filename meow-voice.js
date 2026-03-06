@@ -423,6 +423,20 @@ ${t}
     return Array.isArray(group?.tracks) ? group.tracks : [];
   }
 
+  function _bgmTracksForDisplay(lib, groupId) {
+    const group = _findBgmGroup(lib, groupId);
+    const tracks = _bgmTrackList(group).slice();
+    const curGroupId = String(lsGet(LS.BGM_GROUP, '') || '');
+    const curTrackId = String(lsGet(LS.BGM_TRACK, '') || '');
+    const curTitle = String(lsGet(LS.BGM_TITLE, '') || '').trim();
+    const curUrl = String(lsGet(LS.BGM_URL, '') || '').trim();
+    if (curUrl && String(group?.id || '') === curGroupId) {
+      const exists = tracks.some(t => (curTrackId && String(t?.id || '') === curTrackId) || String(t?.url || '').trim() === curUrl);
+      if (!exists) tracks.unshift({ id: curTrackId || '__current__', title: curTitle || '当前曲目', url: curUrl });
+    }
+    return tracks;
+  }
+
   function _parseDramaBgmSource(raw) {
     const txt = String(raw || '').trim();
     if (!txt) return { kind: 'none', raw: txt };
@@ -587,7 +601,8 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-arm-bar{position:absolute;right:13px;top:12px;width:35px;height:4px;border-radius:999px;background:linear-gradient(180deg,#f6f4ef,#cfcac2);transform:rotate(44deg);transform-origin:100% 50%;box-shadow:0 1px 2px rgba(0,0,0,.14)}
       #meow-voice-bgm-dock .mv-bgm-arm-head{position:absolute;left:12px;top:39px;width:18px;height:8px;border-radius:999px;background:linear-gradient(180deg,#f7f6f2,#d6d0c8);transform:rotate(44deg);box-shadow:0 1px 2px rgba(0,0,0,.16)}
       #meow-voice-bgm-dock.playing:not(.collapsed) .mv-bgm-tonearm{transform:rotate(-31deg)}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-tonearm{transform:rotate(8deg)}
+      #meow-voice-bgm-dock.playing.collapsed .mv-bgm-tonearm{transform:rotate(-22deg)}
+      #meow-voice-bgm-dock.collapsed:not(.playing) .mv-bgm-tonearm{transform:rotate(8deg)}
       #meow-voice-bgm-dock:not(.playing):not(.collapsed) .mv-bgm-tonearm{transform:rotate(-6deg)}
       #meow-voice-bgm-dock .mv-bgm-panel{position:relative;min-height:118px;padding:12px 12px 10px 54px;border-radius:22px;background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(244,244,240,.64));border:1px solid rgba(214,214,206,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 16px 34px rgba(0,0,0,.10);overflow:visible}
       #meow-voice-bgm-dock .mv-bgm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding-right:34px}
@@ -614,12 +629,12 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-embed{margin-top:8px}
       #meow-voice-bgm-dock .mv-bgm-embed iframe{display:block;width:100%;height:104px;border:0;border-radius:14px;background:rgba(255,255,255,.84)}
       #meow-voice-bgm-dock .mv-bgm-embed.empty{display:none}
-      #meow-voice-bgm-dock.collapsed{transform:translate3d(calc(100% - 76px),0,0)}
+      #meow-voice-bgm-dock.collapsed{transform:translate3d(calc(100% - 92px),0,0)}
       #meow-voice-bgm-dock.collapsed .mv-bgm-panel{opacity:0;pointer-events:none}
       #meow-voice-bgm-dock.collapsed .mv-bgm-close{display:none}
       #meow-voice-bgm-dock.collapsed .mv-bgm-shell{min-height:112px}
       #meow-voice-bgm-dock.collapsed .mv-bgm-open-settings{right:58px;top:8px}
-      #meow-voice-bgm-dock.compact{width:268px !important;right:4px !important;bottom:68px !important}
+      #meow-voice-bgm-dock.compact{width:268px !important;right:2px !important;bottom:104px !important}
       #meow-voice-bgm-dock.compact .mv-bgm-shell{min-height:100px;padding-left:38px}
       #meow-voice-bgm-dock.compact .mv-bgm-disc-wrap{left:-20px;top:10px;width:92px;height:92px}
       #meow-voice-bgm-dock.compact .mv-bgm-disc{width:82px;height:82px}
@@ -632,16 +647,16 @@ ${t}
       #meow-voice-bgm-dock.compact .mv-bgm-sub{max-width:138px}
       #meow-voice-bgm-dock.compact .mv-bgm-controls button{width:30px;height:30px}
       #meow-voice-bgm-dock.compact .mv-bgm-play{width:34px;height:34px}
-      #meow-voice-bgm-dock.compact.collapsed{transform:translate3d(calc(100% - 62px),0,0)}
-      #meow-voice-bgm-dock.mini{width:218px !important;max-width:calc(100vw - 4px) !important;right:1px !important;bottom:58px !important}
-      #meow-voice-bgm-dock.mini .mv-bgm-shell{padding-left:28px;min-height:88px}
-      #meow-voice-bgm-dock.mini .mv-bgm-disc-wrap{left:-16px;top:8px;width:76px;height:76px}
+      #meow-voice-bgm-dock.compact.collapsed{transform:translate3d(calc(100% - 82px),0,0)}
+      #meow-voice-bgm-dock.mini{width:196px !important;max-width:calc(100vw - 2px) !important;right:-6px !important;bottom:122px !important}
+      #meow-voice-bgm-dock.mini .mv-bgm-shell{padding-left:24px;min-height:82px}
+      #meow-voice-bgm-dock.mini .mv-bgm-disc-wrap{left:-14px;top:8px;width:76px;height:76px}
       #meow-voice-bgm-dock.mini .mv-bgm-disc{width:66px;height:66px}
       #meow-voice-bgm-dock.mini .mv-bgm-tonearm{top:-2px;right:-2px;width:44px;height:44px}
       #meow-voice-bgm-dock.mini .mv-bgm-arm-knob{right:6px;top:3px;width:9px;height:9px}
       #meow-voice-bgm-dock.mini .mv-bgm-arm-bar{right:9px;top:10px;width:24px;height:4px}
       #meow-voice-bgm-dock.mini .mv-bgm-arm-head{left:8px;top:27px;width:13px;height:6px}
-      #meow-voice-bgm-dock.mini .mv-bgm-panel{padding:9px 8px 8px 34px;border-radius:16px}
+      #meow-voice-bgm-dock.mini .mv-bgm-panel{padding:9px 8px 8px 30px;border-radius:16px}
       #meow-voice-bgm-dock.mini .mv-bgm-name{font-size:12px;max-width:94px}
       #meow-voice-bgm-dock.mini .mv-bgm-sub{font-size:10px;max-width:110px}
       #meow-voice-bgm-dock.mini .mv-bgm-open-settings{right:7px;top:30px;width:24px;height:24px;font-size:11px}
@@ -653,7 +668,7 @@ ${t}
       #meow-voice-bgm-dock.mini .mv-bgm-track-select{padding:5px 8px;font-size:10px}
       #meow-voice-bgm-dock.mini .mv-bgm-lyric{min-height:38px;padding:7px 8px;font-size:10px}
       #meow-voice-bgm-dock.mini .mv-bgm-list{max-height:86px}
-      #meow-voice-bgm-dock.mini.collapsed{transform:translate3d(calc(100% - 50px),0,0)}
+      #meow-voice-bgm-dock.mini.collapsed{transform:translate3d(calc(100% - 72px),0,0)}
       @media (max-width: 640px){
         #meow-voice-bgm-dock{width:254px !important;max-width:calc(100vw - 8px) !important;right:2px !important;bottom:62px !important}
         #meow-voice-bgm-dock .mv-bgm-shell{padding-left:34px;min-height:96px}
@@ -666,7 +681,7 @@ ${t}
         #meow-voice-bgm-dock .mv-bgm-close{right:8px;top:4px;width:26px;height:26px}
         #meow-voice-bgm-dock .mv-bgm-group-chip{padding:4px 8px;font-size:10px}
         #meow-voice-bgm-dock .mv-bgm-lyric{min-height:42px;padding:8px 9px}
-        #meow-voice-bgm-dock.collapsed{transform:translate3d(calc(100% - 58px),0,0)}
+        #meow-voice-bgm-dock.collapsed{transform:translate3d(calc(100% - 82px),0,0)}
       }
       #meow-voice-bgm-dock input[type="range"]{accent-color:#727f86}
     `;
@@ -819,7 +834,7 @@ ${t}
     }
     const group = _findBgmGroup(lib, activeGroupId);
     const activeTrackId = lsGet(LS.BGM_TRACK, '') || selection?.trackId || '';
-    const tracks = _bgmTrackList(group);
+    const tracks = _bgmTracksForDisplay(lib, activeGroupId);
     const currentTrack = tracks.find(t => t.id === activeTrackId) || tracks[0] || (selection ? { id: selection.trackId || '', title: selection.title || title, url: selection.url || '' } : null);
 
     const trackSel = root.querySelector('.mv-bgm-track-select');
@@ -869,7 +884,7 @@ ${t}
     }
     const playBtn = root.querySelector('.mv-bgm-play');
     if (playBtn) playBtn.textContent = (_bgmState.active || (_bgmAudio && !_bgmAudio.paused)) ? '⏸' : '▶';
-    root.classList.toggle('playing', !!(_bgmAudio && !_bgmAudio.paused));
+    root.classList.toggle('playing', !!((_bgmAudio && !_bgmAudio.paused) || _bgmState.active));
     const sub = root.querySelector('.mv-bgm-sub');
     if (sub && _bgmAudio) {
       sub.textContent = _bgmAudio.paused ? '已暂停' : '播放中';
@@ -2035,7 +2050,7 @@ async function _speakWithCfg(rawText, charName, c) {
     }
     const currentGroupId = sel?.value || (lib[0]?.id || '');
     const group = _findBgmGroup(lib, currentGroupId);
-    const tracks = _bgmTrackList(group);
+    const tracks = _bgmTracksForDisplay(lib, currentGroupId);
     const activeTrack = lsGet(LS.BGM_TRACK, '') || tracks[0]?.id || '';
     const trackSel = q('mvBgmTrackSel');
     if (trackSel) {
@@ -2380,8 +2395,14 @@ async function _speakWithCfg(rawText, charName, c) {
       lsSet(LS.BGM_GROUP, e.target.value || '');
       const lib = _getBgmLibrary();
       const group = _findBgmGroup(lib, e.target.value || '');
-      lsSet(LS.BGM_TRACK, group?.tracks?.[0]?.id || '');
+      const firstTrack = _bgmTrackList(group)[0] || null;
+      lsSet(LS.BGM_TRACK, firstTrack?.id || '');
+      if (firstTrack) {
+        q('mvBgmTitle').value = firstTrack.title || '';
+        q('mvBgmUrl').value = firstTrack.url || '';
+      }
       _renderBgmLibraryEditor(box);
+      _renderBgmDock();
     });
     q('mvBgmTrackSel')?.addEventListener('change', e => {
       const gid = q('mvBgmGroupSel')?.value || '';
@@ -2414,24 +2435,30 @@ async function _speakWithCfg(rawText, charName, c) {
       if (!url) { toast('先填音乐链接'); return; }
       let lib = _getBgmLibrary();
       if (!Array.isArray(lib) || !lib.length) lib = [{ id: 'g_default', name: '常用', tracks: [] }];
-      let group = _findBgmGroup(lib, gid);
+      let group = lib.find(g => g && g.id === gid) || null;
       if (!group) {
-        group = lib[0];
+        group = lib[0] || { id: 'g_default', name: '常用', tracks: [] };
+        if (!lib.length) lib.push(group);
         gid = group.id;
       }
       if (!Array.isArray(group.tracks)) group.tracks = [];
-      const existed = group.tracks.find(t => String(t.url||'').trim() === url || String(t.title||'').trim() === title);
+      const existed = group.tracks.find(t => String(t?.url || '').trim() === url);
       const tid = existed ? existed.id : _uid('t_');
       if (existed) {
         existed.title = title;
         existed.url = url;
       } else {
-        group.tracks = [{ id: tid, title, url }, ...group.tracks.filter(t => String(t.url||'').trim() !== url)];
+        group.tracks.unshift({ id: tid, title, url });
       }
+      group.tracks = group.tracks.filter((t, idx, arr) => t && t.url && arr.findIndex(x => String(x?.url || '').trim() === String(t.url || '').trim()) === idx);
       _saveBgmLibrary(lib);
-      _setBgmSelection(gid, tid, title, url);
+      const savedLib = _getBgmLibrary();
+      const savedGroup = savedLib.find(g => g && g.id === gid) || savedLib[0] || null;
+      const savedTrack = (savedGroup?.tracks || []).find(t => String(t?.url || '').trim() === url) || (savedGroup?.tracks || []).find(t => t.id === tid) || null;
+      const finalTid = savedTrack?.id || tid;
+      _setBgmSelection(gid, finalTid, title, url);
       lsSet(LS.BGM_GROUP, gid);
-      lsSet(LS.BGM_TRACK, tid);
+      lsSet(LS.BGM_TRACK, finalTid);
       lsSet(LS.BGM_TITLE, title);
       lsSet(LS.BGM_URL, url);
       const groupSel = q('mvBgmGroupSel');
@@ -2440,7 +2467,7 @@ async function _speakWithCfg(rawText, charName, c) {
       const trackSel = q('mvBgmTrackSel');
       if (trackSel) {
         trackSel.disabled = false;
-        trackSel.value = tid;
+        trackSel.value = finalTid;
       }
       _renderBgmDock();
       toast(existed ? '已更新到歌单' : '已加入歌单');
