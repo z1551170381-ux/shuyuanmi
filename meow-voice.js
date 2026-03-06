@@ -84,9 +84,14 @@
     AUTO_MODE:    'meow_voice_auto_mode_v1',
     DRAMA_RATE:   'meow_voice_drama_rate_v1',
     BGM_ENABLED:  'meow_voice_bgm_enabled_v1',
+    BGM_TITLE:    'meow_voice_bgm_title_v1',
     BGM_URL:      'meow_voice_bgm_url_v1',
     BGM_VOLUME:   'meow_voice_bgm_volume_v1',
     BGM_LOOP:     'meow_voice_bgm_loop_v1',
+    BGM_LIBRARY:  'meow_voice_bgm_library_v1',
+    BGM_GROUP:    'meow_voice_bgm_group_v1',
+    BGM_TRACK:    'meow_voice_bgm_track_v1',
+    BGM_DOCK_COLLAPSED: 'meow_voice_bgm_dock_collapsed_v1',
   };
 
   const ID = {
@@ -121,9 +126,14 @@
       autoMode:     lsGet(LS.AUTO_MODE,     'manual'),
       dramaRate:    lsGet(LS.DRAMA_RATE,    1.0),
       bgmEnabled:   lsGet(LS.BGM_ENABLED,   false),
+      bgmTitle:     lsGet(LS.BGM_TITLE,     '背景音乐'),
       bgmUrl:       lsGet(LS.BGM_URL,       ''),
       bgmVolume:    lsGet(LS.BGM_VOLUME,    0.18),
       bgmLoop:      lsGet(LS.BGM_LOOP,      true),
+      bgmLibrary:   lsGet(LS.BGM_LIBRARY,   []),
+      bgmGroup:     lsGet(LS.BGM_GROUP,     ''),
+      bgmTrack:     lsGet(LS.BGM_TRACK,     ''),
+      bgmDockCollapsed: lsGet(LS.BGM_DOCK_COLLAPSED, true),
     };
   }
 
@@ -143,6 +153,16 @@
   let _apiPlayGen   = 0;   // stopReading 时自增，speakViaApi 检测后退出
   let _pendingSpeak = null; // 用于延迟speak，防止cancel噪音
   let _bgmAudio     = null;
+  let _bgmState     = {
+    visible: false,
+    active: false,
+    title: '',
+    sourceUrl: '',
+    parsedKind: '',
+    groupId: '',
+    trackId: '',
+    closed: false,
+  };
 
   function getVoices() {
     return new Promise(resolve => {
@@ -315,6 +335,570 @@ ${t}
     const n = Number(v);
     if (!Number.isFinite(n)) return fallback;
     return Math.max(min, Math.min(max, n));
+  }
+
+  function _safeAttr(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function _directAudioLike(url) {
+    const u = String(url || '').trim();
+    return /(?:\.mp3|\.m4a|\.aac|\.ogg|\.wav|\.flac)(?:[?#].*)?$/i.test(u)
+      || /[?&](?:format|mime|type)=(?:audio|mp3|m4a|ogg|wav|aac)/i.test(u)
+      || /^blob:/i.test(u)
+      || /^data:audio\//i.test(u);
+  }
+
+
+  function _uid(prefix) {
+    return String(prefix || 'id_') + Math.random().toString(36).slice(2, 10);
+  }
+
+  function _ensureBgmLibrary(raw) {
+    let lib = Array.isArray(raw) ? raw : [];
+    lib = lib.map(g => ({
+      id: String(g?.id || _uid('g_')),
+      name: String(g?.name || '未命名分组').trim() || '未命名分组',
+      tracks: Array.isArray(g?.tracks) ? g.tracks.map(t => ({
+        id: String(t?.id || _uid('t_')),
+        title: String(t?.title || '未命名曲目').trim() || '未命名曲目',
+        url: String(t?.url || '').trim(),
+      })).filter(t => t.url) : [],
+    }));
+    if (!lib.length) lib = [{ id: 'g_default', name: '常用', tracks: [] }];
+    return lib;
+  }
+
+  function _getBgmLibrary() {
+    return _ensureBgmLibrary(lsGet(LS.BGM_LIBRARY, []));
+  }
+
+  function _saveBgmLibrary(lib) {
+    lsSet(LS.BGM_LIBRARY, _ensureBgmLibrary(lib));
+  }
+
+  function _findBgmGroup(lib, groupId) {
+    const arr = _ensureBgmLibrary(lib);
+    return arr.find(g => g.id === groupId) || arr[0] || null;
+  }
+
+  function _findBgmTrack(lib, groupId, trackId) {
+    const group = _findBgmGroup(lib, groupId);
+    if (!group) return null;
+    return group.tracks.find(t => t.id === trackId) || group.tracks[0] || null;
+  }
+
+  function _resolveBgmSelection(cArg, override) {
+    const c = cArg || cfg();
+    const o = override || {};
+    if (o.sourceUrl) {
+      return {
+        title: String(o.title || c.bgmTitle || '背景音乐').trim() || '背景音乐',
+        url: String(o.sourceUrl || '').trim(),
+        groupId: String(o.groupId || ''),
+        trackId: String(o.trackId || ''),
+      };
+    }
+    const lib = _ensureBgmLibrary(c.bgmLibrary || lsGet(LS.BGM_LIBRARY, []));
+    const groupId = String(c.bgmGroup || lsGet(LS.BGM_GROUP, '') || (lib[0]?.id || ''));
+    const trackId = String(c.bgmTrack || lsGet(LS.BGM_TRACK, ''));
+    const track = _findBgmTrack(lib, groupId, trackId);
+    if (track && track.url) {
+      return { title: track.title || c.bgmTitle || '背景音乐', url: track.url, groupId: groupId || (lib[0]?.id || ''), trackId: track.id || '' };
+    }
+    if (String(c.bgmUrl || '').trim()) {
+      return { title: String(c.bgmTitle || '背景音乐').trim() || '背景音乐', url: String(c.bgmUrl || '').trim(), groupId: '', trackId: '' };
+    }
+    return null;
+  }
+
+  function _setBgmSelection(groupId, trackId, title, url) {
+    if (groupId != null) lsSet(LS.BGM_GROUP, groupId || '');
+    if (trackId != null) lsSet(LS.BGM_TRACK, trackId || '');
+    if (title != null) lsSet(LS.BGM_TITLE, String(title || '').trim() || '背景音乐');
+    if (url != null) lsSet(LS.BGM_URL, String(url || '').trim());
+  }
+
+  function _bgmTrackList(group) {
+    return Array.isArray(group?.tracks) ? group.tracks : [];
+  }
+
+  function _parseDramaBgmSource(raw) {
+    const txt = String(raw || '').trim();
+    if (!txt) return { kind: 'none', raw: txt };
+
+    // 支持直接粘贴 iframe HTML
+    const iframeMatch = txt.match(/<iframe[^>]+src=(["'])(.*?)\1/i);
+    let val = iframeMatch ? iframeMatch[2] : txt;
+    val = val.replace(/&amp;/g, '&').trim();
+
+    // 网易云常规歌曲页 /#/song?id=xxx
+    const songIdMatch = val.match(/music\.163\.com\/(?:#\/)?song\?id=(\d+)/i)
+      || val.match(/music\.163\.com\/.*?[?&]id=(\d+)/i)
+      || val.match(/\/song\?id=(\d+)/i);
+    if (songIdMatch) {
+      const songId = songIdMatch[1];
+      return {
+        kind: 'netease_iframe',
+        songId,
+        iframeSrc: 'https://music.163.com/outchain/player?type=2&id=' + songId + '&auto=1&height=66',
+        raw: txt,
+      };
+    }
+
+    // 网易云 outchain
+    const outchainMatch = val.match(/music\.163\.com\/outchain\/player\?[^"' ]+/i);
+    if (outchainMatch) {
+      let iframeSrc = outchainMatch[0];
+      iframeSrc = iframeSrc.replace(/^\/\//, 'https://');
+      if (!/^https?:\/\//i.test(iframeSrc)) iframeSrc = 'https://' + iframeSrc.replace(/^\/+/, '');
+      if (!/[?&]auto=/.test(iframeSrc)) iframeSrc += (iframeSrc.includes('?') ? '&' : '?') + 'auto=1';
+      if (!/[?&]height=/.test(iframeSrc)) iframeSrc += '&height=66';
+      const idm = iframeSrc.match(/[?&]id=(\d+)/i);
+      return {
+        kind: 'netease_iframe',
+        songId: idm ? idm[1] : '',
+        iframeSrc,
+        raw: txt,
+      };
+    }
+
+    if (_directAudioLike(val)) {
+      return { kind: 'audio', audioUrl: val, raw: txt };
+    }
+
+    // 普通网页地址不是可直接播放音频，先按网页类处理
+    if (/^https?:\/\//i.test(val)) {
+      return { kind: 'page', pageUrl: val, raw: txt };
+    }
+    return { kind: 'unknown', raw: txt };
+  }
+
+
+  function _getBgmDock() {
+    let root = doc.getElementById('meow-voice-bgm-dock');
+    if (root) return root;
+    root = doc.createElement('div');
+    root.id = 'meow-voice-bgm-dock';
+    root.innerHTML = `
+      <div class="mv-bgm-shell">
+        <button type="button" class="mv-bgm-mini-toggle" title="收起/展开" aria-label="收起/展开">⟷</button>
+        <button type="button" class="mv-bgm-close" title="隐藏" aria-label="隐藏">×</button>
+        <div class="mv-bgm-disc-wrap">
+          <div class="mv-bgm-disc">
+            <div class="mv-bgm-disc-ring"></div>
+            <div class="mv-bgm-disc-core"></div>
+          </div>
+        </div>
+        <div class="mv-bgm-panel">
+          <div class="mv-bgm-meta">
+            <div class="mv-bgm-name">背景音乐</div>
+            <div class="mv-bgm-sub">未播放</div>
+          </div>
+          <div class="mv-bgm-progress"><input type="range" class="mv-bgm-seek" min="0" max="1000" step="1" value="0"></div>
+          <div class="mv-bgm-controls">
+            <button type="button" class="mv-bgm-prev" title="上一首">⏮</button>
+            <button type="button" class="mv-bgm-play" title="播放/暂停">▶</button>
+            <button type="button" class="mv-bgm-next" title="下一首">⏭</button>
+          </div>
+          <div class="mv-bgm-groups"></div>
+          <div class="mv-bgm-list"></div>
+          <div class="mv-bgm-embed"></div>
+        </div>
+      </div>
+    `;
+    Object.assign(root.style, {
+      position: 'fixed',
+      right: '10px',
+      bottom: '84px',
+      width: '404px',
+      maxWidth: '90vw',
+      zIndex: '2147483646',
+      display: 'none',
+      background: 'transparent',
+      pointerEvents: 'auto',
+      transition: 'transform .28s ease',
+    });
+    const style = doc.createElement('style');
+    style.id = 'meow-voice-bgm-dock-style';
+    style.textContent = `
+      #meow-voice-bgm-dock{font-family:inherit;color:#12313a}
+      #meow-voice-bgm-dock .mv-bgm-shell{position:relative;min-height:184px;padding-left:108px}
+      #meow-voice-bgm-dock .mv-bgm-disc-wrap{position:absolute;left:0;top:16px;width:170px;height:170px;display:flex;align-items:center;justify-content:center;pointer-events:none}
+      #meow-voice-bgm-dock .mv-bgm-disc{position:relative;width:156px;height:156px;border-radius:50%;box-shadow:0 16px 34px rgba(0,0,0,.18), inset 0 0 0 1px rgba(255,255,255,.25);background:
+        radial-gradient(circle at 62% 38%, rgba(216,115,255,.22) 0 12%, rgba(216,115,255,0) 26%),
+        radial-gradient(circle at 34% 66%, rgba(255,255,255,.28) 0 10%, rgba(255,255,255,0) 36%),
+        radial-gradient(circle at 50% 50%, rgba(234,250,251,.85) 0 16%, rgba(214,248,248,.92) 16% 19%, rgba(14,201,214,.98) 19% 60%, rgba(5,180,198,.96) 60% 77%, rgba(7,163,181,.92) 77% 100%);
+        overflow:hidden}
+      #meow-voice-bgm-dock .mv-bgm-disc::before{content:'';position:absolute;inset:12px;border-radius:50%;border:1px solid rgba(255,255,255,.24);opacity:.7}
+      #meow-voice-bgm-dock .mv-bgm-disc::after{content:'';position:absolute;inset:26px;border-radius:50%;border:1px solid rgba(255,255,255,.18);opacity:.7}
+      #meow-voice-bgm-dock .mv-bgm-disc-ring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;border-radius:50%;background:rgba(245,250,250,.92);box-shadow:inset 0 0 0 1px rgba(6,102,112,.12)}
+      #meow-voice-bgm-dock .mv-bgm-disc-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:#d8ffff;box-shadow:0 0 0 3px rgba(12,146,162,.18)}
+      #meow-voice-bgm-dock.playing .mv-bgm-disc{animation:mvBgmSpin 7.5s linear infinite}
+      @keyframes mvBgmSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+      #meow-voice-bgm-dock .mv-bgm-panel{position:relative;min-height:176px;padding:18px 16px 14px 86px;border-radius:26px;background:linear-gradient(180deg, rgba(245,255,255,.92), rgba(235,249,249,.86));border:1px solid rgba(64,153,162,.16);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 14px 34px rgba(0,0,0,.12)}
+      #meow-voice-bgm-dock .mv-bgm-name{font-size:20px;line-height:1.1;font-weight:700;color:#1d3c44;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      #meow-voice-bgm-dock .mv-bgm-sub{font-size:12px;color:rgba(29,60,68,.58);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px}
+      #meow-voice-bgm-dock .mv-bgm-progress{margin-top:14px}
+      #meow-voice-bgm-dock .mv-bgm-progress input{width:100%}
+      #meow-voice-bgm-dock .mv-bgm-controls{display:flex;align-items:center;gap:12px;margin-top:12px}
+      #meow-voice-bgm-dock .mv-bgm-controls button,#meow-voice-bgm-dock .mv-bgm-mini-toggle,#meow-voice-bgm-dock .mv-bgm-close{border:0;border-radius:999px;background:rgba(255,255,255,.76);box-shadow:0 6px 18px rgba(16,50,55,.10);cursor:pointer;color:#18363f}
+      #meow-voice-bgm-dock .mv-bgm-controls button{width:40px;height:40px;font-size:18px;line-height:1}
+      #meow-voice-bgm-dock .mv-bgm-play{width:50px;height:50px;font-size:22px;background:#143c45;color:#fff}
+      #meow-voice-bgm-dock .mv-bgm-mini-toggle,#meow-voice-bgm-dock .mv-bgm-close{position:absolute;top:0;width:32px;height:32px;font-size:14px;z-index:2}
+      #meow-voice-bgm-dock .mv-bgm-mini-toggle{right:44px}
+      #meow-voice-bgm-dock .mv-bgm-close{right:8px}
+      #meow-voice-bgm-dock .mv-bgm-groups{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+      #meow-voice-bgm-dock .mv-bgm-group-chip{border:0;border-radius:999px;padding:5px 10px;background:rgba(20,60,69,.08);color:#1d3c44;cursor:pointer;font-size:11px}
+      #meow-voice-bgm-dock .mv-bgm-group-chip.active{background:#153f49;color:#fff}
+      #meow-voice-bgm-dock .mv-bgm-list{margin-top:10px;max-height:148px;overflow:auto;padding-right:2px}
+      #meow-voice-bgm-dock .mv-bgm-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:14px;background:rgba(255,255,255,.54);margin-bottom:6px;cursor:pointer;border:1px solid rgba(64,153,162,.08)}
+      #meow-voice-bgm-dock .mv-bgm-item.active{background:rgba(17,65,74,.12);border-color:rgba(17,65,74,.16)}
+      #meow-voice-bgm-dock .mv-bgm-item-title{font-size:12px;font-weight:600;color:#21444d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      #meow-voice-bgm-dock .mv-bgm-item-meta{font-size:10px;color:rgba(33,68,77,.52);margin-top:2px}
+      #meow-voice-bgm-dock .mv-bgm-item-play{border:0;border-radius:999px;background:#153f49;color:#fff;font-size:11px;padding:6px 10px;cursor:pointer;flex:none}
+      #meow-voice-bgm-dock .mv-bgm-embed{margin-top:10px}
+      #meow-voice-bgm-dock .mv-bgm-embed iframe{display:block;width:100%;height:110px;border:0;border-radius:16px;background:rgba(255,255,255,.84)}
+      #meow-voice-bgm-dock .mv-bgm-embed.empty{display:none}
+      #meow-voice-bgm-dock.collapsed{transform:translate3d(276px,0,0)}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-panel{opacity:0;pointer-events:none}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-mini-toggle{right:290px}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-close{right:254px}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-disc-wrap{pointer-events:auto}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-shell{min-height:170px}
+      #meow-voice-bgm-dock .mv-bgm-empty{font-size:11px;color:rgba(29,60,68,.55);padding:8px 2px}
+      #meow-voice-bgm-dock input[type="range"]{accent-color:#146f79}
+    `;
+    if (!doc.getElementById(style.id)) (doc.head || doc.documentElement).appendChild(style);
+    root.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button, .mv-bgm-item');
+      if (!btn) return;
+      const c = cfg();
+      const lib = _getBgmLibrary();
+      const rootNow = _getBgmDock();
+      if (btn.classList.contains('mv-bgm-close')) {
+        _bgmState.closed = true;
+        rootNow.style.display = 'none';
+        try { await _setDramaBgmActive(false, c, { keepDock: true }); } catch(err) {}
+        return;
+      }
+      if (btn.classList.contains('mv-bgm-mini-toggle')) {
+        const next = !rootNow.classList.contains('collapsed');
+        lsSet(LS.BGM_DOCK_COLLAPSED, next);
+        _renderBgmDock();
+        return;
+      }
+      if (btn.classList.contains('mv-bgm-group-chip')) {
+        const gid = btn.dataset.groupId || '';
+        lsSet(LS.BGM_GROUP, gid);
+        const group = _findBgmGroup(lib, gid);
+        const first = group && group.tracks[0] ? group.tracks[0] : null;
+        lsSet(LS.BGM_TRACK, first ? first.id : '');
+        _renderBgmDock();
+        return;
+      }
+      if (btn.classList.contains('mv-bgm-prev') || btn.classList.contains('mv-bgm-next') || btn.classList.contains('mv-bgm-item') || btn.classList.contains('mv-bgm-item-play')) {
+        let gid = lsGet(LS.BGM_GROUP, '') || (lib[0]?.id || '');
+        let group = _findBgmGroup(lib, gid);
+        let tracks = _bgmTrackList(group);
+        if (!tracks.length) {
+          const sel = _resolveBgmSelection(c);
+          if (!sel) { toast('还没有可播放的音乐'); return; }
+          await _setDramaBgmActive(true, c, { preview: true, sourceUrl: sel.url, title: sel.title, restart: true });
+          return;
+        }
+        let idx = Math.max(0, tracks.findIndex(t => t.id === lsGet(LS.BGM_TRACK, '')));
+        if (btn.classList.contains('mv-bgm-prev')) idx = (idx - 1 + tracks.length) % tracks.length;
+        else if (btn.classList.contains('mv-bgm-next')) idx = (idx + 1) % tracks.length;
+        else {
+          const item = btn.closest('.mv-bgm-item');
+          const wanted = item?.dataset.trackId || btn.dataset.trackId || '';
+          const foundIdx = tracks.findIndex(t => t.id === wanted);
+          if (foundIdx >= 0) idx = foundIdx;
+        }
+        const track = tracks[idx];
+        if (!track) return;
+        _setBgmSelection(gid, track.id, track.title, track.url);
+        _bgmState.closed = false;
+        await _setDramaBgmActive(true, cfg(), { preview: true, sourceUrl: track.url, title: track.title, groupId: gid, trackId: track.id, restart: true });
+        return;
+      }
+      if (btn.classList.contains('mv-bgm-play')) {
+        const sel = _resolveBgmSelection(cfg());
+        if (!sel) { toast('请先在设置里填写音乐链接或加入歌单'); return; }
+        if ((_bgmAudio && !_bgmAudio.paused) || (_bgmState.active && _bgmState.parsedKind === 'netease_iframe')) {
+          try { await _setDramaBgmActive(false, cfg(), { keepDock: true, sourceUrl: sel.url, title: sel.title, groupId: sel.groupId, trackId: sel.trackId }); } catch(err) {}
+          return;
+        }
+        _bgmState.closed = false;
+        await _setDramaBgmActive(true, cfg(), { preview: true, sourceUrl: sel.url, title: sel.title, groupId: sel.groupId, trackId: sel.trackId, restart: !!sel.trackId || true });
+        return;
+      }
+    });
+    root.addEventListener('input', (e) => {
+      const seek = e.target.closest('.mv-bgm-seek');
+      if (!seek || !_bgmAudio || !Number.isFinite(_bgmAudio.duration) || _bgmAudio.duration <= 0) return;
+      try {
+        _bgmAudio.currentTime = (_bgmAudio.duration * Number(seek.value || 0)) / 1000;
+      } catch(err) {}
+    });
+    (doc.documentElement || doc.body).appendChild(root);
+    return root;
+  }
+
+  function _renderBgmDock(cArg) {
+    const c = cArg || cfg();
+    const root = _getBgmDock();
+    if (_bgmState.closed) return;
+    const selection = _resolveBgmSelection(c, _bgmState.sourceUrl ? { sourceUrl: _bgmState.sourceUrl, title: _bgmState.title, groupId: _bgmState.groupId, trackId: _bgmState.trackId } : null) || _resolveBgmSelection(c);
+    const title = String(_bgmState.title || selection?.title || c.bgmTitle || '背景音乐').trim() || '背景音乐';
+    const sub = _bgmState.active
+      ? (_bgmState.parsedKind === 'netease_iframe' ? '网易云播放器' : '播放中')
+      : (selection ? '待播放 · ' + ((_bgmState.parsedKind === 'netease_iframe') ? '网易云' : '本地/直链') : '未配置音源');
+    root.style.display = selection ? '' : 'none';
+    root.classList.toggle('collapsed', !!lsGet(LS.BGM_DOCK_COLLAPSED, true));
+    root.classList.toggle('playing', !!_bgmState.active);
+    root.querySelector('.mv-bgm-name').textContent = title;
+    root.querySelector('.mv-bgm-sub').textContent = sub;
+    const playBtn = root.querySelector('.mv-bgm-play');
+    if (playBtn) playBtn.textContent = (_bgmState.active || (_bgmAudio && !_bgmAudio.paused)) ? '⏸' : '▶';
+
+    const seek = root.querySelector('.mv-bgm-seek');
+    if (seek) {
+      if (_bgmAudio && Number.isFinite(_bgmAudio.duration) && _bgmAudio.duration > 0) {
+        seek.disabled = false;
+        seek.value = String(Math.max(0, Math.min(1000, Math.round((_bgmAudio.currentTime / _bgmAudio.duration) * 1000))));
+      } else {
+        seek.disabled = true;
+        seek.value = '0';
+      }
+    }
+
+    const lib = _getBgmLibrary();
+    const activeGroupId = lsGet(LS.BGM_GROUP, '') || (selection?.groupId || lib[0]?.id || '');
+    const groupsWrap = root.querySelector('.mv-bgm-groups');
+    if (groupsWrap) {
+      groupsWrap.innerHTML = lib.map(g => `<button type="button" class="mv-bgm-group-chip ${g.id===activeGroupId?'active':''}" data-group-id="${_safeAttr(g.id)}">${_safeAttr(g.name)}</button>`).join('');
+    }
+    const listWrap = root.querySelector('.mv-bgm-list');
+    const group = _findBgmGroup(lib, activeGroupId);
+    const activeTrackId = lsGet(LS.BGM_TRACK, '') || selection?.trackId || '';
+    const tracks = _bgmTrackList(group);
+    if (listWrap) {
+      listWrap.innerHTML = tracks.length
+        ? tracks.map(t => `
+            <div class="mv-bgm-item ${t.id===activeTrackId?'active':''}" data-track-id="${_safeAttr(t.id)}">
+              <div style="min-width:0;flex:1">
+                <div class="mv-bgm-item-title">${_safeAttr(t.title)}</div>
+                <div class="mv-bgm-item-meta">${_safeAttr(group?.name || '')}</div>
+              </div>
+              <button type="button" class="mv-bgm-item-play" data-track-id="${_safeAttr(t.id)}">播放</button>
+            </div>`).join('')
+        : '<div class="mv-bgm-empty">这个分组还没有歌。去语音设置里的背景音乐区域，把当前链接加入歌单。</div>';
+    }
+    const embed = root.querySelector('.mv-bgm-embed');
+    if (embed) {
+      if (_bgmState.active && _bgmState.parsedKind === 'netease_iframe' && _bgmState.embedSrc) {
+        embed.classList.remove('empty');
+        embed.innerHTML = `<iframe allow="autoplay *; encrypted-media *" src="${_safeAttr(_bgmState.embedSrc)}"></iframe>`;
+      } else {
+        embed.classList.add('empty');
+        embed.innerHTML = '';
+      }
+    }
+  }
+
+  function _syncBgmDockFromAudio() {
+    const root = doc.getElementById('meow-voice-bgm-dock');
+    if (!root || _bgmState.closed) return;
+    const seek = root.querySelector('.mv-bgm-seek');
+    if (seek && _bgmAudio && Number.isFinite(_bgmAudio.duration) && _bgmAudio.duration > 0) {
+      seek.disabled = false;
+      seek.value = String(Math.max(0, Math.min(1000, Math.round((_bgmAudio.currentTime / _bgmAudio.duration) * 1000))));
+    }
+    const playBtn = root.querySelector('.mv-bgm-play');
+    if (playBtn) playBtn.textContent = (_bgmState.active || (_bgmAudio && !_bgmAudio.paused)) ? '⏸' : '▶';
+    root.classList.toggle('playing', !!(_bgmAudio && !_bgmAudio.paused));
+    const sub = root.querySelector('.mv-bgm-sub');
+    if (sub && _bgmAudio) {
+      sub.textContent = _bgmAudio.paused ? '已暂停' : '播放中';
+    }
+  }
+
+  function _clearDramaBgmDock(hide) {
+    const root = doc.getElementById('meow-voice-bgm-dock');
+    _bgmState.active = false;
+    _bgmState.parsedKind = '';
+    _bgmState.embedSrc = '';
+    if (!root) return;
+    const embed = root.querySelector('.mv-bgm-embed');
+    if (embed) { embed.classList.add('empty'); embed.innerHTML = ''; }
+    root.classList.remove('playing');
+    if (hide) {
+      root.style.display = 'none';
+      _bgmState.closed = true;
+    } else {
+      _renderBgmDock();
+    }
+  }
+
+  async function _setDramaBgmActive(active, cArg, opts) {
+    const c = cArg || cfg();
+    const o = Object.assign({ preview: false, keepDock: false, sourceUrl: '', title: '', groupId: '', trackId: '', restart: false }, opts || {});
+    const selection = _resolveBgmSelection(c, { sourceUrl: o.sourceUrl, title: o.title, groupId: o.groupId, trackId: o.trackId });
+    const sourceUrl = selection?.url || c.bgmUrl || '';
+    const sourceTitle = selection?.title || c.bgmTitle || '背景音乐';
+    const parsed = _parseDramaBgmSource(sourceUrl);
+
+    if (!active || !sourceUrl || (!c.bgmEnabled && !o.preview)) {
+      if (_bgmAudio) {
+        try { _bgmAudio.pause(); } catch(e) {}
+        try { _bgmAudio.src = ''; } catch(e) {}
+      }
+      if (W._meowBgmAudio) {
+        try { W._meowBgmAudio.pause(); } catch(e) {}
+      }
+      _bgmAudio = null;
+      W._meowBgmAudio = null;
+      _bgmState.active = false;
+      _bgmState.title = sourceTitle;
+      _bgmState.sourceUrl = sourceUrl;
+      _bgmState.groupId = selection?.groupId || '';
+      _bgmState.trackId = selection?.trackId || '';
+      _bgmState.parsedKind = parsed.kind || '';
+      _bgmState.embedSrc = '';
+      if (!o.keepDock && !sourceUrl) _clearDramaBgmDock(true);
+      else _clearDramaBgmDock(false);
+      return;
+    }
+
+    _bgmState.closed = false;
+    _bgmState.visible = true;
+    _bgmState.title = sourceTitle;
+    _bgmState.sourceUrl = sourceUrl;
+    _bgmState.groupId = selection?.groupId || '';
+    _bgmState.trackId = selection?.trackId || '';
+    _bgmState.parsedKind = parsed.kind || '';
+
+    if (selection?.groupId || selection?.trackId) _setBgmSelection(selection?.groupId || '', selection?.trackId || '', sourceTitle, sourceUrl);
+
+    if (parsed.kind === 'audio') {
+      _bgmState.embedSrc = '';
+      const root = _getBgmDock();
+      root.style.display = '';
+      const same = _bgmAudio && _bgmAudio.dataset && _bgmAudio.dataset.src === parsed.audioUrl;
+      const a = same ? _bgmAudio : new Audio(parsed.audioUrl);
+      a.preload = 'auto';
+      a.loop = c.bgmLoop !== false;
+      a.volume = _clampNum(c.bgmVolume, 0, 1, 0.18);
+      a.dataset.src = parsed.audioUrl;
+      if (!same) {
+        a.addEventListener('timeupdate', _syncBgmDockFromAudio);
+        a.addEventListener('play', () => { _bgmState.active = true; _syncBgmDockFromAudio(); _renderBgmDock(); });
+        a.addEventListener('pause', () => { _bgmState.active = false; _syncBgmDockFromAudio(); _renderBgmDock(); });
+        a.addEventListener('ended', () => { _bgmState.active = false; _syncBgmDockFromAudio(); _renderBgmDock(); });
+      }
+      _bgmAudio = a;
+      W._meowBgmAudio = a;
+      try {
+        if (same && (o.preview || o.restart || a.ended || (Number.isFinite(a.duration) && a.currentTime >= Math.max(0, a.duration - 0.05)))) {
+          try { a.currentTime = 0; } catch(e) {}
+        }
+        if (!same || a.paused || o.preview || o.restart) await a.play();
+        _bgmState.active = true;
+        _renderBgmDock();
+      } catch(err) {
+        throw new Error('浏览器阻止了音频自动播放，或该链接不可直接播放');
+      }
+      return;
+    }
+
+    if (parsed.kind === 'netease_iframe') {
+      if (_bgmAudio) {
+        try { _bgmAudio.pause(); } catch(e) {}
+        try { _bgmAudio.src = ''; } catch(e) {}
+      }
+      _bgmAudio = null;
+      W._meowBgmAudio = null;
+      const root = _getBgmDock();
+      let iframeSrc = parsed.iframeSrc;
+      if (o.preview || o.restart) iframeSrc += (iframeSrc.includes('?') ? '&' : '?') + 'mvts=' + Date.now();
+      _bgmState.embedSrc = iframeSrc;
+      _bgmState.active = true;
+      root.style.display = '';
+      _renderBgmDock();
+      return;
+    }
+
+    if (parsed.kind === 'page') {
+      throw new Error('这不是直接音频流。普通歌曲页不能直接当 BGM，用网易云歌曲页请改成 outchain 播放器或直接粘贴歌曲页让系统转换。');
+    }
+
+    throw new Error('未识别的音乐链接格式');
+  }
+  async function _playApiJobSequence(jobs, opts) {
+    const o = Object.assign({ cfg: cfg(), playbackRate: 1, withBgm: false }, opts || {});
+    const c = o.cfg || cfg();
+    const runGen = ++_apiPlayGen;
+    isReading = true;
+    updateAllBtns(true);
+
+    if (o.withBgm) {
+      try { await _setDramaBgmActive(true, c); }
+      catch(err) { toast('BGM 未启用：' + ((err && err.message) || err || '未知错误')); }
+    }
+
+    let nextBlobPromise = null;
+    try {
+      if (!jobs || !jobs.length) return;
+      nextBlobPromise = _apiOnce(jobs[0].text, jobs[0].voiceId, c);
+
+      for (let i = 0; i < jobs.length; i++) {
+        if (runGen !== _apiPlayGen) break;
+        const job = jobs[i];
+        const blob = await nextBlobPromise;
+        nextBlobPromise = (i + 1 < jobs.length)
+          ? _apiOnce(jobs[i + 1].text, jobs[i + 1].voiceId, c)
+          : null;
+
+        await new Promise((resolve, reject) => {
+          if (runGen !== _apiPlayGen) { resolve(); return; }
+          let ended = false;
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          W._meowAudio = audio;
+          audio.preload = 'auto';
+          audio.playbackRate = _clampNum(o.playbackRate, 0.5, 2, 1);
+
+          const done = (err) => {
+            if (ended) return;
+            ended = true;
+            try { audio.pause(); } catch(e) {}
+            try { audio.src = ''; } catch(e) {}
+            try { URL.revokeObjectURL(url); } catch(e) {}
+            if (W._meowAudio === audio) W._meowAudio = null;
+            err ? reject(err) : resolve();
+          };
+
+          audio.onended = () => done();
+          audio.onerror = () => done(new Error('音频播放失败'));
+          try {
+            const p = audio.play();
+            if (p && typeof p.catch === 'function') p.catch(err => done(err));
+          } catch(err) {
+            done(err);
+          }
+        });
+      }
+    } finally {
+      if (runGen === _apiPlayGen) {
+        isReading = false;
+        updateAllBtns(false);
+      }
+      if (o.withBgm) {
+        try { await _setDramaBgmActive(false, c); } catch(e) {}
+      }
+    }
   }
 
   async function _apiOnce(text, voiceId, cArg) {
@@ -665,63 +1249,6 @@ ${t}
     return segments;
   }
 
-  // ── BGM 管理 ──
-  function _setDramaBgmActive(active, cArg) {
-    const c = cArg || cfg();
-    if (!active || !c.bgmEnabled || !c.bgmUrl) {
-      if (W._meowBgmAudio) {
-        try { W._meowBgmAudio.pause(); } catch(e) {}
-        W._meowBgmAudio = null;
-      }
-      return;
-    }
-    try {
-      if (!W._meowBgmAudio) {
-        W._meowBgmAudio = new Audio(c.bgmUrl);
-      } else {
-        W._meowBgmAudio.src = c.bgmUrl;
-      }
-      W._meowBgmAudio.volume = _clampNum(c.bgmVolume, 0, 1, 0.18);
-      W._meowBgmAudio.loop   = !!c.bgmLoop;
-      W._meowBgmAudio.play().catch(() => {});
-    } catch(e) {
-      console.warn('[meow-voice] BGM error:', e);
-    }
-  }
-
-  // ── 批量顺序播放 TTS 片段（支持 BGM 伴奏）──
-  async function _playApiJobSequence(jobs, opts) {
-    const c     = opts?.cfg || cfg();
-    const rate  = opts?.playbackRate || 1;
-    const bgm   = opts?.withBgm && c.bgmEnabled && c.bgmUrl;
-    if (bgm) _setDramaBgmActive(true, c);
-    const gen = ++_apiPlayGen;
-    isReading = true;
-    updateAllBtns(true);
-    try {
-      for (const job of jobs) {
-        if (gen !== _apiPlayGen || !isReading) break;
-        const blob   = await _apiOnce(job.text, job.voiceId, c);
-        if (gen !== _apiPlayGen || !isReading) break;
-        const objUrl = URL.createObjectURL(blob);
-        await new Promise((resolve, reject) => {
-          const a = new Audio(objUrl);
-          W._meowAudio = a;
-          a.playbackRate = rate;
-          a.onended  = () => { URL.revokeObjectURL(objUrl); resolve(); };
-          a.onerror  = (e) => { URL.revokeObjectURL(objUrl); reject(e); };
-          a.play().catch(reject);
-        });
-      }
-    } finally {
-      if (gen === _apiPlayGen) {
-        isReading = false;
-        updateAllBtns(false);
-        if (bgm && !c.bgmEnabled) _setDramaBgmActive(false, c);
-      }
-    }
-  }
-
   function _dramEntryVoice(entry) { return typeof entry === 'string' ? entry : (entry?.voice || ''); }
 
   function getDramaCharNames(c) {
@@ -786,6 +1313,8 @@ ${t}
     _apiPlayGen++;   // 让进行中的 speakViaApi 循环检测到版本变化后退出
     if (W._meowAudio) { try { W._meowAudio.pause(); W._meowAudio = null; } catch(e) {} }
     if (W._meowBgmAudio) { try { W._meowBgmAudio.pause(); } catch(e) {} }
+    _bgmState.active = false;
+    _renderBgmDock();
     isReading = false;
     updateAllBtns(false);
   }
@@ -1343,6 +1872,38 @@ async function _speakWithCfg(rawText, charName, c) {
   //  § 11  设置弹窗
   // ════════════════════════════════════════════════════════════════════
 
+
+  function _renderBgmLibraryEditor(box) {
+    if (!box) return;
+    const q = id => box.querySelector('#' + id);
+    const lib = _getBgmLibrary();
+    const sel = q('mvBgmGroupSel');
+    if (sel) {
+      const chosen = lsGet(LS.BGM_GROUP, '') || (lib[0]?.id || '');
+      sel.innerHTML = lib.map(g => `<option value="${escAttr(g.id)}" ${g.id===chosen?'selected':''}>${esc(g.name)}</option>`).join('');
+      if (!sel.value && lib[0]) sel.value = lib[0].id;
+    }
+    const currentGroupId = sel?.value || (lib[0]?.id || '');
+    const group = _findBgmGroup(lib, currentGroupId);
+    const list = q('mvBgmLibraryList');
+    if (list) {
+      const activeTrack = lsGet(LS.BGM_TRACK, '');
+      list.innerHTML = _bgmTrackList(group).length
+        ? _bgmTrackList(group).map(t => `
+            <div class="mv-bgm-row ${t.id===activeTrack?'active':''}" data-track-id="${escAttr(t.id)}" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;background:${t.id===activeTrack?'rgba(17,65,74,.10)':'rgba(255,255,255,.55)'};margin-bottom:6px;border:1px solid rgba(28,24,18,.05)">
+              <div style="min-width:0;flex:1">
+                <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.title)}</div>
+                <div style="font-size:10px;color:rgba(90,70,50,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(group?.name||'')} · ${esc(t.url)}</div>
+              </div>
+              <div style="display:flex;gap:6px;flex:none">
+                <button type="button" class="mv-btn mv-bgm-lib-use" data-track-id="${escAttr(t.id)}" style="font-size:11px;padding:5px 10px">选用</button>
+                <button type="button" class="mv-btn mv-bgm-lib-play" data-track-id="${escAttr(t.id)}" style="font-size:11px;padding:5px 10px">播放</button>
+              </div>
+            </div>`).join('')
+        : '<div class="mv-hint" style="font-size:11px">这个分组里还没有歌。先填上曲名和链接，再点“加入歌单”。</div>';
+    }
+  }
+
   function openModal() {
     injectCSS();
     doc.getElementById(ID.MODAL)?.remove();
@@ -1553,34 +2114,52 @@ async function _speakWithCfg(rawText, charName, c) {
               ${dramaCharRows(c.dramaMap||{}, getActiveCharNames())}
             </div>
             <button type="button" class="mv-btn" id="mvDramaRefresh" style="margin-top:6px;font-size:12px">↺ 刷新角色列表</button>
-            <div style="margin-top:12px">
-              <div style="margin:12px 0;padding:12px;border:1px solid rgba(28,24,18,.08);border-radius:14px;background:rgba(255,255,255,.38)">
-                <div style="font-size:12px;font-weight:700;margin-bottom:8px">背景音乐</div>
-                <label class="mv-toggle" style="margin-bottom:10px">
-                  <span>启用背景音乐</span>
-                  <div class="mv-sw"><input type="checkbox" id="mvBgmEnabled" ${c.bgmEnabled?'checked':''}><div class="mv-slider"></div></div>
-                </label>
-                <div style="margin-bottom:8px">
-                  <label style="font-size:12px;display:block;margin-bottom:4px">音频链接</label>
-                  <input type="text" id="mvBgmUrl" placeholder="mp3/m4a/ogg 直链，或网易云外链 music.163.com/outchain/player?..." value="${esc(c.bgmUrl||'')}">
+            <div style="margin:14px 0 0;padding:12px;border:1px solid rgba(28,24,18,.08);border-radius:14px;background:rgba(255,255,255,.38)">
+              <div style="font-size:12px;font-weight:700;margin-bottom:8px">背景音乐</div>
+              <label class="mv-toggle" style="margin-bottom:10px">
+                <span>启用背景音乐</span>
+                <div class="mv-sw"><input type="checkbox" id="mvBgmEnabled" ${c.bgmEnabled?'checked':''}><div class="mv-slider"></div></div>
+              </label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                <div>
+                  <label style="font-size:12px;display:block;margin-bottom:4px">当前曲名</label>
+                  <input type="text" id="mvBgmTitle" placeholder="例如：南行夜路" value="${esc(c.bgmTitle||'背景音乐')}">
                 </div>
-                <div style="margin-bottom:8px">
-                  <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">背景音乐音量</label>
-                  <div style="display:flex;gap:10px;align-items:center">
-                    <input type="range" id="mvBgmVolume" min="0" max="1" step="0.01" value="${_clampNum(c.bgmVolume,0,1,0.18)}" style="flex:1">
-                    <span class="mv-val" id="mvBgmVolumeVal">${Math.round(_clampNum(c.bgmVolume,0,1,0.18)*100)}%</span>
-                  </div>
+                <div>
+                  <label style="font-size:12px;display:block;margin-bottom:4px">当前分组</label>
+                  <select id="mvBgmGroupSel"></select>
                 </div>
-                <label class="mv-toggle" style="margin-bottom:10px">
-                  <span>循环播放</span>
-                  <div class="mv-sw"><input type="checkbox" id="mvBgmLoop" ${c.bgmLoop!==false?'checked':''}><div class="mv-slider"></div></div>
-                </label>
-                <div style="display:flex;gap:8px;flex-wrap:wrap">
-                  <button type="button" class="mv-btn" id="mvBgmTest" style="font-size:12px">▶ 试听 BGM</button>
-                  <button type="button" class="mv-btn" id="mvBgmStop" style="font-size:12px">■ 停止 BGM</button>
-                </div>
-                <div class="mv-hint" style="margin-top:6px;font-size:11px">支持 mp3/m4a/ogg 直链，或网易云/QQ音乐的外链播放器地址（如 music.163.com/outchain/player?type=2&amp;id=...）；普通分享页链接无法直接播放。</div>
               </div>
+              <div style="margin-bottom:8px">
+                <label style="font-size:12px;display:block;margin-bottom:4px">音乐链接 / iframe 代码</label>
+                <input type="text" id="mvBgmUrl" placeholder="支持 mp3 直链、网易云歌曲页、网易云 outchain iframe 代码" value="${esc(c.bgmUrl||'')}">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;margin-bottom:8px">
+                <div>
+                  <label style="font-size:12px;display:block;margin-bottom:4px">新建分组</label>
+                  <input type="text" id="mvBgmNewGroup" placeholder="例如：暧昧 / 夜路 / 雨天">
+                </div>
+                <button type="button" class="mv-btn" id="mvBgmAddGroup" style="font-size:12px">＋ 添加分组</button>
+              </div>
+              <div style="margin-bottom:8px">
+                <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">背景音乐音量</label>
+                <div style="display:flex;gap:10px;align-items:center">
+                  <input type="range" id="mvBgmVolume" min="0" max="1" step="0.01" value="${_clampNum(c.bgmVolume,0,1,0.18)}" style="flex:1">
+                  <span class="mv-val" id="mvBgmVolumeVal">${Math.round(_clampNum(c.bgmVolume,0,1,0.18)*100)}%</span>
+                </div>
+              </div>
+              <label class="mv-toggle" style="margin-bottom:10px">
+                <span>循环播放</span>
+                <div class="mv-sw"><input type="checkbox" id="mvBgmLoop" ${c.bgmLoop!==false?'checked':''}><div class="mv-slider"></div></div>
+              </label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+                <button type="button" class="mv-btn" id="mvBgmAddTrack" style="font-size:12px">♡ 加入歌单</button>
+                <button type="button" class="mv-btn" id="mvBgmDeleteTrack" style="font-size:12px">－ 删除当前曲</button>
+                <button type="button" class="mv-btn" id="mvBgmTest" style="font-size:12px">▶ 试听 BGM</button>
+                <button type="button" class="mv-btn" id="mvBgmStop" style="font-size:12px">■ 停止 BGM</button>
+              </div>
+              <div id="mvBgmLibraryList" style="max-height:180px;overflow:auto;padding-right:2px;border:1px solid rgba(28,24,18,.06);border-radius:12px;background:rgba(255,255,255,.42);padding:8px"></div>
+              <div class="mv-hint" style="margin-top:6px;font-size:11px">这里的歌单会同步到正文右侧贴边唱片机。直链音乐能用播放器按钮完整控制；网易云歌曲页 / outchain 会以嵌入播放器方式播放。</div>
             </div>
           </div>
         </div>
@@ -1632,24 +2211,111 @@ async function _speakWithCfg(rawText, charName, c) {
         try { W._meowBgmAudio.volume = v; } catch(e) {}
       }
     });
+
+    _renderBgmLibraryEditor(box);
+    q('mvBgmGroupSel')?.addEventListener('change', e => {
+      lsSet(LS.BGM_GROUP, e.target.value || '');
+      const lib = _getBgmLibrary();
+      const group = _findBgmGroup(lib, e.target.value || '');
+      lsSet(LS.BGM_TRACK, group?.tracks?.[0]?.id || '');
+      _renderBgmLibraryEditor(box);
+    });
+    q('mvBgmAddGroup')?.addEventListener('click', () => {
+      const name = q('mvBgmNewGroup')?.value.trim() || '';
+      if (!name) { toast('先写一个分组名'); return; }
+      const lib = _getBgmLibrary();
+      const exists = lib.find(g => g.name === name);
+      const gid = exists ? exists.id : _uid('g_');
+      if (!exists) lib.push({ id: gid, name, tracks: [] });
+      _saveBgmLibrary(lib);
+      lsSet(LS.BGM_GROUP, gid);
+      q('mvBgmNewGroup').value = '';
+      _renderBgmLibraryEditor(box);
+      toast(exists ? '这个分组已经有了' : '已添加分组');
+    });
+    q('mvBgmAddTrack')?.addEventListener('click', () => {
+      const title = q('mvBgmTitle')?.value.trim() || '未命名曲目';
+      const url = q('mvBgmUrl')?.value.trim() || '';
+      const gid = q('mvBgmGroupSel')?.value || '';
+      if (!url) { toast('先填音乐链接'); return; }
+      const lib = _getBgmLibrary();
+      const group = _findBgmGroup(lib, gid);
+      if (!group) { toast('先创建一个分组'); return; }
+      const existed = group.tracks.find(t => t.url === url || t.title === title);
+      const tid = existed ? existed.id : _uid('t_');
+      if (existed) {
+        existed.title = title;
+        existed.url = url;
+      } else {
+        group.tracks.unshift({ id: tid, title, url });
+      }
+      _saveBgmLibrary(lib);
+      _setBgmSelection(gid, tid, title, url);
+      _renderBgmLibraryEditor(box);
+      _renderBgmDock();
+      toast(existed ? '已更新到歌单' : '已加入歌单');
+    });
+    q('mvBgmDeleteTrack')?.addEventListener('click', () => {
+      const gid = q('mvBgmGroupSel')?.value || '';
+      const tid = lsGet(LS.BGM_TRACK, '');
+      if (!gid || !tid) { toast('先在歌单里选一首歌'); return; }
+      const lib = _getBgmLibrary();
+      const group = _findBgmGroup(lib, gid);
+      if (!group) return;
+      group.tracks = _bgmTrackList(group).filter(t => t.id !== tid);
+      _saveBgmLibrary(lib);
+      lsSet(LS.BGM_TRACK, group.tracks[0]?.id || '');
+      _renderBgmLibraryEditor(box);
+      _renderBgmDock();
+      toast('已删除当前曲');
+    });
+    q('mvBgmLibraryList')?.addEventListener('click', async (e) => {
+      const useBtn = e.target.closest('.mv-bgm-lib-use');
+      const playBtn = e.target.closest('.mv-bgm-lib-play');
+      const row = e.target.closest('[data-track-id]');
+      const tid = useBtn?.dataset.trackId || playBtn?.dataset.trackId || row?.dataset.trackId || '';
+      if (!tid) return;
+      const gid = q('mvBgmGroupSel')?.value || '';
+      const lib = _getBgmLibrary();
+      const track = _findBgmTrack(lib, gid, tid);
+      if (!track) return;
+      _setBgmSelection(gid, track.id, track.title, track.url);
+      q('mvBgmTitle').value = track.title || '';
+      q('mvBgmUrl').value = track.url || '';
+      _renderBgmLibraryEditor(box);
+      _renderBgmDock();
+      if (playBtn) {
+        try {
+          await _setDramaBgmActive(true, Object.assign({}, cfg(), { bgmEnabled: true, bgmTitle: track.title, bgmUrl: track.url }), { preview: true, sourceUrl: track.url, title: track.title, groupId: gid, trackId: track.id, restart: true });
+        } catch(err) {
+          toast('BGM 播放失败：' + ((err && err.message) || err || '未知错误'));
+        }
+      }
+    });
     q('mvBgmTest')?.addEventListener('click', async () => {
       const url = q('mvBgmUrl')?.value.trim() || '';
+      const title = q('mvBgmTitle')?.value.trim() || '背景音乐';
       if (!url) { toast('请先填写背景音乐链接'); return; }
       try {
         const tmpCfg = Object.assign({}, cfg(), {
           bgmEnabled: true,
+          bgmTitle: title,
           bgmUrl: url,
           bgmVolume: _clampNum(q('mvBgmVolume')?.value, 0, 1, 0.18),
           bgmLoop: !!q('mvBgmLoop')?.checked,
+          bgmGroup: q('mvBgmGroupSel')?.value || '',
+          bgmTrack: lsGet(LS.BGM_TRACK, ''),
+          bgmLibrary: _getBgmLibrary(),
         });
-        await _setDramaBgmActive(true, tmpCfg);
-        toast('▶ 背景音乐已开始');
+        const parsed = _parseDramaBgmSource(url);
+        await _setDramaBgmActive(true, tmpCfg, { preview: true, sourceUrl: url, title, groupId: q('mvBgmGroupSel')?.value || '', trackId: lsGet(LS.BGM_TRACK, ''), restart: true });
+        toast(parsed.kind === 'netease_iframe' ? '▶ 已打开贴边唱片机' : '▶ 背景音乐已开始');
       } catch(err) {
         toast('BGM 试听失败：' + ((err && err.message) || err || '未知错误'));
       }
     });
-    q('mvBgmStop')?.addEventListener('click', () => {
-      if (W._meowBgmAudio) { try { W._meowBgmAudio.pause(); } catch(e) {} }
+    q('mvBgmStop')?.addEventListener('click', async () => {
+      try { await _setDramaBgmActive(false, Object.assign({}, cfg(), { bgmEnabled: false })); } catch(e) {}
     });
 
     // 保存设置
@@ -1681,9 +2347,12 @@ async function _speakWithCfg(rawText, charName, c) {
       lsSet(LS.USER_NAME,  q('mvUserName')?.value.trim() || '我');
       lsSet(LS.DRAMA_RATE, _clampNum(q('mvDramaRate')?.value, 0.7, 1.5, 1.0));
       lsSet(LS.BGM_ENABLED, !!q('mvBgmEnabled')?.checked);
+      lsSet(LS.BGM_TITLE, q('mvBgmTitle')?.value.trim() || '背景音乐');
       lsSet(LS.BGM_URL, q('mvBgmUrl')?.value.trim() || '');
       lsSet(LS.BGM_VOLUME, _clampNum(q('mvBgmVolume')?.value, 0, 1, 0.18));
       lsSet(LS.BGM_LOOP, !!q('mvBgmLoop')?.checked);
+      lsSet(LS.BGM_GROUP, q('mvBgmGroupSel')?.value || '');
+      lsSet(LS.BGM_LIBRARY, _getBgmLibrary());
       const newDramaMap = { ...lsGet(LS.DRAMA_MAP, {}) };
       newDramaMap['__narration__'] = q('mvNarratorVoice')?.value.trim() || '';
       newDramaMap['__user__']      = q('mvUserVoice')?.value.trim() || '';
@@ -1703,6 +2372,8 @@ async function _speakWithCfg(rawText, charName, c) {
       });
       Object.assign(newDramaMap, _dramaTmp);
       lsSet(LS.DRAMA_MAP, newDramaMap);
+      _bgmState.closed = false;
+      _renderBgmDock(cfg());
       toast('✅ 语音设置已保存');
       closeModal();
     });
@@ -1912,6 +2583,19 @@ async function _speakWithCfg(rawText, charName, c) {
     if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', () => setTimeout(injectPlayBtn, 1200));
     else setTimeout(injectPlayBtn, 1200);
     setInterval(keepPlayBtn, 30000);
+    setTimeout(() => {
+      try {
+        const sel = _resolveBgmSelection(cfg());
+        if (sel) {
+          _bgmState.closed = false;
+          _bgmState.title = sel.title;
+          _bgmState.sourceUrl = sel.url;
+          _bgmState.groupId = sel.groupId || '';
+          _bgmState.trackId = sel.trackId || '';
+          _renderBgmDock(cfg());
+        }
+      } catch(e) {}
+    }, 1200);
 
     window.meowVoice = { open: openModal, stop: stopReading, speak: speakText };
     toast('🎙️ 语音模块已加载');
@@ -1919,475 +2603,5 @@ async function _speakWithCfg(rawText, charName, c) {
   }
 
   setTimeout(start, 350);
-
-})();
-
-
-
-/* ═══════════════════════════════════════════════════
-   🎵 喵喵唱片机 v3 — 黑胶贴边版
-   ═══════════════════════════════════════════════════ */
-(function () {
-  'use strict';
-  const doc = document;
-  const LS_KEY = 'meow_jukebox_v3';
-
-  function dbLoad() {
-    try { const v = localStorage.getItem(LS_KEY); return v ? JSON.parse(v) : null; } catch { return null; }
-  }
-  function dbSave() { try { localStorage.setItem(LS_KEY, JSON.stringify(db)); } catch(e) {} }
-  function mkDefault() {
-    return { groups:[{id:'g1',name:'默认歌单',songs:[]}], gid:'g1', sid:null, vol:0.6, open:false };
-  }
-
-  let db = Object.assign(mkDefault(), dbLoad() || {});
-  // 修复：确保 groups 存在
-  if (!db.groups || !db.groups.length) db.groups = mkDefault().groups;
-
-  let rootEl = null;
-  let audioEl = null;
-  let isPlaying = false;
-  let spinRAF = null;
-  let spinAngle = 0;
-
-  const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  const $ = sel => rootEl ? rootEl.querySelector(sel) : null;
-  const toast = msg => { try { window.meowVoice?.toast?.(msg); } catch(e) {} };
-
-  function curGroup() { return db.groups.find(g=>g.id===db.gid) || db.groups[0]; }
-  function curSong()  { const g=curGroup(); return g ? g.songs.find(s=>s.id===db.sid)||null : null; }
-
-  // ── URL 解析 ──
-  function detectType(url) {
-    if (!url) return 'none';
-    // 网易云外链播放器（可直接 iframe 嵌入）
-    if (/music\.163\.com\/outchain\/player/.test(url)) return 'wyframe';
-    // 网易云分享页（转成外链）
-    if (/music\.163\.com\/#?\/song|music\.163\.com\/song\?/.test(url)) return 'wyshare';
-    // 直音频文件
-    if (/\.(mp3|m4a|ogg|wav|flac|aac)(\?|$)/i.test(url)) return 'audio';
-    // 其他 iframe（QQ音乐外链等）
-    return 'iframe';
-  }
-
-  function toPlayUrl(url, type) {
-    if (type === 'wyshare') {
-      const m = url.match(/[?&]id=(\d+)/);
-      if (m) return 'https://music.163.com/outchain/player?type=2&id=' + m[1] + '&auto=1&height=100';
-    }
-    return url;
-  }
-
-  // ── 播放 ──
-  function playSong(song) {
-    if (!song) return;
-    db.sid = song.id;
-    dbSave();
-    const type = detectType(song.url);
-    const url  = toPlayUrl(song.url, type);
-
-    updateInfo(song);
-
-    if (type === 'audio') {
-      // mp3 直链 → <audio> 元素
-      clearIframe();
-      hideIframe();
-      if (!audioEl) {
-        audioEl = new Audio();
-        audioEl.onended = () => { isPlaying=false; setSpinning(false); updatePlayBtn(); playNext(); };
-        audioEl.onerror = () => { isPlaying=false; setSpinning(false); updatePlayBtn(); toast('❌ 音频加载失败，请检查链接'); };
-      }
-      if (audioEl.src !== url) audioEl.src = url;
-      audioEl.volume = db.vol;
-      const p = audioEl.play();
-      if (p) {
-        p.then(() => {
-          isPlaying = true;
-          setSpinning(true);
-          updatePlayBtn();
-          renderList();
-        }).catch(err => {
-          toast('⚠️ 浏览器阻止了自动播放，请点击 ▶ 手动开始');
-          isPlaying = false;
-          setSpinning(false);
-          updatePlayBtn();
-        });
-      }
-    } else {
-      // iframe 模式（网易云外链 / QQ音乐 / 其他）
-      if (audioEl) { try { audioEl.pause(); } catch(e){} }
-      isPlaying = true;
-      setSpinning(true);
-      updatePlayBtn();
-      buildIframe(url);
-      renderList();
-    }
-  }
-
-  function togglePlay() {
-    const song = curSong();
-    if (!song) { toast('请先添加并选择一首歌'); return; }
-    const type = detectType(song.url);
-
-    if (type === 'audio') {
-      if (!audioEl || !audioEl.src) { playSong(song); return; }
-      if (isPlaying) {
-        audioEl.pause();
-        isPlaying = false;
-        setSpinning(false);
-      } else {
-        audioEl.play().then(() => { isPlaying=true; setSpinning(true); }).catch(() => {});
-        isPlaying = true;
-        setSpinning(true);
-      }
-      updatePlayBtn();
-    } else {
-      // iframe 歌曲无法直接控制，重新加载
-      if (!isPlaying) { playSong(song); }
-      else { isPlaying=false; setSpinning(false); updatePlayBtn(); clearIframe(); }
-    }
-  }
-
-  function playNext() {
-    const g=curGroup(); if(!g||!g.songs.length) return;
-    const i=g.songs.findIndex(s=>s.id===db.sid);
-    const nx=g.songs[(i+1)%g.songs.length];
-    if(nx) playSong(nx);
-  }
-  function playPrev() {
-    const g=curGroup(); if(!g||!g.songs.length) return;
-    const i=g.songs.findIndex(s=>s.id===db.sid);
-    const pv=g.songs[(i-1+g.songs.length)%g.songs.length];
-    if(pv) playSong(pv);
-  }
-
-  // ── iframe 管理 ──
-  function buildIframe(url) {
-    const wrap = $('#mjbIframeWrap');
-    if (!wrap) return;
-    wrap.style.display = 'block';
-    wrap.innerHTML = '<iframe src="' + esc(url) + '" frameborder="0" allow="autoplay;encrypted-media" '
-      + 'style="width:100%;height:100px;border:none;display:block;" scrolling="no"></iframe>';
-  }
-  function clearIframe() { const w=$('#mjbIframeWrap'); if(w) { w.innerHTML=''; } }
-  function hideIframe()  { const w=$('#mjbIframeWrap'); if(w) w.style.display='none'; }
-
-  // ── 黑胶旋转（requestAnimationFrame 版，比 setInterval 更顺滑）──
-  function setSpinning(on) {
-    const disc    = $('#mjbDisc');
-    const edgeDisc= $('#mjbEdgeDisc');
-    if (on) {
-      if (spinRAF) return;
-      let last = 0;
-      function frame(ts) {
-        if (!isPlaying) { spinRAF=null; return; }
-        if (last) spinAngle = (spinAngle + (ts-last)*0.03) % 360;
-        last = ts;
-        const t = `rotate(${spinAngle.toFixed(1)}deg)`;
-        if (disc)     disc.style.transform     = t;
-        if (edgeDisc) edgeDisc.style.transform = t;
-        spinRAF = requestAnimationFrame(frame);
-      }
-      spinRAF = requestAnimationFrame(frame);
-    } else {
-      if (spinRAF) { cancelAnimationFrame(spinRAF); spinRAF=null; }
-    }
-  }
-
-  function updatePlayBtn() {
-    const btn = $('#mjbPlay');
-    if (btn) btn.textContent = isPlaying ? '⏸' : '▶';
-  }
-
-  function updateInfo(song) {
-    const nm = $('#mjbSongName');
-    const sb = $('#mjbSongSub');
-    if (nm) nm.textContent = song ? (song.title||'未命名') : '点击歌单选曲';
-    if (sb) sb.textContent = song ? (isPlaying?'▶ 播放中':'已暂停') : '🎵 唱片机';
-  }
-
-  // ── 渲染 ──
-  function renderList() {
-    const listEl = $('#mjbList');
-    if (!listEl) return;
-    const g = curGroup();
-    listEl.innerHTML = (g && g.songs.length)
-      ? g.songs.map(s => {
-          const act = s.id===db.sid;
-          return `<div class="mjb-row${act?' act':''}" data-sid="${esc(s.id)}">
-            <span class="mjb-dot">${act&&isPlaying?'▶':act?'▷':'·'}</span>
-            <span class="mjb-rname" title="${esc(s.title||s.url)}">${esc(s.title||'未命名')}</span>
-            <button class="mjb-del" data-del="${esc(s.id)}" title="删除">✕</button>
-          </div>`;
-        }).join('')
-      : '<div class="mjb-empty">空歌单，在下方添加第一首</div>';
-  }
-
-  function renderTabs() {
-    const tabEl = $('#mjbTabs');
-    if (!tabEl) return;
-    tabEl.innerHTML = db.groups.map(g =>
-      `<button class="mjb-tab${g.id===db.gid?' act':''}" data-gid="${esc(g.id)}">${esc(g.name)}</button>`
-    ).join('') + '<button class="mjb-tab mjb-newtab" id="mjbNewGroup">＋</button>';
-  }
-
-  // ── HTML 骨架 ──
-  const CSS = `
-<style>
-#mjb-root{position:fixed;right:0;bottom:130px;z-index:9997;display:flex;align-items:flex-end;
-  font-family:-apple-system,'PingFang SC',sans-serif;transition:right .3s ease;}
-
-/* 贴边收起：半张黑胶探出来 */
-#mjbEdge{width:56px;height:110px;cursor:pointer;position:relative;overflow:hidden;
-  display:flex;align-items:center;}
-#mjbEdgeDisc{width:100px;height:100px;flex-shrink:0;position:absolute;right:-22px;
-  border-radius:50%;
-  background:radial-gradient(circle,#e8e8e8 7%,#ccc 8.5%,#999 11%,#777 15%,#555 19%,
-    #444 24%,#555 29%,#444 35%,#333 42%,#555 49%,#444 56%,#333 63%,#222 70%,
-    #111 77%,#000 84%,#111 91%,#000 100%);
-  box-shadow:-3px 0 16px rgba(0,0,0,.7);}
-#mjbEdgeHint{position:absolute;left:5px;top:50%;transform:translateY(-50%);
-  writing-mode:vertical-rl;font-size:9px;letter-spacing:1px;color:rgba(255,255,255,.4);}
-
-/* 展开面板 */
-#mjb-root.open #mjbEdge{display:none;}
-#mjbPanel{display:none;width:264px;flex-direction:column;
-  background:#f6f5f1;border-radius:14px 0 0 14px;
-  box-shadow:-4px 0 28px rgba(0,0,0,.3);overflow:hidden;}
-#mjb-root.open #mjbPanel{display:flex;}
-
-/* 黑色顶部区 */
-#mjbTop{background:#111;padding:14px 14px 10px;display:flex;gap:12px;align-items:center;}
-#mjbDisc{width:68px;height:68px;flex-shrink:0;border-radius:50%;
-  background:radial-gradient(circle,#e8e8e8 7%,#ccc 8.5%,#999 11%,#777 15%,#555 19%,
-    #444 24%,#555 29%,#444 35%,#333 42%,#555 49%,#444 56%,#333 63%,#222 70%,
-    #111 77%,#000 84%,#111 91%,#000 100%);
-  box-shadow:0 0 0 2px #2a2a2a,0 3px 14px rgba(0,0,0,.9);}
-#mjbInfo{flex:1;min-width:0;}
-#mjbSongName{color:#f0eee8;font-size:12px;font-weight:600;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:148px;}
-#mjbSongSub{color:rgba(255,255,255,.35);font-size:10px;margin-top:3px;}
-#mjbCloseBtn{background:none;border:none;color:rgba(255,255,255,.3);
-  cursor:pointer;font-size:17px;padding:3px 5px;align-self:flex-start;line-height:1;}
-#mjbCloseBtn:hover{color:rgba(255,255,255,.8);}
-
-/* 控制栏 */
-#mjbCtrl{background:#1a1a1a;padding:8px 12px;display:flex;align-items:center;gap:7px;}
-.mjb-cb{background:rgba(255,255,255,.07);border:none;border-radius:50%;
-  color:rgba(255,255,255,.75);cursor:pointer;font-size:13px;
-  width:30px;height:30px;display:flex;align-items:center;justify-content:center;
-  transition:background .15s;}
-.mjb-cb:hover{background:rgba(255,255,255,.16);}
-#mjbPlay{width:38px;height:38px;font-size:15px;background:rgba(255,255,255,.13);}
-#mjbPlay:hover{background:rgba(255,255,255,.22);}
-#mjbVolRow{flex:1;display:flex;align-items:center;gap:5px;}
-#mjbVolSlider{flex:1;-webkit-appearance:none;height:3px;border-radius:2px;
-  background:rgba(255,255,255,.2);outline:none;cursor:pointer;}
-#mjbVolSlider::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;
-  border-radius:50%;background:#ccc;cursor:pointer;}
-#mjbVolNum{color:rgba(255,255,255,.35);font-size:10px;min-width:28px;text-align:right;}
-
-/* iframe 播放器区 */
-#mjbIframeWrap{background:#0d0d0d;display:none;}
-
-/* 分组标签 */
-#mjbTabs{padding:7px 10px 4px;display:flex;gap:4px;flex-wrap:wrap;
-  background:#f6f5f1;border-bottom:1px solid #eae8e2;}
-.mjb-tab{background:none;border:1px solid #d5d3cc;border-radius:20px;
-  font-size:11px;padding:2px 9px;color:#888;cursor:pointer;transition:all .15s;}
-.mjb-tab:hover{border-color:#999;color:#444;}
-.mjb-tab.act{background:#111;border-color:#111;color:#f0eee8;font-weight:600;}
-.mjb-tab.mjb-newtab{border-style:dashed;color:#aaa;}
-
-/* 歌曲列表 */
-#mjbList{max-height:120px;overflow-y:auto;padding:3px 7px 3px;background:#f6f5f1;}
-#mjbList::-webkit-scrollbar{width:3px;}
-#mjbList::-webkit-scrollbar-thumb{background:#d0cec8;border-radius:2px;}
-.mjb-row{display:flex;align-items:center;gap:5px;padding:5px 5px;
-  border-radius:7px;cursor:pointer;transition:background .12s;}
-.mjb-row:hover{background:rgba(0,0,0,.04);}
-.mjb-row.act{background:rgba(0,0,0,.07);}
-.mjb-dot{font-size:9px;color:#999;width:13px;flex-shrink:0;text-align:center;}
-.mjb-row.act .mjb-dot{color:#111;}
-.mjb-rname{flex:1;font-size:11px;color:#555;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.mjb-row.act .mjb-rname{color:#111;font-weight:600;}
-.mjb-del{background:none;border:none;color:#ccc;cursor:pointer;
-  font-size:10px;padding:2px 4px;border-radius:4px;flex-shrink:0;}
-.mjb-del:hover{background:rgba(200,0,0,.1);color:#d44;}
-.mjb-empty{color:#bbb;font-size:11px;text-align:center;padding:10px 0;}
-
-/* 添加区 */
-#mjbAddArea{padding:8px 10px 10px;background:#f6f5f1;border-top:1px solid #eae8e2;
-  display:flex;flex-direction:column;gap:6px;}
-.mjb-inprow{display:flex;gap:5px;}
-.mjb-inp{flex:1;background:#fff;border:1px solid #ddd;border-radius:8px;
-  color:#333;font-size:11px;padding:5px 8px;outline:none;transition:border .15s;}
-.mjb-inp:focus{border-color:#888;}
-.mjb-inp::placeholder{color:#bbb;}
-.mjb-addbtn{background:#111;border:none;border-radius:8px;color:#f0eee8;
-  font-size:11px;padding:5px 12px;cursor:pointer;white-space:nowrap;}
-.mjb-addbtn:hover{background:#333;}
-.mjb-addtip{color:#bbb;font-size:10px;line-height:1.5;}
-</style>`;
-
-  const HTML = `
-<div id="mjbEdge">
-  <div id="mjbEdgeDisc"></div>
-  <div id="mjbEdgeHint">🎵</div>
-</div>
-<div id="mjbPanel">
-  <div id="mjbTop">
-    <div id="mjbDisc"></div>
-    <div id="mjbInfo">
-      <div id="mjbSongName">点击歌单选曲</div>
-      <div id="mjbSongSub">🎵 唱片机</div>
-    </div>
-    <button id="mjbCloseBtn" title="收起">×</button>
-  </div>
-  <div id="mjbCtrl">
-    <button class="mjb-cb" id="mjbPrev" title="上一首">⏮</button>
-    <button class="mjb-cb" id="mjbPlay" title="播放/暂停">▶</button>
-    <button class="mjb-cb" id="mjbNext" title="下一首">⏭</button>
-    <div id="mjbVolRow">
-      <span style="color:rgba(255,255,255,.25);font-size:10px">🔉</span>
-      <input type="range" id="mjbVolSlider" min="0" max="1" step="0.02" value="0.6">
-      <span id="mjbVolNum">60%</span>
-    </div>
-  </div>
-  <div id="mjbIframeWrap"></div>
-  <div id="mjbTabs"></div>
-  <div id="mjbList"></div>
-  <div id="mjbAddArea">
-    <div class="mjb-inprow">
-      <input class="mjb-inp" id="mjbTitleInp" placeholder="歌名（可选）" style="max-width:85px">
-      <input class="mjb-inp" id="mjbUrlInp" placeholder="粘贴音乐链接…">
-      <button class="mjb-addbtn" id="mjbAddBtn">添加</button>
-    </div>
-    <div class="mjb-addtip">mp3直链 · 网易云分享页/外链地址 · 自动识别转换</div>
-  </div>
-</div>`;
-
-  function buildRoot() {
-    const d = document.createElement('div');
-    d.id = 'mjb-root';
-    d.innerHTML = CSS + HTML;
-    return d;
-  }
-
-  function setOpen(on) {
-    db.open = on;
-    dbSave();
-    if (!rootEl) return;
-    rootEl.classList.toggle('open', on);
-    if (on) { renderTabs(); renderList(); updateInfo(curSong()); updatePlayBtn(); }
-  }
-
-  function addSong() {
-    const urlInp   = $('#mjbUrlInp');
-    const titleInp = $('#mjbTitleInp');
-    const url = urlInp?.value.trim() || '';
-    if (!url) { toast('请先填写音乐链接'); return; }
-    const title = titleInp?.value.trim() || (()=>{
-      try { return decodeURIComponent(url.split('/').pop().split('?')[0]) || '未命名'; } catch { return '未命名'; }
-    })();
-    const song = { id:'s'+Date.now(), title, url };
-    curGroup().songs.push(song);
-    dbSave();
-    if (urlInp)   urlInp.value   = '';
-    if (titleInp) titleInp.value = '';
-    renderList();
-    playSong(song);
-    // 同步更新 info（play 是异步，先手动更新一次）
-    const nm=$('#mjbSongName'); const sb=$('#mjbSongSub');
-    if (nm) nm.textContent = song.title||'未命名';
-    if (sb) sb.textContent = '⏳ 加载中…';
-  }
-
-  function deleteSong(id) {
-    const g = curGroup();
-    g.songs = g.songs.filter(s=>s.id!==id);
-    if (db.sid===id) {
-      db.sid=null; isPlaying=false;
-      setSpinning(false); clearIframe(); hideIframe();
-      if (audioEl) { try{audioEl.pause();}catch(e){} audioEl=null; }
-      updateInfo(null); updatePlayBtn();
-    }
-    dbSave(); renderList();
-  }
-
-  function addGroup() {
-    const name = prompt('新建歌单名称：', '歌单'+(db.groups.length+1));
-    if (!name?.trim()) return;
-    const g={id:'g'+Date.now(), name:name.trim(), songs:[]};
-    db.groups.push(g); db.gid=g.id; dbSave();
-    renderTabs(); renderList();
-  }
-
-  function mount() {
-    if (rootEl) return;
-    rootEl = buildRoot();
-    document.body.appendChild(rootEl);
-
-    // 初始状态
-    const vs = $('#mjbVolSlider');
-    if (vs) vs.value = db.vol;
-    const vn = $('#mjbVolNum');
-    if (vn) vn.textContent = Math.round(db.vol*100)+'%';
-
-    rootEl.classList.toggle('open', !!db.open);
-    if (db.open) { renderTabs(); renderList(); updateInfo(curSong()); }
-
-    // 贴边
-    $('#mjbEdge').addEventListener('click', () => setOpen(true));
-    $('#mjbCloseBtn').addEventListener('click', () => setOpen(false));
-
-    // 控制
-    $('#mjbPlay').addEventListener('click', togglePlay);
-    $('#mjbPrev').addEventListener('click', playPrev);
-    $('#mjbNext').addEventListener('click', playNext);
-
-    // 音量
-    $('#mjbVolSlider').addEventListener('input', e => {
-      db.vol = parseFloat(e.target.value);
-      dbSave();
-      $('#mjbVolNum').textContent = Math.round(db.vol*100)+'%';
-      if (audioEl) audioEl.volume = db.vol;
-    });
-
-    // 歌单点击
-    $('#mjbList').addEventListener('click', e => {
-      const d = e.target.closest('[data-del]');
-      if (d) { deleteSong(d.dataset.del); return; }
-      const r = e.target.closest('.mjb-row[data-sid]');
-      if (r) {
-        const song = curGroup()?.songs.find(s=>s.id===r.dataset.sid);
-        if (song) playSong(song);
-      }
-    });
-
-    // 分组 tab
-    $('#mjbTabs').addEventListener('click', e => {
-      if (e.target.id==='mjbNewGroup') { addGroup(); return; }
-      const t = e.target.closest('[data-gid]');
-      if (t) { db.gid=t.dataset.gid; dbSave(); renderTabs(); renderList(); }
-    });
-
-    // 添加
-    $('#mjbAddBtn').addEventListener('click', addSong);
-    $('#mjbUrlInp').addEventListener('keydown', e => { if(e.key==='Enter') addSong(); });
-
-    // 恢复上次播放（iframe 类型只恢复显示，不自动播放）
-    const last = curSong();
-    if (last && db.open) {
-      const type = detectType(last.url);
-      if (type !== 'audio' && type !== 'none') {
-        buildIframe(toPlayUrl(last.url, type));
-      }
-    }
-  }
-
-  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', ()=>setTimeout(mount,1000));
-  else setTimeout(mount, 1000);
 
 })();
