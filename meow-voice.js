@@ -78,11 +78,10 @@
     API_KEY:      'meow_voice_api_key_v1',
     API_MODEL:    'meow_voice_api_model_v1',
     API_VOICE:    'meow_voice_api_voice_v1',
-    API_ENABLED:  'meow_voice_api_enabled_v1',
-    API_URL:      'meow_voice_api_url_v1',
-    API_KEY:      'meow_voice_api_key_v1',
-    API_VOICE:    'meow_voice_api_voice_v1',
-    API_MODEL:    'meow_voice_api_model_v1',
+    DRAMA_MODE:   'meow_voice_drama_mode_v1',
+    DRAMA_MAP:    'meow_voice_drama_map_v1',
+    USER_NAME:    'meow_voice_user_name_v1',
+    AUTO_MODE:    'meow_voice_auto_mode_v1',
   };
 
   const ID = {
@@ -107,15 +106,14 @@
       skipPattern:  lsGet(LS.SKIP_PATTERN, ''),
       readUser:     lsGet(LS.READ_USER,    false),
       apiEnabled:   lsGet(LS.API_ENABLED,  false),
-      apiUrl:       lsGet(LS.API_URL, ''),
-      apiKey:       lsGet(LS.API_KEY,      ''),
-      apiModel:     lsGet(LS.API_MODEL,    'tts-1'),
-      apiVoice:     lsGet(LS.API_VOICE,    'alloy'),
-      apiEnabled:   lsGet(LS.API_ENABLED,  false),
       apiUrl:       lsGet(LS.API_URL,       ''),
       apiKey:       lsGet(LS.API_KEY,       ''),
-      apiVoice:     lsGet(LS.API_VOICE,     ''),
       apiModel:     lsGet(LS.API_MODEL,     'tts-1'),
+      apiVoice:     lsGet(LS.API_VOICE,     ''),
+      dramaMode:    lsGet(LS.DRAMA_MODE,    false),
+      dramaMap:     lsGet(LS.DRAMA_MAP,     {}),
+      userName:     lsGet(LS.USER_NAME,     '我'),
+      autoMode:     lsGet(LS.AUTO_MODE,     'manual'),
     };
   }
 
@@ -131,7 +129,8 @@
   // ════════════════════════════════════════════════════════════════════
 
   const synth = window.speechSynthesis;
-  let isReading = false;
+  let isReading    = false;
+  let _apiPlayGen  = 0;   // stopReading 时自增，speakViaApi 检测后退出
   let _pendingSpeak = null; // 用于延迟speak，防止cancel噪音
 
   function getVoices() {
@@ -263,37 +262,118 @@
     return chunks.length ? chunks : [text.slice(0, maxLen)];
   }
 
+  // ── 广播剧模式：把文本切成 [{type:'dialogue'|'narration', speaker, text}] 段落 ──
+  // 判断规则：引号 "..." 前后5个字中含有人名 → 该人说话；含 "我/我说/我道" → 玩家说话；其余为旁白
+  function _parseDramaSegments(rawText, charNames, userName) {
+    const segments = [];
+    // 匹配引号段落（弯引号/直引号）和引号外旁白
+    const rx = /(\u201c[\s\S]*?\u201d|"[^"]*?")/g;
+    let lastIdx = 0, m;
+    while ((m = rx.exec(rawText)) !== null) {
+      const narBefore = rawText.slice(lastIdx, m.index).trim();
+      if (narBefore) segments.push({ type: 'narration', speaker: null, text: narBefore });
+      const dialogueStr = m[0].slice(1, -1).trim(); // 去掉引号
+      // 取引号前后各5字判断说话者
+      const ctx = rawText.slice(Math.max(0, m.index - 8), m.index + m[0].length + 8);
+      let speaker = null;
+      // 优先匹配角色名
+      for (const name of charNames) {
+        if (ctx.includes(name)) { speaker = name; break; }
+      }
+      // 含"我"字且不含角色名 → 玩家
+      if (!speaker && /[我](?:说|道|回|答|问|轻声|低声)?/.test(ctx)) {
+        speaker = userName || '我';
+      }
+      if (dialogueStr) segments.push({ type: 'dialogue', speaker, text: dialogueStr });
+      lastIdx = m.index + m[0].length;
+    }
+    const narAfter = rawText.slice(lastIdx).trim();
+    if (narAfter) segments.push({ type: 'narration', speaker: null, text: narAfter });
+    return segments;
+  }
+
+  // 根据段落类型和说话者选 voiceId（dramaMap：{角色名: voiceId, __narration__: voiceId, __user__: voiceId}）
+  function _dramaVoiceFor(seg, c) {
+    const dm = c.dramaMap || {};
+    if (seg.type === 'narration')  return dm['__narration__'] || c.apiVoice || '';
+    if (seg.speaker === (c.userName || '我')) return dm['__user__'] || c.apiVoice || '';
+    if (seg.speaker && dm[seg.speaker]) return dm[seg.speaker];
+    return c.apiVoice || '';  // 未知角色用默认
+  }
+
+  // 广播剧模式朗读（API）
+  async function speakDramaApi(rawText, charNames) {
+    const c    = cfg();
+    const segs = _parseDramaSegments(rawText, charNames, c.userName);
+    const gen  = ++_apiPlayGen;
+    isReading  = true; updateAllBtns(true);
+    for (const seg of segs) {
+      if (gen !== _apiPlayGen || !isReading) break;
+      const chunks  = _splitChunks(seg.text, 400);
+      const voiceId = _dramaVoiceFor(seg, c);
+      for (const chunk of chunks) {
+        if (gen !== _apiPlayGen || !isReading) break;
+        try {
+          const origVoice = c.apiVoice;
+          // 临时覆盖 apiVoice 来调用 _apiOnce
+          const tempCfg = Object.assign({}, c, { apiVoice: voiceId });
+          const resp = await fetch((c.apiUrl || '').trim(), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (c.apiKey || '') },
+            body: JSON.stringify({ model: c.apiModel || 'tts-1', input: chunk, ...(voiceId ? { voice: voiceId } : {}) }),
+          });
+          if (!resp.ok) { let msg=''; try{msg=await resp.text();}catch(_){} throw new Error('API '+resp.status+(msg?': '+msg.slice(0,100):'')); }
+          const blob   = await resp.blob();
+          const objUrl = URL.createObjectURL(blob);
+          await new Promise((resolve, reject) => {
+            const audio  = new Audio(objUrl);
+            W._meowAudio = audio;
+            audio.onended  = () => { URL.revokeObjectURL(objUrl); resolve(); };
+            audio.onerror  = (e) => { URL.revokeObjectURL(objUrl); reject(e); };
+            audio.play().catch(reject);
+          });
+        } catch(err) {
+          if (gen !== _apiPlayGen) break;
+          isReading = false; updateAllBtns(false);
+          throw err;
+        }
+      }
+    }
+    if (gen === _apiPlayGen) { isReading = false; updateAllBtns(false); }
+  }
+
   async function speakViaApi(text) {
+    const gen    = ++_apiPlayGen;              // 本次播放的 token
     const chunks = _splitChunks(text);
     isReading = true; updateAllBtns(true);
     for (const chunk of chunks) {
-      if (!isReading) break;  // stopReading 被调用时退出
+      if (gen !== _apiPlayGen || !isReading) break;  // 被 stopReading 打断
       try {
-        const blob    = await _apiOnce(chunk);
-        const objUrl  = URL.createObjectURL(blob);
+        const blob   = await _apiOnce(chunk);
+        if (gen !== _apiPlayGen) { URL.revokeObjectURL(URL.createObjectURL(blob)); break; }
+        const objUrl = URL.createObjectURL(blob);
         await new Promise((resolve, reject) => {
-          const audio = new Audio(objUrl);
+          const audio  = new Audio(objUrl);
           W._meowAudio = audio;
           audio.onended  = () => { URL.revokeObjectURL(objUrl); resolve(); };
           audio.onerror  = (e) => { URL.revokeObjectURL(objUrl); reject(e); };
           audio.play().catch(reject);
         });
       } catch(err) {
+        if (gen !== _apiPlayGen) break;  // 被中断不报错
         isReading = false; updateAllBtns(false);
         throw err;
       }
     }
-    isReading = false; updateAllBtns(false);
+    if (gen === _apiPlayGen) { isReading = false; updateAllBtns(false); }
   }
 
   function stopReading() {
     if (_pendingSpeak) { clearTimeout(_pendingSpeak); _pendingSpeak = null; }
-    try { synth.cancel(); } catch(e) {}
-    // 停止 API 音频
-    if (window._mvAudio) {
-      try { window._mvAudio.pause(); } catch(e) {}
-      window._mvAudio = null;
-    }
+    try { synth?.cancel(); } catch(e) {}
+    // 中断 API 分段播放
+    _apiPlayGen++;   // 让进行中的 speakViaApi 循环检测到版本变化后退出
+    if (W._meowAudio) { try { W._meowAudio.pause(); W._meowAudio = null; } catch(e) {} }
     isReading = false;
     updateAllBtns(false);
   }
@@ -308,15 +388,17 @@
     const text  = processText(rawText, c);
     if (!text || text.length < 2) { updateAllBtns(false); return; }
 
-    // 外接 API 优先
-    if (c.apiEnabled && c.apiKey && c.apiUrl) {
-      try {
-        updateAllBtns(true); isReading = true;
-        await speakViaApi(text);
-      } catch(err) {
-        isReading = false; updateAllBtns(false);
-        toast('🔇 API 朗读失败：' + (err.message || err));
-      }
+    // 广播剧模式（API）
+    if (c.apiEnabled && c.apiUrl && c.dramaMode) {
+      const charNames = Object.keys(c.dramaMap || {}).filter(k => k !== '__narration__' && k !== '__user__');
+      try { await speakDramaApi(text, charNames); }
+      catch(err) { isReading = false; updateAllBtns(false); toast('🔇 广播剧朗读失败：' + (err.message||err)); }
+      return;
+    }
+    // 外接 API 普通模式
+    if (c.apiEnabled && c.apiUrl) {
+      try { await speakViaApi(text); }
+      catch(err) { isReading = false; updateAllBtns(false); toast('🔇 API 朗读失败：' + (err.message||err)); }
       return;
     }
 
@@ -416,15 +498,17 @@ async function _speakWithCfg(rawText, charName, c) {
     const text = processText(rawText, c);
     if (!text || text.length < 2) { updateAllBtns(false); return; }
 
-    // 外接 API 优先
-    if (c.apiEnabled && c.apiKey && c.apiUrl) {
-      try {
-        updateAllBtns(true); isReading = true;
-        await speakViaApi(text);
-      } catch(err) {
-        isReading = false; updateAllBtns(false);
-        toast('🔇 API 朗读失败：' + (err.message || err));
-      }
+    // 广播剧模式（API）
+    if (c.apiEnabled && c.apiUrl && c.dramaMode) {
+      const charNames = Object.keys(c.dramaMap || {}).filter(k => k !== '__narration__' && k !== '__user__');
+      try { await speakDramaApi(text, charNames); }
+      catch(err) { isReading = false; updateAllBtns(false); toast('🔇 广播剧朗读失败：' + (err.message||err)); }
+      return;
+    }
+    // 外接 API 普通模式
+    if (c.apiEnabled && c.apiUrl) {
+      try { await speakViaApi(text); }
+      catch(err) { isReading = false; updateAllBtns(false); toast('🔇 API 朗读失败：' + (err.message||err)); }
       return;
     }
 
@@ -522,7 +606,11 @@ async function _speakWithCfg(rawText, charName, c) {
   function bindChatObserver() {
     const root = doc.querySelector('.simplebar-content-wrapper') || doc.querySelector('#chat') || doc.body;
     if (!root) { setTimeout(bindChatObserver, 1000); return; }
+    // 冷启动标志：页面加载后 2.5s 内新增的节点都是历史消息，忽略
+    let _warm = false;
+    setTimeout(() => { _warm = true; }, 2500);
     new MutationObserver(muts => {
+      if (!_warm) return;  // 页面初始加载期间静默
       for (const mut of muts) {
         for (const node of mut.addedNodes) {
           if (node?.nodeType !== 1) continue;
@@ -870,6 +958,18 @@ async function _speakWithCfg(rawText, charName, c) {
       if (other.length) h += `<optgroup label="── 其他 ──">${other.map(v => `<option value="${escAttr(v.voiceURI)}" ${v.voiceURI===sel?'selected':''}>${esc(v.name)} (${v.lang})</option>`).join('')}</optgroup>`;
       return h;
     }
+    function dramaCharRows(dramaMap, names) {
+      if (!names.length) return '<p class="mv-hint" style="margin:4px 0">暂无 AI 角色，开始对话后会自动检测</p>';
+      return names.map(name => `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+          <span style="font-size:13px;font-weight:600;min-width:80px">${esc(name)}</span>
+          <input type="text" data-drama-char="${escAttr(name)}" class="mv-drama-char-voice"
+            placeholder="音色 ID（留空用默认）"
+            value="${esc(dramaMap[name]||'')}"
+            style="flex:1;min-width:120px">
+        </div>`).join('');
+    }
+
     function charRows(names, map) {
       if (!names.length) return '<p class="mv-hint" style="margin:6px 0">暂无角色，对话开始后会自动检测</p>';
       return names.map(name => `
@@ -988,6 +1088,36 @@ async function _speakWithCfg(rawText, charName, c) {
             <p id="mvApiHint" style="margin-top:6px;font-size:11px;color:rgba(120,100,70,.8);min-height:16px"></p>
           </div>
         </div>
+        <div class="mv-sec" id="mvDramaSec">
+          <h3>🎙 广播剧模式</h3>
+          <p class="mv-hint" style="margin-bottom:8px">启用后根据说话者自动切换音色；需配合外接 API 使用</p>
+          <label class="mv-toggle" style="margin-bottom:10px">
+            <span>启用广播剧模式</span>
+            <div class="mv-sw"><input type="checkbox" id="mvDramaEnabled" ${c.dramaMode?'checked':''}><div class="mv-slider"></div></div>
+          </label>
+          <div id="mvDramaFields" style="${!c.dramaMode?'display:none':''}">
+            <div style="margin-bottom:10px">
+              <label style="font-size:12px;display:block;margin-bottom:4px">玩家角色称呼（判断"我"的发言）</label>
+              <input type="text" id="mvUserName" placeholder="我" value="${esc(c.userName||'我')}" style="max-width:200px">
+            </div>
+            <div style="margin-bottom:6px">
+              <label style="font-size:12px;font-weight:600">旁白音色</label>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+                <input type="text" id="mvNarratorVoice" placeholder="留空用默认" value="${esc((c.dramaMap||{}).__narration__||'')}" style="flex:1">
+              </div>
+            </div>
+            <div style="margin-bottom:6px">
+              <label style="font-size:12px;font-weight:600">玩家音色</label>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:4px">
+                <input type="text" id="mvUserVoice" placeholder="留空用默认" value="${esc((c.dramaMap||{}).__user__||'')}" style="flex:1">
+              </div>
+            </div>
+            <div id="mvDramaCharList" style="margin-top:8px">
+              ${dramaCharRows(c.dramaMap||{}, getActiveCharNames())}
+            </div>
+            <button type="button" class="mv-btn" id="mvDramaRefresh" style="margin-top:6px;font-size:12px">↺ 刷新角色列表</button>
+          </div>
+        </div>
         <div class="mv-footer">
           <button class="mv-btn primary" id="mvSave" style="flex:1">保存设置</button>
           <button class="mv-btn" id="mvCloseBtn">关闭</button>
@@ -1049,7 +1179,19 @@ async function _speakWithCfg(rawText, charName, c) {
       lsSet(LS.API_URL,      q('mvApiUrl')?.value.trim()   || '');
       lsSet(LS.API_KEY,      q('mvApiKey')?.value.trim()   || '');
       lsSet(LS.API_MODEL,    q('mvApiModel')?.value.trim() || 'tts-1');
-      lsSet(LS.API_VOICE,    q('mvApiVoice')?.value.trim() || 'alloy');
+      lsSet(LS.API_VOICE,    q('mvApiVoice')?.value.trim() || '');
+      // 广播剧设置
+      const dramaEnabled = q('mvDramaEnabled')?.checked || false;
+      lsSet(LS.DRAMA_MODE, dramaEnabled);
+      lsSet(LS.USER_NAME,  q('mvUserName')?.value.trim() || '我');
+      const newDramaMap = { ...lsGet(LS.DRAMA_MAP, {}) };
+      newDramaMap['__narration__'] = q('mvNarratorVoice')?.value.trim() || '';
+      newDramaMap['__user__']      = q('mvUserVoice')?.value.trim() || '';
+      box.querySelectorAll('.mv-drama-char-voice').forEach(inp => {
+        const char = inp.dataset.dramaChar;
+        if (char) newDramaMap[char] = inp.value.trim();
+      });
+      lsSet(LS.DRAMA_MAP, newDramaMap);
       toast('✅ 语音设置已保存');
       closeModal();
     });
@@ -1058,6 +1200,15 @@ async function _speakWithCfg(rawText, charName, c) {
     q('mvApiEnabled')?.addEventListener('change', e => {
       const f = q('mvApiFields');
       if (f) f.style.display = e.target.checked ? '' : 'none';
+    });
+    // 广播剧开关联动
+    q('mvDramaEnabled')?.addEventListener('change', e => {
+      const f = q('mvDramaFields');
+      if (f) f.style.display = e.target.checked ? '' : 'none';
+    });
+    q('mvDramaRefresh')?.addEventListener('click', () => {
+      const dl = q('mvDramaCharList');
+      if (dl) dl.innerHTML = dramaCharRows(lsGet(LS.DRAMA_MAP, {}), getActiveCharNames());
     });
     // 密钥显示/隐藏
     q('mvApiKeyToggle')?.addEventListener('click', () => {
