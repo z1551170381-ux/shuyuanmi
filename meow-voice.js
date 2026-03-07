@@ -2717,7 +2717,7 @@ async function _speakWithCfg(rawText, charName, c) {
               background:${active?'rgba(17,65,74,.10)':'rgba(255,255,255,.6)'};
               border:1px solid ${active?'rgba(17,65,74,.15)':'rgba(28,24,18,.06)'}">
               <div style="flex:1;min-width:0">
-                <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.title)}</div>
+                <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.title) || '<span style="opacity:.45;font-weight:400">（无标题）</span>'}</div>
                 <div style="font-size:10px;color:rgba(90,70,50,.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t.url)}</div>
               </div>
               <div style="display:flex;gap:4px;flex:none">
