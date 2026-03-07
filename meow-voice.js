@@ -773,34 +773,6 @@ ${t}
     if (persist) lsSet(LS.BGM_DOCK_POS, { x, y, side, peek });
   }
 
-  function _mutateBgmDockInstant(root, fn) {
-    if (typeof fn !== 'function') return;
-    if (!root) { fn(); return; }
-    const panel = root.querySelector('.mv-bgm-panel');
-    const tonearm = root.querySelector('.mv-bgm-tonearm');
-    const prevRootTr = root.style.transition;
-    const prevPanelTr = panel ? panel.style.transition : '';
-    const prevTonearmTr = tonearm ? tonearm.style.transition : '';
-
-    root.classList.add('mv-bgm-no-anim');
-    root.style.transition = 'none';
-    if (panel) panel.style.transition = 'none';
-    if (tonearm) tonearm.style.transition = 'none';
-    void root.offsetWidth;
-
-    try {
-      fn();
-      void root.offsetWidth;
-    } finally {
-      requestAnimationFrame(() => {
-        root.classList.remove('mv-bgm-no-anim');
-        root.style.transition = prevRootTr;
-        if (panel) panel.style.transition = prevPanelTr;
-        if (tonearm) tonearm.style.transition = prevTonearmTr;
-      });
-    }
-  }
-
   function _resetBgmDockPos(forceOpen) {
     const root = _getBgmDock();
     if (!root) return;
@@ -878,7 +850,7 @@ ${t}
     const style = doc.createElement('style');
     style.id = 'meow-voice-bgm-dock-style';
     style.textContent = `
-      #meow-voice-bgm-dock{font-family:inherit;color:#26353a;overflow:visible;--mv-bgm-peek:56px;contain:layout paint;backface-visibility:hidden;transform:translateZ(0)}
+      #meow-voice-bgm-dock{font-family:inherit;color:#26353a;overflow:visible;--mv-bgm-peek:56px}
       #meow-voice-bgm-dock .mv-bgm-shell{position:relative;min-height:114px;padding-left:42px}
       #meow-voice-bgm-dock .mv-bgm-close{position:absolute;right:10px;top:2px;width:28px;height:28px;border:0;border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 8px 18px rgba(40,40,40,.10);cursor:pointer;color:#516068;font-size:14px;z-index:8}
       #meow-voice-bgm-dock .mv-bgm-disc-wrap{position:absolute;left:-24px;top:12px;width:102px;height:102px;display:flex;align-items:center;justify-content:center;pointer-events:auto;z-index:6}
@@ -902,7 +874,7 @@ ${t}
       #meow-voice-bgm-dock.playing.collapsed .mv-bgm-tonearm{transform:rotate(-30deg)}
       #meow-voice-bgm-dock.collapsed:not(.playing) .mv-bgm-tonearm{transform:rotate(12deg)}
       #meow-voice-bgm-dock:not(.playing):not(.collapsed) .mv-bgm-tonearm{transform:rotate(-6deg)}
-      #meow-voice-bgm-dock .mv-bgm-panel{position:relative;min-height:110px;padding:10px 10px 9px 46px;border-radius:20px;background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(244,244,240,.64));border:1px solid rgba(214,214,206,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 16px 34px rgba(0,0,0,.10);overflow:hidden;transition:opacity .18s ease,max-height .18s ease,padding .18s ease;max-height:600px;isolation:isolate;backface-visibility:hidden;transform:translateZ(0)}
+      #meow-voice-bgm-dock .mv-bgm-panel{position:relative;min-height:110px;padding:10px 10px 9px 46px;border-radius:20px;background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(244,244,240,.64));border:1px solid rgba(214,214,206,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 16px 34px rgba(0,0,0,.10);overflow:visible;transition:opacity .18s ease,max-height .18s ease,padding .18s ease;max-height:600px}
       #meow-voice-bgm-dock .mv-bgm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding-right:32px}
       #meow-voice-bgm-dock .mv-bgm-open-settings{position:absolute;right:8px;top:34px;width:26px;height:26px;border:0;border-radius:999px;background:rgba(255,255,255,.78);box-shadow:0 6px 14px rgba(0,0,0,.08);cursor:pointer;color:#56656d;font-size:13px;flex:none;z-index:7}
       #meow-voice-bgm-dock .mv-bgm-name{font-size:14px;line-height:1.15;font-weight:700;color:#2c393f;max-width:126px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -943,9 +915,6 @@ ${t}
       #meow-voice-bgm-dock.collapsed .mv-bgm-shell{min-height:0 !important;background:transparent !important}
       #meow-voice-bgm-dock.collapsed .mv-bgm-close{display:none}
       #meow-voice-bgm-dock.collapsed .mv-bgm-open-settings{right:58px;top:8px}
-      #meow-voice-bgm-dock.mv-bgm-no-anim,
-      #meow-voice-bgm-dock.mv-bgm-no-anim .mv-bgm-panel,
-      #meow-voice-bgm-dock.mv-bgm-no-anim .mv-bgm-tonearm{transition:none !important;animation:none !important}
       #meow-voice-bgm-dock.compact{width:244px !important;--mv-bgm-peek:50px}
       #meow-voice-bgm-dock.compact .mv-bgm-shell{min-height:94px;padding-left:30px}
       #meow-voice-bgm-dock.compact .mv-bgm-disc-wrap{left:-24px;top:10px;width:84px;height:84px}
@@ -1010,12 +979,10 @@ ${t}
       if (e.target.closest('.mv-bgm-disc-hit')) {
         if (rootNow.dataset.dragging === '1') return;
         if (rootNow.dataset.justTap === '1' && e.detail > 0) return;
-        _mutateBgmDockInstant(rootNow, () => {
-          const next = !rootNow.classList.contains('collapsed');
-          lsSet(LS.BGM_DOCK_COLLAPSED, next);
-          _renderBgmDock();
-          _applyBgmDockPos(rootNow, lsGet(LS.BGM_DOCK_POS, null), true);
-        });
+        const next = !rootNow.classList.contains('collapsed');
+        lsSet(LS.BGM_DOCK_COLLAPSED, next);
+        _renderBgmDock();
+        _applyBgmDockPos(rootNow, lsGet(LS.BGM_DOCK_POS, null), true);
         return;
       }
       if (e.target.closest('.mv-bgm-tonearm')) {
