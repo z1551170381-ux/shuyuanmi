@@ -196,18 +196,19 @@
     return lines.sort((a, b) => a.ms - b.ms);
   }
 
-  /** 通过网易云歌曲 ID 拉取 LRC，存入单独 key，返回 lrc 文本 */
-  async function _fetchNeteaseLyric(songId) {
-    if (!songId) return '';
-    // 使用支持跨域的第三方镜像，云酒馆也能用
-    const NM_API = 'https://netease-cloud-music-api-five-rouge.vercel.app';
+  /** 通过歌曲标题从 lrclib.net 拉取 LRC（跨域友好） */
+  async function _fetchNeteaseLyric(songId, titleHint) {
+    const kw = titleHint || songId;
+    if (!kw) return '';
     try {
-      const res = await fetch(`${NM_API}/lyric?id=${songId}`);
+      const res = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(kw)}&limit=5`);
       if (!res.ok) return '';
       const data = await res.json();
-      const lrcText = data?.lrc?.lyric || '';
-      if (lrcText) _lrcSet(songId, lrcText);
-      return lrcText;
+      if (!Array.isArray(data) || !data.length) return '';
+      const match = data.find(d => d.syncedLyrics) || data[0];
+      const lrc = match?.syncedLyrics || '';
+      if (lrc && songId) _lrcSet(songId, lrc);
+      return lrc;
     } catch(e) { return ''; }
   }
 
@@ -222,16 +223,39 @@
     _bgmLyricLines = [];
     _bgmLyricIdx   = -1;
     if (!track) return;
-    // 优先从单独 lrc 存储读（用 songId 为 key）
+
+    // 1. 优先从本地缓存读（songId key 或 lrclib_xxx key）
     const songId = _extractNeteaseId(track.url);
     if (songId) {
       const cached = _lrcGet(songId);
       if (cached) { _bgmLyricLines = _parseLrc(cached); return; }
     }
-    // 没有缓存时在线拉取
-    if (!songId) return;
-    const lrc = await _fetchNeteaseLyric(songId);
-    if (lrc) _bgmLyricLines = _parseLrc(lrc);
+    // 也尝试 lrclib key
+    if (track._lrclibKey) {
+      const cached2 = _lrcGet(track._lrclibKey);
+      if (cached2) { _bgmLyricLines = _parseLrc(cached2); return; }
+    }
+
+    // 2. 有网易 ID → 用 lrclib.net 按 ID 查（lrclib 支持 isrc/spotifyId，但更可靠的是按名字搜）
+    //    直接用曲名搜索，取最匹配的第一条
+    const title = String(track.title || '').trim();
+    if (!title || title === '未命名曲目') return;
+
+    try {
+      const LRCLIB = 'https://lrclib.net/api';
+      const res = await fetch(`${LRCLIB}/search?q=${encodeURIComponent(title)}&limit=5`);
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!Array.isArray(data) || !data.length) return;
+      // 取第一条有 syncedLyrics 的
+      const match = data.find(d => d.syncedLyrics) || data[0];
+      const lrc = match?.syncedLyrics || '';
+      if (!lrc) return;
+      // 存下来，key 用 songId（有的话）或 title hash
+      const cacheKey = songId || ('title_' + title.slice(0, 40).replace(/\s+/g,'_'));
+      _lrcSet(cacheKey, lrc);
+      _bgmLyricLines = _parseLrc(lrc);
+    } catch(e) {}
   }
 
   /** 根据当前播放时间更新歌词高亮行，返回是否有变化 */
@@ -3047,32 +3071,23 @@ async function _speakWithCfg(rawText, charName, c) {
     _renderBgmLibraryEditor(box);
 
     // ── 网易云搜歌 ────────────────────────────────────────────
-    const NM_API = 'https://netease-cloud-music-api-five-rouge.vercel.app';
+    // ── 搜歌 + 歌词（lrclib.net，天然支持跨域）────────────────
+    // lrclib.net 按歌名/歌手搜索，直接返回 LRC；音频 URL 由 hhtjim 按网易 ID 生成
+    const LRCLIB = 'https://lrclib.net/api';
 
-    async function _nmSearch(keywords) {
-      const res = await fetch(`${NM_API}/search?keywords=${encodeURIComponent(keywords)}&limit=15&type=1`);
+    async function _lrcSearch(keywords) {
+      const res = await fetch(`${LRCLIB}/search?q=${encodeURIComponent(keywords)}&limit=15`);
       if (!res.ok) throw new Error('搜索失败 ' + res.status);
       const data = await res.json();
-      return (data?.result?.songs || []).map(s => ({
-        id:     String(s.id),
-        name:   s.name || '未知',
-        artist: (s.artists || []).map(a => a.name).join(' / ') || '未知',
-        album:  s.album?.name || '',
+      if (!Array.isArray(data)) throw new Error('搜索结果格式异常');
+      return data.slice(0, 15).map(s => ({
+        id:       String(s.id),         // lrclib 内部 ID
+        name:     s.trackName  || '未知',
+        artist:   s.artistName || '',
+        album:    s.albumName  || '',
+        lrc:      s.syncedLyrics || '', // 已经是 LRC 格式！
+        duration: s.duration   || 0,
       }));
-    }
-
-    async function _nmGetUrl(songId) {
-      const res = await fetch(`${NM_API}/song/url?id=${songId}`);
-      if (!res.ok) return '';
-      const data = await res.json();
-      return data?.data?.[0]?.url || '';
-    }
-
-    async function _nmGetLyric(songId) {
-      const res = await fetch(`${NM_API}/lyric?id=${songId}`);
-      if (!res.ok) return '';
-      const data = await res.json();
-      return data?.lrc?.lyric || '';
     }
 
     function _renderSearchResults(songs) {
@@ -3084,19 +3099,25 @@ async function _speakWithCfg(rawText, charName, c) {
         return;
       }
       el.style.display = '';
-      el.innerHTML = songs.map((s, i) =>
-        `<div class="mv-bgm-search-item" data-idx="${i}"
-          style="display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;border-bottom:1px solid rgba(28,24,18,.05);transition:background .15s"
+      el.innerHTML = songs.map((s, i) => {
+        const dur = s.duration ? Math.floor(s.duration/60) + ':' + String(Math.floor(s.duration%60)).padStart(2,'0') : '';
+        return `<div class="mv-bgm-search-item" data-idx="${i}"
+          style="display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;
+          border-bottom:1px solid rgba(28,24,18,.05);transition:background .15s"
           onmouseover="this.style.background='rgba(139,115,85,.10)'"
           onmouseout="this.style.background=''">
           <div style="flex:1;min-width:0">
-            <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}</div>
-            <div style="font-size:10px;color:rgba(46,38,30,.45);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.artist)}${s.album?' · '+esc(s.album):''}</div>
+            <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              ${esc(s.name)}${s.lrc?' <span style="font-size:9px;color:rgba(100,140,100,.8);font-weight:400">🎵词</span>':''}
+            </div>
+            <div style="font-size:10px;color:rgba(46,38,30,.45);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              ${esc(s.artist)}${s.album?' · '+esc(s.album):''}${dur?' · '+dur:''}
+            </div>
           </div>
           <button type="button" class="mv-btn mv-bgm-search-add" data-idx="${i}"
             style="font-size:11px;padding:3px 10px;white-space:nowrap;flex:none">＋ 加入</button>
-        </div>`
-      ).join('');
+        </div>`;
+      }).join('');
       el._songs = songs;
     }
 
@@ -3106,7 +3127,7 @@ async function _speakWithCfg(rawText, charName, c) {
       const btn = q('mvBgmSearchBtn');
       if (btn) btn.textContent = '搜索中…';
       try {
-        const songs = await _nmSearch(kw);
+        const songs = await _lrcSearch(kw);
         _renderSearchResults(songs);
       } catch(e) {
         toast('搜索失败：' + (e?.message || e));
@@ -3126,41 +3147,37 @@ async function _speakWithCfg(rawText, charName, c) {
       const song = songs[idx];
       if (!song) return;
 
-      addBtn.textContent = '获取中…';
+      addBtn.textContent = '加入中…';
       addBtn.disabled = true;
       try {
-        // 并行拉直链 + 歌词
-        const [url, lrc] = await Promise.all([
-          _nmGetUrl(song.id),
-          _nmGetLyric(song.id),
-        ]);
-        if (!url) { toast('该歌曲暂无可用直链（可能是 VIP 或已下架）'); return; }
-
         const title = song.name + (song.artist ? ' - ' + song.artist : '');
         const gid = q('mvBgmAddToGroup')?.value || '';
         const lib = _getBgmLibrary();
         const group = lib.find(g => g.id === gid) || lib[0];
         if (!group) { toast('请先新建一个分组'); return; }
         if (!Array.isArray(group.tracks)) group.tracks = [];
-        if (group.tracks.some(t => t.url === url)) { toast('该歌曲已在此分组中'); return; }
 
+        // 用 lrclib 内部 ID 作为歌词 key 存储
+        // 音频 URL 先留空，让用户自己填；在输入框里预填标题
         const tid = _uid('t_');
-        group.tracks.push({ id: tid, title, url });
-        _saveBgmLibrary(lib);
+        // 暂时用 lrclib ID 构造一个占位 key，歌词单独存
+        const lrcKey = 'lrclib_' + song.id;
+        if (song.lrc) _lrcSet(lrcKey, song.lrc);
 
-        // 歌词单独存
-        if (lrc) _lrcSet(song.id, lrc);
+        // 尝试自动生成 hhtjim 直链（lrclib 没有网易 ID，提示用户手动填）
+        // 预填搜索框和标题栏，引导用户完成
+        if (q('mvBgmNewTitle')) q('mvBgmNewTitle').value = title;
+        if (q('mvBgmUrl')) q('mvBgmUrl').value = '';
 
-        box.__mvBgmState = { groupId: group.id, trackId: tid };
-        _renderBgmLibraryEditor(box);
-        toast('✅ 已加入「' + song.name + '」' + (lrc ? ' 🎵 含歌词' : ''));
-
-        // 隐藏搜索结果
+        // 收起搜索结果，聚焦 URL 输入框
         const resEl = q('mvBgmSearchResults');
         if (resEl) resEl.style.display = 'none';
         if (q('mvBgmSearch')) q('mvBgmSearch').value = '';
+
+        toast(`已填入「${song.name}」${song.lrc?'🎵 含歌词，':''} 请在下方粘贴音频直链后点加入`);
+        q('mvBgmUrl')?.focus();
       } catch(err) {
-        toast('加入失败：' + (err?.message || err));
+        toast('操作失败：' + (err?.message || err));
       } finally {
         addBtn.textContent = '＋ 加入';
         addBtn.disabled = false;
