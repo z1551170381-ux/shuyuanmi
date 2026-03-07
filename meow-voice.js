@@ -1359,6 +1359,13 @@ ${t}
     return p || 'openai_compatible';
   }
 
+  function _describeApiProvider(cArg) {
+    const c = cArg || cfg();
+    return _getApiProvider(c) === 'volcengine_v3'
+      ? '火山语音 V3'
+      : 'OpenAI 兼容';
+  }
+
   function _volcNormalizeEndpoint(rawUrl) {
     const u = String(rawUrl || '').trim();
     if (!u) return 'https://openspeech.bytedance.com/api/v3/tts/unidirectional';
@@ -1587,25 +1594,12 @@ ${t}
   }
 
   async function _apiOnce(text, voiceId, cArg) {
-    const c   = cArg || cfg();
-    const url = (c.apiUrl || '').trim();
-    if (!url) throw new Error('未填写 API 地址');
-    const body = { model: c.apiModel || 'tts-1', input: text };
-    const useVoice = (voiceId ?? c.apiVoice ?? '').toString().trim();
-    if (useVoice) body.voice = useVoice;
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + (c.apiKey || ''),
-      },
-      body: JSON.stringify(body),
-    });
-    if (!resp.ok) {
-      let msg = ''; try { msg = await resp.text(); } catch(_) {}
-      throw new Error('API ' + resp.status + (msg ? ': ' + msg.slice(0, 200) : ''));
+    const c = Object.assign({}, cfg(), cArg || {});
+    const provider = _getApiProvider(c);
+    if (provider === 'volcengine_v3') {
+      return _apiOnceVolcengineV3(text, voiceId, c);
     }
-    return resp.blob();
+    return _apiOnceOpenAICompatible(text, voiceId, c);
   }
 
   // 把长文本按句子切成 ≤400字的块，逐块朗读
@@ -3411,13 +3405,23 @@ async function _speakWithCfg(rawText, charName, c) {
       const testTxt = q('mvApiTestTxt')?.value.trim() || '你好，这是朗读测试。';
       const hint    = q('mvApiHint');
       const formCfg = _apiUi.readFormCfg();
+      const provider = _getApiProvider(formCfg);
       if (!formCfg.apiUrl) { toast('请填写 API 地址'); return; }
-      if (hint) hint.textContent = '⏳ 请求中…';
+      if (provider === 'volcengine_v3' && !String(formCfg.volcResourceId || '').trim()) {
+        toast('请填写 Resource ID');
+        if (hint) hint.textContent = '❌ 缺少 Resource ID';
+        return;
+      }
+      if (hint) hint.textContent = provider === 'volcengine_v3'
+        ? '⏳ 火山 V3 请求中…'
+        : '⏳ 请求中…';
       try {
         const blob = await _apiOnce(testTxt, formCfg.apiVoice || '', formCfg);
         const audio = new Audio(URL.createObjectURL(blob));
         if (hint) {
-          hint.textContent = '▶ 播放中…';
+          hint.textContent = provider === 'volcengine_v3'
+            ? '▶ 火山 V3 播放中…'
+            : '▶ 播放中…';
           audio.onended = () => { hint.textContent = '✅ 测试完成'; };
         }
         const p = audio.play();
