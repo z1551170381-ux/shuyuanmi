@@ -1382,10 +1382,12 @@ ${t}
           if (_bgmIframeTimer) { clearTimeout(_bgmIframeTimer); _bgmIframeTimer = null; }
           // 挂钟同步：elapsed = 从 iframe 加载起经过的毫秒数
           // 歌词行的 ms 也是从歌曲开头起的偏移，直接比较即可
+          // iframe 加载 + 网易云缓冲约需 2 秒，歌词计时延迟启动补偿
+          const IFRAME_LOAD_DELAY_MS = 2000;
           const _iframeStartWall = Date.now();
           const schedIframeLyric = () => {
             if (!_bgmLyricLines.length) return;
-            const elapsedMs = Date.now() - _iframeStartWall;
+            const elapsedMs = Math.max(0, Date.now() - _iframeStartWall - IFRAME_LOAD_DELAY_MS);
             // 找当前应显示的行（最后一个 ms <= elapsedMs 的行）
             let idx = 0;
             for (let i = 0; i < _bgmLyricLines.length; i++) {
