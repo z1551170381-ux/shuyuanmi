@@ -905,6 +905,14 @@ ${t}
       #meow-voice-bgm-dock.edge-right.collapsed{transform:none}
       #meow-voice-bgm-dock.edge-left.collapsed{transform:none}
       #meow-voice-bgm-dock.collapsed .mv-bgm-panel{opacity:0;pointer-events:none;max-height:0 !important;min-height:0 !important;padding:0 !important;margin:0 !important;border-width:0 !important;overflow:hidden;box-shadow:none !important;backdrop-filter:none !important}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-lyric{display:none !important}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-embed{display:none !important}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-groups{display:none !important}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-controls{display:none !important}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-track-count{display:none !important}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-title-wrap{display:none !important}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-sub{display:none !important}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-shell{min-height:0 !important;background:transparent !important}
       #meow-voice-bgm-dock.collapsed .mv-bgm-close{display:none}
       #meow-voice-bgm-dock.collapsed .mv-bgm-shell{min-height:112px}
       #meow-voice-bgm-dock.collapsed .mv-bgm-open-settings{right:58px;top:8px}
