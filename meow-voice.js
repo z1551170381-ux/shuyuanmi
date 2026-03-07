@@ -3197,7 +3197,7 @@ async function _speakWithCfg(rawText, charName, c) {
       el.innerHTML = songs.map((s, i) => {
         const badge = sourceBadge[s.source] || '';
         const hasLrc = !!s.lrc;
-        const hasUrl = !!s.url;
+        const hasUrl = !!(s.url || s.url_id);  // url_id = 已确认有直链来源
         return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;
           border-bottom:1px solid rgba(28,24,18,.05);"
           onmouseover="this.style.background='rgba(139,115,85,.10)'"
