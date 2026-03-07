@@ -1258,7 +1258,7 @@ ${t}
     const sub = _bgmState.active
       ? (_bgmState.parsedKind === 'netease_iframe' ? '网易云嵌入播放器' : '播放中')
       : (selection ? '待播放 · ' + ((_bgmState.parsedKind === 'netease_iframe') ? '网易云' : '本地/直链') : '未配置音源');
-    root.style.display = selection ? '' : 'none';
+    root.style.display = ''; // 始终显示，未配置音源时显示空状态
     root.classList.toggle('collapsed', !!lsGet(LS.BGM_DOCK_COLLAPSED, true));
     root.classList.toggle('playing', !!_bgmState.active);
     const dockVW = (W.innerWidth || doc.documentElement.clientWidth || 0);
@@ -3950,13 +3950,14 @@ async function _speakWithCfg(rawText, charName, c) {
       try {
         const sel = _resolveBgmSelection(cfg());
         if (sel) {
-          _bgmState.closed = false;
           _bgmState.title = sel.title;
           _bgmState.sourceUrl = sel.url;
           _bgmState.groupId = sel.groupId || '';
           _bgmState.trackId = sel.trackId || '';
-          _renderBgmDock(cfg());
         }
+        // 无论是否已有音源，都渲染播放器（未配置时显示空状态，不再隐藏）
+        _bgmState.closed = false;
+        _renderBgmDock(cfg());
       } catch(e) {}
     }, 1200);
 
