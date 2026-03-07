@@ -180,6 +180,7 @@
   // ── 歌词状态 ─────────────────────────────────────────────────
   let _bgmLyricLines = [];   // [{ms:number, text:string}]  当前曲 LRC 解析结果
   let _bgmLyricIdx   = -1;   // 当前高亮行索引
+  let _bgmIframeTimer = null; // iframe 模式歌词自动滚动定时器
 
   /** 解析 LRC 文本 → [{ms, text}] */
   function _parseLrc(lrcText) {
@@ -305,16 +306,16 @@
       }
       wrap.innerHTML = html;
     } else {
-      // 静态模式（iframe）：所有歌词可滚动，当前行（或第一行）标色
+      // 静态模式（iframe）：显示前后各3行窗口，和音频模式同样体验
       const displayCur = Math.max(0, cur);
+      const start = Math.max(0, displayCur - 3);
+      const end   = Math.min(_bgmLyricLines.length - 1, displayCur + 3);
       let html = '';
-      for (let i = 0; i < _bgmLyricLines.length; i++) {
+      for (let i = start; i <= end; i++) {
         const isCur = i === displayCur;
-        html += `<div class="mv-bgm-lrc-line${isCur?' mv-bgm-lrc-cur':''}" style="text-align:center;padding:2px 8px;box-sizing:border-box;font-size:13px;font-weight:${isCur?'600':'400'};color:${isCur?'rgba(44,57,63,.88)':'rgba(44,57,63,.4)'};line-height:1.6">${esc(_bgmLyricLines[i].text)}</div>`;
+        html += `<div class="mv-bgm-lrc-line${isCur?' mv-bgm-lrc-cur':''}" style="text-align:center;padding:2px 8px;box-sizing:border-box;transition:all .3s ease;font-size:${isCur?'15px':'12px'};font-weight:${isCur?'700':'400'};color:${isCur?'rgba(44,57,63,.9)':'rgba(44,57,63,.32)'};line-height:${isCur?'1.7':'1.5'}">${esc(_bgmLyricLines[i].text)}</div>`;
       }
-      // 静态模式下启用滚动
-      wrap.style.maxHeight = '130px';
-      wrap.style.overflowY = 'auto';
+      wrap.style.overflowY = 'hidden';
       wrap.innerHTML = html;
     }
     // 让当前行在视口中
@@ -1246,6 +1247,7 @@ ${t}
     const root = doc.getElementById('meow-voice-bgm-dock');
     _bgmState.active = false;
     _bgmState.parsedKind = '';
+    if (_bgmIframeTimer) { clearTimeout(_bgmIframeTimer); clearInterval(_bgmIframeTimer); _bgmIframeTimer = null; }
     _bgmState.embedSrc = '';
     if (!root) return;
     const embed = root.querySelector('.mv-bgm-embed');
@@ -1359,6 +1361,7 @@ ${t}
       W._meowBgmAudio = null;
       // 重置歌词
       _bgmLyricLines = []; _bgmLyricIdx = -1;
+      if (_bgmIframeTimer) { clearTimeout(_bgmIframeTimer); clearInterval(_bgmIframeTimer); _bgmIframeTimer = null; }
       const root = _getBgmDock();
       let iframeSrc = parsed.iframeSrc;
       if (o.preview || o.restart) iframeSrc += (iframeSrc.includes('?') ? '&' : '?') + 'mvts=' + Date.now();
@@ -1375,6 +1378,35 @@ ${t}
         _loadBgmLyric(trk2 || { url: sourceUrl }).then(() => {
           _bgmLyricIdx = 0;
           _renderLyricInDock(doc.getElementById('meow-voice-bgm-dock'));
+          // iframe 模式：按歌词实际时间间隔自动滚动
+          if (_bgmIframeTimer) clearInterval(_bgmIframeTimer);
+          _bgmIframeTimer = setInterval(() => {
+            if (!_bgmLyricLines.length) return;
+            // 用相邻行时间差驱动；默认间隔约3秒
+            const next = _bgmLyricIdx + 1;
+            if (next >= _bgmLyricLines.length) {
+              clearInterval(_bgmIframeTimer); _bgmIframeTimer = null; return;
+            }
+            const delay = _bgmLyricLines[next].ms - _bgmLyricLines[_bgmLyricIdx].ms;
+            _bgmLyricIdx = next;
+            _renderLyricInDock(doc.getElementById('meow-voice-bgm-dock'));
+            // 动态调整下次间隔
+            if (_bgmIframeTimer) {
+              clearInterval(_bgmIframeTimer);
+              _bgmIframeTimer = null;
+            }
+            const schedNext = () => {
+              const ni = _bgmLyricIdx + 1;
+              if (ni >= _bgmLyricLines.length) return;
+              const d = Math.max(500, _bgmLyricLines[ni].ms - _bgmLyricLines[_bgmLyricIdx].ms);
+              _bgmIframeTimer = setTimeout(() => {
+                _bgmLyricIdx = ni;
+                _renderLyricInDock(doc.getElementById('meow-voice-bgm-dock'));
+                schedNext();
+              }, d);
+            };
+            schedNext();
+          }, Math.max(500, (_bgmLyricLines[1]?.ms || 3000) - (_bgmLyricLines[0]?.ms || 0)));
         });
       }
       _renderBgmDock();
