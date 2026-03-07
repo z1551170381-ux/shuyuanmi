@@ -141,7 +141,8 @@
       bgmUrl:       lsGet(LS.BGM_URL,       ''),
       bgmVolume:    lsGet(LS.BGM_VOLUME,    0.18),
       bgmLoop:      lsGet(LS.BGM_LOOP,      true),
-      bgmLibrary:   lsGet(LS.BGM_LIBRARY,   []),
+      bgmLibrary:   _bgmLibCache ? JSON.parse(JSON.stringify(_bgmLibCache)) : lsGet(LS.BGM_LIBRARY, []),
+      bgmProxy:     lsGet(LS.BGM_PROXY,     ''),
       bgmGroup:     lsGet(LS.BGM_GROUP,     ''),
       bgmTrack:     lsGet(LS.BGM_TRACK,     ''),
       bgmDockCollapsed: lsGet(LS.BGM_DOCK_COLLAPSED, true),
@@ -3138,12 +3139,13 @@ async function _speakWithCfg(rawText, charName, c) {
       const kw = (name + (artist ? ' ' + artist : '')).trim();
       if (proxy) {
         try {
-          const p = new URLSearchParams({ q: kw });
+          const p = new URLSearchParams();
+          if (songId) p.set('id', songId);
+          if (kw) p.set('q', kw);
           const res = await fetch(`${proxy}/lyric?${p}`, { signal: AbortSignal.timeout(8000) });
           if (!res.ok) throw new Error(res.status);
           const data = await res.json();
-          const hit = Array.isArray(data) ? (data.find(d => d.syncedLyrics) || data[0]) : data;
-          return hit?.syncedLyrics || '';
+          return data?.lrc || '';
         } catch(e) {}
       }
       // 直连 lrclib
@@ -3162,25 +3164,29 @@ async function _speakWithCfg(rawText, charName, c) {
     function _renderSearchResults(songs) {
       const el = q('mvBgmSearchResults');
       if (!el) return;
-      const proxy = _bgmProxyBase();
       if (!songs.length) {
         el.style.display = '';
         el.innerHTML = '<div style="padding:10px;text-align:center;font-size:11px;color:rgba(46,38,30,.4)">没有找到相关歌曲</div>';
         return;
       }
       el.style.display = '';
+      const sourceBadge = {
+        netease: '<span style="font-size:9px;background:rgba(200,50,50,.12);color:rgba(200,50,50,.8);border-radius:3px;padding:1px 4px;margin-left:4px">网易云</span>',
+        qq:      '<span style="font-size:9px;background:rgba(50,100,200,.12);color:rgba(50,100,200,.8);border-radius:3px;padding:1px 4px;margin-left:4px">QQ</span>',
+        lrclib:  '<span style="font-size:9px;background:rgba(80,150,80,.12);color:rgba(80,150,80,.8);border-radius:3px;padding:1px 4px;margin-left:4px">lrclib</span>',
+      };
       el.innerHTML = songs.map((s, i) => {
-        const hasUrl = !!s.url;
+        const badge = sourceBadge[s.source] || '';
         const hasLrc = !!s.lrc;
+        const hasUrl = !!s.url;
         return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;
           border-bottom:1px solid rgba(28,24,18,.05);"
           onmouseover="this.style.background='rgba(139,115,85,.10)'"
           onmouseout="this.style.background=''">
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-              ${esc(s.name)}
-              ${hasLrc?'<span style="font-size:9px;color:rgba(80,130,80,.9);margin-left:4px">🎵词</span>':''}
-              ${!hasUrl?'<span style="font-size:9px;color:rgba(160,100,50,.7);margin-left:4px">需手动填链接</span>':''}
+              ${esc(s.name)}${badge}${hasLrc?'<span style="font-size:9px;color:rgba(80,130,80,.9);margin-left:3px">🎵</span>':''}
+              ${!hasUrl?'<span style="font-size:9px;color:rgba(160,100,50,.7);margin-left:3px">需手动填链接</span>':''}
             </div>
             <div style="font-size:10px;color:rgba(46,38,30,.45);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.artist)}${s.album?' · '+esc(s.album):''}</div>
           </div>
