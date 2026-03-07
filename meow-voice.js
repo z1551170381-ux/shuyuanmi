@@ -3100,19 +3100,22 @@ async function _speakWithCfg(rawText, charName, c) {
       if (proxy) {
         // 走 Cloudflare Worker 代理
         try {
-          const res = await fetch(`${proxy}/search?q=${encodeURIComponent(keywords)}&limit=8`,
-            { signal: AbortSignal.timeout(15000) });
+          const res = await fetch(`${proxy}/search?q=${encodeURIComponent(keywords)}&limit=15`,
+            { signal: AbortSignal.timeout(12000) });
           if (!res.ok) throw new Error('proxy ' + res.status);
           const arr = await res.json();
           if (!Array.isArray(arr)) throw new Error('格式异常');
           return arr.map(s => ({
-            id:     String(s.id || ''),
-            name:   s.name   || s.trackName  || '未知',
-            artist: s.artist || s.artistName || '',
-            album:  s.album  || s.albumName  || '',
-            source: s.source || 'netease',
-            lrc:    s.lrc    || s.syncedLyrics || '',
-            url:    s.url    || '',   // Worker 直接返回真实直链
+            id:       String(s.id || ''),
+            url_id:   String(s.url_id   || s.id || ''),
+            lyric_id: String(s.lyric_id || s.id || ''),
+            name:     s.name   || '未知',
+            artist:   s.artist || '',
+            album:    s.album  || '',
+            source:   s.source || 'netease',
+            gd_src:   s.gd_src || 'netease',
+            lrc:      '',
+            url:      '',  // 点加入时才通过 /song 接口拿直链
           }));
         } catch(e) {
           toast('代理搜索失败，尝试直连…');
@@ -3238,31 +3241,52 @@ async function _speakWithCfg(rawText, charName, c) {
         if (!group) { toast('请先新建一个分组'); return; }
         if (!Array.isArray(group.tracks)) group.tracks = [];
 
-        if (song.url) {
-          // 有直链（走了代理）→ 直接加入
-          if (group.tracks.some(t => t.url === song.url)) { toast('该歌曲已在此分组中'); return; }
+        const proxy2 = _bgmProxyBase();
+        if (proxy2 && song.url_id) {
+          // 通过 /song 接口获取直链+歌词
+          addBtn.textContent = '获取中…';
+          const p = new URLSearchParams({
+            src:      song.gd_src   || 'netease',
+            url_id:   song.url_id,
+            lyric_id: song.lyric_id || song.url_id,
+          });
+          const songRes = await fetch(`${proxy2}/song?${p}`, { signal: AbortSignal.timeout(12000) });
+          const songData = songRes.ok ? await songRes.json() : {};
+          const realUrl = songData.url || '';
+          const lrc     = songData.lrc || '';
+
+          if (!realUrl) { toast('获取直链失败，请手动填入链接'); return; }
+          if (group.tracks.some(t => t.url === realUrl)) { toast('该歌曲已在此分组中'); return; }
           const tid = _uid('t_');
-          group.tracks.push({ id: tid, title, url: song.url });
+          group.tracks.push({ id: tid, title, url: realUrl });
           _saveBgmLibrary(lib);
           box.__mvBgmState = { groupId: group.id, trackId: tid };
-
-          // 拉歌词
-          addBtn.textContent = '拉词中…';
-          let lrc = song.lrc || await _musicGetLyric(song.id, song.name, song.artist);
-          if (lrc) _lrcSet(song.id, lrc);
+          if (lrc) _lrcSet(tid, lrc);
 
           _renderBgmLibraryEditor(box);
           q('mvBgmSearchResults').style.display = 'none';
           q('mvBgmSearch').value = '';
           toast('✅ 已加入「' + song.name + '」' + (lrc ? ' 🎵 含歌词' : ' （暂无歌词）'));
+        } else if (song.url) {
+          // 有直链直接加入（lrclib 模式不会走这里，预留）
+          if (group.tracks.some(t => t.url === song.url)) { toast('该歌曲已在此分组中'); return; }
+          const tid = _uid('t_');
+          group.tracks.push({ id: tid, title, url: song.url });
+          _saveBgmLibrary(lib);
+          box.__mvBgmState = { groupId: group.id, trackId: tid };
+          if (song.lrc) _lrcSet(tid, song.lrc);
+          _renderBgmLibraryEditor(box);
+          q('mvBgmSearchResults').style.display = 'none';
+          q('mvBgmSearch').value = '';
+          toast('✅ 已加入「' + song.name + '」');
         } else {
-          // 无直链（lrclib 直连模式）→ 预填标题，让用户手动填链接
+          // 无直链（lrclib 直连模式）→ 预填标题
           if (song.lrc) _lrcSet('title_' + song.name.slice(0,30), song.lrc);
           if (q('mvBgmNewTitle')) q('mvBgmNewTitle').value = title;
           if (q('mvBgmUrl')) q('mvBgmUrl').value = '';
           q('mvBgmSearchResults').style.display = 'none';
           q('mvBgmSearch').value = '';
-          toast(`已填入「${song.name}」${song.lrc?'🎵 含歌词，':''}请在下方粘贴 hhtjim 直链后点加入`);
+          toast(`已填入「${song.name}」请在下方粘贴链接后点加入`);
           q('mvBgmUrl')?.focus();
         }
       } catch(err) {
