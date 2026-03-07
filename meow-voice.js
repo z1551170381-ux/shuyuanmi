@@ -874,7 +874,7 @@ ${t}
       #meow-voice-bgm-dock.playing.collapsed .mv-bgm-tonearm{transform:rotate(-30deg)}
       #meow-voice-bgm-dock.collapsed:not(.playing) .mv-bgm-tonearm{transform:rotate(12deg)}
       #meow-voice-bgm-dock:not(.playing):not(.collapsed) .mv-bgm-tonearm{transform:rotate(-6deg)}
-      #meow-voice-bgm-dock .mv-bgm-panel{position:relative;min-height:110px;padding:10px 10px 9px 46px;border-radius:20px;background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(244,244,240,.64));border:1px solid rgba(214,214,206,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 16px 34px rgba(0,0,0,.10);overflow:visible;transition:opacity .15s ease,transform .15s ease}
+      #meow-voice-bgm-dock .mv-bgm-panel{position:relative;min-height:110px;padding:10px 10px 9px 46px;border-radius:20px;background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(244,244,240,.64));border:1px solid rgba(214,214,206,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 16px 34px rgba(0,0,0,.10);overflow:visible;transition:opacity .18s ease,max-height .18s ease,padding .18s ease;max-height:600px}
       #meow-voice-bgm-dock .mv-bgm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding-right:32px}
       #meow-voice-bgm-dock .mv-bgm-open-settings{position:absolute;right:8px;top:34px;width:26px;height:26px;border:0;border-radius:999px;background:rgba(255,255,255,.78);box-shadow:0 6px 14px rgba(0,0,0,.08);cursor:pointer;color:#56656d;font-size:13px;flex:none;z-index:7}
       #meow-voice-bgm-dock .mv-bgm-name{font-size:14px;line-height:1.15;font-weight:700;color:#2c393f;max-width:126px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -904,7 +904,7 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-embed.empty{display:none}
       #meow-voice-bgm-dock.edge-right.collapsed{transform:none}
       #meow-voice-bgm-dock.edge-left.collapsed{transform:none}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-panel{opacity:0;pointer-events:none;transform:translateY(-4px)}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-panel{opacity:0;pointer-events:none;max-height:0 !important;padding-top:0 !important;padding-bottom:0 !important;overflow:hidden;min-height:0 !important}
       #meow-voice-bgm-dock.collapsed .mv-bgm-close{display:none}
       #meow-voice-bgm-dock.collapsed .mv-bgm-shell{min-height:112px}
       #meow-voice-bgm-dock.collapsed .mv-bgm-open-settings{right:58px;top:8px}
