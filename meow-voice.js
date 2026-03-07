@@ -207,17 +207,8 @@
       } catch(e) { continue; }
     }
     if (!lrcText) return '';
-    // 存进 track
-    if (gid && tid) {
-      try {
-        const lib = _getBgmLibrary();
-        const grp = _findBgmGroup(lib, gid);
-        if (grp) {
-          const trk = grp.tracks.find(t => t.id === tid);
-          if (trk && !trk.lrc) { trk.lrc = lrcText; _saveBgmLibrary(lib); }
-        }
-      } catch(e) {}
-    }
+    // 单独存储 lrc，不写进 library（防止撑爆 5MB 限制）
+    _lrcSet(songId, lrcText);
     return lrcText;
   }
 
@@ -232,10 +223,13 @@
     _bgmLyricLines = [];
     _bgmLyricIdx   = -1;
     if (!track) return;
-    // 已存 lrc
-    if (track.lrc) { _bgmLyricLines = _parseLrc(track.lrc); return; }
-    // 尝试从 URL 推断 ID 并拉取
+    // 优先从单独 lrc 存储读（用 songId 为 key）
     const songId = _extractNeteaseId(track.url);
+    if (songId) {
+      const cached = _lrcGet(songId);
+      if (cached) { _bgmLyricLines = _parseLrc(cached); return; }
+    }
+    // 没有缓存时在线拉取
     if (!songId) return;
     const lrc = await _fetchNeteaseLyric(songId, gid, tid);
     if (lrc) _bgmLyricLines = _parseLrc(lrc);
@@ -482,6 +476,18 @@ ${t}
     return String(prefix || 'id_') + Math.random().toString(36).slice(2, 10);
   }
 
+  // ── LRC 单独存储，避免撑爆 library JSON（5MB 限制）─────────
+  const LS_LRC_PREFIX = 'meow_voice_lrc_v1_';
+  function _lrcKey(songId) { return LS_LRC_PREFIX + String(songId || ''); }
+  function _lrcGet(songId) {
+    if (!songId) return '';
+    try { return W.localStorage.getItem(_lrcKey(songId)) || ''; } catch(e) { return ''; }
+  }
+  function _lrcSet(songId, lrc) {
+    if (!songId || !lrc) return;
+    try { W.localStorage.setItem(_lrcKey(songId), lrc); } catch(e) {}
+  }
+
   function _ensureBgmLibrary(raw) {
     let lib = Array.isArray(raw) ? raw : [];
     lib = lib.map(g => ({
@@ -491,6 +497,7 @@ ${t}
         id: String(t?.id || _uid('t_')),
         title: String(t?.title || '未命名曲目').trim() || '未命名曲目',
         url: String(t?.url || '').trim(),
+        // lrc 字段不保存进 library（单独存在 LS_LRC_PREFIX+songId 里）
       })).filter(t => t.url) : [],
     }));
     if (!lib.length) lib = [{ id: 'g_default', name: '常用', tracks: [] }];
@@ -509,9 +516,22 @@ ${t}
   }
 
   function _saveBgmLibrary(lib) {
-    const ensured = _ensureBgmLibrary(lib);
-    _bgmLibCache = ensured;           // 立即更新内存缓存
-    lsSet(LS.BGM_LIBRARY, ensured);  // 持久化到 localStorage
+    const ensured = _ensureBgmLibrary(lib); // lrc 字段在这里被剥离
+    _bgmLibCache = ensured;                 // 立即更新内存缓存
+    // 写入 localStorage 并验证
+    try {
+      const json = JSON.stringify(ensured);
+      W.localStorage.setItem(LS.BGM_LIBRARY, json);
+      // 验证：读回来对比长度，防止静默失败
+      const check = W.localStorage.getItem(LS.BGM_LIBRARY);
+      if (!check || check.length !== json.length) {
+        // 回退：尝试 window.localStorage（排除 W 取错的情况）
+        try { window.localStorage.setItem(LS.BGM_LIBRARY, json); } catch(e2) {}
+      }
+    } catch(e) {
+      // 写入失败时内存缓存仍正确，本次会话不受影响
+      try { window.localStorage.setItem(LS.BGM_LIBRARY, JSON.stringify(ensured)); } catch(e2) {}
+    }
   }
 
   function _findBgmGroup(lib, groupId) {
@@ -3020,7 +3040,7 @@ async function _speakWithCfg(rawText, charName, c) {
       lsSet(LS.BGM_TRACK,   s.trackId   || '');
       lsSet(LS.BGM_TITLE,   saveTrack?.title || q('mvBgmTitle')?.value.trim() || '背景音乐');
       lsSet(LS.BGM_URL,     saveTrack?.url   || '');
-      lsSet(LS.BGM_LIBRARY, saveLib);
+      _saveBgmLibrary(saveLib);  // 同步缓存 + 写 localStorage + 验证
       const newDramaMap = { ...lsGet(LS.DRAMA_MAP, {}) };
       newDramaMap['__narration__'] = q('mvNarratorVoice')?.value.trim() || '';
       newDramaMap['__user__']      = q('mvUserVoice')?.value.trim() || '';
