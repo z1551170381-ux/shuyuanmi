@@ -508,10 +508,7 @@ ${t}
       || /[?&](?:format|mime|type)=(?:audio|mp3|m4a|ogg|wav|aac)/i.test(u)
       || /^blob:/i.test(u)
       || /^data:audio\//i.test(u)
-      // QQ音乐各类直链
-      || /zj\.v\.api\.aa1\.cn/i.test(u)
-      || /amobile\.music\.tc\.qq\.com/i.test(u)
-      || /aqqmusic\.tc\.qq\.com/i.test(u)
+      // QQ音乐（已移除，vkey 过期太快）
       // 酷我 CDN
       || /music-api\.gdstudio\.xyz/i.test(u)
       || /er-sycdn\.kuwo\.cn/i.test(u)
