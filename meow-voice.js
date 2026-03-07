@@ -301,7 +301,7 @@
       let html = '';
       for (let i = start; i <= end; i++) {
         const isCur = i === cur;
-        html += `<div class="mv-bgm-lrc-line${isCur?' mv-bgm-lrc-cur':''}" style="text-align:center;padding:1px 8px;box-sizing:border-box;transition:all .3s ease;font-size:${isCur?'13px':'11px'};font-weight:${isCur?'700':'400'};color:${isCur?'rgba(44,57,63,.9)':'rgba(44,57,63,.32)'};line-height:${isCur?'1.6':'1.4'}">${esc(_bgmLyricLines[i].text)}</div>`;
+        html += `<div class="mv-bgm-lrc-line${isCur?' mv-bgm-lrc-cur':''}" style="text-align:center;padding:2px 8px;box-sizing:border-box;transition:all .3s ease;font-size:${isCur?'15px':'12px'};font-weight:${isCur?'700':'400'};color:${isCur?'rgba(44,57,63,.9)':'rgba(44,57,63,.32)'};line-height:${isCur?'1.7':'1.5'}">${esc(_bgmLyricLines[i].text)}</div>`;
       }
       wrap.innerHTML = html;
     } else {
@@ -310,7 +310,7 @@
       let html = '';
       for (let i = 0; i < _bgmLyricLines.length; i++) {
         const isCur = i === displayCur;
-        html += `<div class="mv-bgm-lrc-line${isCur?' mv-bgm-lrc-cur':''}" style="text-align:center;padding:1px 8px;box-sizing:border-box;font-size:11px;font-weight:${isCur?'600':'400'};color:${isCur?'rgba(44,57,63,.88)':'rgba(44,57,63,.4)'};line-height:1.5">${esc(_bgmLyricLines[i].text)}</div>`;
+        html += `<div class="mv-bgm-lrc-line${isCur?' mv-bgm-lrc-cur':''}" style="text-align:center;padding:2px 8px;box-sizing:border-box;font-size:13px;font-weight:${isCur?'600':'400'};color:${isCur?'rgba(44,57,63,.88)':'rgba(44,57,63,.4)'};line-height:1.6">${esc(_bgmLyricLines[i].text)}</div>`;
       }
       // 静态模式下启用滚动
       wrap.style.maxHeight = '130px';
@@ -873,7 +873,7 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-group-chip.active{background:#434f55;color:#fff}
       #meow-voice-bgm-dock .mv-bgm-pick-row{margin-top:7px}
       #meow-voice-bgm-dock .mv-bgm-track-select{width:100%;border:1px solid rgba(120,125,128,.18);border-radius:10px;padding:6px 9px;background:rgba(255,255,255,.74);font-size:11px;color:#334249;box-sizing:border-box}
-      #meow-voice-bgm-dock .mv-bgm-lyric{margin-top:8px;min-height:80px;max-height:130px;overflow:hidden;padding:6px 2px;border-radius:14px;background:rgba(255,255,255,.36);border:1px solid rgba(225,225,219,.78);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
+      #meow-voice-bgm-dock .mv-bgm-lyric{margin-top:8px;min-height:90px;max-height:150px;overflow:hidden;padding:6px 2px;border-radius:14px;background:rgba(255,255,255,.36);border:1px solid rgba(225,225,219,.78);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
       #meow-voice-bgm-dock .mv-bgm-lyric:empty::before{content:'歌词';font-size:11px;color:rgba(44,57,63,.28);font-style:italic}
       #meow-voice-bgm-dock .mv-bgm-lrc-line{width:100%;padding:1px 8px;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       #meow-voice-bgm-dock .mv-bgm-lrc-cur{white-space:normal;word-break:break-all}
