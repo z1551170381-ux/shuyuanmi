@@ -8284,9 +8284,12 @@ ${lines}
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
               <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.85);">🔗 跟随 chatId</div>
-              <div style="font-size:11px;color:rgba(20,24,28,.45);margin-top:2px;">${isFollowChatId ? '自动使用当前酒馆 chatId 关联的 persona' : '已手动锁定为: ' + esc(cSettings.personaOverride || '')}</div>
+              <div style="font-size:11px;color:rgba(20,24,28,.45);margin-top:2px;">${isFollowChatId ? '自动使用当前酒馆 chatId 关联的 persona' : '已手动锁定为: ' + esc(cSettings.personaOverride || '(无)')}</div>
             </div>
-            ${isFollowChatId ? '<span style="color:#07c160;font-size:12px;font-weight:600;">✓ 启用中</span>' : '<button data-act="personaFollowChat" style="border:0;background:#07c160;color:#fff;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer;">恢复自动</button>'}
+            <button data-act="${isFollowChatId ? 'personaUnlinkChat' : 'personaFollowChat'}"
+              style="border:0;background:${isFollowChatId ? 'rgba(0,0,0,.06)' : '#07c160'};color:${isFollowChatId ? 'rgba(20,24,28,.5)' : '#fff'};font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;">
+              ${isFollowChatId ? '取消自动' : '恢复自动'}
+            </button>
           </div>
         </div>`;
 
@@ -8345,12 +8348,21 @@ ${lines}
           }
           _renderPersonaPage(container);
         }));
-        // C2: 跟随 chatId 按钮
+        // C2: 跟随 chatId 按钮 / 取消自动
         container.querySelectorAll('[data-act="personaFollowChat"]').forEach(b => b.addEventListener('click',()=>{
           const cs = loadPhoneChatSettings();
           cs.personaOverride = null;
           savePhoneChatSettings(cs);
           try{toast('已恢复跟随 chatId');}catch(e){}
+          _renderPersonaPage(container);
+        }));
+        container.querySelectorAll('[data-act="personaUnlinkChat"]').forEach(b => b.addEventListener('click',()=>{
+          const cs = loadPhoneChatSettings();
+          // 锁定为当前激活人设，或空字符串（不跟随）
+          const act2 = _loadActivePersona();
+          cs.personaOverride = act2.id || '__manual__';
+          savePhoneChatSettings(cs);
+          try{toast('已取消自动跟随，请从列表选择人设');}catch(e){}
           _renderPersonaPage(container);
         }));
         container.querySelectorAll('[data-act="personaDel"]').forEach(b => b.addEventListener('click',()=>{
@@ -10752,7 +10764,7 @@ const npc = _wxGetChatTargetMeta(npcId);
 
       /* --- 数据层：角色设定(扩展profile) --- */
       function _loadCharExtra(npcId){
-        return _phLoad('char_extra_'+npcId, { profile:'', chatBg:'', autoSummary:false });
+        return _phLoad('char_extra_'+npcId, { profile:'', chatBg:'', autoSummary:false, autoSumEvery:20 });
       }
       function _saveCharExtra(npcId, data){
         _phSave('char_extra_'+npcId, data);
@@ -11083,6 +11095,12 @@ const npc = _wxGetChatTargetMeta(npcId);
                 </div>
               </div>
               <div data-el="sumExpandArea" style="display:none;padding:10px 0 4px 0;border-top:1px solid rgba(0,0,0,.04);margin-top:8px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                  <span style="font-size:12px;color:rgba(20,24,28,.55);white-space:nowrap;">每</span>
+                  <input type="number" min="5" max="200" value="${charEx.autoSumEvery||20}" data-el="sumEveryInput" data-npcid="${esc(contactId)}"
+                    style="width:60px;padding:4px 8px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;text-align:center;background:rgba(255,255,255,.9);"/>
+                  <span style="font-size:12px;color:rgba(20,24,28,.55);flex:1;">条消息自动生成一次总结</span>
+                </div>
                 <div style="font-size:11px;color:rgba(20,24,28,.45);margin-bottom:6px;">自定义总结提示词：</div>
                 <textarea data-el="sumCustomPrompt" data-npcid="${esc(contactId)}" placeholder="留空则使用全局默认提示词" rows="3" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;background:rgba(255,255,255,.6);">${esc((getChatSummary(contactId)||{}).customPrompt||'')}</textarea>
                 <div style="margin-top:10px;">
@@ -11108,6 +11126,18 @@ const npc = _wxGetChatTargetMeta(npcId);
               const existing = getChatSummary(nid) || {};
               existing.customPrompt = String(promptInp.value||'').trim();
               saveChatSummary(nid, existing);
+            });
+          }
+          // 每N条触发自动总结 — 失焦保存
+          const everyInp = body.querySelector('[data-el="sumEveryInput"]');
+          if (everyInp){
+            everyInp.addEventListener('change', ()=>{
+              const nid = everyInp.getAttribute('data-npcid') || contactId;
+              const n = Math.max(5, Math.min(200, parseInt(everyInp.value)||20));
+              everyInp.value = n;
+              const ce = _loadCharExtra(nid);
+              ce.autoSumEvery = n;
+              _saveCharExtra(nid, ce);
             });
           }
         }catch(e){}
@@ -11206,6 +11236,21 @@ const npc = _wxGetChatTargetMeta(npcId);
             </div>
           </div>
 
+          <div style="margin:10px 14px 0;font-size:11px;color:rgba(20,24,28,.4);letter-spacing:.3px;padding:0 0 4px;">自定义状态条目</div>
+          <div data-el="customEntryList" style="margin:0 14px;background:rgba(255,255,255,.88);border-radius:12px;border:1px solid rgba(0,0,0,.07);overflow:hidden;">
+            ${(b.customStatusEntries||[]).map(function(e,i){
+              return `<div style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-bottom:1px solid rgba(0,0,0,.05);" data-entry-idx="${i}">
+                <input data-ei="${i}" data-ef="icon" value="${esc(e.icon||'📌')}" placeholder="图标" style="width:32px;font-size:15px;border:0;outline:none;background:transparent;text-align:center;"/>
+                <input data-ei="${i}" data-ef="label" value="${esc(e.label||'')}" placeholder="标签" style="width:52px;font-size:12px;border:0;outline:none;background:transparent;color:rgba(20,24,28,.7);"/>
+                <input data-ei="${i}" data-ef="value" value="${esc(e.value||'')}" placeholder="内容" style="flex:1;font-size:12px;border:0;outline:none;background:transparent;color:rgba(20,24,28,.8);"/>
+                <button data-ei="${i}" data-act="cbDelEntry" style="font-size:13px;color:rgba(0,0,0,.25);background:transparent;border:0;cursor:pointer;padding:0 4px;">✕</button>
+              </div>`;
+            }).join('')}
+            <div style="padding:8px 14px;">
+              <button data-act="cbAddEntry" data-npcid="${esc(contactId)}" style="width:100%;border:0;background:transparent;color:rgba(20,24,28,.4);font-size:12px;cursor:pointer;text-align:left;">+ 添加自定义条目</button>
+            </div>
+          </div>
+
           <button data-act="cbSaveBehavior" data-npcid="${esc(contactId)}"
             style="display:block;width:calc(100% - 28px);margin:12px 14px 0;padding:12px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
         </div>`;
@@ -11236,8 +11281,43 @@ const npc = _wxGetChatTargetMeta(npcId);
             var k = inp.getAttribute('data-txt');
             bNew[k] = String(inp.value||'').trim();
           });
+          // 读取自定义状态条目
+          var entries = [];
+          body.querySelectorAll('[data-entry-idx]').forEach(function(row){
+            var icon  = (row.querySelector('[data-ef="icon"]')  || {value:''}).value;
+            var label = (row.querySelector('[data-ef="label"]') || {value:''}).value;
+            var value = (row.querySelector('[data-ef="value"]') || {value:''}).value;
+            if (String(label||'').trim() || String(value||'').trim())
+              entries.push({ icon:(icon||'📌').trim(), label:(label||'').trim(), value:(value||'').trim() });
+          });
+          bNew.customStatusEntries = entries;
           _saveCharBehavior(nid, bNew);
           try{ toast('行为参数已保存'); }catch(e){}
+        });
+
+        // 添加自定义条目
+        body.querySelector('[data-act="cbAddEntry"]')?.addEventListener('click', function(){
+          var nid = this.getAttribute('data-npcid') || contactId;
+          var bTmp = _loadCharBehavior(nid);
+          var entriesTmp = _safeArr(bTmp.customStatusEntries);
+          entriesTmp.push({ icon:'📌', label:'', value:'' });
+          bTmp.customStatusEntries = entriesTmp;
+          _saveCharBehavior(nid, bTmp);
+          _renderCharBehaviorPage(nid);
+        });
+
+        // 删除自定义条目（先保存当前输入再删）
+        body.querySelectorAll('[data-act="cbDelEntry"]').forEach(function(btn){
+          btn.addEventListener('click', function(){
+            var nid = contactId;
+            var idx = parseInt(this.getAttribute('data-ei'));
+            var bTmp = _loadCharBehavior(nid);
+            var entriesTmp = _safeArr(bTmp.customStatusEntries);
+            entriesTmp.splice(idx, 1);
+            bTmp.customStatusEntries = entriesTmp;
+            _saveCharBehavior(nid, bTmp);
+            _renderCharBehaviorPage(nid);
+          });
         });
 
         // 重置状态
@@ -12384,18 +12464,23 @@ const npc = _wxGetChatTargetMeta(npcId);
         var energyPct = Math.max(0, Math.min(100, s.energy || 0));
         var energyColor = energyPct > 60 ? '#07c160' : energyPct > 30 ? '#f39c12' : '#e74c3c';
 
-        // 读取行为参数里的 wearing/doing/heartLine（可选，有则显示）
         var bx = _loadCharBehavior(npcId);
         var wearing   = bx.wearing   || '';
         var doing     = bx.doing     || '';
         var heartLine = bx.heartLine || '';
+        // 读取自定义条目
+        var customEntries = _safeArr(bx.customStatusEntries);
 
-        // 沉默状态说明
         var silentTip = '';
         if (s.silentUntil > Date.now()){
           var leftM = Math.ceil((s.silentUntil - Date.now())/60000);
           silentTip = `<div class="wxSPCRow"><span class="wxSPCIcon">🤐</span><span class="wxSPCLabel">状态</span><span class="wxSPCValue" style="color:#e74c3c;">冷静中，约 ${leftM} 分钟后回来</span></div>`;
         }
+
+        var customRows = customEntries.map(function(e){
+          if (!e || !e.label || !e.value) return '';
+          return `<div class="wxSPCRow"><span class="wxSPCIcon">${esc(e.icon||'📌')}</span><span class="wxSPCLabel">${esc(e.label)}</span><span class="wxSPCValue">${esc(e.value)}</span></div>`;
+        }).join('');
 
         var card = doc.createElement('div');
         card.className = 'wxStatePanelCard';
@@ -12414,26 +12499,27 @@ const npc = _wxGetChatTargetMeta(npcId);
               </div>
             </div>
           </div>
-          <div class="wxSPCRow">
-            <span class="wxSPCIcon">💭</span>
-            <span class="wxSPCLabel">心情</span>
-            <span class="wxSPCValue">${esc(s.mood)}</span>
-          </div>
+          <div class="wxSPCRow"><span class="wxSPCIcon">💭</span><span class="wxSPCLabel">心情</span><span class="wxSPCValue">${esc(s.mood)}</span></div>
           ${wearing ? `<div class="wxSPCRow"><span class="wxSPCIcon">👗</span><span class="wxSPCLabel">穿着</span><span class="wxSPCValue">${esc(wearing)}</span></div>` : ''}
-          ${doing   ? `<div class="wxSPCRow"><span class="wxSPCIcon">🎯</span><span class="wxSPCLabel">正在</span><span class="wxSPCValue">${esc(doing)}</span></div>`   : ''}
+          ${doing   ? `<div class="wxSPCRow"><span class="wxSPCIcon">🎯</span><span class="wxSPCLabel">正在</span><span class="wxSPCValue">${esc(doing)}</span></div>` : ''}
           ${silentTip}
           ${heartLine ? `<div class="wxSPCRow"><span class="wxSPCIcon">💬</span><span class="wxSPCLabel">心声</span><span class="wxSPCValue" style="font-style:italic;color:rgba(20,24,28,.55);">"${esc(heartLine)}"</span></div>` : ''}
+          ${customRows}
           <button class="wxSPCClose" data-act="wxSPCClose">收起</button>
         `;
-        root.appendChild(card);
-        // 点外部关闭
-        var closeHandler = function(e){
-          if (!card.contains(e.target) && e.target !== root.querySelector('[data-ph="appTitleWrap"]')){
+        // ✅ 挂在 .phShell 上（position:relative），而非 root（无定义宽高）
+        var shell = root.querySelector('.phShell') || root;
+        shell.appendChild(card);
+
+        // 延迟 80ms 再注册关闭监听，避免触发本次点击
+        setTimeout(function(){
+          var closeOnce = function(ev){
+            if (card.contains(ev.target)) return;
             card.remove();
-            root.removeEventListener('click', closeHandler, true);
-          }
-        };
-        setTimeout(function(){ root.addEventListener('click', closeHandler, true); }, 50);
+            root.removeEventListener('click', closeOnce, true);
+          };
+          root.addEventListener('click', closeOnce, true);
+        }, 80);
       }
 
       function _showTypingInAppBar(npcName){
@@ -12625,9 +12711,10 @@ const npc = _wxGetChatTargetMeta(npcId);
           proactiveShare:    'weekly',
           emojiUsage:        'normal',
           quoteHabit:        'sometimes',
-          wearing:   '',   // 当前穿着（显示在状态面板）
-          doing:     '',   // 正在做什么
-          heartLine: ''    // 一句心声
+          wearing:   '',
+          doing:     '',
+          heartLine: '',
+          customStatusEntries: []  // [{icon,label,value}, ...]（显示在状态面板）
         });
       }
       function _saveCharBehavior(npcId, b){
@@ -13363,6 +13450,33 @@ const npc = _wxGetChatTargetMeta(npcId);
         if (!store.byChat) store.byChat = {};
         store.byChat[String(chatId)] = data;
         saveSummaryStore(store);
+      }
+
+      // 后台静默触发自动总结（不更新 UI，不 toast，只写入数据）
+      async function _triggerAutoSummary(npcId){
+        try{
+          var apiCfg = PhoneAI._getConfig();
+          if (!apiCfg.endpoint || !apiCfg.key) return;
+          var gs = getGlobalSummarySettings();
+          var msgCount = gs.defaultMsgCount || 60;
+          var log = getLog(npcId);
+          var tail = log.slice(Math.max(0, log.length - msgCount)).filter(function(m){ return m.role !== 'system' && !m.recalled; });
+          if (!tail.length) return;
+          var db = loadContactsDB();
+          var npc = findContactById(db, npcId) || { name: String(npcId) };
+          var msgs = tail.map(function(x){
+            var role = (x.role === 'me') ? 'user' : 'assistant';
+            return { role:role, content: String(x.text||'') };
+          });
+          var existing = getChatSummary(npcId) || {};
+          var result = await PhoneAI.summarizeChat({ messages:msgs, customPrompt: existing.customPrompt || '' });
+          if (result.ok && result.data){
+            existing.summaryText = result.data;
+            existing.updatedAt = Date.now();
+            existing.sourceMsgCount = tail.length;
+            saveChatSummary(npcId, existing);
+          }
+        }catch(e){}
       }
 
       function getGlobalSummarySettings(){
@@ -14772,6 +14886,28 @@ const npc = _wxGetChatTargetMeta(npcId);
 
       // ====== 阶段B：AI回复后概率触发逻辑 ======
       function _postReplyProbabilityTriggers(npcId, npc, replies){
+        // ===【自动总结触发】===
+        try{
+          var ce = _loadCharExtra(npcId);
+          if (ce.autoSummary){
+            var everyN = Math.max(5, ce.autoSumEvery || 20);
+            var log = getLog(npcId);
+            var msgCount = (log || []).filter(function(m){ return m.role !== 'system'; }).length;
+            var lastAutoSum = getChatSummary(npcId);
+            var lastCount = (lastAutoSum && lastAutoSum.lastAutoSumAt) || 0;
+            if (msgCount - lastCount >= everyN){
+              // 更新计数，后台静默触发总结
+              var sumData = getChatSummary(npcId) || {};
+              sumData.lastAutoSumAt = msgCount;
+              saveChatSummary(npcId, sumData);
+              // 静默生成总结（复用现有生成逻辑）
+              setTimeout(function(){
+                _triggerAutoSummary(npcId);
+              }, 2000);
+            }
+          }
+        }catch(e){}
+
         try{
           var ps = _loadPokeSettings(npcId);
 
