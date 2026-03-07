@@ -902,8 +902,8 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-embed{margin-top:8px}
       #meow-voice-bgm-dock .mv-bgm-embed iframe{display:block;width:100%;height:104px;border:0;border-radius:14px;background:rgba(255,255,255,.84)}
       #meow-voice-bgm-dock .mv-bgm-embed.empty{display:none}
-      #meow-voice-bgm-dock.edge-right.collapsed{transform:none}
-      #meow-voice-bgm-dock.edge-left.collapsed{transform:none}
+      #meow-voice-bgm-dock.edge-right.collapsed{transform:none;background:transparent !important;box-shadow:none !important;border:none !important}
+      #meow-voice-bgm-dock.edge-left.collapsed{transform:none;background:transparent !important;box-shadow:none !important;border:none !important}
       #meow-voice-bgm-dock.collapsed .mv-bgm-panel{opacity:0;pointer-events:none;max-height:0 !important;min-height:0 !important;padding:0 !important;margin:0 !important;border-width:0 !important;overflow:hidden;box-shadow:none !important;backdrop-filter:none !important}
       #meow-voice-bgm-dock.collapsed .mv-bgm-lyric{display:none !important}
       #meow-voice-bgm-dock.collapsed .mv-bgm-embed{display:none !important}
@@ -914,7 +914,6 @@ ${t}
       #meow-voice-bgm-dock.collapsed .mv-bgm-sub{display:none !important}
       #meow-voice-bgm-dock.collapsed .mv-bgm-shell{min-height:0 !important;background:transparent !important}
       #meow-voice-bgm-dock.collapsed .mv-bgm-close{display:none}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-shell{min-height:112px}
       #meow-voice-bgm-dock.collapsed .mv-bgm-open-settings{right:58px;top:8px}
       #meow-voice-bgm-dock.compact{width:244px !important;--mv-bgm-peek:50px}
       #meow-voice-bgm-dock.compact .mv-bgm-shell{min-height:94px;padding-left:30px}
