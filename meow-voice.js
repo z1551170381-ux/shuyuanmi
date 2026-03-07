@@ -1380,12 +1380,13 @@ ${t}
           _renderLyricInDock(doc.getElementById('meow-voice-bgm-dock'));
           // iframe 模式：用挂钟时间近似同步歌词（从 iframe 加载时刻起）
           if (_bgmIframeTimer) { clearTimeout(_bgmIframeTimer); _bgmIframeTimer = null; }
+          // 挂钟同步：elapsed = 从 iframe 加载起经过的毫秒数
+          // 歌词行的 ms 也是从歌曲开头起的偏移，直接比较即可
           const _iframeStartWall = Date.now();
-          const _iframeFirstMs   = _bgmLyricLines[0]?.ms || 0;
           const schedIframeLyric = () => {
             if (!_bgmLyricLines.length) return;
-            const elapsedMs = (Date.now() - _iframeStartWall) + _iframeFirstMs;
-            // 找当前应显示的行
+            const elapsedMs = Date.now() - _iframeStartWall;
+            // 找当前应显示的行（最后一个 ms <= elapsedMs 的行）
             let idx = 0;
             for (let i = 0; i < _bgmLyricLines.length; i++) {
               if (_bgmLyricLines[i].ms <= elapsedMs) idx = i;
@@ -1395,10 +1396,10 @@ ${t}
               _bgmLyricIdx = idx;
               _renderLyricInDock(doc.getElementById('meow-voice-bgm-dock'));
             }
-            // 算下一次触发时间
+            // 精确等到下一行的触发时刻
             const nextIdx = idx + 1;
             if (nextIdx < _bgmLyricLines.length) {
-              const waitMs = Math.max(100, _bgmLyricLines[nextIdx].ms - elapsedMs + _iframeFirstMs);
+              const waitMs = Math.max(50, _bgmLyricLines[nextIdx].ms - elapsedMs);
               _bgmIframeTimer = setTimeout(schedIframeLyric, waitMs);
             }
           };
