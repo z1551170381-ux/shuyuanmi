@@ -7706,6 +7706,10 @@ ${lines}
       // ====== 4.3 世界书（全局世界书管理页） ======
       function renderGlobalWBPage(container){
         const data = loadPhoneGlobalWB();
+        // 兼容旧数据：补充酒馆上下文字段默认值
+        if (typeof data.tavernCtxEnabled === 'undefined') data.tavernCtxEnabled = false;
+        if (typeof data.tavernCtxN === 'undefined') data.tavernCtxN = 10;
+
         let html = `<div style="padding:14px;">
           <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:8px;">全局世界书/记忆包文本（聊天时可选附加给 AI）</div>
           <textarea data-el="gwbText" rows="10" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid rgba(0,0,0,.1);border-radius:10px;font-size:13px;line-height:1.6;resize:vertical;outline:none;background:rgba(255,255,255,.8);color:rgba(20,24,28,.85);">${esc(data.text||'')}</textarea>
@@ -7718,6 +7722,26 @@ ${lines}
               <span style="position:absolute;top:3px;${data.enabled?'left:21px':'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
             </button>
           </div>
+
+          <div style="margin-top:14px;padding:12px 14px;background:rgba(255,255,255,.85);border-radius:12px;border:1px solid rgba(0,0,0,.07);">
+            <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.85);margin-bottom:4px;">📜 酒馆聊天上下文</div>
+            <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:10px;">将酒馆（SillyTavern）主线聊天记录附加给小手机 AI，让 AI 知道当前分支的剧情走向</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div>
+                <div style="font-size:13px;color:rgba(20,24,28,.85);">附加酒馆聊天上下文</div>
+                <div style="font-size:11px;color:rgba(20,24,28,.4);">开启后自动读取最近 N 条主线消息</div>
+              </div>
+              <button data-act="gwbTavernCtxToggle" style="width:44px;height:26px;border-radius:13px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${data.tavernCtxEnabled?'#07c160':'rgba(0,0,0,.15)'};">
+                <span style="position:absolute;top:3px;${data.tavernCtxEnabled?'left:21px':'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
+              </button>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="font-size:13px;color:rgba(20,24,28,.75);white-space:nowrap;">可阅读最近</div>
+              <input data-el="gwbTavernCtxN" type="number" min="1" max="50" value="${data.tavernCtxN||10}" style="width:64px;padding:6px 8px;border:1px solid rgba(0,0,0,.12);border-radius:8px;font-size:13px;text-align:center;outline:none;background:rgba(255,255,255,.9);"/>
+              <div style="font-size:13px;color:rgba(20,24,28,.75);">条主线消息（1–50）</div>
+            </div>
+          </div>
+
           <button data-act="gwbSave" style="width:100%;margin-top:12px;padding:12px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
           <div style="font-size:11px;color:rgba(20,24,28,.3);margin-top:8px;text-align:center;">此世界书仅由小手机管理，不影响 ST 现有世界书</div>
         </div>`;
@@ -7732,9 +7756,18 @@ ${lines}
           this.classList.toggle('on', data.enabled);
           this.classList.toggle('off', !data.enabled);
         });
+        container.querySelector('[data-act="gwbTavernCtxToggle"]')?.addEventListener('click', function(){
+          data.tavernCtxEnabled = !data.tavernCtxEnabled;
+          this.style.background = data.tavernCtxEnabled ? '#07c160' : 'rgba(0,0,0,.15)';
+          const dot = this.querySelector('span');
+          if (dot) dot.style.left = data.tavernCtxEnabled ? '21px' : '3px';
+        });
         container.querySelector('[data-act="gwbSave"]')?.addEventListener('click', ()=>{
           const ta = container.querySelector('[data-el="gwbText"]');
           data.text = ta ? ta.value : '';
+          const nInp = container.querySelector('[data-el="gwbTavernCtxN"]');
+          const nVal = nInp ? parseInt(nInp.value, 10) : 10;
+          data.tavernCtxN = (nVal >= 1 && nVal <= 50) ? nVal : 10;
           savePhoneGlobalWB(data);
           try{toast('世界书已保存');}catch(e){}
         });
@@ -7783,6 +7816,17 @@ ${lines}
             <button data-act="vaAddBind" style="padding:8px 14px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:12px;cursor:pointer;">添加</button>
           </div>
           <div style="font-size:11px;color:rgba(20,24,28,.3);margin-top:12px;text-align:center;">当前仅保存配置，不执行真实播放</div>
+
+          <div style="margin-top:14px;padding:12px 14px;background:rgba(255,255,255,.85);border-radius:12px;border:1px solid rgba(0,0,0,.07);">
+            <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.85);margin-bottom:4px;">🔊 AI 自动发语音消息</div>
+            <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:10px;">开启后，AI 回复将自动调用语音 API 生成语音气泡，气泡内含播放器并自动展示文字转写</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="font-size:13px;color:rgba(20,24,28,.85);">AI 回复时自动发送语音</div>
+              <button data-act="vaAutoVoiceToggle" style="width:44px;height:26px;border-radius:13px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${data.autoVoice?'#07c160':'rgba(0,0,0,.15)'};">
+                <span style="position:absolute;top:3px;${data.autoVoice?'left:21px':'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
+              </button>
+            </div>
+          </div>
         </div>`;
         container.innerHTML = html;
 
@@ -7800,6 +7844,14 @@ ${lines}
           });
           saveVoiceApi(data);
           try{toast('声音API配置已保存');}catch(e){}
+        });
+        container.querySelector('[data-act="vaAutoVoiceToggle"]')?.addEventListener('click', function(){
+          data.autoVoice = !data.autoVoice;
+          this.style.background = data.autoVoice ? '#07c160' : 'rgba(0,0,0,.15)';
+          const dot = this.querySelector('span');
+          if (dot) dot.style.left = data.autoVoice ? '21px' : '3px';
+          saveVoiceApi(data);
+          try{toast(data.autoVoice ? '已开启 AI 自动语音' : '已关闭 AI 自动语音');}catch(e){}
         });
         container.querySelector('[data-act="vaAddBind"]')?.addEventListener('click', ()=>{
           const sel = container.querySelector('[data-el="vaBindSelect"]');
@@ -11274,11 +11326,78 @@ const npc = _wxGetChatTargetMeta(npcId);
               </div>
             </div>
           </div>`;
+        } else if (mt === 'tts_voice'){
+          // 语音消息气泡：audio 播放器 + 下方自动展示文字转写
+          const audioSrc = meta.audioUrl || '';
+          const transcriptText = esc(meta.transcript || text || '');
+          const durSec = meta.durSec || 0;
+          const durLabel = durSec >= 60 ? Math.floor(durSec/60)+'′'+String(durSec%60).padStart(2,'0')+'″' : durSec+'″';
+          const waveId = 'ttsWave_' + (ts || Date.now());
+          contentHtml = `<div class="wxCBContent wxCBSpecial" style="padding:0;overflow:hidden;border-radius:12px;min-width:180px;max-width:240px;">
+            <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(255,255,255,.9);">
+              <button data-ttsplay="${waveId}" style="width:32px;height:32px;border-radius:50%;border:0;background:#07c160;color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">▶</button>
+              <div style="flex:1;display:flex;align-items:center;gap:2px;height:22px;" id="${waveId}_bar">
+                ${Array.from({length:14},(_,i)=>`<div style="width:3px;border-radius:2px;background:rgba(7,193,96,${0.3+0.7*Math.abs(Math.sin(i*0.7))});height:${4+Math.round(14*Math.abs(Math.sin(i*0.7)))}px;"></div>`).join('')}
+              </div>
+              <span style="font-size:11px;color:rgba(20,24,28,.4);flex-shrink:0;">${durLabel}</span>
+            </div>
+            <audio id="${waveId}" src="${esc(audioSrc)}" preload="auto" style="display:none;"></audio>
+            <div style="padding:6px 12px 8px;border-top:1px solid rgba(0,0,0,.05);font-size:12px;color:rgba(20,24,28,.7);line-height:1.5;background:rgba(255,255,255,.7);">
+              <span style="font-size:10px;color:rgba(20,24,28,.3);">🔤 文字转写</span><br>${transcriptText}
+            </div>
+          </div>`;
         } else {
           contentHtml = `<div class="wxCBContent">${esc(text)}${editedTag}</div>`;
         }
         b.innerHTML = `<div class="wxCBAvatar">${esc(avatar)}</div>${contentHtml}`;
         msgs.appendChild(b);
+
+        // 绑定 TTS 播放按钮
+        if ((meta && meta.type === 'tts_voice') || false){
+          var waveId2 = 'ttsWave_' + (ts || Date.now());
+          var playBtn = b.querySelector('[data-ttsplay]');
+          var audioEl = b.querySelector('audio');
+          if (playBtn && audioEl){
+            playBtn.addEventListener('click', function(){
+              if (audioEl.paused){
+                audioEl.play().catch(function(){});
+                playBtn.textContent = '⏸';
+              } else {
+                audioEl.pause();
+                playBtn.textContent = '▶';
+              }
+            });
+            audioEl.addEventListener('ended', function(){ playBtn.textContent = '▶'; });
+          }
+        }
+      }
+
+      // ===== TTS API 调用（将文本转为语音，返回 {ok, audioUrl, error}）=====
+      async function _callTTSApi(text, npcId){
+        try{
+          var va = loadVoiceApi();
+          if (!va || !va.apiUrl || !va.apiKey) return { ok:false, error:'未配置语音API' };
+          var voiceId = va.defaultVoiceId || '';
+          // 查找角色专属 voiceId
+          if (npcId && va.bindings && va.bindings.length){
+            var found = va.bindings.find(function(b2){ return b2.id === npcId || b2.name === npcId; });
+            if (found && found.voiceId) voiceId = found.voiceId;
+          }
+          var body = { input: text, voice: voiceId };
+          if (voiceId) body.model = voiceId; // 兼容以 model 传的 API
+          var resp = await fetch(va.apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + va.apiKey },
+            body: JSON.stringify(body),
+            signal: AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined
+          });
+          if (!resp.ok) return { ok:false, error:'TTS API 错误 ' + resp.status };
+          var blob = await resp.blob();
+          var audioUrl = URL.createObjectURL(blob);
+          return { ok:true, audioUrl: audioUrl };
+        }catch(e){
+          return { ok:false, error: String(e && e.message || e) };
+        }
       }
 
       // ===== 【PhoneAI 模块】新增 =====
@@ -11809,6 +11928,30 @@ const npc = _wxGetChatTargetMeta(npcId);
           var summaryData = getChatSummary(npcId);
           if (summaryData && summaryData.summaryText && summaryData.summaryText.trim()){
             parts.push('【之前的对话摘要】\n' + summaryData.summaryText.trim().slice(0, 2000));
+          }
+        }catch(e){}
+
+        // === 3.8 [酒馆聊天上下文]：从主线聊天读取最近 N 条消息 ===
+        try{
+          var gwb2 = loadPhoneGlobalWB();
+          if (gwb2 && gwb2.tavernCtxEnabled){
+            var ctxN2 = (gwb2.tavernCtxN && gwb2.tavernCtxN > 0) ? Math.min(Number(gwb2.tavernCtxN), 50) : 10;
+            var stCtx2 = meowGetSTCtx();
+            if (stCtx2 && stCtx2.chat && Array.isArray(stCtx2.chat) && stCtx2.chat.length){
+              var recentMsgs = stCtx2.chat.slice(-ctxN2);
+              var ctxLines = [];
+              for (var ci2 = 0; ci2 < recentMsgs.length; ci2++){
+                var m2 = recentMsgs[ci2];
+                if (!m2) continue;
+                var msgText2 = String(m2.mes || m2.message || '').trim();
+                if (!msgText2) continue;
+                var speaker2 = m2.is_user ? '用户' : '角色';
+                ctxLines.push(speaker2 + ': ' + msgText2.slice(0, 300));
+              }
+              if (ctxLines.length > 0){
+                parts.push('【酒馆主线聊天上下文（最近 ' + ctxLines.length + ' 条）】\n以下是当前酒馆主线聊天分支的最近对话，供你了解背景：\n' + ctxLines.join('\n'));
+              }
+            }
           }
         }catch(e){}
 
@@ -12433,8 +12576,28 @@ const npc = _wxGetChatTargetMeta(npcId);
           bumpThread(npcId, { lastMsg: replies[ri], lastTime: _now(), unread: 0 });
           var msgsEl = root.querySelector('[data-ph="chatMsgs"]');
           if (msgsEl){
-            _wxAppendBubble(msgsEl, npc, 'them', replies[ri], _now());
-            requestAnimationFrame(function(){ msgsEl.scrollTop = msgsEl.scrollHeight; });
+            var vaData2 = loadVoiceApi();
+            var ttsTs2 = _now();
+            if (vaData2 && vaData2.autoVoice && vaData2.apiUrl && vaData2.apiKey){
+              _wxAppendBubble(msgsEl, npc, 'them', replies[ri], ttsTs2);
+              requestAnimationFrame(function(){ msgsEl.scrollTop = msgsEl.scrollHeight; });
+              (function(replyText2, replyTs2, msgsRef2, npcRef2){
+                _callTTSApi(replyText2, npcId).then(function(ttsResult2){
+                  if (!ttsResult2.ok) return;
+                  var existing2 = msgsRef2.querySelector('.wxChatBubble.them[data-msgts="'+replyTs2+'"]');
+                  if (existing2) existing2.remove();
+                  var wordCount2 = replyText2.replace(/\s/g,'').length;
+                  var estSec2 = Math.max(1, Math.round(wordCount2 / 4));
+                  _wxAppendBubble(msgsRef2, npcRef2, 'them', replyText2, replyTs2, {
+                    type:'tts_voice', audioUrl:ttsResult2.audioUrl, transcript:replyText2, durSec:estSec2
+                  });
+                  requestAnimationFrame(function(){ msgsRef2.scrollTop = msgsRef2.scrollHeight; });
+                }).catch(function(){});
+              })(replies[ri], ttsTs2, msgsEl, npc);
+            } else {
+              _wxAppendBubble(msgsEl, npc, 'them', replies[ri], _now());
+              requestAnimationFrame(function(){ msgsEl.scrollTop = msgsEl.scrollHeight; });
+            }
           }
         }
 
@@ -13431,8 +13594,32 @@ const npc = _wxGetChatTargetMeta(npcId);
 
             var msgsEl = root.querySelector('[data-ph="chatMsgs"]');
             if (msgsEl){
-              _wxAppendBubble(msgsEl, npc, 'them', replies[ri], _now());
-              requestAnimationFrame(function(){ msgsEl.scrollTop = msgsEl.scrollHeight; });
+              // 检查是否开启了 AI 自动语音回复
+              var vaData = loadVoiceApi();
+              var ttsTs = _now();
+              if (vaData && vaData.autoVoice && vaData.apiUrl && vaData.apiKey){
+                // 先显示文字气泡（占位），再异步请求 TTS 替换成语音气泡
+                _wxAppendBubble(msgsEl, npc, 'them', replies[ri], ttsTs);
+                requestAnimationFrame(function(){ msgsEl.scrollTop = msgsEl.scrollHeight; });
+                // 异步调用 TTS，完成后在文字气泡旁插入语音气泡
+                (function(replyText, replyTs, msgsRef, npcRef){
+                  _callTTSApi(replyText, npcId).then(function(ttsResult){
+                    if (!ttsResult.ok) return; // TTS 失败则保留文字气泡
+                    // 找到对应文字气泡，替换为语音气泡
+                    var existing = msgsRef.querySelector('.wxChatBubble.them[data-msgts="'+replyTs+'"]');
+                    if (existing) existing.remove();
+                    var wordCount = replyText.replace(/\s/g,'').length;
+                    var estSec = Math.max(1, Math.round(wordCount / 4));
+                    _wxAppendBubble(msgsRef, npcRef, 'them', replyText, replyTs, {
+                      type:'tts_voice', audioUrl:ttsResult.audioUrl, transcript:replyText, durSec:estSec
+                    });
+                    requestAnimationFrame(function(){ msgsRef.scrollTop = msgsRef.scrollHeight; });
+                  }).catch(function(){});
+                })(replies[ri], ttsTs, msgsEl, npc);
+              } else {
+                _wxAppendBubble(msgsEl, npc, 'them', replies[ri], _now());
+                requestAnimationFrame(function(){ msgsEl.scrollTop = msgsEl.scrollHeight; });
+              }
             }
           }
 

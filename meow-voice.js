@@ -7,8 +7,18 @@
 // =====================================================================
 
 (() => {
-  if (window.MEOW_VOICE_V1) return;
-  window.MEOW_VOICE_V1 = true;
+  const __MEOW_VOICE_VER = 'v1.2-bgm-horizontal-r2';
+  try {
+    const prev = window.MEOW_VOICE_V1;
+    if (prev && prev.__ver === __MEOW_VOICE_VER) return;
+  } catch(e) {}
+  try {
+    const oldRoot = document.getElementById('meow-voice-bgm-dock');
+    if (oldRoot) oldRoot.remove();
+    const oldStyle = document.getElementById('meow-voice-bgm-dock-style');
+    if (oldStyle) oldStyle.remove();
+  } catch(e) {}
+  window.MEOW_VOICE_V1 = { __ver: __MEOW_VOICE_VER };
 
   // ════════════════════════════════════════════════════════════════════
   //  § 1  环境 & 工具
