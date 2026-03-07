@@ -74,10 +74,14 @@
     READ_USER:    'meow_voice_read_user_v1',
     POS:          'meow_voice_btn_pos_v1',
     API_ENABLED:  'meow_voice_api_enabled_v1',
+    API_PROVIDER: 'meow_voice_api_provider_v1',
     API_URL:      'meow_voice_api_url_v1',
     API_KEY:      'meow_voice_api_key_v1',
     API_MODEL:    'meow_voice_api_model_v1',
     API_VOICE:    'meow_voice_api_voice_v1',
+    VOLC_APP_ID:  'meow_voice_volc_app_id_v1',
+    VOLC_ACCESS_KEY: 'meow_voice_volc_access_key_v1',
+    VOLC_RESOURCE_ID: 'meow_voice_volc_resource_id_v1',
     DRAMA_MODE:   'meow_voice_drama_mode_v1',
     DRAMA_MAP:    'meow_voice_drama_map_v1',
     USER_NAME:    'meow_voice_user_name_v1',
@@ -117,10 +121,14 @@
       skipPattern:  lsGet(LS.SKIP_PATTERN, ''),
       readUser:     lsGet(LS.READ_USER,    false),
       apiEnabled:   lsGet(LS.API_ENABLED,  false),
+      apiProvider:  lsGet(LS.API_PROVIDER,  'openai_compatible'),
       apiUrl:       lsGet(LS.API_URL,       ''),
       apiKey:       lsGet(LS.API_KEY,       ''),
       apiModel:     lsGet(LS.API_MODEL,     'tts-1'),
       apiVoice:     lsGet(LS.API_VOICE,     ''),
+      volcAppId:    lsGet(LS.VOLC_APP_ID,   ''),
+      volcAccessKey: lsGet(LS.VOLC_ACCESS_KEY, ''),
+      volcResourceId: lsGet(LS.VOLC_RESOURCE_ID, 'seed-tts-2.0'),
       dramaMode:    lsGet(LS.DRAMA_MODE,    false),
       dramaMap:     lsGet(LS.DRAMA_MAP,     {}),
       userName:     lsGet(LS.USER_NAME,     '我'),
@@ -1345,6 +1353,174 @@ ${t}
 
     throw new Error('未识别的音乐链接格式');
   }
+
+  function _getApiProvider(cArg) {
+    const p = String((cArg || cfg()).apiProvider || 'openai_compatible').trim();
+    return p || 'openai_compatible';
+  }
+
+  function _volcNormalizeEndpoint(rawUrl) {
+    const u = String(rawUrl || '').trim();
+    if (!u) return 'https://openspeech.bytedance.com/api/v3/tts/unidirectional';
+    return u;
+  }
+
+  function _b64ToUint8(base64) {
+    const bin = atob(String(base64 || '').replace(/\s+/g, ''));
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return arr;
+  }
+
+  function _concatUint8Arrays(chunks) {
+    let total = 0;
+    chunks.forEach(c => { total += c.length; });
+    const out = new Uint8Array(total);
+    let offset = 0;
+    chunks.forEach(c => {
+      out.set(c, offset);
+      offset += c.length;
+    });
+    return out;
+  }
+
+  function _parseJsonLine(line) {
+    const txt = String(line || '').trim();
+    if (!txt) return null;
+    if (txt.startsWith('event:')) return null;
+    let payload = txt;
+    if (payload.startsWith('data:')) payload = payload.slice(5).trim();
+    if (!payload || payload === '[DONE]') return null;
+    if (payload[0] !== '{') return null;
+    try { return JSON.parse(payload); } catch(_) { return null; }
+  }
+
+  async function _readVolcStreamToBlob(resp) {
+    if (!resp.body) {
+      const t = await resp.text();
+      throw new Error('火山返回为空：' + String(t || '').slice(0, 200));
+    }
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    const audioChunks = [];
+    let sawAudio = false;
+    let lastErr = '';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        const obj = _parseJsonLine(line);
+        if (!obj) continue;
+        if (obj.code && obj.code !== 0 && obj.code !== 20000000) {
+          lastErr = obj.message || ('火山返回错误 code=' + obj.code);
+          continue;
+        }
+        if (typeof obj.data === 'string' && obj.data) {
+          try {
+            audioChunks.push(_b64ToUint8(obj.data));
+            sawAudio = true;
+          } catch(err) {
+            lastErr = '音频分片解码失败';
+          }
+        }
+      }
+    }
+
+    const tail = decoder.decode();
+    if (tail) buffer += tail;
+    if (buffer.trim()) {
+      const obj = _parseJsonLine(buffer.trim());
+      if (obj) {
+        if (obj.code && obj.code !== 0 && obj.code !== 20000000) {
+          lastErr = obj.message || ('火山返回错误 code=' + obj.code);
+        } else if (typeof obj.data === 'string' && obj.data) {
+          audioChunks.push(_b64ToUint8(obj.data));
+          sawAudio = true;
+        }
+      }
+    }
+
+    if (!sawAudio || !audioChunks.length) {
+      throw new Error(lastErr || '火山未返回音频分片');
+    }
+    const bytes = _concatUint8Arrays(audioChunks);
+    return new Blob([bytes], { type: 'audio/mpeg' });
+  }
+
+  async function _apiOnceOpenAICompatible(text, voiceId, cArg) {
+    const c   = cArg || cfg();
+    const url = (c.apiUrl || '').trim();
+    if (!url) throw new Error('未填写 API 地址');
+    const body = { model: c.apiModel || 'tts-1', input: text };
+    const useVoice = (voiceId ?? c.apiVoice ?? '').toString().trim();
+    if (useVoice) body.voice = useVoice;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (c.apiKey || ''),
+      },
+      body: JSON.stringify(body),
+    });
+    if (!resp.ok) {
+      let msg = ''; 
+      try { msg = await resp.text(); } catch(_) {}
+      throw new Error('API ' + resp.status + (msg ? ': ' + msg.slice(0, 200) : ''));
+    }
+    return resp.blob();
+  }
+
+  async function _apiOnceVolcengineV3(text, voiceId, cArg) {
+    const c = cArg || cfg();
+    const url = _volcNormalizeEndpoint(c.apiUrl);
+    const appId = String(c.volcAppId || '').trim();
+    const accessKey = String(c.volcAccessKey || '').trim();
+    const resourceId = String(c.volcResourceId || '').trim();
+    const speaker = String(voiceId ?? c.apiVoice ?? '').trim();
+
+    if (!url) throw new Error('未填写火山 V3 接口地址');
+    if (!appId) throw new Error('请填写火山 App ID');
+    if (!accessKey) throw new Error('请填写火山 Access Key');
+    if (!resourceId) throw new Error('请填写火山 Resource ID');
+    if (!speaker) throw new Error('请填写火山音色 ID');
+
+    const payload = {
+      user: { uid: 'meow_voice_' + Date.now() },
+      req_params: {
+        text: String(text || ''),
+        speaker,
+        audio_params: {
+          format: 'mp3',
+          sample_rate: 24000,
+        },
+      },
+    };
+
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Api-App-Id': appId,
+        'X-Api-Access-Key': accessKey,
+        'X-Api-Resource-Id': resourceId,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!resp.ok) {
+      let msg = '';
+      try { msg = await resp.text(); } catch(_) {}
+      throw new Error('火山 V3 ' + resp.status + (msg ? ': ' + msg.slice(0, 240) : ''));
+    }
+    return _readVolcStreamToBlob(resp);
+  }
+
+
   async function _playApiJobSequence(jobs, opts) {
     const o = Object.assign({ cfg: cfg(), playbackRate: 1, withBgm: false }, opts || {});
     const c = o.cfg || cfg();
@@ -1847,7 +2023,11 @@ ${t}
     }
     // 外接 API 普通模式
     if (c.apiEnabled && c.apiUrl) {
-      try { await speakViaApi(text); }
+      try { await _playApiJobSequence(_splitChunks(text).map(chunk => ({ text: chunk, voiceId: c.apiVoice || '' })), {
+        cfg: c,
+        playbackRate: 1,
+        withBgm: false,
+      }); }
       catch(err) { isReading = false; updateAllBtns(false); toast('🔇 API 朗读失败：' + (err.message||err)); }
       return;
     }
@@ -2645,34 +2825,63 @@ async function _speakWithCfg(rawText, charName, c) {
         </div>
         <div class="mv-sec" id="mvApiSec">
           <h3>🔌 外接语音 API</h3>
-          <p class="mv-hint" style="margin-bottom:8px">兼容 OpenAI TTS 接口（volink / OpenAI / Azure 等），填写后优先使用 API 朗读</p>
+          <p class="mv-hint" style="margin-bottom:8px">保留 OpenAI 兼容接口，同时新增火山语音 V3。播放器、广播剧和 BGM 不用改，只切换外接适配器。</p>
           <label class="mv-toggle" style="margin-bottom:8px">
             <span>启用外接 API</span>
             <div class="mv-sw"><input type="checkbox" id="mvApiEnabled" ${c.apiEnabled?'checked':''}><div class="mv-slider"></div></div>
           </label>
           <div id="mvApiFields" style="${!c.apiEnabled?'display:none':''}">
             <div style="margin-bottom:8px">
-              <label style="font-size:12px;display:block;margin-bottom:4px">API 地址（完整 endpoint）</label>
-              <input type="text" id="mvApiUrl" placeholder="https://api.volink.org/v1/audio/speech" value="${esc(c.apiUrl)}">
+              <label style="font-size:12px;display:block;margin-bottom:4px">提供商</label>
+              <select id="mvApiProvider">
+                <option value="openai_compatible" ${c.apiProvider==='openai_compatible'?'selected':''}>OpenAI 兼容</option>
+                <option value="volcengine_v3" ${c.apiProvider==='volcengine_v3'?'selected':''}>火山语音 V3</option>
+              </select>
             </div>
             <div style="margin-bottom:8px">
-              <label style="font-size:12px;display:block;margin-bottom:4px">API Key</label>
-              <div style="display:flex;gap:6px">
-                <input type="password" id="mvApiKey" placeholder="sk-..." value="${esc(c.apiKey)}" style="flex:1">
-                <button type="button" class="mv-btn" id="mvApiKeyToggle" style="padding:6px 10px;font-size:11px">显示</button>
+              <label style="font-size:12px;display:block;margin-bottom:4px">API 地址（完整 endpoint）</label>
+              <input type="text" id="mvApiUrl" placeholder="${c.apiProvider==='volcengine_v3'?'https://openspeech.bytedance.com/api/v3/tts/unidirectional':'https://api.volink.org/v1/audio/speech'}" value="${esc(c.apiUrl)}">
+            </div>
+            <div id="mvOpenAIFields" style="${c.apiProvider==='volcengine_v3'?'display:none':''}">
+              <div style="margin-bottom:8px">
+                <label style="font-size:12px;display:block;margin-bottom:4px">API Key</label>
+                <div style="display:flex;gap:6px">
+                  <input type="password" id="mvApiKey" placeholder="sk-..." value="${esc(c.apiKey)}" style="flex:1">
+                  <button type="button" class="mv-btn" id="mvApiKeyToggle" style="padding:6px 10px;font-size:11px">显示</button>
+                </div>
+              </div>
+            </div>
+            <div id="mvVolcFields" style="${c.apiProvider==='volcengine_v3'?'':'display:none'}">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                <div>
+                  <label style="font-size:12px;display:block;margin-bottom:4px">App ID</label>
+                  <input type="text" id="mvVolcAppId" placeholder="控制台里的 App ID" value="${esc(c.volcAppId)}">
+                </div>
+                <div>
+                  <label style="font-size:12px;display:block;margin-bottom:4px">Access Key</label>
+                  <div style="display:flex;gap:6px">
+                    <input type="password" id="mvVolcAccessKey" placeholder="控制台里的 Access Token" value="${esc(c.volcAccessKey)}" style="flex:1">
+                    <button type="button" class="mv-btn" id="mvVolcAccessToggle" style="padding:6px 10px;font-size:11px">显示</button>
+                  </div>
+                </div>
+              </div>
+              <div style="margin-bottom:8px">
+                <label style="font-size:12px;display:block;margin-bottom:4px">Resource ID</label>
+                <input type="text" id="mvVolcResourceId" placeholder="seed-tts-2.0" value="${esc(c.volcResourceId || 'seed-tts-2.0')}">
+                <div class="mv-hint" style="margin-top:4px">常用值：seed-tts-2.0 / seed-tts-1.0。要和音色所属模型对应。</div>
               </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
               <div>
-                <label style="font-size:12px;display:block;margin-bottom:4px">模型</label>
-                <input type="text" id="mvApiModel" placeholder="tts-1" value="${esc(c.apiModel)}">
+                <label style="font-size:12px;display:block;margin-bottom:4px">模型 / 备注</label>
+                <input type="text" id="mvApiModel" placeholder="${c.apiProvider==='volcengine_v3'?'火山分支不强依赖此项，可留 tts-1':'tts-1'}" value="${esc(c.apiModel)}">
               </div>
               <div>
                 <label style="font-size:12px;display:block;margin-bottom:4px">
                   音色 ID
                   <button type="button" id="mvApiFetchVoices" style="margin-left:6px;font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid rgba(28,24,18,.15);background:transparent;cursor:pointer">获取列表</button>
                 </label>
-                <input type="text" id="mvApiVoice" placeholder="alloy（留空用默认）" value="${esc(c.apiVoice)}">
+                <input type="text" id="mvApiVoice" placeholder="${c.apiProvider==='volcengine_v3'?'如：zh_female_cancan_moon_bigtts':'alloy（留空用默认）'}" value="${esc(c.apiVoice)}">
                 <select id="mvApiVoiceSel" style="display:none;width:100%;margin-top:4px"><option value="">— 选择音色 —</option></select>
               </div>
             </div>
@@ -2767,8 +2976,54 @@ async function _speakWithCfg(rawText, charName, c) {
     (doc.documentElement || doc.body).appendChild(box);
 
     const q = id => box.querySelector('#' + id);
+    const _apiUi = {
+      setProvider(provider) {
+        const isVolc = provider === 'volcengine_v3';
+        const openaiFields = q('mvOpenAIFields');
+        const volcFields = q('mvVolcFields');
+        const apiUrl = q('mvApiUrl');
+        const apiVoice = q('mvApiVoice');
+        const apiHint = q('mvApiHint');
+        if (openaiFields) openaiFields.style.display = isVolc ? 'none' : '';
+        if (volcFields) volcFields.style.display = isVolc ? '' : 'none';
+        if (apiUrl && !apiUrl.value.trim()) {
+          apiUrl.placeholder = isVolc
+            ? 'https://openspeech.bytedance.com/api/v3/tts/unidirectional'
+            : 'https://api.volink.org/v1/audio/speech';
+        }
+        if (apiVoice) {
+          apiVoice.placeholder = isVolc
+            ? '如：zh_female_cancan_moon_bigtts'
+            : 'alloy（留空用默认）';
+        }
+        if (apiHint && !apiHint.textContent.trim()) {
+          apiHint.textContent = isVolc
+            ? '火山 V3 需要：完整 endpoint + App ID + Access Key + Resource ID + 音色 ID。'
+            : 'OpenAI 兼容：endpoint + API Key + model + voice。';
+        }
+        const voiceSel = q('mvApiVoiceSel');
+        if (voiceSel && isVolc) {
+          voiceSel.style.display = 'none';
+          voiceSel.innerHTML = '<option value="">— 选择音色 —</option>';
+        }
+      },
+      readFormCfg() {
+        return {
+          apiEnabled: true,
+          apiProvider: q('mvApiProvider')?.value || 'openai_compatible',
+          apiUrl: q('mvApiUrl')?.value.trim() || '',
+          apiKey: q('mvApiKey')?.value.trim() || '',
+          apiModel: q('mvApiModel')?.value.trim() || 'tts-1',
+          apiVoice: q('mvApiVoice')?.value.trim() || '',
+          volcAppId: q('mvVolcAppId')?.value.trim() || '',
+          volcAccessKey: q('mvVolcAccessKey')?.value.trim() || '',
+          volcResourceId: q('mvVolcResourceId')?.value.trim() || 'seed-tts-2.0',
+        };
+      }
+    };
     box.querySelector('.mv-close').addEventListener('click', closeModal);
     q('mvCloseBtn').addEventListener('click', closeModal);
+    _apiUi.setProvider(c.apiProvider || 'openai_compatible');
     q('mvRate').addEventListener('input', e => {
       q('mvRateVal').textContent = (+e.target.value).toFixed(1)+'x';
       lsSet(LS.RATE, +e.target.value);
@@ -3021,10 +3276,14 @@ async function _speakWithCfg(rawText, charName, c) {
       lsSet(LS.SKIP_PATTERN, q('mvSkipPattern')?.value || '');
       lsSet(LS.CHAR_MAP,     newMap);
       lsSet(LS.API_ENABLED,  q('mvApiEnabled')?.checked || false);
+      lsSet(LS.API_PROVIDER, q('mvApiProvider')?.value || 'openai_compatible');
       lsSet(LS.API_URL,      q('mvApiUrl')?.value.trim()   || '');
       lsSet(LS.API_KEY,      q('mvApiKey')?.value.trim()   || '');
       lsSet(LS.API_MODEL,    q('mvApiModel')?.value.trim() || 'tts-1');
       lsSet(LS.API_VOICE,    q('mvApiVoice')?.value.trim() || '');
+      lsSet(LS.VOLC_APP_ID, q('mvVolcAppId')?.value.trim() || '');
+      lsSet(LS.VOLC_ACCESS_KEY, q('mvVolcAccessKey')?.value.trim() || '');
+      lsSet(LS.VOLC_RESOURCE_ID, q('mvVolcResourceId')?.value.trim() || 'seed-tts-2.0');
       // 广播剧设置
       const dramaEnabled = q('mvDramaEnabled')?.checked || false;
       lsSet(LS.DRAMA_MODE, dramaEnabled);
@@ -3071,6 +3330,9 @@ async function _speakWithCfg(rawText, charName, c) {
       const f = q('mvApiFields');
       if (f) f.style.display = e.target.checked ? '' : 'none';
     });
+    q('mvApiProvider')?.addEventListener('change', e => {
+      _apiUi.setProvider(e.target.value || 'openai_compatible');
+    });
     // 广播剧开关联动
     q('mvDramaEnabled')?.addEventListener('change', e => {
       const f = q('mvDramaFields');
@@ -3085,13 +3347,23 @@ async function _speakWithCfg(rawText, charName, c) {
       const inp = q('mvApiKey');
       if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
     });
+    q('mvVolcAccessToggle')?.addEventListener('click', () => {
+      const inp = q('mvVolcAccessKey');
+      if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
+    });
     // 获取音色列表
     q('mvApiFetchVoices')?.addEventListener('click', async () => {
+      const hint = q('mvApiHint');
+      const provider = q('mvApiProvider')?.value || 'openai_compatible';
+      if (provider === 'volcengine_v3') {
+        if (hint) hint.textContent = '火山 V3 这版先手填音色 ID。控制台可直接复制音色 ID，避免错误猜接口。';
+        toast('火山 V3 先手填音色 ID');
+        return;
+      }
+
       const rawUrl = q('mvApiUrl')?.value.trim() || '';
       const apiKey = q('mvApiKey')?.value.trim() || '';
-      const hint   = q('mvApiHint');
       if (!rawUrl) { toast('请先填写 API 地址'); return; }
-      // 尝试多种 /voices 端点路径
       const base = rawUrl.replace(/\/(audio\/speech|tts)\/?$/, '').replace(/\/$/, '');
       const voicesCandidates = [
         base + '/voices',
@@ -3110,7 +3382,9 @@ async function _speakWithCfg(rawText, charName, c) {
           if (!resp.ok) continue;
           data = await resp.json();
           break;
-        } catch(_) { continue; }
+        } catch(_) {
+          continue;
+        }
       }
       try {
         if (!data) throw new Error('所有路径均失败，请手动填写音色 ID\n尝试过：' + triedUrls.join('\n'));
@@ -3131,35 +3405,23 @@ async function _speakWithCfg(rawText, charName, c) {
         if (hint) hint.textContent = '❌ ' + (err.message || err) + '（请手动填写音色 ID）';
       }
     });
+
     // 测试 API
     q('mvApiTest')?.addEventListener('click', async () => {
-      const apiUrl  = q('mvApiUrl')?.value.trim();
-      const apiKey  = q('mvApiKey')?.value.trim() || '';
-      const model   = q('mvApiModel')?.value.trim() || 'tts-1';
-      const voice   = q('mvApiVoice')?.value.trim();
       const testTxt = q('mvApiTestTxt')?.value.trim() || '你好，这是朗读测试。';
       const hint    = q('mvApiHint');
-      if (!apiUrl) { toast('请填写 API 地址'); return; }
+      const formCfg = _apiUi.readFormCfg();
+      if (!formCfg.apiUrl) { toast('请填写 API 地址'); return; }
       if (hint) hint.textContent = '⏳ 请求中…';
       try {
-        const bodyObj = { model, input: testTxt };
-        if (voice) bodyObj.voice = voice;
-        const resp = await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
-          body: JSON.stringify(bodyObj),
-        });
-        if (!resp.ok) {
-          const t = await resp.text();
-          throw new Error('HTTP ' + resp.status + ': ' + t.slice(0, 200));
-        }
-        const blob  = await resp.blob();
+        const blob = await _apiOnce(testTxt, formCfg.apiVoice || '', formCfg);
         const audio = new Audio(URL.createObjectURL(blob));
         if (hint) {
           hint.textContent = '▶ 播放中…';
           audio.onended = () => { hint.textContent = '✅ 测试完成'; };
         }
-        audio.play();
+        const p = audio.play();
+        if (p && typeof p.catch === 'function') await p;
       } catch(err) {
         const msg = err.message || String(err);
         if (hint) hint.textContent = '❌ ' + msg;
