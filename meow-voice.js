@@ -562,19 +562,33 @@ ${t}
   function _saveBgmLibrary(lib) {
     const ensured = _ensureBgmLibrary(lib); // lrc 字段在这里被剥离
     _bgmLibCache = ensured;                 // 立即更新内存缓存
-    // 写入 localStorage 并验证
-    try {
-      const json = JSON.stringify(ensured);
-      W.localStorage.setItem(LS.BGM_LIBRARY, json);
-      // 验证：读回来对比长度，防止静默失败
-      const check = W.localStorage.getItem(LS.BGM_LIBRARY);
-      if (!check || check.length !== json.length) {
-        // 回退：尝试 window.localStorage（排除 W 取错的情况）
-        try { window.localStorage.setItem(LS.BGM_LIBRARY, json); } catch(e2) {}
+    const json = JSON.stringify(ensured);
+    // localStorage 5MB 配额保护：写入失败时清理旧歌词缓存再重试
+    const _tryWrite = () => {
+      try {
+        W.localStorage.setItem(LS.BGM_LIBRARY, json);
+        return true;
+      } catch(e) { return false; }
+    };
+    if (!_tryWrite()) {
+      // 清理所有歌词缓存腾出空间
+      const toDelete = [];
+      for (let i = 0; i < W.localStorage.length; i++) {
+        const k = W.localStorage.key(i);
+        if (k && k.startsWith('meow_voice_lrc_')) toDelete.push(k);
       }
-    } catch(e) {
-      // 写入失败时内存缓存仍正确，本次会话不受影响
-      try { window.localStorage.setItem(LS.BGM_LIBRARY, JSON.stringify(ensured)); } catch(e2) {}
+      toDelete.forEach(k => { try { W.localStorage.removeItem(k); } catch(e) {} });
+      if (!_tryWrite()) {
+        // 实在写不进去就用 sessionStorage 临时保住本次会话
+        try { W.sessionStorage.setItem(LS.BGM_LIBRARY, json); } catch(e) {}
+        toast('⚠️ 曲库已满，请删除一些旧歌曲（localStorage 超出 5MB 限制）');
+      }
+    }
+    // 验证写入成功
+    const check = W.localStorage.getItem(LS.BGM_LIBRARY);
+    if (check && check.length !== json.length) {
+      // 数据不完整，再试一次
+      try { W.localStorage.setItem(LS.BGM_LIBRARY, json); } catch(e) {}
     }
   }
 
@@ -890,7 +904,7 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-embed.empty{display:none}
       #meow-voice-bgm-dock.edge-right.collapsed{transform:none}
       #meow-voice-bgm-dock.edge-left.collapsed{transform:none}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-panel{opacity:0;pointer-events:none}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-panel{display:none}
       #meow-voice-bgm-dock.collapsed .mv-bgm-close{display:none}
       #meow-voice-bgm-dock.collapsed .mv-bgm-shell{min-height:112px}
       #meow-voice-bgm-dock.collapsed .mv-bgm-open-settings{right:58px;top:8px}
