@@ -1403,34 +1403,30 @@ default: return emoji||'';
 }
 #${ID} .phAppTitle{
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  overflow:hidden; line-height:1.2;
+  overflow:hidden; gap:0; line-height:1.25;
 }
 #${ID} .phAppTitleMain{
   color:var(--ph-text); font-weight:600; font-size:14px;
   text-align:center; letter-spacing:.2px;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  max-width:100%; transition:font-size .15s, transform .15s;
+  max-width:100%; transition:font-size .18s;
 }
 #${ID} .phAppSubTitle{
   display:none; align-items:center; gap:3px;
-  font-size:11px; color:rgba(7,193,96,.9); font-weight:400;
-  white-space:nowrap; margin-top:1px; letter-spacing:.1px;
+  font-size:10.5px; color:var(--ph-text); opacity:.52; font-weight:400;
+  white-space:nowrap; letter-spacing:.15px; margin-top:2px;
 }
-#${ID} .phAppSubTitle.show{
-  display:flex;
-}
-#${ID} .phAppTitle.hasSubTitle .phAppTitleMain{
-  font-size:12.5px;
-}
+#${ID} .phAppSubTitle.show{ display:flex; }
+#${ID} .phAppTitle.hasSubTitle .phAppTitleMain{ font-size:13px; }
 #${ID} .phSTDot{
-  display:inline-block; width:4px; height:4px; border-radius:50%;
-  background:rgba(7,193,96,.85);
+  display:inline-block; width:3px; height:3px; border-radius:50%;
+  background:currentColor;
   animation:phSTBounce 1.1s ease-in-out infinite;
 }
-#${ID} .phSTDot:nth-child(2){ animation-delay:.18s; }
-#${ID} .phSTDot:nth-child(3){ animation-delay:.36s; }
+#${ID} .phSTDot:nth-child(2){ animation-delay:.2s; }
+#${ID} .phSTDot:nth-child(3){ animation-delay:.4s; }
 @keyframes phSTBounce{
-  0%,60%,100%{ transform:translateY(0); opacity:.4; }
+  0%,60%,100%{ transform:translateY(0); opacity:.35; }
   30%{ transform:translateY(-3px); opacity:1; }
 }
 #${ID} .phNavBtn{
@@ -4255,6 +4251,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             if (cspage === 'autoSummary') { return; } // toggle only, no separate page
             state._innerStack.push(() => _renderCharSettingsPage(nid));
             if (cspage === 'charProfile') _renderCharProfileEdit(nid);
+            else if (cspage === 'charBehavior') _renderCharBehaviorPage(nid);
             else if (cspage === 'chatBg') _renderChatBgSettings(nid);
             else if (cspage === 'reminders') _renderRemindersPage(nid);
             else if (cspage === 'pokeSettings') _renderPokeSettingsPage(nid);
@@ -11004,6 +11001,11 @@ const npc = _wxGetChatTargetMeta(npcId);
               <div class="wxCSName">角色设定</div>
               <div class="wxCSArrow">›</div>
             </div>
+            <div class="wxCSItem" data-act="wxCSNav" data-cspage="charBehavior" data-npcid="${esc(contactId)}">
+              <div class="wxCSIco">🎭</div>
+              <div class="wxCSName">行为参数</div>
+              <div class="wxCSArrow">›</div>
+            </div>
             <div class="wxCSItem" data-act="wxCSNav" data-cspage="chatBg" data-npcid="${esc(contactId)}">
               <div class="wxCSIco">🖼️</div>
               <div class="wxCSName">聊天背景</div>
@@ -11062,6 +11064,164 @@ const npc = _wxGetChatTargetMeta(npcId);
       }
 
       /* --- 子渲染：角色设定编辑页 --- */
+      // ========== 角色行为参数页 ==========
+      function _renderCharBehaviorPage(contactId){
+        var body = root.querySelector('[data-ph="appBody"]');
+        if (!body) return;
+        var b = _loadCharBehavior(contactId);
+        var s = _loadCharState(contactId);
+        var db = loadContactsDB();
+        var npc = findContactById(db, contactId) || { name: String(contactId) };
+
+        try{ var t = root.querySelector('[data-ph="appTitle"]'); if(t) t.textContent='行为参数'; }catch(e){}
+        try{ var sp = root.querySelector('.phAppBarSpacer'); if(sp) sp.innerHTML=''; }catch(e){}
+
+        function sliderRow(label, key, val){
+          return `<div style="padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+              <span style="font-size:13px;color:rgba(20,24,28,.8);">${label}</span>
+              <span style="font-size:12px;color:rgba(20,24,28,.4);" data-sl-val="${key}">${Math.round(val*100)}%</span>
+            </div>
+            <input type="range" min="0" max="100" value="${Math.round(val*100)}" data-sl="${key}"
+              style="width:100%;accent-color:#07c160;cursor:pointer;"/>
+          </div>`;
+        }
+        function selectRow(label, key, opts, labels, cur){
+          var optsHtml = opts.map(function(o,i){ return `<option value="${o}"${o===cur?' selected':''}>${labels[i]}</option>`; }).join('');
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);">
+            <span style="font-size:13px;color:rgba(20,24,28,.8);">${label}</span>
+            <select data-sel="${key}" style="font-size:12px;border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:4px 8px;background:rgba(255,255,255,.9);outline:none;max-width:140px;">${optsHtml}</select>
+          </div>`;
+        }
+
+        // 状态面板
+        var moodEmoji={'开心':'😄','兴奋':'🤩','平静':'😌','害羞':'😳','疲惫':'😴','委屈':'🥺','烦躁':'😤','生气':'😠'};
+        var bondColors={'疏远':'#aaa','普通':'#888','亲近':'#07c160','暧昧':'#f39c12','冷战中':'#e74c3c'};
+        var energyPct = s.energy || 0;
+        var energyColor = energyPct > 60 ? '#07c160' : energyPct > 30 ? '#f39c12' : '#e74c3c';
+
+        var html = `<div style="padding-bottom:20px;">
+          <!-- 状态面板 -->
+          <div style="margin:14px 14px 0;padding:12px 14px;background:rgba(255,255,255,.88);border-radius:12px;border:1px solid rgba(0,0,0,.07);">
+            <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:8px;letter-spacing:.3px;">当前状态</div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <span style="font-size:22px;">${moodEmoji[s.mood]||'😌'}</span>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.85);">${esc(npc.name)}</div>
+                <div style="font-size:11.5px;color:rgba(20,24,28,.5);margin-top:1px;">情绪：${esc(s.mood)} &nbsp;·&nbsp; <span style="color:${bondColors[s.bond]||'#888'};">关系：${esc(s.bond)}</span></div>
+              </div>
+              <div style="margin-left:auto;text-align:right;">
+                <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:3px;">精力</div>
+                <div style="width:72px;height:6px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden;">
+                  <div style="height:100%;width:${energyPct}%;background:${energyColor};border-radius:3px;transition:width .3s;"></div>
+                </div>
+                <div style="font-size:10px;color:rgba(20,24,28,.35);margin-top:2px;">${energyPct}%</div>
+              </div>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:6px;">
+              <button data-act="cbResetState" data-npcid="${esc(contactId)}" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);color:rgba(20,24,28,.6);cursor:pointer;">重置状态</button>
+              <button data-act="cbSetMood" data-npcid="${esc(contactId)}" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);color:rgba(20,24,28,.6);cursor:pointer;">手动设置情绪</button>
+            </div>
+          </div>
+
+          <!-- 行为参数 -->
+          <div style="margin:12px 14px 0;font-size:11px;color:rgba(20,24,28,.4);letter-spacing:.3px;padding:0 0 4px;">行为参数</div>
+          <div style="background:rgba(255,255,255,.88);border-radius:12px;border:1px solid rgba(0,0,0,.07);overflow:hidden;margin:0 14px;">
+            ${sliderRow('短句比例', 'shortSentenceRatio', b.shortSentenceRatio||0.5)}
+            ${sliderRow('连发概率', 'burstProbability', b.burstProbability||0.35)}
+            ${sliderRow('情绪外放', 'emotionExpressive', b.emotionExpressive||0.5)}
+            ${selectRow('被冒犯时', 'defenseStyle', DEFENSE_STYLES, DEFENSE_STYLES, b.defenseStyle||'解释')}
+            ${selectRow('安慰方式', 'comfortStyle', COMFORT_STYLES, COMFORT_STYLES, b.comfortStyle||'共情抱抱')}
+            ${selectRow('主动分享', 'proactiveShare', PROACTIVE_OPTS, PROACTIVE_LABELS, b.proactiveShare||'weekly')}
+            ${selectRow('Emoji 用量', 'emojiUsage', EMOJI_OPTS, EMOJI_LABELS, b.emojiUsage||'normal')}
+            ${selectRow('引用习惯', 'quoteHabit', QUOTE_OPTS, QUOTE_LABELS, b.quoteHabit||'sometimes')}
+          </div>
+          <button data-act="cbSaveBehavior" data-npcid="${esc(contactId)}"
+            style="display:block;width:calc(100% - 28px);margin:12px 14px 0;padding:12px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
+        </div>`;
+        body.innerHTML = html;
+
+        // 滑块实时更新数值显示
+        body.querySelectorAll('input[data-sl]').forEach(function(inp){
+          inp.addEventListener('input', function(){
+            var k = inp.getAttribute('data-sl');
+            var display = body.querySelector('[data-sl-val="'+k+'"]');
+            if (display) display.textContent = inp.value + '%';
+          });
+        });
+
+        // 保存按钮
+        body.querySelector('[data-act="cbSaveBehavior"]')?.addEventListener('click', function(){
+          var nid = this.getAttribute('data-npcid') || contactId;
+          var bNew = _loadCharBehavior(nid);
+          body.querySelectorAll('input[data-sl]').forEach(function(inp){
+            var k = inp.getAttribute('data-sl');
+            bNew[k] = Number(inp.value) / 100;
+          });
+          body.querySelectorAll('select[data-sel]').forEach(function(sel){
+            var k = sel.getAttribute('data-sel');
+            bNew[k] = sel.value;
+          });
+          _saveCharBehavior(nid, bNew);
+          try{ toast('行为参数已保存'); }catch(e){}
+        });
+
+        // 重置状态
+        body.querySelector('[data-act="cbResetState"]')?.addEventListener('click', function(){
+          var nid = this.getAttribute('data-npcid') || contactId;
+          _saveCharState(nid, { mood:'平静', energy:80, bond:'普通', silentUntil:0, silentReason:'', lastActiveAt:0 });
+          try{ toast('状态已重置'); }catch(e){}
+          _renderCharBehaviorPage(nid);
+        });
+
+        // 手动设情绪
+        body.querySelector('[data-act="cbSetMood"]')?.addEventListener('click', function(){
+          var nid = this.getAttribute('data-npcid') || contactId;
+          var cur = _loadCharState(nid);
+          var moodOptHtml = MOOD_ORDER.map(function(m){
+            return `<option value="${m}"${m===cur.mood?' selected':''}>${m}</option>`;
+          }).join('');
+          var bondOptHtml = ['疏远','普通','亲近','暧昧','冷战中'].map(function(bd){
+            return `<option value="${bd}"${bd===cur.bond?' selected':''}>${bd}</option>`;
+          }).join('');
+          var inner = `
+            <div style="font-size:14px;font-weight:600;margin-bottom:12px;">手动设置状态</div>
+            <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+              <span style="font-size:13px;color:rgba(20,24,28,.7);min-width:36px;">情绪</span>
+              <select data-el="moodSel" style="flex:1;font-size:13px;border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:6px 8px;outline:none;">${moodOptHtml}</select>
+            </div>
+            <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+              <span style="font-size:13px;color:rgba(20,24,28,.7);min-width:36px;">关系</span>
+              <select data-el="bondSel" style="flex:1;font-size:13px;border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:6px 8px;outline:none;">${bondOptHtml}</select>
+            </div>
+            <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+              <span style="font-size:13px;color:rgba(20,24,28,.7);min-width:36px;">精力</span>
+              <input type="range" data-el="energyRange" min="0" max="100" value="${cur.energy||80}" style="flex:1;accent-color:#07c160;"/>
+              <span data-el="energyLabel" style="font-size:12px;color:rgba(20,24,28,.4);min-width:28px;">${cur.energy||80}%</span>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button data-el="moodSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">确定</button>
+              <button data-el="moodCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button>
+            </div>`;
+          var ov = _cpShowOverlay(inner);
+          ov.querySelector('[data-el="energyRange"]').addEventListener('input', function(){
+            ov.querySelector('[data-el="energyLabel"]').textContent = this.value + '%';
+          });
+          ov.querySelector('[data-el="moodCancel"]').addEventListener('click', function(){ ov.remove(); });
+          ov.querySelector('[data-el="moodSave"]').addEventListener('click', function(){
+            var sNew = _loadCharState(nid);
+            sNew.mood   = ov.querySelector('[data-el="moodSel"]').value;
+            sNew.bond   = ov.querySelector('[data-el="bondSel"]').value;
+            sNew.energy = Number(ov.querySelector('[data-el="energyRange"]').value);
+            sNew.silentUntil = 0; sNew.silentReason = '';
+            _saveCharState(nid, sNew);
+            ov.remove();
+            try{ toast('状态已更新'); }catch(e){}
+            _renderCharBehaviorPage(nid);
+          });
+        });
+      }
+
       function _renderCharProfileEdit(contactId){
         const body = root.querySelector('[data-ph="appBody"]');
         if (!body) return;
@@ -11875,6 +12035,18 @@ const npc = _wxGetChatTargetMeta(npcId);
       function buildSystemPrompt(npcId){
         var parts = [];
 
+        // === 0. [角色实时状态] B3：最高优先级，放最前面 ===
+        try{
+          var stateBlock = _buildStatePromptBlock(npcId);
+          if (stateBlock) parts.push(stateBlock);
+        }catch(e){}
+
+        // === 0.5 [行为风格] C：角色行为参数 ===
+        try{
+          var behaviorBlock = _buildBehaviorPromptBlock(npcId);
+          if (behaviorBlock) parts.push(behaviorBlock);
+        }catch(e){}
+
         // === 1. [世界观]：优先级：酒馆世界书条目内容 > 本地世界书 role tab > 小手机全局世界书 ===
 
         // C2-fix: 从缓存读取酒馆世界书条目的实际内容
@@ -12010,7 +12182,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           var sub  = root.querySelector('[data-ph="appSubTitle"]');
           var txt  = root.querySelector('[data-ph="appSubTitleText"]');
           if (!sub) return;
-          if (txt) txt.textContent = (npcName ? npcName + ' ' : '') + '正在输入…';
+          if (txt) txt.textContent = '正在输入…';
           sub.classList.add('show');
           if (wrap) wrap.classList.add('hasSubTitle');
         }catch(e){}
@@ -12051,6 +12223,173 @@ const npc = _wxGetChatTargetMeta(npcId);
       // ===== 随机延迟辅助 =====
       function _randomBetween(min, max){
         return Math.floor(min + Math.random() * (max - min));
+      }
+
+      // ========== 【模块 B3】角色状态系统 ==========
+      // 存储键：meow_phone 前缀复用 _phLoad/_phSave（按 chatUID 隔离）
+      var MOOD_ORDER = ['开心','兴奋','平静','害羞','疲惫','委屈','烦躁','生气'];
+
+      function _loadCharState(npcId){
+        return _phLoad('charstate_'+String(npcId), {
+          mood:'平静', energy:80, bond:'普通',
+          silentUntil:0, silentReason:'',
+          lastActiveAt:0
+        });
+      }
+      function _saveCharState(npcId, s){
+        _phSave('charstate_'+String(npcId), s);
+      }
+
+      // 根据用户消息 + 时间更新角色状态（纯规则，不调 API）
+      function _updateCharStateFromMsg(npcId, userText){
+        var s = _loadCharState(npcId);
+        var now = Date.now();
+        var txt = String(userText || '').toLowerCase();
+        var idx = MOOD_ORDER.indexOf(s.mood);
+        if (idx < 0) idx = 2; // 默认平静
+
+        // ---- 情绪推断 ----
+        // 正向：往开心/兴奋方向移
+        if (/谢谢|感谢|好棒|厉害|喜欢|爱你|开心|太好了|哈哈|😊|❤|💕|好可爱|好帅|夸|赞/.test(txt)){
+          idx = Math.max(0, idx - 1);
+          s.energy = Math.min(100, s.energy + 5);
+          // bond 暖化
+          var bondOrder = ['疏远','普通','亲近','暧昧','冷战中'];
+          var bi = bondOrder.indexOf(s.bond);
+          if (bi >= 0 && bi < 3) s.bond = bondOrder[Math.min(3, bi + 1)];
+        }
+        // 负向：往烦躁/生气方向推
+        if (/烦|讨厌|滚|闭嘴|傻|笨|没用|骗|失望|难受|哭泣|气死|你去死|废物|垃圾/.test(txt)){
+          idx = Math.min(MOOD_ORDER.length - 1, idx + 2);
+          s.energy = Math.max(0, s.energy - 12);
+        }
+        // 关心：轻微回暖
+        if (/还好吗|你怎么了|辛苦了|多休息|照顾好自己|没事吧|加油/.test(txt)){
+          s.energy = Math.min(100, s.energy + 4);
+          if (idx > 2) idx = Math.max(2, idx - 1);
+        }
+        // 冷淡/敷衍：能量小降
+        if (/哦|嗯|ok|随便|无所谓|算了|不知道/.test(txt) && txt.length <= 4){
+          s.energy = Math.max(0, s.energy - 3);
+          if (idx < 4) idx = Math.min(4, idx + 1); // 向疲惫走
+        }
+
+        // ---- 时间段影响 ----
+        var hour = new Date().getHours();
+        if (hour >= 23 || hour < 5){
+          s.energy = Math.max(0, s.energy - 8); // 深夜消耗大
+        } else if (hour >= 22){
+          s.energy = Math.max(0, s.energy - 4);
+        } else if (hour >= 7 && hour <= 9){
+          s.energy = Math.min(100, s.energy + 3); // 早上精力回复
+        }
+
+        // ---- 每条消息自然消耗 ----
+        s.energy = Math.max(0, s.energy - 2);
+
+        // ---- 触发沉默窗口 ----
+        if (s.silentUntil < now){ // 当前不在沉默期才能重新触发
+          var newMood = MOOD_ORDER[Math.max(0, Math.min(MOOD_ORDER.length-1, idx))];
+          if (s.energy < 18 || newMood === '生气'){
+            var silentMin = newMood === '生气' ? _randomBetween(4, 12) : _randomBetween(2, 6);
+            s.silentUntil = now + silentMin * 60000;
+            s.silentReason = newMood === '生气' ? '生气' : '疲惫';
+          }
+        }
+
+        // ---- 沉默冷却后自动恢复 ----
+        // （energy 每段沉默后稍微恢复，mood 向平静靠）
+        if (s.silentUntil > 0 && now > s.silentUntil + 60000){
+          s.energy = Math.min(100, s.energy + 15);
+          if (idx > 2) idx = Math.max(2, idx - 1);
+          // 已经冷静了，清除标记
+          if (s.silentUntil < now) s.silentReason = '';
+        }
+
+        s.mood = MOOD_ORDER[Math.max(0, Math.min(MOOD_ORDER.length-1, idx))];
+        s.lastActiveAt = now;
+        _saveCharState(npcId, s);
+        return s;
+      }
+
+      // 构建状态块文字（注入 system prompt 用，极短）
+      function _buildStatePromptBlock(npcId){
+        try{
+          var s = _loadCharState(npcId);
+          var energyBar = Math.round(s.energy / 20); // 0–5
+          var energyStr = '▓'.repeat(energyBar) + '░'.repeat(5 - energyBar) + ' ' + s.energy + '%';
+          var moodMap = {
+            '开心':'😄 开心','兴奋':'🤩 兴奋','平静':'😌 平静','害羞':'😳 害羞',
+            '疲惫':'😴 疲惫','委屈':'🥺 委屈','烦躁':'😤 烦躁','生气':'😠 生气'
+          };
+          var moodLine = moodMap[s.mood] || s.mood;
+          // 根据 mood+energy 生成行为提示
+          var hint = '';
+          if (s.mood === '生气') hint = '→ 情绪激动，可能短句、语气冲，若继续被激怒可能会不回复';
+          else if (s.mood === '烦躁') hint = '→ 有些不耐烦，回复偏短，不想多解释';
+          else if (s.mood === '疲惫') hint = '→ 没精神，回复简短，语气较平淡';
+          else if (s.mood === '委屈') hint = '→ 心里有些难受，可能话少，偶尔透露情绪';
+          else if (s.mood === '害羞') hint = '→ 有点腼腆，可能回避话题，偶尔用 "…" 或 "怎么突然问这个"';
+          else if (s.mood === '开心') hint = '→ 状态好，活泼，可能主动多说';
+          else if (s.mood === '兴奋') hint = '→ 很亢奋，短句多，感叹号多，可能连发';
+          else if (s.energy < 30) hint = '→ 精力低，回复简短，语气平';
+          else hint = '→ 状态正常，正常聊天';
+
+          var silentNote = '';
+          if (s.silentUntil > Date.now()){
+            var leftMin = Math.ceil((s.silentUntil - Date.now()) / 60000);
+            silentNote = '\n⚠️ 正处于短暂沉默期（还有约 '+leftMin+' 分钟），请先不回复，或仅用一句极短的话应付';
+          }
+
+          return '【当前状态（你自己的实时状态，最高优先级）】\n情绪：' + moodLine + ' | 精力：' + energyStr + ' | 关系：' + s.bond + '\n' + hint + silentNote;
+        }catch(e){ return ''; }
+      }
+
+      // ========== 【模块 C】角色行为参数 ==========
+      var DEFENSE_STYLES  = ['沉默','反讽','转移话题','解释','撒娇','激烈反驳'];
+      var COMFORT_STYLES  = ['讲道理','共情抱抱','转移注意力','给解决方案','冷处理'];
+      var PROACTIVE_OPTS  = ['daily','weekly','rare'];
+      var PROACTIVE_LABELS= ['每天主动分享','每周偶尔','几乎不主动'];
+      var EMOJI_OPTS      = ['rare','normal','many'];
+      var EMOJI_LABELS    = ['很少用','正常','频繁用'];
+      var QUOTE_OPTS      = ['never','sometimes','often'];
+      var QUOTE_LABELS    = ['从不引用','偶尔引用','经常引用'];
+
+      function _loadCharBehavior(npcId){
+        return _phLoad('charbehavior_'+String(npcId), {
+          shortSentenceRatio: 0.5,  // 短句比例
+          burstProbability:   0.35, // 连发概率
+          emotionExpressive:  0.5,  // 情绪外放程度
+          defenseStyle:      '解释',
+          comfortStyle:      '共情抱抱',
+          proactiveShare:    'weekly',
+          emojiUsage:        'normal',
+          quoteHabit:        'sometimes'
+        });
+      }
+      function _saveCharBehavior(npcId, b){
+        _phSave('charbehavior_'+String(npcId), b);
+      }
+
+      // 将行为参数转为注入 system prompt 的短文本
+      function _buildBehaviorPromptBlock(npcId){
+        try{
+          var b = _loadCharBehavior(npcId);
+          var lines = [];
+          if (b.shortSentenceRatio >= 0.7) lines.push('说话习惯：爱发短句，一次只说一两个字或一小句');
+          else if (b.shortSentenceRatio <= 0.3) lines.push('说话习惯：句子偏长，表达完整，不爱碎碎念');
+          if (b.burstProbability >= 0.6) lines.push('发消息风格：经常连发多条，想到什么说什么');
+          else if (b.burstProbability <= 0.2) lines.push('发消息风格：一次说完，很少连发');
+          if (b.emotionExpressive >= 0.7) lines.push('情绪表达：情绪很外放，容易感叹、激动或直接发怒');
+          else if (b.emotionExpressive <= 0.3) lines.push('情绪表达：情绪内敛，不容易表现出来，平时看起来很稳');
+          lines.push('被误解/被冒犯时：' + b.defenseStyle);
+          lines.push('安慰用户时：' + b.comfortStyle);
+          var emojiLabel = EMOJI_LABELS[EMOJI_OPTS.indexOf(b.emojiUsage)] || '正常';
+          lines.push('Emoji 使用频率：' + emojiLabel);
+          var quoteLabel = QUOTE_LABELS[QUOTE_OPTS.indexOf(b.quoteHabit)] || '偶尔引用';
+          lines.push('引用回复习惯：' + quoteLabel);
+          return '【角色行为风格（请严格遵守）】\n' + lines.join('\n');
+        }catch(e){ return ''; }
       }
 
       // ===== 【气泡长按菜单系统 V2】=====
@@ -13575,6 +13914,10 @@ const npc = _wxGetChatTargetMeta(npcId);
           requestAnimationFrame(()=>{ msgs.scrollTop = msgs.scrollHeight; });
         }
 
+        // ===【B3】更新角色状态（纯规则，不调 API）===
+        var charStateNow = null;
+        try{ charStateNow = _updateCharStateFromMsg(npcId, text); }catch(e){}
+
         // === AI 自动回复 ===
         try{
           const cfg = phoneLoadSettings();
@@ -13587,6 +13930,32 @@ const npc = _wxGetChatTargetMeta(npcId);
             return;
           }
           if (isBlacklisted(npc.name) || isBlacklisted(npc.id)) return;
+
+          // ===【B3】沉默期检测：处于沉默期则延迟回复 ===
+          if (charStateNow && charStateNow.silentUntil > Date.now()){
+            var leftMs = charStateNow.silentUntil - Date.now();
+            var seqBeforeSilent = PhoneAI._replySeqId;
+            setTimeout(function(){
+              // 沉默期结束后，追加一条"回神"消息
+              if (PhoneAI._replySeqId !== seqBeforeSilent) return; // 已切走
+              var sAfter = _loadCharState(npcId);
+              sAfter.mood = (sAfter.mood === '生气') ? '烦躁' : '平静';
+              sAfter.energy = Math.min(100, sAfter.energy + 12);
+              sAfter.silentUntil = 0;
+              sAfter.silentReason = '';
+              _saveCharState(npcId, sAfter);
+              var breakLines = ['……', '缓了一下', '刚才有点上头', '好了冷静一下', '……回来了'];
+              var breakMsg = breakLines[Math.floor(Math.random() * breakLines.length)];
+              var msgsE = root.querySelector('[data-ph="chatMsgs"]');
+              if (msgsE){
+                pushLog(npcId, 'them', breakMsg);
+                bumpThread(npcId, { lastMsg:breakMsg, lastTime:_now(), unread:0 });
+                _wxAppendBubble(msgsE, npc, 'them', breakMsg, _now());
+                requestAnimationFrame(function(){ msgsE.scrollTop = msgsE.scrollHeight; });
+              }
+            }, leftMs + _randomBetween(500, 1500));
+            return; // 沉默期内不触发正常 AI 回复
+          }
 
           // 有请求在跑，先 abort
           if (PhoneAI._requesting){ PhoneAI.abort(); }
