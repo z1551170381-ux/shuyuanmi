@@ -3183,9 +3183,12 @@ async function _speakWithCfg(rawText, charName, c) {
       }
       el.style.display = '';
       const sourceBadge = {
-        netease: '<span style="font-size:9px;background:rgba(200,50,50,.12);color:rgba(200,50,50,.8);border-radius:3px;padding:1px 4px;margin-left:4px">网易云</span>',
-        qq:      '<span style="font-size:9px;background:rgba(50,100,200,.12);color:rgba(50,100,200,.8);border-radius:3px;padding:1px 4px;margin-left:4px">QQ</span>',
-        lrclib:  '<span style="font-size:9px;background:rgba(80,150,80,.12);color:rgba(80,150,80,.8);border-radius:3px;padding:1px 4px;margin-left:4px">lrclib</span>',
+        netease: '<span style="font-size:9px;background:rgba(200,50,50,.15);color:rgba(180,30,30,.9);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600">网易云</span>',
+        qq:      '<span style="font-size:9px;background:rgba(30,120,255,.15);color:rgba(20,100,220,.9);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600">QQ</span>',
+        tencent: '<span style="font-size:9px;background:rgba(30,120,255,.15);color:rgba(20,100,220,.9);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600">QQ</span>',
+        kugou:   '<span style="font-size:9px;background:rgba(30,180,100,.15);color:rgba(20,150,70,.9);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600">酷狗</span>',
+        kuwo:    '<span style="font-size:9px;background:rgba(255,140,0,.15);color:rgba(200,100,0,.9);border-radius:3px;padding:1px 5px;margin-left:4px;font-weight:600">酷我</span>',
+        lrclib:  '<span style="font-size:9px;background:rgba(80,150,80,.12);color:rgba(80,150,80,.8);border-radius:3px;padding:1px 5px;margin-left:4px">lrclib</span>',
       };
       el.innerHTML = songs.map((s, i) => {
         const badge = sourceBadge[s.source] || '';
