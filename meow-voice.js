@@ -302,7 +302,7 @@
       let html = '';
       for (let i = start; i <= end; i++) {
         const isCur = i === cur;
-        html += `<div class="mv-bgm-lrc-line${isCur?' mv-bgm-lrc-cur':''}" style="text-align:center;padding:2px 8px;box-sizing:border-box;transition:all .3s ease;font-size:${isCur?'15px':'12px'};font-weight:${isCur?'700':'400'};color:${isCur?'rgba(44,57,63,.9)':'rgba(44,57,63,.32)'};line-height:${isCur?'1.7':'1.5'}">${esc(_bgmLyricLines[i].text)}</div>`;
+        html += `<div class="mv-bgm-lrc-line${isCur?' mv-bgm-lrc-cur':''}" style="text-align:center;padding:1px 8px;box-sizing:border-box;transition:all .3s ease;font-size:${isCur?'13px':'11px'};font-weight:${isCur?'700':'400'};color:${isCur?'rgba(44,57,63,.9)':'rgba(44,57,63,.32)'};line-height:${isCur?'1.6':'1.4'}">${esc(_bgmLyricLines[i].text)}</div>`;
       }
       wrap.innerHTML = html;
     } else {
@@ -313,7 +313,7 @@
       let html = '';
       for (let i = start; i <= end; i++) {
         const isCur = i === displayCur;
-        html += `<div class="mv-bgm-lrc-line${isCur?' mv-bgm-lrc-cur':''}" style="text-align:center;padding:2px 8px;box-sizing:border-box;transition:all .3s ease;font-size:${isCur?'15px':'12px'};font-weight:${isCur?'700':'400'};color:${isCur?'rgba(44,57,63,.9)':'rgba(44,57,63,.32)'};line-height:${isCur?'1.7':'1.5'}">${esc(_bgmLyricLines[i].text)}</div>`;
+        html += `<div class="mv-bgm-lrc-line${isCur?' mv-bgm-lrc-cur':''}" style="text-align:center;padding:1px 8px;box-sizing:border-box;transition:all .3s ease;font-size:${isCur?'13px':'11px'};font-weight:${isCur?'700':'400'};color:${isCur?'rgba(44,57,63,.9)':'rgba(44,57,63,.32)'};line-height:${isCur?'1.6':'1.4'}">${esc(_bgmLyricLines[i].text)}</div>`;
       }
       wrap.style.overflowY = 'hidden';
       wrap.innerHTML = html;
@@ -874,7 +874,7 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-group-chip.active{background:#434f55;color:#fff}
       #meow-voice-bgm-dock .mv-bgm-pick-row{margin-top:7px}
       #meow-voice-bgm-dock .mv-bgm-track-select{width:100%;border:1px solid rgba(120,125,128,.18);border-radius:10px;padding:6px 9px;background:rgba(255,255,255,.74);font-size:11px;color:#334249;box-sizing:border-box}
-      #meow-voice-bgm-dock .mv-bgm-lyric{margin-top:8px;min-height:90px;max-height:150px;overflow:hidden;padding:6px 2px;border-radius:14px;background:rgba(255,255,255,.36);border:1px solid rgba(225,225,219,.78);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
+      #meow-voice-bgm-dock .mv-bgm-lyric{margin-top:8px;min-height:80px;max-height:130px;overflow:hidden;padding:6px 2px;border-radius:14px;background:rgba(255,255,255,.36);border:1px solid rgba(225,225,219,.78);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
       #meow-voice-bgm-dock .mv-bgm-lyric:empty::before{content:'歌词';font-size:11px;color:rgba(44,57,63,.28);font-style:italic}
       #meow-voice-bgm-dock .mv-bgm-lrc-line{width:100%;padding:1px 8px;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       #meow-voice-bgm-dock .mv-bgm-lrc-cur{white-space:normal;word-break:break-all}
@@ -1378,35 +1378,31 @@ ${t}
         _loadBgmLyric(trk2 || { url: sourceUrl }).then(() => {
           _bgmLyricIdx = 0;
           _renderLyricInDock(doc.getElementById('meow-voice-bgm-dock'));
-          // iframe 模式：按歌词实际时间间隔自动滚动
-          if (_bgmIframeTimer) clearInterval(_bgmIframeTimer);
-          _bgmIframeTimer = setInterval(() => {
+          // iframe 模式：用挂钟时间近似同步歌词（从 iframe 加载时刻起）
+          if (_bgmIframeTimer) { clearTimeout(_bgmIframeTimer); _bgmIframeTimer = null; }
+          const _iframeStartWall = Date.now();
+          const _iframeFirstMs   = _bgmLyricLines[0]?.ms || 0;
+          const schedIframeLyric = () => {
             if (!_bgmLyricLines.length) return;
-            // 用相邻行时间差驱动；默认间隔约3秒
-            const next = _bgmLyricIdx + 1;
-            if (next >= _bgmLyricLines.length) {
-              clearInterval(_bgmIframeTimer); _bgmIframeTimer = null; return;
+            const elapsedMs = (Date.now() - _iframeStartWall) + _iframeFirstMs;
+            // 找当前应显示的行
+            let idx = 0;
+            for (let i = 0; i < _bgmLyricLines.length; i++) {
+              if (_bgmLyricLines[i].ms <= elapsedMs) idx = i;
+              else break;
             }
-            const delay = _bgmLyricLines[next].ms - _bgmLyricLines[_bgmLyricIdx].ms;
-            _bgmLyricIdx = next;
-            _renderLyricInDock(doc.getElementById('meow-voice-bgm-dock'));
-            // 动态调整下次间隔
-            if (_bgmIframeTimer) {
-              clearInterval(_bgmIframeTimer);
-              _bgmIframeTimer = null;
+            if (idx !== _bgmLyricIdx) {
+              _bgmLyricIdx = idx;
+              _renderLyricInDock(doc.getElementById('meow-voice-bgm-dock'));
             }
-            const schedNext = () => {
-              const ni = _bgmLyricIdx + 1;
-              if (ni >= _bgmLyricLines.length) return;
-              const d = Math.max(500, _bgmLyricLines[ni].ms - _bgmLyricLines[_bgmLyricIdx].ms);
-              _bgmIframeTimer = setTimeout(() => {
-                _bgmLyricIdx = ni;
-                _renderLyricInDock(doc.getElementById('meow-voice-bgm-dock'));
-                schedNext();
-              }, d);
-            };
-            schedNext();
-          }, Math.max(500, (_bgmLyricLines[1]?.ms || 3000) - (_bgmLyricLines[0]?.ms || 0)));
+            // 算下一次触发时间
+            const nextIdx = idx + 1;
+            if (nextIdx < _bgmLyricLines.length) {
+              const waitMs = Math.max(100, _bgmLyricLines[nextIdx].ms - elapsedMs + _iframeFirstMs);
+              _bgmIframeTimer = setTimeout(schedIframeLyric, waitMs);
+            }
+          };
+          schedIframeLyric();
         });
       }
       _renderBgmDock();
