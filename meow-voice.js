@@ -508,10 +508,14 @@ ${t}
       || /[?&](?:format|mime|type)=(?:audio|mp3|m4a|ogg|wav|aac)/i.test(u)
       || /^blob:/i.test(u)
       || /^data:audio\//i.test(u)
-      // QQ音乐 aa1 直链（重定向到 mp3，浏览器自动跟随）
+      // QQ音乐各类直链
       || /zj\.v\.api\.aa1\.cn/i.test(u)
-      // 酷我 gdstudio CDN
-      || /music-api\.gdstudio\.xyz/i.test(u);
+      || /amobile\.music\.tc\.qq\.com/i.test(u)
+      || /aqqmusic\.tc\.qq\.com/i.test(u)
+      // 酷我 CDN
+      || /music-api\.gdstudio\.xyz/i.test(u)
+      || /er-sycdn\.kuwo\.cn/i.test(u)
+      || /sycdn\.kuwo\.cn/i.test(u);
   }
 
 
@@ -1213,7 +1217,12 @@ ${t}
     if (embed) {
       if (_bgmState.active && _bgmState.parsedKind === 'netease_iframe' && _bgmState.embedSrc) {
         embed.classList.remove('empty');
-        embed.innerHTML = `<iframe allow="autoplay *; encrypted-media *" src="${_safeAttr(_bgmState.embedSrc)}"></iframe>`;
+        // 只有 src 真正变化时才重建 iframe，避免折叠/展开时重载
+        const existing = embed.querySelector('iframe');
+        const newSrc = _safeAttr(_bgmState.embedSrc);
+        if (!existing || existing.getAttribute('src') !== newSrc) {
+          embed.innerHTML = `<iframe allow="autoplay *; encrypted-media *" src="${newSrc}"></iframe>`;
+        }
       } else {
         embed.classList.add('empty');
         embed.innerHTML = '';
@@ -1383,7 +1392,7 @@ ${t}
           // 挂钟同步：elapsed = 从 iframe 加载起经过的毫秒数
           // 歌词行的 ms 也是从歌曲开头起的偏移，直接比较即可
           // iframe 加载 + 网易云缓冲约需 2 秒，歌词计时延迟启动补偿
-          const IFRAME_LOAD_DELAY_MS = 2000;
+          const IFRAME_LOAD_DELAY_MS = 3000;
           const _iframeStartWall = Date.now();
           const schedIframeLyric = () => {
             if (!_bgmLyricLines.length) return;
