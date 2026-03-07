@@ -506,7 +506,11 @@ ${t}
     return /(?:\.mp3|\.m4a|\.aac|\.ogg|\.wav|\.flac)(?:[?#].*)?$/i.test(u)
       || /[?&](?:format|mime|type)=(?:audio|mp3|m4a|ogg|wav|aac)/i.test(u)
       || /^blob:/i.test(u)
-      || /^data:audio\//i.test(u);
+      || /^data:audio\//i.test(u)
+      // QQ音乐 aa1 直链（重定向到 mp3，浏览器自动跟随）
+      || /zj\.v\.api\.aa1\.cn/i.test(u)
+      // 酷我 gdstudio CDN
+      || /music-api\.gdstudio\.xyz/i.test(u);
   }
 
 
