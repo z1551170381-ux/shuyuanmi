@@ -3100,18 +3100,19 @@ async function _speakWithCfg(rawText, charName, c) {
       if (proxy) {
         // 走 Cloudflare Worker 代理
         try {
-          const res = await fetch(`${proxy}/search?q=${encodeURIComponent(keywords)}&limit=20`,
-            { signal: AbortSignal.timeout(8000) });
+          const res = await fetch(`${proxy}/search?q=${encodeURIComponent(keywords)}&limit=8`,
+            { signal: AbortSignal.timeout(15000) });
           if (!res.ok) throw new Error('proxy ' + res.status);
           const arr = await res.json();
           if (!Array.isArray(arr)) throw new Error('格式异常');
           return arr.map(s => ({
             id:     String(s.id || ''),
-            name:   s.trackName  || s.name   || '未知',
-            artist: s.artistName || s.artist  || '',
-            album:  s.albumName  || s.album   || '',
-            lrc:    s.syncedLyrics || '',
-            url:    `https://link.hhtjim.com/163/${s.id}.mp3`,
+            name:   s.name   || s.trackName  || '未知',
+            artist: s.artist || s.artistName || '',
+            album:  s.album  || s.albumName  || '',
+            source: s.source || 'netease',
+            lrc:    s.lrc    || s.syncedLyrics || '',
+            url:    s.url    || '',   // Worker 直接返回真实直链
           }));
         } catch(e) {
           toast('代理搜索失败，尝试直连…');
