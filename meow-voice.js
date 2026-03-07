@@ -904,7 +904,7 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-embed.empty{display:none}
       #meow-voice-bgm-dock.edge-right.collapsed{transform:none}
       #meow-voice-bgm-dock.edge-left.collapsed{transform:none}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-panel{opacity:0;pointer-events:none;max-height:0 !important;padding-top:0 !important;padding-bottom:0 !important;overflow:hidden;min-height:0 !important}
+      #meow-voice-bgm-dock.collapsed .mv-bgm-panel{opacity:0;pointer-events:none;max-height:0 !important;min-height:0 !important;padding:0 !important;margin:0 !important;border-width:0 !important;overflow:hidden;box-shadow:none !important;backdrop-filter:none !important}
       #meow-voice-bgm-dock.collapsed .mv-bgm-close{display:none}
       #meow-voice-bgm-dock.collapsed .mv-bgm-shell{min-height:112px}
       #meow-voice-bgm-dock.collapsed .mv-bgm-open-settings{right:58px;top:8px}
