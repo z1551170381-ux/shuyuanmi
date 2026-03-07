@@ -196,28 +196,19 @@
     return lines.sort((a, b) => a.ms - b.ms);
   }
 
-  /** 通过网易云歌曲 ID 拉取 LRC，存入 track.lrc，返回 lrc 文本 */
-  async function _fetchNeteaseLyric(songId, gid, tid) {
+  /** 通过网易云歌曲 ID 拉取 LRC，存入单独 key，返回 lrc 文本 */
+  async function _fetchNeteaseLyric(songId) {
     if (!songId) return '';
-    // 优先试直连，Electron / 宽松 CORS 环境通常可以直接拿
-    const endpoints = [
-      `https://music.163.com/api/song/lyric?os=pc&id=${songId}&lv=-1&kv=-1&tv=-1`,
-      `https://music.163.com/api/song/lyric?id=${songId}&lv=1&kv=1&tv=-1`,
-    ];
-    let lrcText = '';
-    for (const url of endpoints) {
-      try {
-        const res = await fetch(url, { credentials: 'omit' });
-        if (!res.ok) continue;
-        const data = await res.json();
-        lrcText = data?.lrc?.lyric || '';
-        if (lrcText) break;
-      } catch(e) { continue; }
-    }
-    if (!lrcText) return '';
-    // 单独存储 lrc，不写进 library（防止撑爆 5MB 限制）
-    _lrcSet(songId, lrcText);
-    return lrcText;
+    // 使用支持跨域的第三方镜像，云酒馆也能用
+    const NM_API = 'https://netease-cloud-music-api-five-rouge.vercel.app';
+    try {
+      const res = await fetch(`${NM_API}/lyric?id=${songId}`);
+      if (!res.ok) return '';
+      const data = await res.json();
+      const lrcText = data?.lrc?.lyric || '';
+      if (lrcText) _lrcSet(songId, lrcText);
+      return lrcText;
+    } catch(e) { return ''; }
   }
 
   /** 从 URL/track 提取网易云歌曲 ID */
@@ -239,7 +230,7 @@
     }
     // 没有缓存时在线拉取
     if (!songId) return;
-    const lrc = await _fetchNeteaseLyric(songId, gid, tid);
+    const lrc = await _fetchNeteaseLyric(songId);
     if (lrc) _bgmLyricLines = _parseLrc(lrc);
   }
 
@@ -1484,45 +1475,35 @@ ${t}
 
   async function _apiOnceVolcengineV3(text, voiceId, cArg) {
     const c = cArg || cfg();
-    const url = _volcNormalizeEndpoint(c.apiUrl);
-    const appId = String(c.volcAppId || '').trim();
-    const accessKey = String(c.volcAccessKey || '').trim();
+    const appId      = String(c.volcAppId      || '').trim();
+    const accessKey  = String(c.volcAccessKey  || '').trim();
     const resourceId = String(c.volcResourceId || '').trim();
-    const speaker = String(voiceId ?? c.apiVoice ?? '').trim();
+    const speaker    = String(voiceId ?? c.apiVoice ?? '').trim();
 
-    if (!url) throw new Error('未填写火山 V3 接口地址');
-    if (!appId) throw new Error('请填写火山 App ID');
-    if (!accessKey) throw new Error('请填写火山 Access Key');
+    if (!appId)      throw new Error('请填写火山 App ID');
+    if (!accessKey)  throw new Error('请填写火山 Access Key（Access Token）');
     if (!resourceId) throw new Error('请填写火山 Resource ID');
-    if (!speaker) throw new Error('请填写火山音色 ID');
+    if (!speaker)    throw new Error('请填写火山音色 ID');
 
-    const payload = {
-      user: { uid: 'meow_voice_' + Date.now() },
-      req_params: {
-        text: String(text || ''),
-        speaker,
-        audio_params: {
-          format: 'mp3',
-          sample_rate: 24000,
-        },
-      },
-    };
+    // 通过 ST 本地后端代理转发，绕过浏览器 CORS 限制
+    const proxyUrl = '/api/plugins/meow-voice/volc-tts';
 
-    const resp = await fetch(url, {
+    const resp = await fetch(proxyUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Api-App-Id': appId,
-        'X-Api-Access-Key': accessKey,
-        'X-Api-Resource-Id': resourceId,
-      },
-      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        appId, accessKey, resourceId, speaker,
+        text: String(text || ''),
+        audioParams: { format: 'mp3', sample_rate: 24000 },
+      }),
     });
 
     if (!resp.ok) {
       let msg = '';
-      try { msg = await resp.text(); } catch(_) {}
-      throw new Error('火山 V3 ' + resp.status + (msg ? ': ' + msg.slice(0, 240) : ''));
+      try { const j = await resp.json(); msg = j?.error || j?.detail || ''; } catch(_) {
+        try { msg = await resp.text(); } catch(_) {}
+      }
+      throw new Error('火山 V3 ' + resp.status + (msg ? ': ' + String(msg).slice(0, 240) : ''));
     }
     return _readVolcStreamToBlob(resp);
   }
@@ -2832,9 +2813,9 @@ async function _speakWithCfg(rawText, charName, c) {
                 <option value="volcengine_v3" ${c.apiProvider==='volcengine_v3'?'selected':''}>火山语音 V3</option>
               </select>
             </div>
-            <div style="margin-bottom:8px">
+            <div style="margin-bottom:8px${c.apiProvider==='volcengine_v3'?';display:none':''}">
               <label style="font-size:12px;display:block;margin-bottom:4px">API 地址（完整 endpoint）</label>
-              <input type="text" id="mvApiUrl" placeholder="${c.apiProvider==='volcengine_v3'?'https://openspeech.bytedance.com/api/v3/tts/unidirectional':'https://api.volink.org/v1/audio/speech'}" value="${esc(c.apiUrl)}">
+              <input type="text" id="mvApiUrl" placeholder="https://api.volink.org/v1/audio/speech" value="${esc(c.apiUrl)}">
             </div>
             <div id="mvOpenAIFields" style="${c.apiProvider==='volcengine_v3'?'display:none':''}">
               <div style="margin-bottom:8px">
@@ -2944,6 +2925,16 @@ async function _speakWithCfg(rawText, charName, c) {
               <div style="background:rgba(139,115,85,.07);border:1px solid rgba(139,115,85,.18);border-radius:12px;padding:10px;margin-bottom:10px">
                 <div style="font-size:11px;font-weight:600;color:rgba(46,38,30,.55);margin-bottom:7px">添加歌曲</div>
                 <select id="mvBgmAddToGroup" style="margin-bottom:6px"></select>
+
+                <!-- 搜歌区 -->
+                <div style="display:flex;gap:6px;margin-bottom:6px">
+                  <input type="text" id="mvBgmSearch" placeholder="搜索歌名 / 歌手…" style="flex:1">
+                  <button type="button" class="mv-btn" id="mvBgmSearchBtn" style="font-size:12px;white-space:nowrap">🔍 搜索</button>
+                </div>
+                <div id="mvBgmSearchResults" style="display:none;max-height:180px;overflow-y:auto;border:1px solid rgba(139,115,85,.22);border-radius:9px;background:rgba(255,255,255,.82);margin-bottom:6px"></div>
+
+                <!-- 手动填链接区 -->
+                <div style="font-size:10px;color:rgba(46,38,30,.38);margin-bottom:5px;text-align:center">— 或手动填入链接 —</div>
                 <input type="text" id="mvBgmNewTitle" placeholder="曲名（留空自动提取）" style="margin-bottom:6px">
                 <div style="display:flex;gap:6px">
                   <input type="text" id="mvBgmUrl" placeholder="mp3 直链 / 网易云歌曲页 / outchain iframe" style="flex:1">
@@ -2975,24 +2966,21 @@ async function _speakWithCfg(rawText, charName, c) {
         const isVolc = provider === 'volcengine_v3';
         const openaiFields = q('mvOpenAIFields');
         const volcFields = q('mvVolcFields');
-        const apiUrl = q('mvApiUrl');
+        const apiUrlWrap = q('mvApiUrl')?.closest('div');
         const apiVoice = q('mvApiVoice');
         const apiHint = q('mvApiHint');
         if (openaiFields) openaiFields.style.display = isVolc ? 'none' : '';
         if (volcFields) volcFields.style.display = isVolc ? '' : 'none';
-        if (apiUrl && !apiUrl.value.trim()) {
-          apiUrl.placeholder = isVolc
-            ? 'https://openspeech.bytedance.com/api/v3/tts/unidirectional'
-            : 'https://api.volink.org/v1/audio/speech';
-        }
+        // 火山走本地代理，不需要手填 API 地址
+        if (apiUrlWrap) apiUrlWrap.style.display = isVolc ? 'none' : '';
         if (apiVoice) {
           apiVoice.placeholder = isVolc
             ? '如：zh_female_cancan_moon_bigtts'
             : 'alloy（留空用默认）';
         }
-        if (apiHint && !apiHint.textContent.trim()) {
+        if (apiHint) {
           apiHint.textContent = isVolc
-            ? '火山 V3 需要：完整 endpoint + App ID + Access Key + Resource ID + 音色 ID。'
+            ? '✅ 火山 V3 通过本地代理转发，无需填写 API 地址。需要：App ID + Access Key + Resource ID + 音色 ID。'
             : 'OpenAI 兼容：endpoint + API Key + model + voice。';
         }
         const voiceSel = q('mvApiVoiceSel');
@@ -3058,6 +3046,127 @@ async function _speakWithCfg(rawText, charName, c) {
 
     _renderBgmLibraryEditor(box);
 
+    // ── 网易云搜歌 ────────────────────────────────────────────
+    const NM_API = 'https://netease-cloud-music-api-five-rouge.vercel.app';
+
+    async function _nmSearch(keywords) {
+      const res = await fetch(`${NM_API}/search?keywords=${encodeURIComponent(keywords)}&limit=15&type=1`);
+      if (!res.ok) throw new Error('搜索失败 ' + res.status);
+      const data = await res.json();
+      return (data?.result?.songs || []).map(s => ({
+        id:     String(s.id),
+        name:   s.name || '未知',
+        artist: (s.artists || []).map(a => a.name).join(' / ') || '未知',
+        album:  s.album?.name || '',
+      }));
+    }
+
+    async function _nmGetUrl(songId) {
+      const res = await fetch(`${NM_API}/song/url?id=${songId}`);
+      if (!res.ok) return '';
+      const data = await res.json();
+      return data?.data?.[0]?.url || '';
+    }
+
+    async function _nmGetLyric(songId) {
+      const res = await fetch(`${NM_API}/lyric?id=${songId}`);
+      if (!res.ok) return '';
+      const data = await res.json();
+      return data?.lrc?.lyric || '';
+    }
+
+    function _renderSearchResults(songs) {
+      const el = q('mvBgmSearchResults');
+      if (!el) return;
+      if (!songs.length) {
+        el.style.display = '';
+        el.innerHTML = '<div style="padding:10px;text-align:center;font-size:11px;color:rgba(46,38,30,.4)">没有找到相关歌曲</div>';
+        return;
+      }
+      el.style.display = '';
+      el.innerHTML = songs.map((s, i) =>
+        `<div class="mv-bgm-search-item" data-idx="${i}"
+          style="display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;border-bottom:1px solid rgba(28,24,18,.05);transition:background .15s"
+          onmouseover="this.style.background='rgba(139,115,85,.10)'"
+          onmouseout="this.style.background=''">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}</div>
+            <div style="font-size:10px;color:rgba(46,38,30,.45);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.artist)}${s.album?' · '+esc(s.album):''}</div>
+          </div>
+          <button type="button" class="mv-btn mv-bgm-search-add" data-idx="${i}"
+            style="font-size:11px;padding:3px 10px;white-space:nowrap;flex:none">＋ 加入</button>
+        </div>`
+      ).join('');
+      el._songs = songs;
+    }
+
+    const _doSearch = async () => {
+      const kw = q('mvBgmSearch')?.value.trim() || '';
+      if (!kw) { toast('请输入歌名或歌手'); return; }
+      const btn = q('mvBgmSearchBtn');
+      if (btn) btn.textContent = '搜索中…';
+      try {
+        const songs = await _nmSearch(kw);
+        _renderSearchResults(songs);
+      } catch(e) {
+        toast('搜索失败：' + (e?.message || e));
+      } finally {
+        if (btn) btn.textContent = '🔍 搜索';
+      }
+    };
+
+    q('mvBgmSearchBtn')?.addEventListener('click', _doSearch);
+    q('mvBgmSearch')?.addEventListener('keydown', e => { if (e.key === 'Enter') _doSearch(); });
+
+    q('mvBgmSearchResults')?.addEventListener('click', async (e) => {
+      const addBtn = e.target.closest('.mv-bgm-search-add');
+      if (!addBtn) return;
+      const idx = Number(addBtn.dataset.idx || 0);
+      const songs = q('mvBgmSearchResults')?._songs || [];
+      const song = songs[idx];
+      if (!song) return;
+
+      addBtn.textContent = '获取中…';
+      addBtn.disabled = true;
+      try {
+        // 并行拉直链 + 歌词
+        const [url, lrc] = await Promise.all([
+          _nmGetUrl(song.id),
+          _nmGetLyric(song.id),
+        ]);
+        if (!url) { toast('该歌曲暂无可用直链（可能是 VIP 或已下架）'); return; }
+
+        const title = song.name + (song.artist ? ' - ' + song.artist : '');
+        const gid = q('mvBgmAddToGroup')?.value || '';
+        const lib = _getBgmLibrary();
+        const group = lib.find(g => g.id === gid) || lib[0];
+        if (!group) { toast('请先新建一个分组'); return; }
+        if (!Array.isArray(group.tracks)) group.tracks = [];
+        if (group.tracks.some(t => t.url === url)) { toast('该歌曲已在此分组中'); return; }
+
+        const tid = _uid('t_');
+        group.tracks.push({ id: tid, title, url });
+        _saveBgmLibrary(lib);
+
+        // 歌词单独存
+        if (lrc) _lrcSet(song.id, lrc);
+
+        box.__mvBgmState = { groupId: group.id, trackId: tid };
+        _renderBgmLibraryEditor(box);
+        toast('✅ 已加入「' + song.name + '」' + (lrc ? ' 🎵 含歌词' : ''));
+
+        // 隐藏搜索结果
+        const resEl = q('mvBgmSearchResults');
+        if (resEl) resEl.style.display = 'none';
+        if (q('mvBgmSearch')) q('mvBgmSearch').value = '';
+      } catch(err) {
+        toast('加入失败：' + (err?.message || err));
+      } finally {
+        addBtn.textContent = '＋ 加入';
+        addBtn.disabled = false;
+      }
+    });
+
     // ── 新建分组 ──────────────────────────────────────────────
     q('mvBgmAddGroup')?.addEventListener('click', () => {
       const name = q('mvBgmNewGroup')?.value.trim() || '';
@@ -3109,7 +3218,7 @@ async function _speakWithCfg(rawText, charName, c) {
       // 异步拉取网易云歌词（静默后台，有 ID 才尝试）
       const _autoLrcId = _extractNeteaseId(url);
       if (_autoLrcId) {
-        _fetchNeteaseLyric(_autoLrcId, group.id, tid).then(lrc => {
+        _fetchNeteaseLyric(_autoLrcId).then(lrc => {
           if (lrc) toast('🎵 歌词已自动获取');
         }).catch(() => {});
       }
