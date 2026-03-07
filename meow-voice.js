@@ -254,15 +254,23 @@
     _bgmLyricIdx   = -1;
     if (!track) return;
     const songId = _extractNeteaseId(track.url);
-    // 先查本地缓存
-    if (songId) {
-      const cached = _lrcGet(songId);
+    // 先查本地缓存（用网易云ID 或 trackId 都能命中）
+    const cacheKeys = [songId, track.id, track.trackId].filter(Boolean);
+    for (const key of cacheKeys) {
+      const cached = _lrcGet(key);
       if (cached) { _bgmLyricLines = _parseLrc(cached); return; }
+    }
+    if (!songId && !cacheKeys.length) {
     }
     // 无缓存：拉取（多节点网易 API + lrclib 兜底）
     const title = String(track.title || '').trim();
     const lrc = await _fetchNeteaseLyric(songId, title);
-    if (lrc) _bgmLyricLines = _parseLrc(lrc);
+    if (lrc) {
+      _bgmLyricLines = _parseLrc(lrc);
+      // 存入缓存，用 trackId 方便下次命中
+      const saveKey = songId || (track.id || track.trackId || '');
+      if (saveKey) _lrcSet(saveKey, lrc);
+    }
   }
 
   /** 根据当前播放时间更新歌词高亮行，返回是否有变化 */
@@ -3261,7 +3269,7 @@ async function _speakWithCfg(rawText, charName, c) {
           group.tracks.push({ id: tid, title, url: realUrl });
           _saveBgmLibrary(lib);
           box.__mvBgmState = { groupId: group.id, trackId: tid };
-          if (lrc) _lrcSet(tid, lrc);
+          if (lrc) { _lrcSet(tid, lrc); if (song.id) _lrcSet(song.id, lrc); }
 
           _renderBgmLibraryEditor(box);
           q('mvBgmSearchResults').style.display = 'none';
