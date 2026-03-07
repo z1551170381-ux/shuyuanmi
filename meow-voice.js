@@ -160,10 +160,137 @@
     title: '',
     sourceUrl: '',
     parsedKind: '',
+    embedSrc: '',
     groupId: '',
     trackId: '',
     closed: false,
   };
+
+  // ── 歌词状态 ─────────────────────────────────────────────────
+  let _bgmLyricLines = [];   // [{ms:number, text:string}]  当前曲 LRC 解析结果
+  let _bgmLyricIdx   = -1;   // 当前高亮行索引
+
+  /** 解析 LRC 文本 → [{ms, text}] */
+  function _parseLrc(lrcText) {
+    if (!lrcText) return [];
+    const lines = [];
+    // 匹配 [mm:ss.xx] 或 [mm:ss.xxx] 时间戳
+    const re = /\[(\d{1,2}):(\d{2})\.(\d{2,3})\]([^\n]*)/g;
+    let m;
+    while ((m = re.exec(lrcText)) !== null) {
+      const ms = (+m[1]) * 60000 + (+m[2]) * 1000 + Number((m[3] + '000').slice(0, 3));
+      const text = m[4].trim();
+      // 跳过空行和纯元信息行（作词/作曲/编曲等）
+      if (text && !/^(作词|作曲|编曲|填词|出品|制作|混音|监制|出版)/.test(text)) {
+        lines.push({ ms, text });
+      }
+    }
+    return lines.sort((a, b) => a.ms - b.ms);
+  }
+
+  /** 通过网易云歌曲 ID 拉取 LRC，存入 track.lrc，返回 lrc 文本 */
+  async function _fetchNeteaseLyric(songId, gid, tid) {
+    if (!songId) return '';
+    // 优先试直连，Electron / 宽松 CORS 环境通常可以直接拿
+    const endpoints = [
+      `https://music.163.com/api/song/lyric?os=pc&id=${songId}&lv=-1&kv=-1&tv=-1`,
+      `https://music.163.com/api/song/lyric?id=${songId}&lv=1&kv=1&tv=-1`,
+    ];
+    let lrcText = '';
+    for (const url of endpoints) {
+      try {
+        const res = await fetch(url, { credentials: 'omit' });
+        if (!res.ok) continue;
+        const data = await res.json();
+        lrcText = data?.lrc?.lyric || '';
+        if (lrcText) break;
+      } catch(e) { continue; }
+    }
+    if (!lrcText) return '';
+    // 存进 track
+    if (gid && tid) {
+      try {
+        const lib = _getBgmLibrary();
+        const grp = _findBgmGroup(lib, gid);
+        if (grp) {
+          const trk = grp.tracks.find(t => t.id === tid);
+          if (trk && !trk.lrc) { trk.lrc = lrcText; _saveBgmLibrary(lib); }
+        }
+      } catch(e) {}
+    }
+    return lrcText;
+  }
+
+  /** 从 URL/track 提取网易云歌曲 ID */
+  function _extractNeteaseId(url) {
+    const m = String(url || '').match(/[?&/]id=(\d+)/i) || String(url || '').match(/\/(\d{6,})/);
+    return m ? m[1] : '';
+  }
+
+  /** 加载当前曲目的歌词到内存 */
+  async function _loadBgmLyric(track, gid, tid) {
+    _bgmLyricLines = [];
+    _bgmLyricIdx   = -1;
+    if (!track) return;
+    // 已存 lrc
+    if (track.lrc) { _bgmLyricLines = _parseLrc(track.lrc); return; }
+    // 尝试从 URL 推断 ID 并拉取
+    const songId = _extractNeteaseId(track.url);
+    if (!songId) return;
+    const lrc = await _fetchNeteaseLyric(songId, gid, tid);
+    if (lrc) _bgmLyricLines = _parseLrc(lrc);
+  }
+
+  /** 根据当前播放时间更新歌词高亮行，返回是否有变化 */
+  function _bgmLyricTickMs(currentMs) {
+    if (!_bgmLyricLines.length) return false;
+    let idx = 0;
+    for (let i = 0; i < _bgmLyricLines.length; i++) {
+      if (_bgmLyricLines[i].ms <= currentMs) idx = i; else break;
+    }
+    if (idx === _bgmLyricIdx) return false;
+    _bgmLyricIdx = idx;
+    return true;
+  }
+
+  /** 渲染歌词到 dock 的 .mv-bgm-lyric 元素 */
+  function _renderLyricInDock(root) {
+    const wrap = root?.querySelector('.mv-bgm-lyric');
+    if (!wrap) return;
+    if (!_bgmLyricLines.length) { wrap.innerHTML = ''; return; }
+
+    const isAudio = _bgmState.parsedKind === 'audio';
+    const cur = _bgmLyricIdx;
+
+    if (isAudio && cur >= 0) {
+      // 时间同步模式：显示前后各3行，高亮当前行
+      const start = Math.max(0, cur - 3);
+      const end   = Math.min(_bgmLyricLines.length - 1, cur + 3);
+      let html = '';
+      for (let i = start; i <= end; i++) {
+        const isCur = i === cur;
+        html += `<div class="mv-bgm-lrc-line${isCur?' mv-bgm-lrc-cur':''}" style="text-align:center;padding:1px 8px;box-sizing:border-box;transition:all .3s ease;font-size:${isCur?'13px':'11px'};font-weight:${isCur?'700':'400'};color:${isCur?'rgba(44,57,63,.9)':'rgba(44,57,63,.32)'};line-height:${isCur?'1.6':'1.4'}">${esc(_bgmLyricLines[i].text)}</div>`;
+      }
+      wrap.innerHTML = html;
+    } else {
+      // 静态模式（iframe）：所有歌词可滚动，当前行（或第一行）标色
+      const displayCur = Math.max(0, cur);
+      let html = '';
+      for (let i = 0; i < _bgmLyricLines.length; i++) {
+        const isCur = i === displayCur;
+        html += `<div class="mv-bgm-lrc-line${isCur?' mv-bgm-lrc-cur':''}" style="text-align:center;padding:1px 8px;box-sizing:border-box;font-size:11px;font-weight:${isCur?'600':'400'};color:${isCur?'rgba(44,57,63,.88)':'rgba(44,57,63,.4)'};line-height:1.5">${esc(_bgmLyricLines[i].text)}</div>`;
+      }
+      // 静态模式下启用滚动
+      wrap.style.maxHeight = '130px';
+      wrap.style.overflowY = 'auto';
+      wrap.innerHTML = html;
+    }
+    // 让当前行在视口中
+    const curEl = wrap.querySelector('.mv-bgm-lrc-cur');
+    if (curEl) {
+      try { curEl.scrollIntoView({ block: 'nearest', behavior: isAudio ? 'smooth' : 'auto' }); } catch(e) {}
+    }
+  }
 
   function getVoices() {
     return new Promise(resolve => {
@@ -684,7 +811,10 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-group-chip.active{background:#434f55;color:#fff}
       #meow-voice-bgm-dock .mv-bgm-pick-row{margin-top:7px}
       #meow-voice-bgm-dock .mv-bgm-track-select{width:100%;border:1px solid rgba(120,125,128,.18);border-radius:10px;padding:6px 9px;background:rgba(255,255,255,.74);font-size:11px;color:#334249;box-sizing:border-box}
-      #meow-voice-bgm-dock .mv-bgm-lyric{margin-top:8px;min-height:42px;padding:8px 9px;border-radius:14px;background:rgba(255,255,255,.42);border:1px solid rgba(225,225,219,.88);font-size:11px;line-height:1.65;color:rgba(51,66,73,.78);white-space:pre-line}#meow-voice-bgm-dock .mv-bgm-lyric:empty::before{content:'歌词';opacity:.32}
+      #meow-voice-bgm-dock .mv-bgm-lyric{margin-top:8px;min-height:80px;max-height:130px;overflow:hidden;padding:6px 2px;border-radius:14px;background:rgba(255,255,255,.36);border:1px solid rgba(225,225,219,.78);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
+      #meow-voice-bgm-dock .mv-bgm-lyric:empty::before{content:'歌词';font-size:11px;color:rgba(44,57,63,.28);font-style:italic}
+      #meow-voice-bgm-dock .mv-bgm-lrc-line{width:100%;padding:1px 8px;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      #meow-voice-bgm-dock .mv-bgm-lrc-cur{white-space:normal;word-break:break-all}
       #meow-voice-bgm-dock .mv-bgm-list{display:none !important}
       #meow-voice-bgm-dock .mv-bgm-item{display:none !important}
       #meow-voice-bgm-dock .mv-bgm-item.active{display:none !important}
@@ -732,7 +862,7 @@ ${t}
       #meow-voice-bgm-dock.mini .mv-bgm-play{width:28px;height:28px}
       #meow-voice-bgm-dock.mini .mv-bgm-group-chip{padding:2px 6px;font-size:9px}
       #meow-voice-bgm-dock.mini .mv-bgm-track-select{padding:4px 7px;font-size:9px}
-      #meow-voice-bgm-dock.mini .mv-bgm-lyric{min-height:32px;padding:6px 7px;font-size:9px}
+      #meow-voice-bgm-dock.mini .mv-bgm-lyric{min-height:54px;max-height:80px;padding:4px 0}
       #meow-voice-bgm-dock.mini .mv-bgm-list{max-height:74px}
       
       @media (max-width: 640px){
@@ -1003,7 +1133,13 @@ ${t}
     }
 
     const lyricWrap = root.querySelector('.mv-bgm-lyric');
-    if (lyricWrap) lyricWrap.textContent = _buildBgmCaption(c, group, currentTrack, tracks);
+    if (lyricWrap) {
+      if (_bgmLyricLines.length) {
+        _renderLyricInDock(root);
+      } else {
+        lyricWrap.innerHTML = '';
+      }
+    }
 
     const countWrap = root.querySelector('.mv-bgm-track-count');
     if (countWrap) countWrap.textContent = tracks.length ? `当前分组共 ${tracks.length} 首` : '当前分组暂无歌曲';
@@ -1036,6 +1172,11 @@ ${t}
     const sub = root.querySelector('.mv-bgm-sub');
     if (sub && _bgmAudio) {
       sub.textContent = _bgmAudio.paused ? '已暂停' : '播放中';
+    }
+    // 歌词同步
+    if (_bgmAudio && _bgmLyricLines.length) {
+      const ms = Math.round(_bgmAudio.currentTime * 1000);
+      if (_bgmLyricTickMs(ms)) _renderLyricInDock(root);
     }
   }
 
@@ -1121,6 +1262,19 @@ ${t}
       }
       _bgmAudio = a;
       W._meowBgmAudio = a;
+      // 加载歌词（切歌时重置）
+      if (!same) {
+        _bgmLyricLines = []; _bgmLyricIdx = -1;
+        const gid = selection?.groupId || '';
+        const tid = selection?.trackId || '';
+        // 先尝试从 track 对象里读缓存 lrc，没有就异步拉
+        const lib = _getBgmLibrary();
+        const trk = tid ? _findBgmTrack(lib, gid, tid) : null;
+        _loadBgmLyric(trk || { url: parsed.audioUrl }, gid, tid).then(() => {
+          _bgmLyricIdx = -1;
+          _renderLyricInDock(root);
+        });
+      }
       try {
         if (same && (o.preview || o.restart || a.ended || (Number.isFinite(a.duration) && a.currentTime >= Math.max(0, a.duration - 0.05)))) {
           try { a.currentTime = 0; } catch(e) {}
@@ -1141,12 +1295,26 @@ ${t}
       }
       _bgmAudio = null;
       W._meowBgmAudio = null;
+      // 重置歌词
+      _bgmLyricLines = []; _bgmLyricIdx = -1;
       const root = _getBgmDock();
       let iframeSrc = parsed.iframeSrc;
       if (o.preview || o.restart) iframeSrc += (iframeSrc.includes('?') ? '&' : '?') + 'mvts=' + Date.now();
       _bgmState.embedSrc = iframeSrc;
       _bgmState.active = true;
       root.style.display = '';
+      // 异步拉取歌词供静态展示
+      const gid2 = selection?.groupId || '';
+      const tid2 = selection?.trackId || '';
+      const lib2 = _getBgmLibrary();
+      const trk2 = tid2 ? _findBgmTrack(lib2, gid2, tid2) : null;
+      const sid2 = parsed.songId || _extractNeteaseId(sourceUrl);
+      if (sid2) {
+        _loadBgmLyric(trk2 || { url: sourceUrl, lrc: trk2?.lrc || '' }, gid2, tid2).then(() => {
+          _bgmLyricIdx = 0;
+          _renderLyricInDock(doc.getElementById('meow-voice-bgm-dock'));
+        });
+      }
       _renderBgmDock();
       return;
     }
@@ -2669,6 +2837,13 @@ async function _speakWithCfg(rawText, charName, c) {
       // 直接传 lib 给渲染，不重读 localStorage
       _renderBgmLibraryEditor(box);
       toast('✅ 已加入「' + title + '」');
+      // 异步拉取网易云歌词（静默后台，有 ID 才尝试）
+      const _autoLrcId = _extractNeteaseId(url);
+      if (_autoLrcId) {
+        _fetchNeteaseLyric(_autoLrcId, group.id, tid).then(lrc => {
+          if (lrc) toast('🎵 歌词已自动获取');
+        }).catch(() => {});
+      }
     });
 
     // ── 歌单列表操作（选用 / 播放 / 改名 / 删除）─────────────
