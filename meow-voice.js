@@ -3260,6 +3260,8 @@ async function _speakWithCfg(rawText, charName, c) {
             src:      song.gd_src   || 'netease',
             url_id:   song.url_id,
             lyric_id: song.lyric_id || song.url_id,
+            name:     song.name   || '',
+            artist:   song.artist || '',
           });
           const songRes = await fetch(`${proxy2}/song?${p}`, { signal: AbortSignal.timeout(12000) });
           const songData = songRes.ok ? await songRes.json() : {};
