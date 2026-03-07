@@ -3994,6 +3994,9 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           if (act === 'wxDelChat'){ _confirmDeleteChat(t.getAttribute('data-npcid')); return; }
           if (act === 'wxDelChatOk'){ _doDeleteChat(t.getAttribute('data-npcid')); return; }
           if (act === 'wxDelChatCancel'){ root.querySelectorAll('.wxConfirmOverlay').forEach(o=>o.remove()); return; }
+          if (act === 'wxDelFriend'){ _confirmDeleteFriend(t.getAttribute('data-npcid')); return; }
+          if (act === 'wxDelFriendOk'){ _doDeleteFriend(t.getAttribute('data-npcid')); return; }
+          if (act === 'wxDelFriendCancel'){ root.querySelectorAll('.wxConfirmOverlay').forEach(o=>o.remove()); return; }
           if (act === 'momentsCoverSet'){ _openMomentsCoverSettings(); return; }
           if (act === 'wxDiscoverNav'){
             state._innerStack.push(() => {
@@ -4705,6 +4708,46 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           if (act === 'afForumSettings'){ _openForumFeedSettings(); return; }
           if (act === 'afBrowserSettings'){ _openBrowserFeedSettings(); return; }
           if (act === 'afMomentsSettings'){ _openMomentsFeedSettings(); return; }
+          if (act === 'phClearAppData'){
+            var appkey = t.getAttribute('data-appkey') || '';
+            var labels = {forum:'论坛所有帖子', moments:'朋友圈所有动态', browser:'浏览器所有资讯', chat:'所有聊天记录和好友'};
+            var lbl = labels[appkey] || appkey;
+            if (!W.confirm('确认清空' + lbl + '？此操作不可恢复')) return;
+            try{
+              var chatUID = (typeof phoneGetChatUID==='function') ? phoneGetChatUID() : 'fallback';
+              chatUID = String(chatUID||'').trim() || 'fallback';
+              if (appkey === 'forum'){
+                var fd2 = phoneLoadForum(chatUID);
+                fd2.posts = [];
+                fd2._inited = false;
+                phoneSaveForum(fd2, chatUID);
+                toast('论坛已清空');
+              } else if (appkey === 'moments'){
+                saveMoments({ v:1, posts:[] });
+                toast('朋友圈已清空');
+              } else if (appkey === 'browser'){
+                // 清空浏览器 feed items
+                try{ var bd2=phoneGetC(chatUID,'browser_feed_v1',null); if(bd2){bd2.items=[];phoneSetC(chatUID,'browser_feed_v1',bd2);} }catch(e){}
+                // 清 autofeed pack
+                try{ phoneSetC(chatUID,'autofeed_pack_browser',null); }catch(e){}
+                toast('浏览器资讯已清空');
+              } else if (appkey === 'chat'){
+                // 清空所有联系人+线程+聊天记录
+                var emptyDB = {v:1,list:[],updatedAt:_now(),lastScanAt:0,__meowContactsZeroed:1};
+                _phSave(PHONE_IM_KEYS.contacts, emptyDB);
+                _phSave(PHONE_IM_KEYS.threads, {v:1,list:[],updatedAt:0});
+                _phSave(PHONE_IM_KEYS.logs, {v:1,map:{}});
+                toast('聊天数据已清空');
+                state.chatTarget = null;
+                state.app = 'chat';
+                var content2 = root.querySelector('[data-ph="chatTabContent"]');
+                if (content2) renderChatMsgsList(content2);
+              }
+              // 关闭设置弹窗
+              root.querySelectorAll('.afModalOverlay,.wxConfirmOverlay').forEach(function(o){o.remove();});
+            }catch(err){ try{toast('清空失败: '+err.message);}catch(e){} }
+            return;
+          }
           if (act === 'afRunSingle'){
             var appName=t.getAttribute('data-afapp');
             if(appName){
@@ -7126,6 +7169,55 @@ ${lines}
         if (content) renderChatMsgsList(content);
       }
 
+      // ===== 删除好友（联系人 + 聊天记录 + 线程全清） =====
+      function _confirmDeleteFriend(npcId){
+        root.querySelectorAll('.wxConfirmOverlay').forEach(o=>o.remove());
+        const db = loadContactsDB();
+        const npc = findContactById(db, npcId);
+        const name = npc ? (npc.name||npcId) : npcId;
+        const overlay = document.createElement('div');
+        overlay.className = 'wxConfirmOverlay';
+        overlay.innerHTML = `<div class="wxConfirmBox">
+          <div class="wxCMsg">确定删除好友「${esc(name)}」吗？<br><span style="font-size:12px;color:rgba(20,24,28,.4);">联系人、聊天记录将全部删除</span></div>
+          <div class="wxCBtns">
+            <button class="wxCBtn" data-act="wxDelFriendCancel">取消</button>
+            <button class="wxCBtn danger" data-act="wxDelFriendOk" data-npcid="${esc(npcId)}" style="color:#e74c3c;">删除</button>
+          </div>
+        </div>`;
+        root.appendChild(overlay);
+        overlay.addEventListener('click',function(e){ if(e.target===overlay) overlay.remove(); });
+      }
+
+      function _doDeleteFriend(npcId){
+        // 1. 从联系人库移除
+        const db = loadContactsDB();
+        db.list = _safeArr(db.list).filter(function(x){ return x.id !== npcId; });
+        saveContactsDB(db);
+        // 2. 删除聊天线程
+        const th = loadThreads();
+        th.list = _safeArr(th.list).filter(function(x){ return x.id !== npcId; });
+        saveThreads(th);
+        // 3. 删除聊天记录
+        const lg = loadLogs();
+        if (lg.map && lg.map[npcId]) delete lg.map[npcId];
+        saveLogs(lg);
+        // 4. 删除角色附加数据
+        try{ _phSave('char_extra_'+npcId, null); }catch(e){}
+        try{ _phSave('charbehavior_'+npcId, null); }catch(e){}
+        try{ _phSave('charstate_'+npcId, null); }catch(e){}
+        // 5. 清置顶
+        let pinned = _phLoad('pinned_chats_v1', []);
+        pinned = pinned.filter(function(x){ return x !== npcId; });
+        _phSave('pinned_chats_v1', pinned);
+        root.querySelectorAll('.wxConfirmOverlay').forEach(function(o){ o.remove(); });
+        try{toast('好友已删除');}catch(e){}
+        // 返回聊天列表
+        state.chatTarget = null;
+        state.app = 'chat';
+        state.navStack = [];
+        const content = root.querySelector('[data-ph="chatTabContent"]');
+        if (content) renderChatMsgsList(content);
+      }
 
       // 通讯录：微信风格 = 顶栏 + 新的朋友/分组/NPC列表(手风琴)
       // NPC来源：角色卡 > 主线AI回复 > 手动添加
@@ -10044,6 +10136,7 @@ ${lines}
         h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><span style="font-size:12px;color:var(--ph-text-sub);">自动生成 NPC</span><button class="sToggle'+(fc.autoGenerateNPC!==false?' on':'')+'" data-afm-bool="autoGenerateNPC" style="flex-shrink:0;"></button></div>';
         h+='<button data-act="afRunSingle" data-afapp="forum" style="width:100%;padding:10px;border:0;border-radius:10px;background:var(--ph-accent-grad);color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">🔄 立即刷新论坛</button>';
         h+='<div style="font-weight:600;font-size:13px;color:var(--ph-text);margin:8px 0;">高级</div><textarea data-afm-ta="customPrompt" placeholder="自定义提示词补充（留空使用默认）" style="width:100%;min-height:60px;padding:8px;border-radius:10px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:12px;resize:vertical;box-sizing:border-box;">'+(fc.customPrompt||'')+'</textarea>';
+        h+='<div style="margin-top:16px;border-top:1px solid var(--ph-glass-border);padding-top:12px;"><button data-act="phClearAppData" data-appkey="forum" style="width:100%;padding:10px;border:0;border-radius:10px;background:rgba(231,76,60,.1);color:#e74c3c;font-size:13px;font-weight:600;cursor:pointer;">🗑 清空论坛所有数据</button></div>';
         _afBindModal(_afModal('论坛资讯设置',h),'forum');
       }
 
@@ -10058,6 +10151,7 @@ ${lines}
         });
         h+='<button data-act="afRunSingle" data-afapp="browser" style="width:100%;padding:10px;border:0;border-radius:10px;background:var(--ph-accent-grad);color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin:12px 0;">🔄 立即刷新浏览器资讯</button>';
         h+='<div style="font-weight:600;font-size:13px;color:var(--ph-text);margin:8px 0;">高级</div><textarea data-afm-ta="customPrompt" placeholder="留空使用默认" style="width:100%;min-height:60px;padding:8px;border-radius:10px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:12px;resize:vertical;box-sizing:border-box;">'+(bc.customPrompt||'')+'</textarea>';
+        h+='<div style="margin-top:16px;border-top:1px solid var(--ph-glass-border);padding-top:12px;"><button data-act="phClearAppData" data-appkey="browser" style="width:100%;padding:10px;border:0;border-radius:10px;background:rgba(231,76,60,.1);color:#e74c3c;font-size:13px;font-weight:600;cursor:pointer;">🗑 清空浏览器所有数据</button></div>';
         _afBindModal(_afModal('浏览器资讯设置',h),'browser');
       }
 
@@ -10074,6 +10168,7 @@ ${lines}
         h+='</div>';
         h+='<button data-act="afRunSingle" data-afapp="moments" style="width:100%;padding:10px;border:0;border-radius:10px;background:var(--ph-accent-grad);color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">✨ 立即生成朋友圈</button>';
         h+='<div style="font-weight:600;font-size:13px;color:var(--ph-text);margin:8px 0;">高级</div><textarea data-afm-ta="customPrompt" placeholder="例如：多生成一些日常生活类的动态" style="width:100%;min-height:60px;padding:8px;border-radius:10px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:12px;resize:vertical;box-sizing:border-box;">'+(mc.customPrompt||'')+'</textarea>';
+        h+='<div style="margin-top:16px;border-top:1px solid var(--ph-glass-border);padding-top:12px;"><button data-act="phClearAppData" data-appkey="moments" style="width:100%;padding:10px;border:0;border-radius:10px;background:rgba(231,76,60,.1);color:#e74c3c;font-size:13px;font-weight:600;cursor:pointer;">🗑 清空朋友圈所有动态</button></div>';
         _afBindModal(_afModal('朋友圈资讯设置',h),'moments');
       }
 
@@ -10247,12 +10342,20 @@ ${lines}
         try{ lsSet(LS_PHONE_MOMENTS_CFG, d); }catch(e){}
       }
 
-      const LS_MOMENTS = 'meow_phone_g_moments_v1';
+      const LS_MOMENTS = 'moments_v1'; // per-chatUID key
       function loadMoments(){
-        try{ return lsGet(LS_MOMENTS, null); }catch(e){ return null; }
+        try{
+          var uid = (typeof phoneGetChatUID==='function') ? phoneGetChatUID() : '';
+          uid = String(uid||'').trim() || 'fallback';
+          return phoneGetC(uid, LS_MOMENTS, null);
+        }catch(e){ return null; }
       }
       function saveMoments(d){
-        try{ lsSet(LS_MOMENTS, d); }catch(e){}
+        try{
+          var uid = (typeof phoneGetChatUID==='function') ? phoneGetChatUID() : '';
+          uid = String(uid||'').trim() || 'fallback';
+          phoneSetC(uid, LS_MOMENTS, d);
+        }catch(e){}
       }
       function _ensureMoments(){
         let d = loadMoments();
@@ -11113,6 +11216,20 @@ const npc = _wxGetChatTargetMeta(npcId);
                   ${(getChatSummary(contactId)||{}).summaryText ? '<button data-act="wxCSCopySummary" data-npcid="'+esc(contactId)+'" style="margin-top:6px;padding:6px 14px;border-radius:8px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);font-size:11px;color:rgba(20,24,28,.6);cursor:pointer;">📋 复制总结</button>' : ''}
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div class="wxCSGroup" style="margin-top:12px;">
+            <div class="wxCSItem" data-act="wxDelChat" data-npcid="${esc(contactId)}"
+              style="color:rgba(231,76,60,.85);">
+              <span class="wxCSIco">🗑</span>
+              <span class="wxCSName" style="color:rgba(231,76,60,.85);">清空聊天记录</span>
+            </div>
+            <div class="wxCSItem" data-act="wxDelFriend" data-npcid="${esc(contactId)}"
+              style="color:#e74c3c;">
+              <span class="wxCSIco">💔</span>
+              <span class="wxCSName" style="color:#e74c3c;">删除好友</span>
+              <span class="wxCSArrow" style="color:rgba(231,76,60,.3);">›</span>
             </div>
           </div>
         </div>`;
@@ -16195,6 +16312,11 @@ const npc = _wxGetChatTargetMeta(npcId);
           { title:'关于', rows:[
             {icon:'ℹ️',label:'版本',value:'MEOW Phone v2.1',type:'info'},
           ]},
+          { title:'危险区域', rows:[
+            {icon:'💬',label:'清空聊天数据（联系人+记录）',type:'danger',act:'phClearAppData',appkey:'chat'},
+            {icon:'📸',label:'清空朋友圈动态',type:'danger',act:'phClearAppData',appkey:'moments'},
+            {icon:'🗣',label:'清空论坛帖子',type:'danger',act:'phClearAppData',appkey:'forum'},
+          ]},
         ];
 
         let html = '';
@@ -16208,6 +16330,8 @@ const npc = _wxGetChatTargetMeta(npcId);
               <span class="sLabel">${r.label}</span>`;
             if(r.type==='toggle'){
               html += `<button class="sToggle${r.val?' on':''}" data-skey="${r.key}"></button>`;
+            } else if(r.type==='danger'){
+              html += `<button data-act="${r.act}" data-appkey="${r.appkey}" style="border:0;background:transparent;color:#e74c3c;font-size:12px;font-weight:600;cursor:pointer;padding:0;">清空</button>`;
             } else {
               html += `<span class="sValue">${r.value||''} ${r.type==='nav'?'›':''}</span>`;
             }
