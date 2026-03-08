@@ -808,26 +808,30 @@ ${t}
           </button>
         </div>
         <div class="mv-bgm-panel">
-          <div class="mv-bgm-head">
-            <div class="mv-bgm-meta">
+          <div class="mv-bgm-body">
+            <div class="mv-bgm-left-col">
               <div class="mv-bgm-name">背景音乐</div>
               <div class="mv-bgm-sub">未播放</div>
+              <div class="mv-bgm-lyric"></div>
             </div>
-            <button type="button" class="mv-bgm-open-settings" title="回语音主弹窗" aria-label="回语音主弹窗">♫</button>
+            <div class="mv-bgm-right-col">
+              <div class="mv-bgm-right-top">
+                <div class="mv-bgm-groups"></div>
+                <button type="button" class="mv-bgm-open-settings" title="回语音主弹窗" aria-label="回语音主弹窗">♫</button>
+              </div>
+              <div class="mv-bgm-controls">
+                <button type="button" class="mv-bgm-prev" title="上一首"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
+                <button type="button" class="mv-bgm-play" title="播放/暂停"><svg class="mv-icon-play" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M8 5v14l11-7z"/></svg><svg class="mv-icon-pause" viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></button>
+                <button type="button" class="mv-bgm-next" title="下一首"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+                <button type="button" class="mv-bgm-float-lyric-toggle" title="悬浮歌词"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M7 9h10v2H7zm0-3h10v2H7zm0 6h7v2H7z"/></svg></button>
+              </div>
+              <div class="mv-bgm-pick-row">
+                <select class="mv-bgm-track-select" aria-label="选择歌曲"></select>
+              </div>
+            </div>
           </div>
           <div class="mv-bgm-progress"><input type="range" class="mv-bgm-seek" min="0" max="1000" step="1" value="0"></div>
-          <div class="mv-bgm-controls">
-            <button type="button" class="mv-bgm-prev" title="上一首"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
-            <button type="button" class="mv-bgm-play" title="播放/暂停"><svg class="mv-icon-play" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M8 5v14l11-7z"/></svg><svg class="mv-icon-pause" viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></button>
-            <button type="button" class="mv-bgm-next" title="下一首"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
-            <button type="button" class="mv-bgm-float-lyric-toggle" title="悬浮歌词"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M7 9h10v2H7zm0-3h10v2H7zm0 6h7v2H7z"/></svg></button>
-          </div>
-          <div class="mv-bgm-groups"></div>
-          <div class="mv-bgm-pick-row">
-            <select class="mv-bgm-track-select" aria-label="选择歌曲"></select>
-          </div>
-          <div class="mv-bgm-lyric"></div>
-          <div class="mv-bgm-track-count" style="margin-top:6px;font-size:10px;color:rgba(57,72,80,.46)"></div>
+          <div class="mv-bgm-track-count"></div>
           <div class="mv-bgm-list"></div>
           <div class="mv-bgm-embed"></div>
         </div>
@@ -839,7 +843,7 @@ ${t}
       top: '0px',
       right: 'auto',
       bottom: 'auto',
-      width: '288px',
+      width: '500px',
       maxWidth: 'calc(100vw - 4px)',
       zIndex: '2147483646',
       display: 'none',
@@ -851,23 +855,27 @@ ${t}
     const style = doc.createElement('style');
     style.id = 'meow-voice-bgm-dock-style';
     style.textContent = `
-      #meow-voice-bgm-dock{font-family:inherit;color:#26353a;overflow:visible;--mv-bgm-peek:56px}
-      #meow-voice-bgm-dock .mv-bgm-shell{position:relative;min-height:114px;padding-left:42px}
-      #meow-voice-bgm-dock .mv-bgm-close{position:absolute;right:10px;top:4px;width:24px;height:24px;border:0;border-radius:999px;background:rgba(240,240,237,.90);box-shadow:0 2px 6px rgba(40,40,40,.08);cursor:pointer;color:#7a8a90;font-size:13px;z-index:8;display:flex;align-items:center;justify-content:center;line-height:1;transition:background .15s}
-      #meow-voice-bgm-dock .mv-bgm-disc-wrap{position:absolute;left:-24px;top:12px;width:102px;height:102px;display:flex;align-items:center;justify-content:center;pointer-events:auto;z-index:6}
+      /* ── 基础 ── */
+      #meow-voice-bgm-dock{font-family:inherit;color:#26353a;overflow:visible}
+      #meow-voice-bgm-dock .mv-bgm-shell{position:relative;padding-left:54px;min-height:0}
+
+      /* ── 关闭按钮 ── */
+      #meow-voice-bgm-dock .mv-bgm-close{position:absolute;right:10px;top:4px;width:22px;height:22px;border:0;border-radius:999px;background:rgba(230,230,226,.90);cursor:pointer;color:#8a9a9f;font-size:13px;z-index:8;display:flex;align-items:center;justify-content:center;line-height:1;transition:background .15s}
+
+      /* ── 唱片 (保持原样) ── */
+      #meow-voice-bgm-dock .mv-bgm-disc-wrap{position:absolute;left:-22px;top:12px;width:100px;height:100px;display:flex;align-items:center;justify-content:center;pointer-events:auto;z-index:6}
       #meow-voice-bgm-dock .mv-bgm-disc-hit{position:absolute;inset:0;border:0;background:transparent;cursor:pointer;z-index:6}
-            #meow-voice-bgm-dock .mv-bgm-disc{position:relative;width:88px;height:88px;border-radius:50%;box-shadow:0 12px 26px rgba(0,0,0,.12), inset 0 0 0 1px rgba(255,255,255,.30);overflow:hidden;background:
-        radial-gradient(circle at 68% 30%, rgba(255,255,255,.26) 0 7%, rgba(255,255,255,0) 18%),
-        radial-gradient(circle at 50% 50%, rgba(246,246,242,.86) 0 18%, rgba(226,226,220,.94) 18% 21%, rgba(240,240,234,.54) 21% 56%, rgba(223,223,216,.38) 56% 77%, rgba(248,248,244,.70) 77% 100%);
-        overflow:hidden}
+      #meow-voice-bgm-dock .mv-bgm-disc{position:relative;width:86px;height:86px;border-radius:50%;box-shadow:0 12px 26px rgba(0,0,0,.12),inset 0 0 0 1px rgba(255,255,255,.30);background:radial-gradient(circle at 68% 30%,rgba(255,255,255,.26) 0 7%,rgba(255,255,255,0) 18%),radial-gradient(circle at 50% 50%,rgba(246,246,242,.86) 0 18%,rgba(226,226,220,.94) 18% 21%,rgba(240,240,234,.54) 21% 56%,rgba(223,223,216,.38) 56% 77%,rgba(248,248,244,.70) 77% 100%);overflow:hidden}
       #meow-voice-bgm-dock .mv-bgm-disc::before{content:'';position:absolute;inset:10px;border-radius:50%;border:1px solid rgba(255,255,255,.22);opacity:.8}
       #meow-voice-bgm-dock .mv-bgm-disc::after{content:'';position:absolute;inset:24px;border-radius:50%;border:1px solid rgba(255,255,255,.18);opacity:.7}
-      #meow-voice-bgm-dock .mv-bgm-disc-shine{position:absolute;inset:0;border-radius:50%;background:linear-gradient(120deg, rgba(255,255,255,.36), rgba(255,255,255,0) 42%, rgba(0,0,0,.03) 68%, rgba(255,255,255,.12));mix-blend-mode:screen;opacity:.78}
-      #meow-voice-bgm-dock .mv-bgm-disc-ring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:32px;height:32px;border-radius:50%;background:rgba(247,247,244,.94);box-shadow:inset 0 0 0 1px rgba(70,82,90,.10)}
+      #meow-voice-bgm-dock .mv-bgm-disc-shine{position:absolute;inset:0;border-radius:50%;background:linear-gradient(120deg,rgba(255,255,255,.36),rgba(255,255,255,0) 42%,rgba(0,0,0,.03) 68%,rgba(255,255,255,.12));mix-blend-mode:screen;opacity:.78}
+      #meow-voice-bgm-dock .mv-bgm-disc-ring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:30px;height:30px;border-radius:50%;background:rgba(247,247,244,.94);box-shadow:inset 0 0 0 1px rgba(70,82,90,.10)}
       #meow-voice-bgm-dock .mv-bgm-disc-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:9px;height:9px;border-radius:50%;background:#efefeb;box-shadow:0 0 0 4px rgba(197,204,206,.42)}
       #meow-voice-bgm-dock.playing .mv-bgm-disc{animation:mvBgmSpin 7.5s linear infinite}
       @keyframes mvBgmSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-      #meow-voice-bgm-dock .mv-bgm-tonearm{position:absolute;right:0;top:-2px;width:56px;height:56px;border:0;background:transparent;cursor:pointer;z-index:9;transform-origin:84% 16%;transition:transform .32s ease;will-change:transform}
+
+      /* ── 唱臂 ── */
+      #meow-voice-bgm-dock .mv-bgm-tonearm{position:absolute;right:0;top:-2px;width:54px;height:54px;border:0;background:transparent;cursor:pointer;z-index:9;transform-origin:84% 16%;transition:transform .32s ease;will-change:transform}
       #meow-voice-bgm-dock .mv-bgm-arm-knob{position:absolute;right:7px;top:3px;width:11px;height:11px;border-radius:50%;background:linear-gradient(180deg,#faf9f7,#dfddd7);box-shadow:0 2px 4px rgba(0,0,0,.18)}
       #meow-voice-bgm-dock .mv-bgm-arm-bar{position:absolute;right:11px;top:11px;width:30px;height:4px;border-radius:999px;background:linear-gradient(180deg,#f6f4ef,#cfcac2);transform:rotate(44deg);transform-origin:100% 50%;box-shadow:0 1px 2px rgba(0,0,0,.14)}
       #meow-voice-bgm-dock .mv-bgm-arm-head{position:absolute;left:10px;top:34px;width:16px;height:7px;border-radius:999px;background:linear-gradient(180deg,#f7f6f2,#d6d0c8);transform:rotate(44deg);box-shadow:0 1px 2px rgba(0,0,0,.16)}
@@ -875,148 +883,99 @@ ${t}
       #meow-voice-bgm-dock.playing.collapsed .mv-bgm-tonearm{transform:rotate(-30deg)}
       #meow-voice-bgm-dock.collapsed:not(.playing) .mv-bgm-tonearm{transform:rotate(12deg)}
       #meow-voice-bgm-dock:not(.playing):not(.collapsed) .mv-bgm-tonearm{transform:rotate(-6deg)}
-      #meow-voice-bgm-dock .mv-bgm-panel{position:relative;min-height:110px;padding:12px 12px 10px 48px;border-radius:22px;background:linear-gradient(160deg, rgba(255,255,255,.94) 0%, rgba(246,246,242,.88) 100%);border:1px solid rgba(220,220,214,.65);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 12px 36px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.04);overflow:visible;transition:opacity .18s ease,max-height .18s ease,padding .18s ease;max-height:600px}
-      #meow-voice-bgm-dock .mv-bgm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding-right:32px}
-      #meow-voice-bgm-dock .mv-bgm-open-settings{position:absolute;right:8px;top:34px;width:26px;height:26px;border:0;border-radius:999px;background:rgba(255,255,255,.85);box-shadow:0 2px 8px rgba(0,0,0,.10);cursor:pointer;color:#56656d;font-size:12px;flex:none;z-index:7;display:flex;align-items:center;justify-content:center;transition:background .15s}
-      #meow-voice-bgm-dock .mv-bgm-name{font-size:14px;line-height:1.2;font-weight:800;color:#1e2d32;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
-      #meow-voice-bgm-dock .mv-bgm-sub{font-size:10px;color:rgba(44,57,63,.55);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
-      #meow-voice-bgm-dock .mv-bgm-progress{margin-top:8px;padding:0 2px}
-      #meow-voice-bgm-dock .mv-bgm-progress input{width:100%;height:3px;cursor:pointer}
-      #meow-voice-bgm-dock .mv-bgm-controls{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px}
-      #meow-voice-bgm-dock .mv-bgm-controls button{width:30px;height:30px;font-size:13px;line-height:1;border:0;border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 3px 10px rgba(16,50,55,.10);cursor:pointer;color:#3e4f56;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .12s;flex-shrink:0}
-      #meow-voice-bgm-dock .mv-bgm-controls button:hover{background:rgba(255,255,255,1);transform:scale(1.08)}
+
+      /* ── 面板 (横向长条) ── */
+      #meow-voice-bgm-dock .mv-bgm-panel{
+        position:relative;
+        padding:12px 14px 10px 58px;
+        border-radius:22px;
+        background:linear-gradient(160deg,rgba(255,255,255,.96) 0%,rgba(246,246,242,.90) 100%);
+        border:1px solid rgba(215,215,208,.68);
+        backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+        box-shadow:0 14px 38px rgba(0,0,0,.09),0 2px 6px rgba(0,0,0,.04);
+        overflow:visible;
+        transition:opacity .18s ease,max-height .18s ease,padding .18s ease;
+        max-height:600px;
+      }
+
+      /* ── 主体行 (横向flex) ── */
+      #meow-voice-bgm-dock .mv-bgm-body{display:flex;align-items:stretch;gap:14px}
+
+      /* ── 左列：信息 + 歌词 ── */
+      #meow-voice-bgm-dock .mv-bgm-left-col{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:1px}
+      #meow-voice-bgm-dock .mv-bgm-name{font-size:15px;line-height:1.2;font-weight:800;color:#1e2d32;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
+      #meow-voice-bgm-dock .mv-bgm-sub{font-size:10px;color:rgba(44,57,63,.52);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+      /* ── 歌词区（横向长条内嵌，纯文字，无边框） ── */
+      #meow-voice-bgm-dock .mv-bgm-lyric{margin-top:5px;min-height:0;max-height:52px;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:1px;background:none;border:none;padding:0}
+      #meow-voice-bgm-dock .mv-bgm-lyric:empty::before{content:'歌词';font-size:11px;color:rgba(44,57,63,.24);font-style:italic}
+      #meow-voice-bgm-dock .mv-bgm-lrc-line{width:100%;padding:0;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:400;color:rgba(44,57,63,.30);line-height:1.45;transition:all .3s ease}
+      #meow-voice-bgm-dock .mv-bgm-lrc-cur{font-size:13px;font-weight:700;color:rgba(30,45,50,.88);white-space:normal;word-break:break-all}
+
+      /* ── 右列：分组 + 设置 + 控制按钮 ── */
+      #meow-voice-bgm-dock .mv-bgm-right-col{flex:none;width:164px;display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;gap:5px}
+      #meow-voice-bgm-dock .mv-bgm-right-top{display:flex;align-items:center;gap:5px;justify-content:flex-end}
+
+      /* ── 设置按钮 ── */
+      #meow-voice-bgm-dock .mv-bgm-open-settings{width:24px;height:24px;border:0;border-radius:7px;background:rgba(240,240,237,.88);cursor:pointer;color:#607078;font-size:11px;flex:none;z-index:7;display:flex;align-items:center;justify-content:center;transition:background .15s}
+
+      /* ── 分组 chip ── */
+      #meow-voice-bgm-dock .mv-bgm-groups{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
+      #meow-voice-bgm-dock .mv-bgm-group-chip{border:0;border-radius:8px;padding:3px 9px;background:rgba(72,82,86,.07);color:#44535a;cursor:pointer;font-size:10px;transition:background .15s}
+      #meow-voice-bgm-dock .mv-bgm-group-chip.active{background:#3a474d;color:#fff}
+
+      /* ── 控制按钮行 ── */
+      #meow-voice-bgm-dock .mv-bgm-controls{display:flex;align-items:center;justify-content:flex-end;gap:6px}
+      #meow-voice-bgm-dock .mv-bgm-controls button{width:30px;height:30px;border:0;border-radius:999px;background:rgba(255,255,255,.86);box-shadow:0 3px 10px rgba(16,50,55,.10);cursor:pointer;color:#3e4f56;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .12s;flex-shrink:0}
+      #meow-voice-bgm-dock .mv-bgm-controls button:hover{background:#fff;transform:scale(1.08)}
       #meow-voice-bgm-dock .mv-bgm-controls button svg{display:block;pointer-events:none}
-      #meow-voice-bgm-dock .mv-bgm-play{width:38px;height:38px;background:#3a474d !important;color:#fff !important;box-shadow:0 4px 14px rgba(40,56,62,.22) !important}
+      #meow-voice-bgm-dock .mv-bgm-play{width:38px !important;height:38px !important;background:#3a474d !important;color:#fff !important;box-shadow:0 4px 14px rgba(40,56,62,.22) !important}
       #meow-voice-bgm-dock .mv-bgm-play:hover{background:#2c3a40 !important}
-      #meow-voice-bgm-dock .mv-bgm-float-lyric-toggle{opacity:.72}
+      #meow-voice-bgm-dock .mv-bgm-float-lyric-toggle{opacity:.68}
       #meow-voice-bgm-dock .mv-bgm-float-lyric-toggle.active{background:#3a474d !important;color:#fff !important;opacity:1}
-      #meow-voice-bgm-dock .mv-bgm-groups{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
-      #meow-voice-bgm-dock .mv-bgm-group-chip{border:0;border-radius:999px;padding:4px 9px;background:rgba(72,82,86,.08);color:#44535a;cursor:pointer;font-size:10px}
-      #meow-voice-bgm-dock .mv-bgm-group-chip.active{background:#434f55;color:#fff}
-      #meow-voice-bgm-dock .mv-bgm-pick-row{margin-top:7px}
-      #meow-voice-bgm-dock .mv-bgm-track-select{width:100%;border:1px solid rgba(120,125,128,.18);border-radius:10px;padding:6px 9px;background:rgba(255,255,255,.74);font-size:11px;color:#334249;box-sizing:border-box}
-      #meow-voice-bgm-dock .mv-bgm-lyric{margin-top:8px;min-height:80px;max-height:130px;overflow:hidden;padding:6px 2px;border-radius:14px;background:rgba(255,255,255,.36);border:1px solid rgba(225,225,219,.78);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
-      #meow-voice-bgm-dock .mv-bgm-lyric:empty::before{content:'歌词';font-size:11px;color:rgba(44,57,63,.28);font-style:italic}
-      #meow-voice-bgm-dock .mv-bgm-lrc-line{width:100%;padding:1px 8px;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-      #meow-voice-bgm-dock .mv-bgm-lrc-cur{white-space:normal;word-break:break-all}
+
+      /* ── 歌曲选择 ── */
+      #meow-voice-bgm-dock .mv-bgm-pick-row{width:100%}
+      #meow-voice-bgm-dock .mv-bgm-track-select{width:100%;border:1px solid rgba(120,125,128,.16);border-radius:8px;padding:4px 7px;background:rgba(255,255,255,.74);font-size:10px;color:#334249;box-sizing:border-box}
+
+      /* ── 进度条 ── */
+      #meow-voice-bgm-dock .mv-bgm-progress{margin-top:10px;padding:0 2px}
+      #meow-voice-bgm-dock .mv-bgm-progress input{width:100%;height:3px;cursor:pointer}
+      #meow-voice-bgm-dock input[type="range"]{accent-color:#727f86}
+
+      /* ── 辅助元素 ── */
+      #meow-voice-bgm-dock .mv-bgm-track-count{font-size:9px;color:rgba(57,72,80,.38);text-align:right;margin-top:3px}
       #meow-voice-bgm-dock .mv-bgm-list{display:none !important}
       #meow-voice-bgm-dock .mv-bgm-item{display:none !important}
-      #meow-voice-bgm-dock .mv-bgm-item.active{display:none !important}
-      #meow-voice-bgm-dock .mv-bgm-item-title{display:none !important}
-      #meow-voice-bgm-dock .mv-bgm-item-meta{display:none !important}
-      #meow-voice-bgm-dock .mv-bgm-item-play{display:none !important}
-      #meow-voice-bgm-dock .mv-bgm-embed{margin-top:8px}
-      #meow-voice-bgm-dock .mv-bgm-embed iframe{display:block;width:100%;height:104px;border:0;border-radius:14px;background:rgba(255,255,255,.84)}
+      #meow-voice-bgm-dock .mv-bgm-embed{margin-top:6px}
+      #meow-voice-bgm-dock .mv-bgm-embed iframe{display:block;width:100%;height:90px;border:0;border-radius:12px;background:rgba(255,255,255,.84)}
       #meow-voice-bgm-dock .mv-bgm-embed.empty{display:none}
+
+      /* ── 收起态 ── */
       #meow-voice-bgm-dock.edge-right.collapsed{transform:none;background:transparent !important;box-shadow:none !important;border:none !important}
       #meow-voice-bgm-dock.edge-left.collapsed{transform:none;background:transparent !important;box-shadow:none !important;border:none !important}
       #meow-voice-bgm-dock.collapsed .mv-bgm-panel{opacity:0;pointer-events:none;max-height:0 !important;min-height:0 !important;padding:0 !important;margin:0 !important;border-width:0 !important;overflow:hidden;box-shadow:none !important;backdrop-filter:none !important}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-lyric{display:none !important}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-embed{display:none !important}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-groups{display:none !important}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-controls{display:none !important}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-track-count{display:none !important}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-title-wrap{display:none !important}
-      #meow-voice-bgm-dock.collapsed .mv-bgm-sub{display:none !important}
       #meow-voice-bgm-dock.collapsed .mv-bgm-shell{min-height:0 !important;background:transparent !important}
       #meow-voice-bgm-dock.collapsed .mv-bgm-close{display:none}
       #meow-voice-bgm-dock.collapsed .mv-bgm-open-settings{right:58px;top:8px}
-      #meow-voice-bgm-dock.compact{width:244px !important;--mv-bgm-peek:50px}
-      #meow-voice-bgm-dock.compact .mv-bgm-shell{min-height:94px;padding-left:30px}
-      #meow-voice-bgm-dock.compact .mv-bgm-disc-wrap{left:-24px;top:10px;width:84px;height:84px}
-      #meow-voice-bgm-dock.compact .mv-bgm-disc{width:72px;height:72px}
-      #meow-voice-bgm-dock.compact .mv-bgm-tonearm{top:-2px;right:-1px;width:46px;height:46px}
-      #meow-voice-bgm-dock.compact .mv-bgm-arm-knob{right:5px;top:3px;width:9px;height:9px}
-      #meow-voice-bgm-dock.compact .mv-bgm-arm-bar{right:8px;top:10px;width:26px;height:4px}
-      #meow-voice-bgm-dock.compact .mv-bgm-arm-head{left:8px;top:28px;width:13px;height:6px}
-      #meow-voice-bgm-dock.compact .mv-bgm-panel{padding:10px 9px 9px 34px;border-radius:18px}
-      #meow-voice-bgm-dock.compact .mv-bgm-name{max-width:104px;font-size:13px}
-      #meow-voice-bgm-dock.compact .mv-bgm-sub{max-width:118px}
-      #meow-voice-bgm-dock.compact .mv-bgm-controls button{width:28px;height:28px}
-      #meow-voice-bgm-dock.compact .mv-bgm-play{width:32px;height:32px}
-      
-      #meow-voice-bgm-dock.mini{width:174px !important;max-width:calc(100vw - 2px) !important;--mv-bgm-peek:44px}
-      #meow-voice-bgm-dock.mini .mv-bgm-shell{padding-left:18px;min-height:74px}
-      #meow-voice-bgm-dock.mini .mv-bgm-disc-wrap{left:-22px;top:7px;width:70px;height:70px}
-      #meow-voice-bgm-dock.mini .mv-bgm-disc{width:58px;height:58px}
-      #meow-voice-bgm-dock.mini .mv-bgm-tonearm{top:-3px;right:-2px;width:40px;height:40px}
-      #meow-voice-bgm-dock.mini .mv-bgm-arm-knob{right:5px;top:3px;width:8px;height:8px}
-      #meow-voice-bgm-dock.mini .mv-bgm-arm-bar{right:8px;top:9px;width:21px;height:3px}
-      #meow-voice-bgm-dock.mini .mv-bgm-arm-head{left:7px;top:24px;width:11px;height:5px}
-      #meow-voice-bgm-dock.mini .mv-bgm-panel{padding:8px 7px 7px 24px;border-radius:14px}
-      #meow-voice-bgm-dock.mini .mv-bgm-name{font-size:11px;max-width:80px}
-      #meow-voice-bgm-dock.mini .mv-bgm-sub{font-size:9px;max-width:92px}
-      #meow-voice-bgm-dock.mini .mv-bgm-open-settings{right:6px;top:25px;width:22px;height:22px;font-size:10px}
-      #meow-voice-bgm-dock.mini .mv-bgm-close{right:6px;top:2px;width:22px;height:22px;font-size:12px}
-      #meow-voice-bgm-dock.mini .mv-bgm-controls{gap:6px;margin-top:7px}
-      #meow-voice-bgm-dock.mini .mv-bgm-controls button{width:24px;height:24px}
-      #meow-voice-bgm-dock.mini .mv-bgm-play{width:28px;height:28px}
-      #meow-voice-bgm-dock.mini .mv-bgm-group-chip{padding:2px 6px;font-size:9px}
-      #meow-voice-bgm-dock.mini .mv-bgm-track-select{padding:4px 7px;font-size:9px}
-      #meow-voice-bgm-dock.mini .mv-bgm-lyric{min-height:54px;max-height:80px;padding:4px 0}
-      #meow-voice-bgm-dock.mini .mv-bgm-list{max-height:74px}
-      
-      @media (max-width: 640px){
-        #meow-voice-bgm-dock{width:234px !important;max-width:calc(100vw - 4px) !important;--mv-bgm-peek:50px}
-        #meow-voice-bgm-dock .mv-bgm-shell{padding-left:28px;min-height:88px}
-        #meow-voice-bgm-dock .mv-bgm-disc-wrap{left:-22px;top:8px;width:76px;height:76px}
-        #meow-voice-bgm-dock .mv-bgm-disc{width:68px;height:68px}
-        #meow-voice-bgm-dock .mv-bgm-panel{padding:9px 8px 8px 32px;border-radius:16px}
-        #meow-voice-bgm-dock .mv-bgm-name{font-size:12px;max-width:98px}
-        #meow-voice-bgm-dock .mv-bgm-sub{font-size:9px;max-width:106px}
-        #meow-voice-bgm-dock .mv-bgm-open-settings{right:7px;top:28px;width:22px;height:22px}
-        #meow-voice-bgm-dock .mv-bgm-close{right:7px;top:3px;width:22px;height:22px}
-        #meow-voice-bgm-dock .mv-bgm-group-chip{padding:4px 8px;font-size:10px}
-        #meow-voice-bgm-dock .mv-bgm-lyric{min-height:34px;padding:7px 8px}
-        
-      }
-      #meow-voice-bgm-dock input[type="range"]{accent-color:#727f86}
 
-      /* ── 悬浮歌词 (QQ音乐风格) ── */
-      #mv-float-lyric{
-        position:fixed;left:50%;top:auto;bottom:88px;transform:translateX(-50%);
-        z-index:2147483645;pointer-events:auto;
-        max-width:72vw;min-width:160px;
-        display:none;
-        user-select:none;-webkit-user-select:none;
+      /* ── 响应式 ── */
+      @media (max-width:640px){
+        #meow-voice-bgm-dock{width:340px !important}
+        #meow-voice-bgm-dock .mv-bgm-right-col{width:130px}
+        #meow-voice-bgm-dock .mv-bgm-name{font-size:13px}
+        #meow-voice-bgm-dock .mv-bgm-play{width:32px !important;height:32px !important}
+        #meow-voice-bgm-dock .mv-bgm-controls button{width:26px;height:26px}
       }
+
+      /* ── 悬浮歌词 ── */
+      #mv-float-lyric{position:fixed;left:50%;top:auto;bottom:88px;transform:translateX(-50%);z-index:2147483645;pointer-events:auto;max-width:72vw;min-width:160px;display:none;user-select:none;-webkit-user-select:none}
       #mv-float-lyric.visible{display:block}
-      #mv-float-lyric .mv-fl-inner{
-        display:flex;flex-direction:column;align-items:center;gap:4px;
-        padding:10px 20px 10px 20px;
-        border-radius:999px;
-        background:rgba(22,28,30,.52);
-        backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
-        border:1px solid rgba(255,255,255,.10);
-        box-shadow:0 8px 32px rgba(0,0,0,.32);
-        transition:background .2s;
-        cursor:move;
-      }
-      #mv-float-lyric .mv-fl-cur{
-        font-size:15px;font-weight:600;
-        color:rgba(255,255,255,.96);
-        text-align:center;line-height:1.45;
-        text-shadow:0 1px 6px rgba(0,0,0,.5);
-        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68vw;
-        transition:opacity .25s;
-      }
-      #mv-float-lyric .mv-fl-next{
-        font-size:12px;font-weight:400;
-        color:rgba(255,255,255,.46);
-        text-align:center;line-height:1.4;
-        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw;
-        transition:opacity .25s;
-      }
-      #mv-float-lyric .mv-fl-close{
-        position:absolute;right:-8px;top:-8px;
-        width:20px;height:20px;border-radius:50%;
-        background:rgba(40,50,54,.78);border:1px solid rgba(255,255,255,.18);
-        color:rgba(255,255,255,.70);font-size:12px;line-height:1;
-        display:none;align-items:center;justify-content:center;
-        cursor:pointer;border:0;
-      }
+      #mv-float-lyric .mv-fl-inner{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 20px;border-radius:999px;background:rgba(22,28,30,.52);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.10);box-shadow:0 8px 32px rgba(0,0,0,.32);transition:background .2s;cursor:move}
+      #mv-float-lyric .mv-fl-cur{font-size:15px;font-weight:600;color:rgba(255,255,255,.96);text-align:center;line-height:1.45;text-shadow:0 1px 6px rgba(0,0,0,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68vw;transition:opacity .25s}
+      #mv-float-lyric .mv-fl-next{font-size:12px;font-weight:400;color:rgba(255,255,255,.46);text-align:center;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw;transition:opacity .25s}
+      #mv-float-lyric .mv-fl-close{position:absolute;right:-8px;top:-8px;width:20px;height:20px;border-radius:50%;background:rgba(40,50,54,.78);border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.70);font-size:12px;line-height:1;display:none;align-items:center;justify-content:center;cursor:pointer}
       #mv-float-lyric:hover .mv-fl-close{display:flex}
-      #mv-float-lyric.no-lyric .mv-fl-inner{background:rgba(22,28,30,.38)}
       #mv-float-lyric.no-lyric .mv-fl-cur{color:rgba(255,255,255,.38);font-style:italic;font-weight:400;font-size:13px}
     `;
     if (!doc.getElementById(style.id)) (doc.head || doc.documentElement).appendChild(style);
@@ -1035,10 +994,7 @@ ${t}
         const isOn = !btn.classList.contains('active');
         btn.classList.toggle('active', isOn);
         lsSet('meow_voice_float_lyric_on', isOn);
-        if (fl) {
-          fl.classList.toggle('visible', isOn);
-          if (isOn) _updateFloatLyric();
-        }
+        if (fl) { fl.classList.toggle('visible', isOn); if (isOn) _updateFloatLyric(); }
         return;
       }
       if (e.target.closest('.mv-bgm-disc-hit')) {
@@ -1223,7 +1179,6 @@ ${t}
 
     (doc.documentElement || doc.body).appendChild(root);
 
-    // ── 创建悬浮歌词元素 ──
     if (!doc.getElementById('mv-float-lyric')) {
       const fl = doc.createElement('div');
       fl.id = 'mv-float-lyric';
@@ -1233,51 +1188,40 @@ ${t}
         <button type="button" class="mv-fl-close" title="关闭悬浮歌词">×</button>
       </div>`;
       Object.assign(fl.style, { position:'fixed', zIndex:'2147483645' });
-      // 拖动支持
       let flDrag=false, flSx=0, flSy=0, flBx=0, flBy=0;
       const inner = fl.querySelector('.mv-fl-inner');
       const onFlDown = e => {
-        const p = e.touches ? e.touches[0] : e;
-        flDrag=true; flSx=p.clientX; flSy=p.clientY;
-        const r = fl.getBoundingClientRect();
-        flBx=r.left; flBy=r.top;
-        fl.style.transform='none';
-        fl.style.left = r.left + 'px';
-        fl.style.top = r.top + 'px';
-        fl.style.bottom = 'auto';
-        if (e.cancelable) e.preventDefault();
-        e.stopPropagation();
+        const p=e.touches?e.touches[0]:e; flDrag=true; flSx=p.clientX; flSy=p.clientY;
+        const r=fl.getBoundingClientRect(); flBx=r.left; flBy=r.top;
+        fl.style.transform='none'; fl.style.left=r.left+'px'; fl.style.top=r.top+'px'; fl.style.bottom='auto';
+        if(e.cancelable)e.preventDefault(); e.stopPropagation();
       };
       const onFlMove = e => {
-        if (!flDrag) return;
-        const p = e.touches ? e.touches[0] : e;
-        const nx = Math.max(4, Math.min((W.innerWidth||400) - (fl.offsetWidth||200) - 4, flBx + p.clientX - flSx));
-        const ny = Math.max(4, Math.min((W.innerHeight||600) - (fl.offsetHeight||50) - 4, flBy + p.clientY - flSy));
-        fl.style.left = nx + 'px';
-        fl.style.top = ny + 'px';
-        if (e.cancelable) e.preventDefault();
+        if(!flDrag)return; const p=e.touches?e.touches[0]:e;
+        const nx=Math.max(4,Math.min((W.innerWidth||400)-(fl.offsetWidth||200)-4,flBx+p.clientX-flSx));
+        const ny=Math.max(4,Math.min((W.innerHeight||600)-(fl.offsetHeight||50)-4,flBy+p.clientY-flSy));
+        fl.style.left=nx+'px'; fl.style.top=ny+'px';
+        if(e.cancelable)e.preventDefault();
       };
-      const onFlUp = () => { flDrag=false; };
-      inner.addEventListener('mousedown', onFlDown);
-      inner.addEventListener('touchstart', onFlDown, {passive:false});
-      W.addEventListener('mousemove', onFlMove);
-      W.addEventListener('touchmove', onFlMove, {passive:false});
-      W.addEventListener('mouseup', onFlUp);
-      W.addEventListener('touchend', onFlUp);
-      fl.querySelector('.mv-fl-close').addEventListener('click', () => {
+      const onFlUp = ()=>{ flDrag=false; };
+      inner.addEventListener('mousedown',onFlDown);
+      inner.addEventListener('touchstart',onFlDown,{passive:false});
+      W.addEventListener('mousemove',onFlMove);
+      W.addEventListener('touchmove',onFlMove,{passive:false});
+      W.addEventListener('mouseup',onFlUp);
+      W.addEventListener('touchend',onFlUp);
+      fl.querySelector('.mv-fl-close').addEventListener('click', ()=>{
         fl.classList.remove('visible');
         lsSet('meow_voice_float_lyric_on', false);
-        // 取消激活按钮
         const dock = doc.getElementById('meow-voice-bgm-dock');
-        if (dock) dock.querySelector('.mv-bgm-float-lyric-toggle')?.classList.remove('active');
+        if(dock) dock.querySelector('.mv-bgm-float-lyric-toggle')?.classList.remove('active');
       });
-      (doc.documentElement || doc.body).appendChild(fl);
+      (doc.documentElement||doc.body).appendChild(fl);
     }
 
     return root;
   }
 
-  /** 更新悬浮歌词显示内容 */
   function _updateFloatLyric() {
     const fl = doc.getElementById('mv-float-lyric');
     if (!fl || !fl.classList.contains('visible')) return;
@@ -1372,7 +1316,6 @@ ${t}
         lyricWrap.innerHTML = '';
       }
     }
-    // 悬浮歌词状态同步
     const floatBtn = root.querySelector('.mv-bgm-float-lyric-toggle');
     const floatLyricOn = lsGet('meow_voice_float_lyric_on', false);
     if (floatBtn) floatBtn.classList.toggle('active', !!floatLyricOn);
