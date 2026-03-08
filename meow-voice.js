@@ -1029,12 +1029,12 @@ ${t}
         display:none;
         padding:10px 11px 14px;
         background:linear-gradient(180deg,
-          rgba(245,245,242,.97) 0%,
-          rgba(246,246,243,.88) 55%,
-          rgba(248,248,245,.55) 82%,
-          rgba(250,250,248,.18) 100%);
-        border:1px solid rgba(210,210,205,.60);
-        border-bottom-color:rgba(210,210,205,.25);
+          rgba(245,245,242,.88) 0%,
+          rgba(246,246,243,.70) 45%,
+          rgba(248,248,245,.35) 75%,
+          rgba(250,250,248,.08) 100%);
+        border:1px solid rgba(210,210,205,.45);
+        border-bottom-color:rgba(210,210,205,.12);
         border-radius:14px;
         box-shadow:0 10px 28px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.03);
         box-sizing:border-box;
@@ -1241,15 +1241,20 @@ ${t}
         const gid = btn.dataset.groupId || '';
         const _alreadySongOpen = rootNow.classList.contains('drawer-song');
         const _alreadyThisGroup = btn.classList.contains('active');
-        // 同组且歌单已开 → 仅收起，不重置当前曲目
+        // 同组且歌单已开 → 仅收起，当前曲目不变
         if (_alreadySongOpen && _alreadyThisGroup) {
           _closeAllDrawers(rootNow);
           return;
         }
-        // 切换到新分组 → 重置曲目选择并展开歌单
         lsSet(LS.BGM_GROUP, gid);
         const group = _findBgmGroup(lib, gid);
         const _gTracks = _bgmTrackList(group);
+        if (_alreadyThisGroup) {
+          // 同组歌单已关 → 直接展开，不重置当前曲目（保持播放状态）
+          _openSongDrawer(rootNow, gid, _gTracks, lsGet(LS.BGM_TRACK,''));
+          return;
+        }
+        // 切换到新分组 → 重置曲目选择并展开歌单
         const first = _gTracks[0] || null;
         lsSet(LS.BGM_TRACK, first ? first.id : '');
         _bgmState.sourceUrl = '';
