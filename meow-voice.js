@@ -1329,7 +1329,6 @@ ${t}
   }
 
   function _renderBgmDock(cArg) {
-    _bgmLibCache = null;
     const c = cArg || cfg();
     const root = _getBgmDock();
     if (_bgmState.closed) return;
