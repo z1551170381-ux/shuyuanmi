@@ -1386,7 +1386,7 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   position:fixed;
   width:220px; height:220px;
   border-radius:50%;
-  background:rgba(255,255,255,.06);
+  background:rgba(255,255,255,.02);
   border:1px solid rgba(255,255,255,.14);
   box-shadow:0 10px 32px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.16);
   backdrop-filter:blur(18px) saturate(1.03);
@@ -1425,7 +1425,7 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   transition:transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
 }
 #${ID_MENU} .rotaryItem.sel{
-  background:rgba(255,253,247,.18);
+  background:rgba(255,253,247,.78);
   border-color:rgba(226,213,183,.56);
   transform:scale(1.10) !important;
   box-shadow:
