@@ -1395,12 +1395,13 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   overflow:visible;
   pointer-events:auto;
   opacity:0;
-  transform:none;
+  transform:translateZ(0);
   transition:opacity .14s ease;
   touch-action:none;
   user-select:none;
   -webkit-user-select:none;
   isolation:isolate;
+  will-change:opacity;
 }
 #${ID_MENU}.meowRotary::before{
   content:"";
@@ -1410,16 +1411,22 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
   border:1px solid rgba(255,255,255,.30);
   box-shadow:0 0 0 1px rgba(0,0,0,.08) inset, 0 16px 34px rgba(0,0,0,.16);
+  /* blur 始终开启，避免 opacity:0→1 时模糊闪动 */
   backdrop-filter:blur(14px) saturate(1.06);
   -webkit-backdrop-filter:blur(14px) saturate(1.06);
   opacity:0;
+  /* 只过渡 opacity，不过渡 backdrop-filter */
   transition:opacity .14s ease;
   pointer-events:none;
   z-index:0;
+  /* will-change 让浏览器提前创建合成层，防止 blur 重绘闪烁 */
+  will-change:opacity;
+  transform:translateZ(0);
+  -webkit-transform:translateZ(0);
 }
 #${ID_MENU}.meowRotary.show{
   opacity:1;
-  transform:none;
+  transform:translateZ(0);
 }
 #${ID_MENU}.meowRotary.show::before{
   opacity:1;
