@@ -1408,7 +1408,7 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   position:absolute;
   inset:0;
   border-radius:50%;
-  background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
+  background:linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.18));
   border:1px solid rgba(255,255,255,.30);
   box-shadow:0 0 0 1px rgba(0,0,0,.08) inset, 0 16px 34px rgba(0,0,0,.16);
   /* blur 始终开启，避免 opacity:0→1 时模糊闪动 */
@@ -1463,18 +1463,18 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   z-index:3;
 }
 #${ID_MENU} .rotaryItem .i{
-  font-size:18px; line-height:18px;
+  font-size:14px; line-height:14px;
   color:rgba(35,35,35,.72);
   display:flex; align-items:center; justify-content:center;
 }
 #${ID_MENU} .rotaryItem .i svg{
   display:block;
-  width:22px; height:22px;
+  width:16px; height:16px;
 }
 #${ID_MENU} .rotaryItem .t{
-  font-size:11px; font-weight:900;
-  letter-spacing:.2px;
-  color:rgba(80,68,52,.78);
+  font-size:9.5px; font-weight:500;
+  letter-spacing:.3px;
+  color:rgba(80,68,52,.62);
   pointer-events:none;
 }
 #${ID_MENU} .rotaryItem.sel .t{
