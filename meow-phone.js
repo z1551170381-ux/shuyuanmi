@@ -538,54 +538,21 @@ function ensureTuneStyle(){
   --ph-glass-border: rgba(255,255,255,var(--phAppBorderA));
 }
 
-/* ✅ GPT-style: 所有列表行变成独立浮卡 */
-#${ID} .wxChatRow,
-#${ID} .wxDiscoverItem,
-#${ID} .wxContactHeader,
-#${ID} .wxContactItem,
-#${ID} .wxMeProfile,
-#${ID} .wxMeProfile + div .wxDiscoverItem{
+/* ✅ 只有聊天行是独立浮卡；discover/contact 行住在 Group 卡内 */
+#${ID} .wxChatRow{
   margin: 4px 10px;
-  border-radius: 22px;
+  border-radius: 20px;
   border-bottom: none !important;
-  box-shadow: 0 10px 28px rgba(16,22,36,.06);
+  box-shadow: 0 4px 16px rgba(16,22,36,.07);
 }
-#${ID} .wxChatList,
+#${ID} .wxChatList{ padding: 6px 0 14px; }
 #${ID} .wxDiscoverList,
 #${ID} .wxContactList,
 #${ID} .wxMeWrap{ padding: 6px 0 14px; }
 
-/* ✅ GPT-style: 所有列表行变成独立浮卡 */
-#${ID} .wxChatRow,
-#${ID} .wxDiscoverItem,
-#${ID} .wxContactHeader,
-#${ID} .wxContactItem,
-#${ID} .wxMeProfile{
-  margin: 4px 10px;
-  border-radius: 22px;
-  border-bottom: none !important;
-  box-shadow: 0 8px 24px rgba(16,22,36,.06);
-}
-#${ID} .wxChatList,
-#${ID} .wxDiscoverList,
-#${ID} .wxContactList,
-#${ID} .wxMeWrap{ padding: 6px 0 14px; }
 
-/* ✅ GPT-style: 所有列表行变成独立浮卡 */
-#${ID} .wxChatRow,
-#${ID} .wxDiscoverItem,
-#${ID} .wxContactHeader,
-#${ID} .wxContactItem,
-#${ID} .wxMeProfile{
-  margin: 4px 10px;
-  border-radius: 22px;
-  border-bottom: none !important;
-  box-shadow: 0 8px 24px rgba(16,22,36,.06);
-}
-#${ID} .wxChatList,
-#${ID} .wxDiscoverList,
-#${ID} .wxContactList,
-#${ID} .wxMeWrap{ padding: 6px 0 14px; }
+
+
 
 /* modern 壁纸：纯黑 */
 #${ID} .phWallpaper{
@@ -987,8 +954,15 @@ function phoneApplyWallpaper(base64OrEmpty, target){
           case '🗑': return s('<path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z"/><path d="M4 7h16v2H4V7z"/>');
           case '🖼': return s('<path d="M4 5h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm3 4a2 2 0 1 0 0 .001A2 2 0 0 0 7 9zm13 10-5-5-3 3-2-2-6 6h16z"/>');
           case '📷': return s('<path d="M9 4l1.5-2h3L15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3zm3 15a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2.2a2.8 2.8 0 1 1 0-5.6 2.8 2.8 0 0 1 0 5.6z"/>');
-          case '➕': return s('<path d="M11 5h2v14h-2V5zm-6 6h14v2H5v-2z"/>');
-default: return emoji||'';
+          case '🎭': return s('<path d="M20 2H4a2 2 0 0 0-2 2v14l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-9 9H9V9h2v2zm4 0h-2V9h2v2zm4 0h-2V9h2v2z"/>');
+        case '👤': return s('<path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>');
+        case '🤖': return s('<path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7H3a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2zM7.5 14a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm9 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM5 19v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1H5z"/>');
+        case '🔗': return s('<path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>');
+        case '🎙': return s('<path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>');
+        case '➕': return s('<path d="M11 5h2v14h-2V5zm-6 6h14v2H5v-2z"/>');
+case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>');
+        case '🏷': return s('<path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/>');
+        default: return emoji||'';
         }
       }
 
@@ -1096,10 +1070,10 @@ default: return emoji||'';
   --ph-confirm-cancel: rgba(255,255,255,.45);
   --ph-confirm-danger: #ff5858;
   --ph-ico-list: rgba(255,255,255,.90);
-  --ph-discover-bg: rgba(255,255,255,.04);
-  --ph-discover-border: rgba(255,255,255,.06);
-  --ph-discover-name: rgba(255,255,255,.88);
-  --ph-discover-arrow: rgba(255,255,255,.22);
+  --ph-discover-bg: rgba(255,255,255,.05);
+  --ph-discover-border: rgba(255,255,255,.07);
+  --ph-discover-name: rgba(255,255,255,.90);
+  --ph-discover-arrow: rgba(255,255,255,.26);
   --ph-searchbox-bg: rgba(255,255,255,.07);
   --ph-searchbox-text: rgba(255,255,255,.40);
 }
@@ -1958,12 +1932,11 @@ default: return emoji||'';
 #${ID} .wxSearchRow{ padding:6px 12px 8px; }
 #${ID} .wxSearchBox{
   height:34px; border-radius:10px;
-  background:rgba(255,255,255,.58);
-  border:1px solid rgba(0,0,0,.06);
+  background:var(--ph-searchbox-bg, rgba(255,255,255,.58));
+  border:1px solid var(--ph-glass-border, rgba(0,0,0,.06));
   display:flex; align-items:center; justify-content:center; gap:6px;
-  color:rgba(20,24,28,.55);
-  font-size:12px;
-  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  color:var(--ph-searchbox-text, rgba(20,24,28,.38));
+  font-size:13px; cursor:text;
 }
 #${ID} .wxSearchBox svg.phIco{ width:14px; height:14px; opacity:.65; }
 #${ID} .wxBadge{
@@ -2248,8 +2221,8 @@ default: return emoji||'';
   border-bottom:1px solid var(--ph-sep);
   transition:background .1s;
 }
-#${ID} .wxDiscoverItem:hover{ background:rgba(255,255,255,.85); }
-#${ID} .wxDiscoverItem:active{ background:rgba(0,0,0,.04); }
+#${ID} .wxDiscoverItem:hover{ background:var(--ph-row-hover); }
+#${ID} .wxDiscoverItem:active{ background:var(--ph-row-hover); }
 #${ID} .wxDiscoverItem:last-child{ border-bottom:0; }
 #${ID} .wxDiscoverItem .wxDIco{
   width:36px; height:36px; border-radius:9px; flex-shrink:0;
@@ -2274,7 +2247,7 @@ default: return emoji||'';
 #${ID} .wxMeProfile{
   display:flex; align-items:center; gap:14px;
   padding:18px 16px;
-  background:var(--ph-glass-strong);
+  background:transparent;
   border-bottom:1px solid var(--ph-sep);
   cursor:pointer; transition:background .1s;
 }
@@ -2286,23 +2259,15 @@ default: return emoji||'';
   box-shadow:0 2px 10px rgba(0,0,0,.1);
 }
 #${ID} .wxMeProfile .wxMeInfo{ flex:1; }
-#${ID} .wxMeProfile .wxMeName{ font-size:17px; font-weight:700; color:rgba(20,24,28,.88); }
-#${ID} .wxMeProfile .wxMeId{ font-size:12px; color:rgba(20,24,28,.4); margin-top:4px; }
+#${ID} .wxMeProfile .wxMeName{ font-size:17px; font-weight:700; color:var(--ph-text); }
+#${ID} .wxMeProfile .wxMeId{ font-size:12px; color:var(--ph-text-sub); margin-top:4px; }
 #${ID} .wxMeMenu{ margin-top:0; }
-#${ID} .wxDiscoverGroup, #${ID} .wxMeGroup{
-  margin:8px 12px;
-  background:var(--ph-glass-strong);
-  border-radius:var(--ph-radius-lg);
-  border:1px solid var(--ph-glass-border);
-  overflow:hidden;
-  box-shadow:0 1px 0 rgba(255,255,255,.82) inset, 0 2px 10px var(--ph-shadow);
-  backdrop-filter:blur(var(--ph-glass-blur)); -webkit-backdrop-filter:blur(var(--ph-glass-blur));
-}
+/* wxDiscoverGroup, wxMeGroup: see wxDiscoverList block above */
 
 /* === Contact Groups Accordion (通讯录) === */
 #${ID} .wxContactHeader{
   display:flex; align-items:center; gap:14px;
-  padding:13px 16px; background:var(--ph-glass-strong);
+  padding:13px 16px; background:transparent;
   border-bottom:1px solid var(--ph-sep);
   cursor:pointer; transition:background .1s;
 }
@@ -2315,19 +2280,27 @@ default: return emoji||'';
   border: 1px solid var(--ph-glass-border) !important;
   box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 0 rgba(255,255,255,.72) inset !important;
 }
-#${ID} .wxContactHeader .wxCHIco svg.phIco{ width:18px; height:18px; fill:var(--ph-text-sub) !important; opacity:.80; }
-#${ID} .wxContactHeader .wxCHName{ flex:1; font-size:14.5px; color:rgba(20,24,28,.88); }
+#${ID} .wxContactHeader .wxCHIco svg.phIco{ width:18px; height:18px; fill:var(--ph-text-sub) !important; }
+#${ID} .wxContactHeader .wxCHName{ flex:1; font-size:14.5px; color:var(--ph-text); }
 #${ID} .wxContactHeader .wxCHBadge{
   background:rgba(0,0,0,.06); border-radius:10px;
   padding:2px 8px; font-size:11px; color:rgba(20,24,28,.4);
 }
-#${ID} .wxGroupAccordion{ }
+#${ID} .wxGroupAccordion{
+  margin:4px 10px 8px;
+  background:var(--ph-glass-strong);
+  border-radius:var(--ph-radius-lg);
+  border:1px solid var(--ph-glass-border);
+  overflow:hidden;
+  box-shadow:0 1px 0 rgba(255,255,255,.80) inset, 0 2px 10px var(--ph-shadow);
+  backdrop-filter:blur(var(--ph-glass-blur)); -webkit-backdrop-filter:blur(var(--ph-glass-blur));
+}
 #${ID} .wxGroupHeader{
   display:flex; align-items:center; gap:10px;
   padding:10px 16px; cursor:pointer;
-  background:rgba(245,245,245,.85);
-  border-bottom:1px solid rgba(0,0,0,.04);
-  font-size:13.5px; color:rgba(20,24,28,.55); font-weight:500;
+  background:var(--ph-glass-strong);
+  border-bottom:1px solid var(--ph-sep);
+  font-size:13px; color:var(--ph-text-sub); font-weight:600;
 }
 #${ID} .wxGroupHeader .wxGArrow{
   transition:transform .2s; font-size:12px; color:rgba(0,0,0,.25);
@@ -2338,17 +2311,17 @@ default: return emoji||'';
 #${ID} .wxContactItem{
   display:flex; align-items:center; gap:12px;
   padding:10px 16px 10px 30px; cursor:pointer;
-  background:rgba(255,255,255,.72);
-  border-bottom:1px solid rgba(0,0,0,.03);
+  background:transparent;
+  border-bottom:1px solid var(--ph-sep);
   transition:background .1s;
 }
-#${ID} .wxContactItem:hover{ background:rgba(255,255,255,.88); }
+#${ID} .wxContactItem:hover{ background:var(--ph-row-hover); }
 #${ID} .wxContactItem .wxCIAvatar{
   width:38px; height:38px; border-radius:50%; flex-shrink:0;
   background:var(--ph-glass-strong); border:1px solid var(--ph-glass-border);
   display:flex; align-items:center; justify-content:center; font-size:15px;
 }
-#${ID} .wxContactItem .wxCIName{ font-size:14px; color:rgba(20,24,28,.85); }
+#${ID} .wxContactItem .wxCIName{ font-size:14px; color:var(--ph-text); }
 
 /* === Confirm Dialog (删除确认) === */
 #${ID} .wxConfirmOverlay{
@@ -7873,11 +7846,11 @@ ${lines}
 
         // C1: 四种导入方式（列表样式）
         html += '<div style="padding:12px 14px 4px;font-size:12px;color:rgba(20,24,28,.4);font-weight:500;">导入方式</div>';
-        html += '<div style="margin:0 14px;border-radius:14px;overflow:hidden;background:rgba(255,255,255,.82);border:1px solid rgba(0,0,0,.06);">';
-        html += '<div class="wxContactHeader" data-act="c1ImportWB" style="margin:0;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;"><div class="wxCHIco" style="font-size:18px;">📖</div><div class="wxCHName" style="flex:1;">世界书角色导入</div><div class="wxDArrow" style="color:rgba(20,24,28,.3);">›</div></div>';
-        html += '<div class="wxContactHeader" data-act="c1ImportSTCard" style="margin:0;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;"><div class="wxCHIco" style="font-size:18px;">🎭</div><div class="wxCHName" style="flex:1;">酒馆角色卡导入</div><div class="wxDArrow" style="color:rgba(20,24,28,.3);">›</div></div>';
-        html += '<div class="wxContactHeader" data-act="c1ImportPersona" style="margin:0;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;"><div class="wxCHIco" style="font-size:18px;">👤</div><div class="wxCHName" style="flex:1;">用户人设导入</div><div class="wxDArrow" style="color:rgba(20,24,28,.3);">›</div></div>';
-        html += '<div class="wxContactHeader" data-act="c1ScanMain" style="margin:0;padding:12px 14px;cursor:pointer;"><div class="wxCHIco" style="font-size:18px;">🔍</div><div class="wxCHName" style="flex:1;">主线扫描</div><div class="wxDArrow" style="color:rgba(20,24,28,.3);">›</div></div>';
+        html += '<div class="wxDiscoverGroup" style="margin:0 14px">';
+        html += '<div class="wxContactHeader" data-act="c1ImportWB" style="margin:0;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;"><div class="wxCHIco">'+ _phFlatIcon('📖') +'</div><div class="wxCHName" style="flex:1;">世界书角色导入</div><div class="wxDArrow" style="color:var(--ph-text-dim)">›</div></div>';
+        html += '<div class="wxContactHeader" data-act="c1ImportSTCard" style="margin:0;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;"><div class="wxCHIco">'+ _phFlatIcon('🎭') +'</div><div class="wxCHName" style="flex:1;">酒馆角色卡导入</div><div class="wxDArrow" style="color:var(--ph-text-dim)">›</div></div>';
+        html += '<div class="wxContactHeader" data-act="c1ImportPersona" style="margin:0;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;"><div class="wxCHIco">'+ _phFlatIcon('👤') +'</div><div class="wxCHName" style="flex:1;">用户人设导入</div><div class="wxDArrow" style="color:var(--ph-text-dim)">›</div></div>';
+        html += '<div class="wxContactHeader" data-act="c1ScanMain" style="margin:0;padding:12px 14px;cursor:pointer;"><div class="wxCHIco">'+ _phFlatIcon('🔍') +'</div><div class="wxCHName" style="flex:1;">主线扫描</div><div class="wxDArrow" style="color:var(--ph-text-dim)">›</div></div>';
         html += '</div>';
 
         // 候选列表
