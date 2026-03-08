@@ -1384,8 +1384,8 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
       from calc((var(--from) - 90) * 1deg),
       rgba(255,255,255,.00) 0deg,
       rgba(255,255,255,.00) calc(var(--gap) * 1deg),
-      rgba(255,255,255,.55) calc(var(--gap) * 1deg),
-      rgba(255,255,255,.32) calc((var(--gap) + var(--span)) * 1deg),
+      rgba(255,255,255,.34) calc(var(--gap) * 1deg),
+      rgba(255,255,255,.16) calc((var(--gap) + var(--span)) * 1deg),
       rgba(255,255,255,.00) calc((var(--gap) + var(--span)) * 1deg)
     );
 
@@ -1400,12 +1400,12 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
     #000 calc(100% - var(--ring) + 1px)
   );
 
-  backdrop-filter: blur(14px) saturate(1.06);
-  -webkit-backdrop-filter: blur(14px) saturate(1.06);
+  backdrop-filter: blur(8px) saturate(1.02);
+  -webkit-backdrop-filter: blur(8px) saturate(1.02);
 
-  filter: drop-shadow(0 18px 40px rgba(0,0,0,.18));
-  border:1px solid rgba(255,255,255,.38);
-  box-shadow: 0 0 0 1px rgba(0,0,0,.08) inset, 0 16px 34px rgba(0,0,0,.16);
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,.08));
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.03) inset, 0 8px 18px rgba(0,0,0,.08);
 
   opacity:0;
   transition: opacity .14s ease;
