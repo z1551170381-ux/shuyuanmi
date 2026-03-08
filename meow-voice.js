@@ -947,11 +947,13 @@ ${t}
         overflow:hidden;max-height:0;
         transition:max-height .32s cubic-bezier(.4,0,.2,1);
         position:relative;z-index:1;
-        margin-top:-8px;    /* tuck behind main panel bottom edge */
-        padding-top:8px;    /* so the inner card clears the overlap */
+        margin-top:-8px;
+        padding-top:8px;
+        padding-bottom:22px;  /* must be >= border-radius to avoid clip */
+        margin-bottom:-22px;  /* pull back so total height is unchanged */
       }
-      #meow-voice-bgm-dock.drawer-song .mv-bgm-drawer-wrap{max-height:180px}
-      #meow-voice-bgm-dock.drawer-menu .mv-bgm-drawer-wrap{max-height:280px}
+      #meow-voice-bgm-dock.drawer-song .mv-bgm-drawer-wrap{max-height:202px}
+      #meow-voice-bgm-dock.drawer-menu .mv-bgm-drawer-wrap{max-height:302px}
 
       /* inner drawer card — looks like a separate card below */
       #meow-voice-bgm-dock .mv-bgm-song-list,
@@ -1046,25 +1048,39 @@ ${t}
       #mv-fl-settings .mv-fl-val{font-size:10px;color:rgba(255,255,255,.5);width:18px;text-align:right;flex-shrink:0}
     `;
     if (!doc.getElementById(style.id)) (doc.head || doc.documentElement).appendChild(style);
+    // ── 抽屉互斥辅助 ──────────────────────────────────────────
+    const _closeAllDrawers = (root) => {
+      root.querySelector('.mv-bgm-song-list')?.classList.remove('open');
+      root.querySelector('.mv-bgm-extra-panel')?.classList.remove('open');
+      root.querySelector('.mv-bgm-open-settings')?.classList.remove('active');
+      root.classList.remove('drawer-song','drawer-menu');
+    };
+    const _openSongDrawer = (root, gid, tracks, curTid) => {
+      _closeAllDrawers(root);
+      const _sl = root.querySelector('.mv-bgm-song-list');
+      if (!_sl) return;
+      _sl.innerHTML = tracks.length
+        ? tracks.map(t => `<button type="button" class="mv-bgm-song-item${t.id===curTid?' playing':''}" data-tid="${t.id}" data-gid="${gid}">${t.title||'未命名'}</button>`).join('')
+        : '<div style="font-size:10px;color:rgba(58,71,77,.4);padding:4px 8px">暂无歌曲</div>';
+      _sl.classList.add('open');
+      root.classList.add('drawer-song');
+    };
+    const _openMenuDrawer = (root) => {
+      _closeAllDrawers(root);
+      root.querySelector('.mv-bgm-extra-panel')?.classList.add('open');
+      root.querySelector('.mv-bgm-open-settings')?.classList.add('active');
+      root.classList.add('drawer-menu');
+    };
+
     root.addEventListener('click', async (e) => {
       const c = cfg();
       const lib = _getBgmLibrary();
       const rootNow = _getBgmDock();
 
       if (e.target.closest('.mv-bgm-open-settings')) {
-        const _ep = rootNow.querySelector('.mv-bgm-extra-panel');
-        const _settBtn = rootNow.querySelector('.mv-bgm-open-settings');
-        if (_ep) {
-          const _epOpen = _ep.classList.toggle('open');
-          if (_settBtn) _settBtn.classList.toggle('active', _epOpen);
-          if (_epOpen) {
-            rootNow.querySelector('.mv-bgm-song-list')?.classList.remove('open');
-            rootNow.classList.remove('drawer-song');
-            rootNow.classList.add('drawer-menu');
-          } else {
-            rootNow.classList.remove('drawer-menu');
-          }
-        }
+        const _isOpen = rootNow.classList.contains('drawer-menu');
+        if (_isOpen) { _closeAllDrawers(rootNow); }
+        else { _openMenuDrawer(rootNow); }
         return;
       }
       if (e.target.closest('.mv-bgm-float-lyric-toggle')) {
@@ -1129,9 +1145,8 @@ ${t}
       }
       if (btn.classList.contains('mv-bgm-group-chip')) {
         const gid = btn.dataset.groupId || '';
-        const _sl = rootNow.querySelector('.mv-bgm-song-list');
-        // 同一分组再次点击：toggle song list
-        const _alreadyActive = btn.classList.contains('active');
+        const _alreadySongOpen = rootNow.classList.contains('drawer-song');
+        const _alreadyThisGroup = btn.classList.contains('active');
         lsSet(LS.BGM_GROUP, gid);
         const group = _findBgmGroup(lib, gid);
         const _gTracks = _bgmTrackList(group);
@@ -1142,20 +1157,11 @@ ${t}
         _bgmState.trackId = first ? first.id : '';
         _bgmState.title = first ? (first.title || '') : '';
         _renderBgmDock();
-        // 渲染歌单列表
-        if (_sl) {
-          if (_alreadyActive && _sl.classList.contains('open')) {
-            _sl.classList.remove('open');
-            rootNow.classList.remove('drawer-song');
-          } else {
-            const _curTid = lsGet(LS.BGM_TRACK, '');
-            _sl.innerHTML = _gTracks.map(t =>
-              `<button type="button" class="mv-bgm-song-item${t.id===_curTid?' playing':''}" data-tid="${t.id}" data-gid="${gid}">${t.title || '未命名'}</button>`
-            ).join('') || '<div style="font-size:10px;color:rgba(58,71,77,.4);padding:4px 8px">暂无歌曲</div>';
-            _sl.classList.add('open');
-            rootNow.classList.remove('drawer-menu');
-            rootNow.classList.add('drawer-song');
-          }
+        // 同组且歌单已开 → 关闭；否则开歌单（会自动关菜单）
+        if (_alreadySongOpen && _alreadyThisGroup) {
+          _closeAllDrawers(rootNow);
+        } else {
+          _openSongDrawer(rootNow, gid, _gTracks, lsGet(LS.BGM_TRACK,''));
         }
         return;
       }
@@ -1171,8 +1177,8 @@ ${t}
           _bgmState.groupId = _siGid;
           _bgmState.trackId = _siTid;
           _bgmState.title = _siTrack.title;
-          await _setDramaBgmActive(true, cfg(), { preview:true, sourceUrl:_siTrack.url, title:_siTrack.title, groupId:_siGid, trackId:_siTid, restart:true });
           rootNow.querySelectorAll('.mv-bgm-song-item').forEach(b => b.classList.toggle('playing', b.dataset.tid === _siTid));
+          await _setDramaBgmActive(true, cfg(), { preview:true, sourceUrl:_siTrack.url, title:_siTrack.title, groupId:_siGid, trackId:_siTid, restart:true });
         }
         return;
       }
@@ -1182,6 +1188,7 @@ ${t}
         const _mode = btn.dataset.mode || 'sequence';
         lsSet(LS.BGM_MODE, _mode);
         if (_bgmAudio) _bgmAudio.loop = (_mode === 'single-loop');
+        // update all mode buttons (keep menu open)
         rootNow.querySelectorAll('.mv-bgm-mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === _mode));
         return;
       }
@@ -1764,6 +1771,9 @@ ${t}
         a.addEventListener('play', () => { _bgmState.active = true; _syncBgmDockFromAudio(); _renderBgmDock(); });
         a.addEventListener('pause', () => { _bgmState.active = false; _syncBgmDockFromAudio(); _renderBgmDock(); });
         a.addEventListener('ended', () => {
+          // close song list when track ends (prevent stale list staying open)
+          const _dk = doc.getElementById('meow-voice-bgm-dock');
+          if (_dk) { _dk.querySelector('.mv-bgm-song-list')?.classList.remove('open'); _dk.classList.remove('drawer-song'); }
           const _mode = lsGet(LS.BGM_MODE, 'sequence');
           if (_mode === 'list-loop') {
             try {
