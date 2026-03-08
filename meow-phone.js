@@ -492,6 +492,7 @@ function ensureTuneStyle(){
   --phAppBorderA: .68;
   --phAppBlur: 16px;
   --phAppSolidA: .92;
+  --phAppBodyRGB: 10,10,10;    /* 各主题覆盖 */
   --phHomeWallA: 1;
   --phAppWallA: 1;
   --phHomeWallUrl: none;
@@ -537,6 +538,55 @@ function ensureTuneStyle(){
   --ph-glass-border: rgba(255,255,255,var(--phAppBorderA));
 }
 
+/* ✅ GPT-style: 所有列表行变成独立浮卡 */
+#${ID} .wxChatRow,
+#${ID} .wxDiscoverItem,
+#${ID} .wxContactHeader,
+#${ID} .wxContactItem,
+#${ID} .wxMeProfile,
+#${ID} .wxMeProfile + div .wxDiscoverItem{
+  margin: 4px 10px;
+  border-radius: 22px;
+  border-bottom: none !important;
+  box-shadow: 0 10px 28px rgba(16,22,36,.06);
+}
+#${ID} .wxChatList,
+#${ID} .wxDiscoverList,
+#${ID} .wxContactList,
+#${ID} .wxMeWrap{ padding: 6px 0 14px; }
+
+/* ✅ GPT-style: 所有列表行变成独立浮卡 */
+#${ID} .wxChatRow,
+#${ID} .wxDiscoverItem,
+#${ID} .wxContactHeader,
+#${ID} .wxContactItem,
+#${ID} .wxMeProfile{
+  margin: 4px 10px;
+  border-radius: 22px;
+  border-bottom: none !important;
+  box-shadow: 0 8px 24px rgba(16,22,36,.06);
+}
+#${ID} .wxChatList,
+#${ID} .wxDiscoverList,
+#${ID} .wxContactList,
+#${ID} .wxMeWrap{ padding: 6px 0 14px; }
+
+/* ✅ GPT-style: 所有列表行变成独立浮卡 */
+#${ID} .wxChatRow,
+#${ID} .wxDiscoverItem,
+#${ID} .wxContactHeader,
+#${ID} .wxContactItem,
+#${ID} .wxMeProfile{
+  margin: 4px 10px;
+  border-radius: 22px;
+  border-bottom: none !important;
+  box-shadow: 0 8px 24px rgba(16,22,36,.06);
+}
+#${ID} .wxChatList,
+#${ID} .wxDiscoverList,
+#${ID} .wxContactList,
+#${ID} .wxMeWrap{ padding: 6px 0 14px; }
+
 /* modern 壁纸：纯黑 */
 #${ID} .phWallpaper{
   background-image: var(--ph-wallpaper-url, none), none;
@@ -557,9 +607,11 @@ function ensureTuneStyle(){
   background-position: center, 25% 10%, 80% 55%, 50% 95%;
 }
 
-/* APP 内容底：跟随各主题变量 */
+/* APP 内容底：使用 --phAppBodyRGB + --phAppSolidA 实现滑块控制 */
 #${ID}[data-view="app"] .phAppBody{
-  background: var(--ph-appbody-bg, rgba(10,10,10,.97));
+  background: rgba(var(--phAppBodyRGB,10,10,10), var(--phAppSolidA,.92));
+  backdrop-filter: blur(calc(var(--phAppBlur,16px) * .35 + 4px));
+  -webkit-backdrop-filter: blur(calc(var(--phAppBlur,16px) * .35 + 4px));
 }
 
 /* App 顶部横条 — 全主题化 */
@@ -578,7 +630,9 @@ function ensureTuneStyle(){
 #${ID} .wxTabbar{
   background: var(--ph-tabbar-bg, rgba(10,10,10,.94));
   border-top: 1px solid var(--ph-tabbar-border, rgba(255,255,255,.07));
-  box-shadow: 0 -4px 20px rgba(0,0,0,.08), 0 1px 0 rgba(255,255,255,.55) inset;
+  box-shadow: 0 -1px 0 var(--ph-tabbar-border, rgba(255,255,255,.07));
+  backdrop-filter: blur(calc(var(--ph-glass-blur) + 6px));
+  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) + 6px));
 }
 #${ID} .wxTabBtn{ color: var(--ph-tabbar-off, rgba(255,255,255,.35)); }
 #${ID} .wxTabBtn.on{ color: var(--ph-tabbar-on, rgba(255,255,255,.95)); background: transparent; }
@@ -587,7 +641,9 @@ function ensureTuneStyle(){
 #${ID} .wxTopBar{
   background: var(--ph-topbar-bg, rgba(10,10,10,.95));
   border-bottom: 1px solid var(--ph-topbar-border, rgba(255,255,255,.07));
-  box-shadow: 0 4px 16px rgba(0,0,0,.06), 0 -1px 0 rgba(255,255,255,.50) inset;
+  backdrop-filter: blur(calc(var(--ph-glass-blur) + 6px));
+  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) + 6px));
+  min-height: 50px;
 }
 #${ID} .wxTopBar .wxTopTitle{ color: var(--ph-topbar-title, rgba(255,255,255,.92)); }
 #${ID} .wxTopBar .wxTopBtn{ color: var(--ph-topbar-btn, rgba(255,255,255,.50)); }
@@ -766,6 +822,19 @@ function phoneApplyVisualFromSettings(cfg){
     root.style.setProperty('--phAppBlur', appBlurPx + 'px');
 
     root.style.setProperty('--phAppSolidA', String(appSolidA));
+
+    // ✅ 动态设置 appBody RGB（匹配当前主题底色）
+    try{
+      const _theme = (root.getAttribute('data-theme') || 'modern');
+      const _rgbMap = {
+        frost: '250,249,247',
+        modern: '10,10,10',
+        medieval: '26,14,4',
+        cyber: '4,4,8',
+        sakura: '16,7,20',
+      };
+      root.style.setProperty('--phAppBodyRGB', _rgbMap[_theme] || '10,10,10');
+    }catch(_e){}
 
     // 壁纸透明度
     const homeWallA = _meowClamp01((cfg.wallpaperHomeOpacity ?? 100)/100);
@@ -1039,10 +1108,10 @@ default: return emoji||'';
 #${ID}[data-theme="frost"]{
   /* 底色：纯净白+极淡暖调（对标 Nube，更白更亮） */
   --ph-bg-primary: linear-gradient(160deg,#fdfcfb 0%,#faf9f7 55%,#f5f3ef 100%);
-  --ph-glass: rgba(255,255,254,.56);
-  --ph-glass-strong: rgba(255,255,254,.78);
-  --ph-glass-border: rgba(255,255,255,.88);
-  --ph-glass-blur: 36px;
+  --ph-glass: rgba(255,255,255,.50);       /* GPT-aligned: card-soft */
+  --ph-glass-strong: rgba(255,255,255,.70); /* card-strong */
+  --ph-glass-border: rgba(255,255,255,.76); /* card-line */
+  --ph-glass-blur: 32px;
   --ph-text: rgba(22,18,14,.88);
   --ph-text-sub: rgba(22,18,14,.50);
   --ph-text-dim: rgba(22,18,14,.28);
@@ -1052,6 +1121,8 @@ default: return emoji||'';
   --ph-accent-grad: linear-gradient(135deg,#7d9b8a,#a3bab0);
   --ph-shadow: rgba(40,30,20,.07);
   --ph-shadow-up: rgba(255,255,255,.95);
+  --phAppBodyRGB: 250,249,247;   /* frost App底色 RGB */
+  --phHomeBodyRGB: 253,252,250;
   --ph-sep: rgba(22,18,14,.040);
   --ph-row-bg: rgba(255,255,254,.62);
   --ph-row-hover: rgba(255,255,254,.86);
@@ -1090,8 +1161,19 @@ default: return emoji||'';
   --ph-confirm-sep: rgba(28,22,16,.07);
   --ph-confirm-cancel: rgba(28,22,16,.44);
   --ph-confirm-danger: #c0392b;
-  --ph-wallpaper-base: #f7f6f4;   /* 无壁纸时的浅暖白底 */
+  --ph-wallpaper-base: #f5f5f7;   /* 同 GPT: 浅灰白 */
   --ph-ico-list: rgba(255,253,250,.95);
+  /* GPT-aligned shell/status */
+  --ph-shell-border: rgba(255,255,255,.58);
+  --ph-shell-shadow: 0 28px 72px rgba(118,130,155,.16), 0 10px 24px rgba(118,130,155,.08);
+  --ph-status-fg: rgba(32,40,53,.86);
+  --ph-status-shadow: 0 1px 0 rgba(255,255,255,.50);
+  --ph-home-label: rgba(38,45,58,.70);
+  --ph-app-icon-bg: linear-gradient(180deg, rgba(255,255,255,.84), rgba(244,247,251,.60));
+  --ph-app-icon-border: rgba(255,255,255,.88);
+  --ph-app-icon-shadow: 0 12px 28px rgba(112,126,152,.12);
+  --ph-dock-surface: rgba(255,255,255,.32);
+  --ph-dock-line: rgba(255,255,255,.52);
   --ph-discover-bg: rgba(255,255,254,.72);
   --ph-discover-border: rgba(22,18,14,.040);
   --ph-discover-name: rgba(22,18,14,.85);
@@ -1343,6 +1425,17 @@ default: return emoji||'';
   transition:transform .2s ease;
   transform-origin:top left;
 }
+/* frost shell：精细高光 + 阴影（GPT-aligned） */
+#${ID}[data-theme="frost"] .phShell{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.03)),
+    var(--ph-bg-primary);
+}
+/* modern shell */
+#${ID}[data-theme="modern"] .phShell{
+  background: var(--ph-bg-primary);
+}
+
 #${ID}.mini .phShell{
   width:100%; height:100%; max-width:none; max-height:none; border-radius:28px;
 }
@@ -1685,13 +1778,13 @@ default: return emoji||'';
 
 /* ---------- Dock ---------- */
 #${ID} .phDock{
-  position:absolute; left:14px; right:14px; bottom:12px;
-  height:58px; border-radius:26px;
-  background:var(--ph-glass);
-  backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px);
-  border:1px solid var(--ph-glass-border);
-  display:flex; align-items:center; justify-content:space-around; padding:0 8px;
-  box-shadow:0 8px 32px var(--ph-shadow);
+  position:absolute; left:16px; right:16px; bottom:14px;
+  height:62px; border-radius:30px;
+  background:var(--ph-dock-surface, var(--ph-glass));
+  backdrop-filter:blur(calc(var(--ph-glass-blur) + 4px)); -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) + 4px));
+  border:1px solid var(--ph-dock-line, var(--ph-glass-border));
+  display:flex; align-items:center; justify-content:space-around; padding:0 10px;
+  box-shadow:0 14px 34px rgba(16,22,36,.10);
 }
 #${ID} .phDockBtn{
   appearance:none; border:0; cursor:pointer;
@@ -1825,12 +1918,10 @@ default: return emoji||'';
   background:var(--ph-glass);
   backdrop-filter:blur(var(--ph-glass-blur)); -webkit-backdrop-filter:blur(var(--ph-glass-blur));
   border:1px solid var(--ph-glass-border);
-  padding:14px; color:var(--ph-text-sub); font-size:13px; line-height:1.5;
+  padding:14px; color:var(--ph-text-sub); font-size:13px; line-height:1.55;
   box-shadow:
-    0 1px 0 0 rgba(255,255,255,.70) inset,   /* 顶边高光 */
-    0 -1px 0 0 rgba(0,0,0,.04) inset,         /* 底边轻压 */
-    0 4px 16px var(--ph-shadow),
-    0 1px 3px rgba(0,0,0,.05);
+    0 1px 0 rgba(255,255,255,.80) inset,
+    0 12px 28px rgba(16,22,36,.07);
 }
 
 /* ---------- Chat (WeChat-like) ---------- */
@@ -2874,6 +2965,14 @@ default: return emoji||'';
 #${ID} .calGrid .calD.other{ color:var(--ph-text-dim); }
 
 /* ---------- Settings ---------- */
+#${ID} .phBackBtn{
+  appearance:none; border:0; background:var(--ph-glass); border:1px solid var(--ph-glass-border);
+  color:var(--ph-text-sub); padding:7px 14px; border-radius:14px; cursor:pointer;
+  font-size:12.5px; font-weight:500; margin-bottom:14px; letter-spacing:.01em;
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  transition:background .12s; display:inline-flex; align-items:center; gap:4px;
+}
+#${ID} .phBackBtn:hover{ background:var(--ph-glass-strong); }
 #${ID} .settingSection{
   padding:0; margin:0 12px 12px;
   background:var(--ph-glass);
@@ -2892,8 +2991,16 @@ default: return emoji||'';
   padding:14px 16px; border-bottom:1px solid var(--ph-sep);
 }
 #${ID} .settingRow:last-child{ border-bottom:0; }
-#${ID} .settingRow .sIcon{ font-size:18px; margin-right:10px; flex-shrink:0; }
-#${ID} .settingRow .sLabel{ color:var(--ph-text); font-size:14px; flex:1; }
+#${ID} .settingRow .sIcon{
+  width:32px; height:32px; border-radius:10px; flex-shrink:0;
+  margin-right:12px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px;
+  background: var(--ph-glass-strong);
+  border: 1px solid var(--ph-glass-border);
+  box-shadow: 0 1px 0 rgba(255,255,255,.80) inset, 0 1px 4px rgba(16,22,36,.06);
+}
+#${ID} .settingRow .sLabel{ color:var(--ph-text); font-size:14px; font-weight:500; flex:1; }
 #${ID} .settingRow .sValue{ color:var(--ph-text-dim); font-size:13px; }
 #${ID} .settingRow .sToggle,
 #${ID} .sToggle{
@@ -5158,7 +5265,16 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           if (act === 'photoDel'){ deletePhoto(t.getAttribute('data-cat'), t.getAttribute('data-idx')); return; }
           if (act === 'setTheme'){ applyTheme(t.getAttribute('data-theme')); return; }
           if (act === 'settingsNav'){ openSettingsSubPage(t.getAttribute('data-subpage')); return; }
-          if (act === 'settingsBack'){ renderSettings(root.querySelector('[data-ph="appBody"]')); return; }
+          if (act === 'settingsBack'){
+            // ✅ 优先从内部栈弹出（层级返回），栈空则回主设置页
+            if (state._innerStack && state._innerStack.length > 0){
+              const restore = state._innerStack.pop();
+              try{ restore(); }catch(e){ renderSettings(root.querySelector('[data-ph="appBody"]')); }
+            } else {
+              renderSettings(root.querySelector('[data-ph="appBody"]'));
+            }
+            return;
+          }
           if (act === 'setWallpaper'){ triggerWallpaperUpload(t.getAttribute('data-wptarget')||'home'); return; }
           if (act === 'clearWallpaper'){ clearWallpaper(t.getAttribute('data-wptarget')||'home'); return; }
           if (act === 'pickWallpaperFromAlbum'){ pickWallpaperFromAlbum(t.getAttribute('data-wptarget')||'home'); return; }
@@ -6015,7 +6131,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
         if (!isBack && state.app !== 'home') state.navStack.push(state.app);
         else if (!isBack) state.navStack = [];
         state.view = 'app'; state.app = id; state.chatTarget = null;
-        state._innerStack = []; // ✅ 切 app 清空子页面栈
+        if (id !== 'settings') state._innerStack = []; // ✅ 切 app 清空子页面栈（settings 保留栈供子页导航）
         try{ PhoneAI.abort(); _hideTypingIndicator(); _hideBubbleMenu(); _hideQuoteBar(); root.querySelectorAll('.wxEditMsgOverlay').forEach(function(o){o.remove();}); }catch(e){}
         if (id === 'chats') state._wxTab = 'msgs'; // ✅ 进入聊天 app 默认 msgs tab
         setView('app');
@@ -9064,7 +9180,7 @@ ${lines}
 
         function _renderList(){
           let html = `<div class="settingSubPage" style="padding:14px;">
-            <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;margin-bottom:12px;">‹ 返回设置</button>
+            <button class="phBackBtn" data-act="settingsBack">‹ 返回</button>
             <div style="font-size:15px;font-weight:700;color:var(--ph-text);margin-bottom:14px;">API 设置</div>`;
 
           if (!presets.length){
@@ -9091,7 +9207,7 @@ ${lines}
         }
 
         function _bindApiListEvents(ct){
-          ct.querySelectorAll('[data-act="settingsBack"]').forEach(b=>b.addEventListener('click',()=>renderSettings(ct)));
+          // settingsBack handled globally
           ct.querySelectorAll('[data-act="apiAddPreset"]').forEach(b=>b.addEventListener('click',()=>{
             const name = W.prompt?.('预设名称：','新预设');
             if (!name) return;
@@ -9362,7 +9478,7 @@ ${lines}
         var ssUsageKB = (ssUsageBytes / 1024).toFixed(1);
 
         let html = `<div class="settingSubPage" style="padding:14px;">
-          <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;margin-bottom:12px;">‹ 返回设置</button>
+          <button class="phBackBtn" data-act="settingsBack">‹ 返回</button>
           <div style="font-size:15px;font-weight:700;color:var(--ph-text);margin-bottom:14px;">数据管理</div>
 
           <!-- 存储使用情况 -->
@@ -9519,7 +9635,7 @@ ${lines}
                 if (!W.confirm?.('删除 key: ' + key + '？')) return;
                 try{ W.localStorage.removeItem(key); }catch(e){}
                 try{ toast('已删除'); }catch(e){}
-                renderDataManagerPage(container);
+                state._innerStack.push(()=>renderApiSettingsPage(container)); renderDataManagerPage(container);
               });
             });
           }catch(e){ console.warn('[MEOW] storage analyzer error:', e); }
@@ -9554,7 +9670,7 @@ ${lines}
           }catch(e){}
         })();
 
-        container.querySelector('[data-act="settingsBack"]')?.addEventListener('click',()=> renderSettings(container));
+        // settingsBack is handled globally via handleClick + _innerStack
 
         // ===== 一键存储优化 =====
         container.querySelector('[data-act="dmStorageOptimize"]')?.addEventListener('click',()=>{
@@ -9751,7 +9867,7 @@ ${lines}
           var freedKB = (freed / 1024).toFixed(1);
           var msg = details.length ? '已清理: ' + details.join('、') + '\n释放约 ' + freedKB + ' KB' : '没有可清理的数据';
           try{ toast(msg); }catch(e){ try{ W.alert(msg); }catch(e2){} }
-          renderDataManagerPage(container);
+          state._innerStack.push(()=>renderApiSettingsPage(container)); renderDataManagerPage(container);
         });
 
         // ===== 重试 IndexedDB =====
@@ -9765,7 +9881,7 @@ ${lines}
             } else {
               toast('❌ IndexedDB 仍不可用，可能浏览器限制');
             }
-            renderDataManagerPage(container);
+            state._innerStack.push(()=>renderApiSettingsPage(container)); renderDataManagerPage(container);
           }catch(e){
             toast('重试失败: ' + e.message);
           }
@@ -9855,7 +9971,7 @@ ${lines}
 
             var savedKB = (totalSaved / 1024).toFixed(0);
             toast(compressed > 0 ? '✅ 压缩了 ' + compressed + ' 张图片，释放约 ' + savedKB + ' KB' : '所有图片已经是最优大小');
-            renderDataManagerPage(container);
+            state._innerStack.push(()=>renderApiSettingsPage(container)); renderDataManagerPage(container);
           }catch(e){
             toast('压缩失败: ' + e.message);
           }
@@ -9878,7 +9994,7 @@ ${lines}
             MeowDB.clear('feedPacks').catch(function(){});
           }
           try{toast('已清空 AI 资讯缓存');}catch(e){}
-          renderDataManagerPage(container);
+          state._innerStack.push(()=>renderApiSettingsPage(container)); renderDataManagerPage(container);
         });
         container.querySelector('[data-act="dmClearAll"]')?.addEventListener('click',()=>{
           if (!W.confirm?.('⚠️ 确定清空所有小手机数据？此操作不可恢复！')) return;
@@ -9893,7 +10009,7 @@ ${lines}
             MeowDB._stores.forEach(function(s){ try{ MeowDB.clear(s); }catch(e){} });
           }
           try{toast(`已清空 ${count} 条数据`);}catch(e){}
-          renderDataManagerPage(container);
+          state._innerStack.push(()=>renderApiSettingsPage(container)); renderDataManagerPage(container);
         });
       }
 
@@ -10163,7 +10279,7 @@ ${lines}
             MeowDB._stores.forEach(function(s){ try{ MeowDB.clear(s); }catch(e){} });
           }
           try{toast(`已清空 ${count} 条数据`);}catch(e){}
-          _renderMeSettingsPage(container);
+          _state._innerStack.push(()=>renderApiSettingsPage(container)); renderMeSettingsPage(container);
         });
       }
 
@@ -10323,7 +10439,7 @@ ${lines}
             }
             overlay.remove();
             try{toast(`导入成功：${count} 条数据`);}catch(e){}
-            _renderMeSettingsPage(container);
+            _state._innerStack.push(()=>renderApiSettingsPage(container)); renderMeSettingsPage(container);
           }catch(e){
             try{toast('JSON 解析失败，请检查格式');}catch(_){}
           }
@@ -10377,7 +10493,7 @@ ${lines}
           btn.addEventListener('click', ()=>{
             walletReceive(500, '充值 500 金币');
             try{toast('充值成功！+500 金币');}catch(e){}
-            _renderWalletPage(body);
+            _state._innerStack.push(()=>renderApiSettingsPage(container)); renderWalletPage(body);
           });
         });
         body.querySelectorAll('[data-act="walletGiftSelf"]').forEach(btn=>{
@@ -10391,7 +10507,7 @@ ${lines}
             const bonus = 50 + Math.floor(Math.random()*50);
             walletReceive(bonus, `每日签到 +${bonus}`);
             try{toast(`签到成功！+${bonus} 金币`);}catch(e){}
-            _renderWalletPage(body);
+            _state._innerStack.push(()=>renderApiSettingsPage(container)); renderWalletPage(body);
           });
         });
       }
@@ -10407,7 +10523,7 @@ ${lines}
         var cdText=''; if(cfg.cooldownUntil>Date.now()) cdText='<div style="color:#ef4444;font-size:11px;margin-top:4px;">冷却中，'+Math.ceil((cfg.cooldownUntil-Date.now())/60000)+'分钟后可重试</div>';
 
         var h='<div class="settingSubPage">';
-        h+='<button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;margin-bottom:12px;">‹ 返回设置</button>';
+        h+='<button class="phBackBtn" data-act="settingsBack">‹ 返回</button>';
 
         h+='<div class="phCard" style="margin-bottom:12px;"><div style="font-weight:700;color:var(--ph-text);margin-bottom:10px;">总控制</div>';
         h+='<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;color:var(--ph-text);">自动运行总开关</span><button class="sToggle'+(cfg.enabled?' on':'')+'" data-afcfg="enabled" style="flex-shrink:0;"></button></div></div>';
@@ -10466,10 +10582,10 @@ ${lines}
           });
         }
 
-        container.querySelectorAll('.sToggle[data-afcfg]').forEach(function(btn){ btn.addEventListener('click',function(){ btn.classList.toggle('on'); var c=getAutofeedCfg(); c[btn.getAttribute('data-afcfg')]=btn.classList.contains('on'); saveAutofeedCfg(c); renderAutoFeedSettingsPage(container); }); });
+        container.querySelectorAll('.sToggle[data-afcfg]').forEach(function(btn){ btn.addEventListener('click',function(){ btn.classList.toggle('on'); var c=getAutofeedCfg(); c[btn.getAttribute('data-afcfg')]=btn.classList.contains('on'); saveAutofeedCfg(c); state._innerStack.push(()=>renderApiSettingsPage(container)); renderAutoFeedSettingsPage(container); }); });
         container.querySelectorAll('.sToggle[data-afsrc]').forEach(function(btn){ btn.addEventListener('click',function(){ btn.classList.toggle('on'); var c=getAutofeedCfg(); if(!c.sources)c.sources={}; c.sources[btn.getAttribute('data-afsrc')]=btn.classList.contains('on'); saveAutofeedCfg(c); }); });
         container.querySelectorAll('.sToggle[data-aftgt]').forEach(function(btn){ btn.addEventListener('click',function(){ btn.classList.toggle('on'); var c=getAutofeedCfg(); if(!c.autoTargets)c.autoTargets={}; c.autoTargets[btn.getAttribute('data-aftgt')]=btn.classList.contains('on'); saveAutofeedCfg(c); }); });
-        container.querySelectorAll('select[data-afcfg],input[data-afcfg]').forEach(function(el){ el.addEventListener('change',function(){ var k=el.getAttribute('data-afcfg'); var c=getAutofeedCfg(); var v=el.value; if(k==='dailyHour'||k==='intervalMin')v=parseInt(v)||0; c[k]=v; saveAutofeedCfg(c); if(k==='mode')renderAutoFeedSettingsPage(container); }); });
+        container.querySelectorAll('select[data-afcfg],input[data-afcfg]').forEach(function(el){ el.addEventListener('change',function(){ var k=el.getAttribute('data-afcfg'); var c=getAutofeedCfg(); var v=el.value; if(k==='dailyHour'||k==='intervalMin')v=parseInt(v)||0; c[k]=v; saveAutofeedCfg(c); if(k==='mode')state._innerStack.push(()=>renderApiSettingsPage(container)); renderAutoFeedSettingsPage(container); }); });
       }
 
       function _afClearAllAIContent(){
@@ -10973,7 +11089,7 @@ ${lines}
         });
       }
 
-function _bindMomentActions(container){
+      function _bindMomentActions(container){
         // 点赞
         container.querySelectorAll('[data-mact="like"]').forEach(btn=>{
           btn.addEventListener('click',()=>{
@@ -16730,6 +16846,7 @@ const npc = _wxGetChatTargetMeta(npcId);
 
       /* ========== 设置 App ========== */
       function renderSettings(container){
+        state._innerStack = []; // ✅ 回到设置主页时清空子页面栈
         const currentTheme = root.getAttribute('data-theme') || 'frost';
         const cfg = phoneLoadSettings();
 
@@ -16763,11 +16880,6 @@ const npc = _wxGetChatTargetMeta(npcId);
         }
 
         const sections = [
-          { title:'高级', rows:[
-            {icon:'🔑',label:'API 设置',type:'nav',subpage:'apiSettings'},
-            {icon:'🎯',label:'API 自动运行设置',type:'nav',subpage:'autoFeedSettings'},
-            {icon:'💾',label:'数据管理',type:'nav',subpage:'dataManager'},
-          ]},
           { title:'高级', rows:[
             {icon:'🔑',label:'API 设置',type:'nav',subpage:'apiSettings'},
             {icon:'🎯',label:'API 自动运行设置',type:'nav',subpage:'autoFeedSettings'},
@@ -16844,6 +16956,9 @@ const npc = _wxGetChatTargetMeta(npcId);
       function openSettingsSubPage(subpage){
         const body = root.querySelector('[data-ph="appBody"]');
         if (!body) return;
+        // ✅ 把"回主设置页"压栈，供 settingsBack 使用
+        state._innerStack = state._innerStack || [];
+        state._innerStack.push(() => renderSettings(body));
         switch(subpage){
           case 'wallpaper': renderSettingsWallpaper(body); break;
           case 'uiHome': renderSettingsUIHome(body); break;
@@ -16897,9 +17012,7 @@ function renderSettingsWallpaper(container){
   }
 
   let html = `<div class="settingSubPage">
-    <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);
-      color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
-      margin-bottom:12px;">‹ 返回设置</button>
+    <button class="phBackBtn" data-act="settingsBack">‹ 返回</button>
     <div class="settingSubTitle">🖼️ 壁纸设置</div>
     <div class="settingSubDesc" style="margin-top:6px;">桌面和 App 内部可以设置不同壁纸，并分别调透明度。</div>
     ${previewCard('桌面壁纸（Home）', 'home', cfg.wallpaperHome, cfg.wallpaperHomeName, cfg.wallpaperHomeOpacity)}
@@ -17035,9 +17148,7 @@ function renderSettingsUIHome(container){
 
   container.innerHTML = `
     <div class="settingSubPage">
-      <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);
-        color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
-        margin-bottom:12px;">‹ 返回设置</button>
+      <button class="phBackBtn" data-act="settingsBack">‹ 返回设置</button>
       <div class="settingSubTitle">🫧 桌面清晰度</div>
       <div class="phCard">
         <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -17083,9 +17194,7 @@ function renderSettingsUIApp(container){
 
   container.innerHTML = `
     <div class="settingSubPage">
-      <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);
-        color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
-        margin-bottom:12px;">‹ 返回设置</button>
+      <button class="phBackBtn" data-act="settingsBack">‹ 返回设置</button>
       <div class="settingSubTitle">📄 App 清晰度</div>
 
       <div class="phCard">
@@ -17141,9 +17250,7 @@ function renderSettingsUIApp(container){
         const cfg = phoneLoadSettings();
         const size = cfg.fontSize || 14;
         let html = `<div class="settingSubPage">
-          <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);
-            color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
-            margin-bottom:12px;">‹ 返回设置</button>
+          <button class="phBackBtn" data-act="settingsBack">‹ 返回设置</button>
           <div class="settingSubTitle">🔤 字体大小</div>
           <div class="settingSubDesc">拖动滑块调整手机界面字体大小</div>
           <div class="sSliderRow">
@@ -17177,9 +17284,7 @@ function renderSettingsUIApp(container){
       function renderSettingsTimeMode(container){
         const cfg = phoneLoadSettings();
         let html = `<div class="settingSubPage">
-          <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);
-            color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
-            margin-bottom:12px;">‹ 返回设置</button>
+          <button class="phBackBtn" data-act="settingsBack">‹ 返回设置</button>
           <div class="settingSubTitle">⏰ 时间模式</div>
           <div class="settingSubDesc">选择手机状态栏显示的时间来源</div>
           <div class="sOptionGrid">
@@ -17238,9 +17343,7 @@ function renderSettingsUIApp(container){
           {id:'glitch', name:'故障风', desc:'带有故障感的特效'},
         ];
         let html = `<div class="settingSubPage">
-          <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);
-            color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
-            margin-bottom:12px;">‹ 返回设置</button>
+          <button class="phBackBtn" data-act="settingsBack">‹ 返回设置</button>
           <div class="settingSubTitle">⌨️ 打字效果</div>
           <div class="settingSubDesc">选择聊天消息的显示动画</div>
           <div class="sOptionGrid" style="flex-direction:column;">`;
@@ -17282,7 +17385,7 @@ function renderSettingsUIApp(container){
         if (current < 3) current = 3;
         if (current > 50) current = 50;
         var html = '<div class="settingSubPage">' +
-          '<button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;margin-bottom:12px;">‹ 返回设置</button>' +
+          '<button class="phBackBtn" data-act="settingsBack">‹ 返回</button>' +
           '<div class="settingSubTitle">📝 上下文条数</div>' +
           '<div class="settingSubDesc">AI 回复时参考最近多少条聊天记录。数值越大效果越好但消耗更多 Token。</div>' +
           '<div style="display:flex;align-items:center;gap:12px;margin-top:18px;">' +
@@ -17494,9 +17597,7 @@ function renderSettingsUIApp(container){
           {id:'深蓝', label:'深蓝', color:'#4A6FA5'},
         ];
         let html = `<div class="settingSubPage">
-          <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);
-            color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
-            margin-bottom:12px;">‹ 返回设置</button>
+          <button class="phBackBtn" data-act="settingsBack">‹ 返回设置</button>
           <div class="settingSubTitle">🎯 图标底色</div>
           <div class="settingSubDesc">自定义桌面/Dock图标的底色（选择预设或输入自定义色值）</div>
           <div class="sOptionGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;">`;
@@ -17590,9 +17691,7 @@ function renderSettingsUIApp(container){
           {id:'深灰', label:'深灰', color:'#6B7280'},
         ];
         let html = `<div class="settingSubPage">
-          <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);
-            color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
-            margin-bottom:12px;">‹ 返回设置</button>
+          <button class="phBackBtn" data-act="settingsBack">‹ 返回设置</button>
           <div class="settingSubTitle">🔮 内部图标色</div>
           <div class="settingSubDesc">调整 App 内部扁平图标颜色（组件编辑器、标签栏、论坛等）</div>
           <div class="sOptionGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;">`;
