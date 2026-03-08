@@ -245,7 +245,7 @@ function phoneGetChatUID(){
 function phoneMakeDefaultG(){
   return {
     v: 1,
-    theme: 'modern',
+    theme: 'frost',
     layout: null,   // 以后存桌面布局 JSON
     settings: {
       typingEffect: true,
@@ -484,37 +484,29 @@ function ensureTuneStyle(){
   --phHomeStrongA: .46;
   --phHomeBorderA: .52;
   --phHomeBlur: 22px;
-
   --phAppA: .52;
   --phAppStrongA: .62;
   --phAppBorderA: .68;
   --phAppBlur: 16px;
-
   --phAppSolidA: .92;
-
   --phHomeWallA: 1;
   --phAppWallA: 1;
   --phHomeWallUrl: none;
   --phAppWallUrl: none;
-
-  /* ✅ 图标对比度（用于你把玻璃调更透明） */
   --ph-ico: rgba(255,255,255,.94);
   --ph-ico-dim: rgba(255,255,255,.84);
   --ph-ico-shadow: rgba(0,0,0,.22);
 }
 
-/* ✅ 桌面/APP 分离：复用现有 --ph-glass 系列变量（不改设置滑块逻辑） */
+/* 桌面/APP 分离 */
 #${ID}[data-view="home"]{
   --ph-glass:        rgba(255,255,255,var(--phHomeA));
   --ph-glass-strong: rgba(255,255,255,var(--phHomeStrongA));
   --ph-glass-border: rgba(255,255,255,var(--phHomeBorderA));
   --ph-glass-blur:   var(--phHomeBlur);
-
-  /* Home：图标更白、更显眼 */
   --ph-ico: rgba(255,255,255,.96);
   --ph-ico-dim: rgba(255,255,255,.86);
   --ph-ico-shadow: rgba(0,0,0,.24);
-
   --ph-wallpaper-opacity: var(--phHomeWallA);
   --ph-wallpaper-url:     var(--phHomeWallUrl);
 }
@@ -523,137 +515,206 @@ function ensureTuneStyle(){
   --ph-glass-strong: rgba(255,255,255,var(--phAppStrongA));
   --ph-glass-border: rgba(255,255,255,var(--phAppBorderA));
   --ph-glass-blur:   var(--phAppBlur);
-
-  /* App：图标跟随正文色，更像原生 */
   --ph-ico: var(--ph-text);
   --ph-ico-dim: var(--ph-text-sub);
   --ph-ico-shadow: rgba(0,0,0,.10);
-
   --ph-wallpaper-opacity: var(--phAppWallA);
   --ph-wallpaper-url:     var(--phAppWallUrl);
 }
 
-/* ✅ 壁纸：在原有渐变之上叠一层（url 在前，透明度可调） */
+/* modern 壁纸：纯黑 */
 #${ID} .phWallpaper{
-  background-image:
-    var(--ph-wallpaper-url, none),
-    radial-gradient(ellipse 600px 400px at 30% 20%, rgba(99,102,241,.2), transparent),
-    radial-gradient(ellipse 500px 500px at 70% 60%, rgba(139,92,246,.14), transparent),
-    radial-gradient(ellipse 800px 600px at 50% 80%, rgba(59,130,246,.1), transparent);
-  background-size: cover, auto, auto, auto;
-  background-position: center, 30% 20%, 70% 60%, 50% 80%;
+  background-image: var(--ph-wallpaper-url, none), none;
+  background-size: cover, auto;
+  background-position: center, center;
+  background-color: #0a0a0a;
   opacity: var(--ph-wallpaper-opacity, 1);
 }
-
-/* ✅ frost 壁纸底纹：更“冷雾白”，不锁死玻璃变量（避免滑块失效） */
+/* frost 壁纸：柔和米白光晕 */
 #${ID}[data-theme="frost"] .phWallpaper{
+  background-color: #f5f5f7;
   background-image:
     var(--ph-wallpaper-url, none),
-    radial-gradient(ellipse 700px 520px at 40% 25%, rgba(255,255,255,.85), transparent),
-    radial-gradient(ellipse 640px 560px at 65% 55%, rgba(0,0,0,.035), transparent),
-    radial-gradient(ellipse 900px 620px at 50% 85%, rgba(0,0,0,.02), transparent);
+    radial-gradient(ellipse 800px 600px at 35% 20%, rgba(255,255,255,.90), transparent),
+    radial-gradient(ellipse 600px 560px at 70% 65%, rgba(200,215,255,.25), transparent);
+  background-size: cover, auto, auto;
+  background-position: center, 35% 20%, 70% 65%;
 }
 
-/* ✅ APP 内容底：跟随“App 内容底不透明度”滑块（0~1） */
+/* APP 内容底：跟随各主题变量 */
 #${ID}[data-view="app"] .phAppBody{
-  background: rgba(10,18,36,var(--phAppSolidA));
-}
-#${ID}[data-theme="frost"][data-view="app"] .phAppBody{
-  background: rgba(255,255,255,var(--phAppSolidA));
+  background: var(--ph-appbody-bg, rgba(10,10,10,.97));
 }
 
-/* ✅ frost 主题：更白、更 iOS（但不覆盖 --ph-glass*，让透明/模糊滑块继续生效） */
-#${ID}[data-theme="frost"]{
-  --ph-bg-primary: linear-gradient(145deg,#f7f7f8 0%,#f2f2f4 55%,#ededf0 100%);
-  --ph-text: rgba(20,24,28,.92);
-  --ph-text-sub: rgba(20,24,28,.60);
-  --ph-text-dim: rgba(20,24,28,.34);
+/* App 顶部横条 — 全主题化 */
+#${ID}[data-view="app"] .phAppBar{
+  background: var(--ph-appbar-bg, rgba(10,10,10,.95)) !important;
+  border-bottom: 1px solid var(--ph-sep, rgba(255,255,255,.07)) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+/* 导航按钮颜色 */
+#${ID}[data-view="app"] .phNavBtn.isBack{ color: var(--ph-text) !important; }
+#${ID}[data-view="app"] .phNavBtn:hover{ background: var(--ph-row-hover); }
 
-  --ph-accent: #a8adb6;
-  --ph-accent2: #c2c6cd;
-  --ph-accent-grad: linear-gradient(135deg, #a8adb6, #c2c6cd);
+/* Tabbar 全主题化 */
+#${ID} .wxTabbar{
+  background: var(--ph-tabbar-bg, rgba(10,10,10,.94));
+  border-top: 1px solid var(--ph-tabbar-border, rgba(255,255,255,.07));
+}
+#${ID} .wxTabBtn{ color: var(--ph-tabbar-off, rgba(255,255,255,.35)); }
+#${ID} .wxTabBtn.on{ color: var(--ph-tabbar-on, rgba(255,255,255,.95)); background: transparent; }
 
-  --ph-shadow: rgba(0,0,0,.08);
+/* 微信顶部 TopBar 全主题化 */
+#${ID} .wxTopBar{
+  background: var(--ph-topbar-bg, rgba(10,10,10,.95));
+  border-bottom: 1px solid var(--ph-topbar-border, rgba(255,255,255,.07));
+}
+#${ID} .wxTopBar .wxTopTitle{ color: var(--ph-topbar-title, rgba(255,255,255,.92)); }
+#${ID} .wxTopBar .wxTopBtn{ color: var(--ph-topbar-btn, rgba(255,255,255,.50)); }
+
+/* 聊天列表行 全主题化 */
+#${ID} .chatItemSwipeWrap .chatItemInner,
+#${ID} .chatItemSwipeWrap .wxChatRow,
+#${ID} .wxChatRow{
+  background: var(--ph-row-bg, rgba(255,255,255,.04));
+}
+#${ID} .wxChatRow:active{ background: var(--ph-row-hover); }
+#${ID} .wxChatName{ color: var(--ph-discover-name); }
+#${ID} .wxChatTime{ color: var(--ph-text-dim); }
+#${ID} .wxChatPreview{ color: var(--ph-text-sub); }
+#${ID} .chatItemPinned .chatItemInner{ background: var(--ph-row-hover); }
+
+/* 搜索框 全主题化 */
+#${ID} .wxSearchBox{
+  background: var(--ph-searchbox-bg, rgba(255,255,255,.07));
+  color: var(--ph-searchbox-text, rgba(255,255,255,.40));
+  border: 1px solid var(--ph-sep, rgba(255,255,255,.07));
 }
 
-/* ===== Solid flat icons: glass tile + solid glyph (no inner colored/gray square) ===== */
+/* 发现/我 列表 全主题化 */
+#${ID} .wxDiscoverItem{
+  background: var(--ph-discover-bg);
+  border-bottom: 1px solid var(--ph-discover-border);
+}
+#${ID} .wxDiscoverItem:hover{ background: var(--ph-row-hover); }
+#${ID} .wxDiscoverItem:active{ background: var(--ph-row-hover); }
+#${ID} .wxDiscoverItem .wxDName{ color: var(--ph-discover-name); }
+#${ID} .wxDiscoverItem .wxDArrow{ color: var(--ph-discover-arrow); }
+#${ID} .wxMeProfile{ background: var(--ph-discover-bg); }
+#${ID} .wxMeProfile:hover{ background: var(--ph-row-hover); }
+#${ID} .wxMeProfile .wxMeName{ color: var(--ph-discover-name); }
+#${ID} .wxMeProfile .wxMeId{ color: var(--ph-text-sub); }
+
+/* 聊天详情 全主题化 */
+#${ID} .wxChatDetailWrap{ background: var(--ph-wechat-bg, rgba(12,12,12,.99)); }
+#${ID} .wxChatMsgs{ background: var(--ph-wechat-bg, rgba(12,12,12,.99)); }
+#${ID} .wxChatBubble.me .wxCBContent{
+  background: var(--ph-wechat-me-bubble, rgba(255,255,255,.92));
+  color: var(--ph-wechat-me-text, #111);
+  border: none;
+}
+#${ID} .wxChatBubble.them .wxCBContent{
+  background: var(--ph-wechat-them-bubble, rgba(255,255,255,.09));
+  color: var(--ph-wechat-them-text, rgba(255,255,255,.88));
+  border: 1px solid var(--ph-sep, rgba(255,255,255,.07));
+}
+
+/* 聊天输入区 全主题化 */
+#${ID} .wxChatInputBar{
+  background: var(--ph-input-area-bg, rgba(10,10,10,.96));
+  border-top: 1px solid var(--ph-sep, rgba(255,255,255,.07));
+}
+#${ID} .wxChatInputBar textarea{
+  background: var(--ph-input-bg, rgba(255,255,255,.07));
+  border: 1px solid var(--ph-input-border, rgba(255,255,255,.12));
+  color: var(--ph-input-text, rgba(255,255,255,.88));
+}
+#${ID} .wxChatInputBar textarea::placeholder{ color: var(--ph-input-ph, rgba(255,255,255,.28)); }
+#${ID} .wxChatSendBtn{
+  background: var(--ph-send-btn, rgba(255,255,255,.92));
+  color: var(--ph-send-icon, #000);
+}
+#${ID} .wxChatExBtn{ color: var(--ph-text-sub); background: transparent; }
+
+/* 表情 / 功能面板 全主题化 */
+#${ID} .wxStickerPanel,
+#${ID} .wxVoicePanel,
+#${ID} .wxChatPlusGrid{
+  background: var(--ph-sticker-bg, rgba(16,16,16,.97));
+  border-top: 1px solid var(--ph-sep, rgba(255,255,255,.07));
+}
+#${ID} .wxStickerGrid .wxStkItem{
+  background: var(--ph-row-bg);
+  border-color: var(--ph-sep);
+}
+#${ID} .wxStickerGrid .wxStkItem:hover{ background: var(--ph-row-hover); }
+#${ID} .wxStickerTabs .wxStkTab{ color: var(--ph-text-sub); border-bottom-color: transparent; }
+#${ID} .wxStickerTabs .wxStkTab.on{ color: var(--ph-tabbar-on); border-bottom-color: var(--ph-tabbar-on); }
+#${ID} .wxChatPlusGrid .wxCPItem .wxCPIco{
+  background: var(--ph-row-bg);
+  border-color: var(--ph-sep);
+  color: var(--ph-text-sub);
+}
+#${ID} .wxChatPlusGrid .wxCPItem .wxCPLabel{ color: var(--ph-text-dim); }
+
+/* + 号弹出菜单 全主题化 */
+#${ID} .wxPlusPopup{ background: var(--ph-plus-popup-bg, rgba(28,28,28,.97)); }
+
+/* 确认对话框 全主题化 */
+#${ID} .wxConfirmBox{ background: var(--ph-confirm-bg, rgba(22,22,22,.99)); }
+#${ID} .wxConfirmBox .wxCMsg{ color: var(--ph-confirm-text); }
+#${ID} .wxConfirmBox .wxCBtns{ border-top-color: var(--ph-confirm-sep); }
+#${ID} .wxConfirmBox .wxCBtn:first-child{ border-right-color: var(--ph-confirm-sep); color: var(--ph-confirm-cancel); }
+#${ID} .wxConfirmBox .wxCBtn:last-child{ color: var(--ph-confirm-danger); }
+#${ID} .wxConfirmBox .wxCBtn:hover{ background: var(--ph-row-hover); }
+
+/* 弹窗 Modal 全主题化 */
+#${ID} .phModalCard,
+#${ID} .wxEditMsgBox{ background: var(--ph-modal-bg, rgba(20,20,20,.97)); border-color: var(--ph-sep); }
+#${ID} .phModalTitle,
+#${ID} .wxEditMsgBox .wxEMTitle{ color: var(--ph-modal-text); }
+#${ID} .phModalTa,
+#${ID} .wxEditMsgBox textarea{
+  background: var(--ph-input-bg);
+  border-color: var(--ph-input-border);
+  color: var(--ph-input-text);
+}
+#${ID} .phModalTa::placeholder{ color: var(--ph-input-ph); }
+
+/* 通讯录 全主题化 */
+#${ID} .phContactActionBtn{ background: var(--ph-glass); border-color: var(--ph-glass-border); color: var(--ph-text); }
+#${ID} .wxContactHeader, #${ID} .wxContactItem{
+  background: var(--ph-row-bg);
+  border-bottom-color: var(--ph-sep);
+}
+#${ID} .wxContactHeader:hover, #${ID} .wxContactItem:hover{ background: var(--ph-row-hover); }
+#${ID} .wxContactHeader .wxCHName, #${ID} .wxContactItem .wxCIName{ color: var(--ph-discover-name); }
+#${ID} .wxGroupHeader{ background: var(--ph-appbody-bg); color: var(--ph-text-sub); border-bottom-color: var(--ph-sep); }
+
+/* 桌面音乐卡片 */
+#${ID} .pwMusic .pwBd{ color: var(--ph-text-sub) !important; }
+#${ID} .pwMusicBtn{ background: var(--ph-glass-strong) !important; color: var(--ph-text) !important; }
+#${ID} .pwMusicBar{ background: var(--ph-sep) !important; }
+
+/* 图标 SVG */
 #${ID} svg.phIco{ width:24px; height:24px; display:block; fill:currentColor; }
-
-/* ✅ 放大：桌面 App / Dock */
 #${ID} .phAppIcon svg.phIco{ width:28px; height:28px; }
 #${ID} .phDockBtn svg.phIco{ width:24px; height:24px; }
-
-/* ✅ App 内（设置列表等）小一号 */
 #${ID} .settingRow .sIcon svg.phIco{ width:18px; height:18px; }
-
-/* ✅ Flat SVG icon layout in app tiles & dock (iOS-style colored bg + white glyph) */
 #${ID} .phAppIcon .ai svg.phIco,
-#${ID} .phDockBtn .di svg.phIco{
-  fill:#fff; width:22px; height:22px;
-}
+#${ID} .phDockBtn .di svg.phIco{ fill:#fff; width:22px; height:22px; }
 #${ID} .phDockBtn .di svg.phIco{ width:18px; height:18px; }
-
-/* ✅ 图标更“立得住”：轻微阴影提高识别度（你把玻璃调更透明也不会糊） */
 #${ID} .phAppIcon svg.phIco,
-#${ID} .phDockBtn svg.phIco{
-  filter: drop-shadow(0 1px 2px var(--ph-ico-shadow));
-}
-
-/* ===== 通讯录：顶部两个按钮统一玻璃风（和整体一致） ===== */
-#${ID} .phContactActionRow{ display:flex; gap:8px; margin-bottom:10px; }
-#${ID} .phContactActionBtn{
-  flex:1;
-  padding:10px 0;
-  border-radius:14px;
-  border:1px solid var(--ph-glass-border);
-  background:var(--ph-glass);
-  backdrop-filter:blur(var(--ph-glass-blur));
-  -webkit-backdrop-filter:blur(var(--ph-glass-blur));
-  color:var(--ph-text);
-  font-size:13px;
-  font-weight:650;
-  cursor:pointer;
-}
-#${ID} .phContactActionBtn:active{ transform:scale(.98); }
-#${ID}[data-theme="frost"] .phContactActionBtn{ background:rgba(255,255,255,.60); }
-
-/* ===== App 顶部横条：与“App 内容底不透明度(uiAppSolidOpacity)”同源，避免出现三层 ===== */
-#${ID}[data-view="app"] .phAppBar{
-  background: rgba(10,18,36,var(--phAppSolidA)) !important;
-  border-bottom: none !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-#${ID}[data-theme="frost"][data-view="app"] .phAppBar{
-  background: rgba(255,255,255,var(--phAppSolidA)) !important;
-  border-bottom: none !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-#${ID}[data-theme="frost"][data-view="app"] .phNavBtn.isBack{ color: rgba(20,24,28,.62) !important; }
-#${ID}[data-theme="frost"][data-view="app"] .phNavBtn:hover{
-  background:rgba(0,0,0,.04);
-}
-
-#${ID}[data-theme="frost"] .wxTabbar{
-  background:rgba(255,255,255,.66);
-  border-top:1px solid rgba(0,0,0,.06);
-}
-#${ID}[data-theme="frost"] .wxTabBtn{ color:rgba(20,24,28,.42); }
-#${ID}[data-theme="frost"] .wxTabBtn.on{ color:rgba(34,139,116,.95); }
-
-/* frost：桌面音乐卡片文字别用纯白（避免看不清） */
-#${ID}[data-theme="frost"] .pwMusic .pwBd{ color:rgba(20,24,28,.38) !important; }
-#${ID}[data-theme="frost"] .pwMusicBtn{
-  background:rgba(0,0,0,.06) !important;
-  color:rgba(20,24,28,.86) !important;
-}
+#${ID} .phDockBtn svg.phIco{ filter: drop-shadow(0 1px 2px var(--ph-ico-shadow)); }
+/* 发现/我 页图标底色 */
+#${ID} .wxDIcoThemed svg.phIco{ fill: var(--ph-ico-list, rgba(255,255,255,.90)) !important; }
     `;
     (doc.head || doc.documentElement).appendChild(st);
   }catch(e){}
 }
+
 
 // ====== 从设置应用“玻璃清晰度/壁纸/APP底色” ======
 function phoneApplyVisualFromSettings(cfg){
@@ -888,70 +949,314 @@ default: return emoji||'';
 /* ===== MEOW PHONE V2 — Glass Morphism ===== */
 
 /* ---------- Theme CSS Variables ---------- */
+
+/* ── modern（默认）：纯黑白极简，字重驱动层次 ── */
 #${ID}{
-  --ph-bg-primary: linear-gradient(145deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);
-  --ph-glass: rgba(255,255,255,.08);
-  --ph-glass-strong: rgba(255,255,255,.12);
-  --ph-glass-border: rgba(255,255,255,.14);
-  --ph-glass-blur: 22px;
-  --ph-text: rgba(255,255,255,.88);
-  --ph-text-sub: rgba(255,255,255,.55);
-  --ph-text-dim: rgba(255,255,255,.3);
-  --ph-accent: #6366f1;
-  --ph-accent2: #8b5cf6;
-  --ph-accent-grad: linear-gradient(135deg, #6366f1, #8b5cf6);
-  --ph-shadow: rgba(0,0,0,.18);
+  --ph-bg-primary: #0a0a0a;
+  --ph-glass: rgba(255,255,255,.055);
+  --ph-glass-strong: rgba(255,255,255,.09);
+  --ph-glass-border: rgba(255,255,255,.10);
+  --ph-glass-blur: 20px;
+  --ph-text: rgba(255,255,255,.92);
+  --ph-text-sub: rgba(255,255,255,.50);
+  --ph-text-dim: rgba(255,255,255,.26);
+  --ph-accent: #ffffff;
+  --ph-accent2: rgba(255,255,255,.72);
+  --ph-accent-grad: linear-gradient(135deg,rgba(255,255,255,.95),rgba(220,220,220,.90));
+  --ph-shadow: rgba(0,0,0,.38);
   --ph-radius-lg: 22px;
   --ph-radius-md: 16px;
   --ph-radius-sm: 12px;
   --ph-radius-xs: 8px;
+  --ph-sep: rgba(255,255,255,.07);
+  --ph-row-bg: rgba(255,255,255,.04);
+  --ph-row-hover: rgba(255,255,255,.07);
+  --ph-input-bg: rgba(255,255,255,.07);
+  --ph-input-border: rgba(255,255,255,.12);
+  --ph-send-btn: rgba(255,255,255,.92);
+  --ph-send-icon: #000;
+  --ph-chat-me-bubble: rgba(255,255,255,.92);
+  --ph-chat-me-text: #111;
+  --ph-chat-them-bubble: rgba(255,255,255,.08);
+  --ph-chat-them-text: rgba(255,255,255,.90);
+  --ph-tabbar-bg: rgba(10,10,10,.94);
+  --ph-tabbar-border: rgba(255,255,255,.07);
+  --ph-tabbar-on: rgba(255,255,255,.95);
+  --ph-tabbar-off: rgba(255,255,255,.35);
+  --ph-appbar-bg: rgba(10,10,10,.95);
+  --ph-appbody-bg: rgba(10,10,10,.97);
+  --ph-topbar-bg: rgba(10,10,10,.95);
+  --ph-topbar-border: rgba(255,255,255,.07);
+  --ph-topbar-title: rgba(255,255,255,.92);
+  --ph-topbar-btn: rgba(255,255,255,.50);
+  --ph-sticker-bg: rgba(16,16,16,.97);
+  --ph-input-area-bg: rgba(10,10,10,.96);
+  --ph-input-text: rgba(255,255,255,.88);
+  --ph-input-ph: rgba(255,255,255,.28);
+  --ph-wechat-me-bubble: rgba(255,255,255,.92);
+  --ph-wechat-me-text: #111;
+  --ph-wechat-them-bubble: rgba(255,255,255,.09);
+  --ph-wechat-them-text: rgba(255,255,255,.88);
+  --ph-wechat-bg: rgba(12,12,12,.99);
+  --ph-plus-popup-bg: rgba(28,28,28,.97);
+  --ph-modal-bg: rgba(20,20,20,.97);
+  --ph-modal-text: rgba(255,255,255,.88);
+  --ph-confirm-bg: rgba(22,22,22,.99);
+  --ph-confirm-text: rgba(255,255,255,.88);
+  --ph-confirm-sep: rgba(255,255,255,.08);
+  --ph-confirm-cancel: rgba(255,255,255,.45);
+  --ph-confirm-danger: #ff5858;
+  --ph-ico-list: rgba(255,255,255,.90);
+  --ph-discover-bg: rgba(255,255,255,.04);
+  --ph-discover-border: rgba(255,255,255,.06);
+  --ph-discover-name: rgba(255,255,255,.88);
+  --ph-discover-arrow: rgba(255,255,255,.22);
+  --ph-searchbox-bg: rgba(255,255,255,.07);
+  --ph-searchbox-text: rgba(255,255,255,.40);
 }
-/* Theme: modern (default — already set above) */
-#${ID}[data-theme="medieval"]{
-  --ph-bg-primary: linear-gradient(145deg,#2c1810 0%,#3d2617 50%,#4a2c1a 100%);
-  --ph-glass: rgba(210,180,140,.1);
-  --ph-glass-strong: rgba(210,180,140,.15);
-  --ph-glass-border: rgba(210,180,140,.2);
-  --ph-text: rgba(255,240,220,.88);
-  --ph-text-sub: rgba(255,240,220,.55);
-  --ph-accent: #c7956d;
-  --ph-accent2: #d4a574;
-  --ph-accent-grad: linear-gradient(135deg, #c7956d, #d4a574);
-}
-#${ID}[data-theme="cyber"]{
-  --ph-bg-primary: linear-gradient(145deg,#0a0a0a 0%,#0d1117 50%,#0a1628 100%);
-  --ph-glass: rgba(0,255,136,.06);
-  --ph-glass-strong: rgba(0,255,136,.1);
-  --ph-glass-border: rgba(0,255,136,.18);
-  --ph-text: rgba(0,255,136,.9);
-  --ph-text-sub: rgba(0,255,136,.55);
-  --ph-accent: #00ff88;
-  --ph-accent2: #00ccff;
-  --ph-accent-grad: linear-gradient(135deg, #00ff88, #00ccff);
-}
-#${ID}[data-theme="sakura"]{
-  --ph-bg-primary: linear-gradient(145deg,#2d1f2f 0%,#3a2040 50%,#4a1942 100%);
-  --ph-glass: rgba(255,182,193,.08);
-  --ph-glass-strong: rgba(255,182,193,.13);
-  --ph-glass-border: rgba(255,182,193,.18);
-  --ph-text: rgba(255,230,235,.88);
-  --ph-text-sub: rgba(255,200,210,.55);
-  --ph-accent: #ff6b9d;
-  --ph-accent2: #c084fc;
-  --ph-accent-grad: linear-gradient(135deg, #ff6b9d, #c084fc);
-}
+
+/* ── frost：米白玻璃拟态（默认视觉主题） ── */
 #${ID}[data-theme="frost"]{
-  --ph-bg-primary: linear-gradient(145deg,#e8edf2 0%,#dce3ea 50%,#cfd8e3 100%);
-  --ph-glass: rgba(255,255,255,.45);
-  --ph-glass-strong: rgba(255,255,255,.6);
-  --ph-glass-border: rgba(255,255,255,.7);
-  --ph-text: rgba(30,40,60,.88);
-  --ph-text-sub: rgba(30,40,60,.55);
-  --ph-text-dim: rgba(30,40,60,.3);
-  --ph-accent: #5b7fb5;
-  --ph-accent2: #7e9bc9;
-  --ph-accent-grad: linear-gradient(135deg, #5b7fb5, #7e9bc9);
-  --ph-shadow: rgba(0,0,0,.08);
+  --ph-bg-primary: linear-gradient(145deg,#fafafa 0%,#f5f5f7 55%,#eff0f3 100%);
+  --ph-glass: rgba(255,255,255,.62);
+  --ph-glass-strong: rgba(255,255,255,.80);
+  --ph-glass-border: rgba(255,255,255,.82);
+  --ph-glass-blur: 24px;
+  --ph-text: rgba(20,20,24,.90);
+  --ph-text-sub: rgba(20,20,24,.52);
+  --ph-text-dim: rgba(20,20,24,.30);
+  --ph-accent: #4f7cee;
+  --ph-accent2: #7c9ff0;
+  --ph-accent-grad: linear-gradient(135deg,#4f7cee,#7c9ff0);
+  --ph-shadow: rgba(80,100,160,.10);
+  --ph-sep: rgba(0,0,0,.055);
+  --ph-row-bg: rgba(255,255,255,.72);
+  --ph-row-hover: rgba(255,255,255,.92);
+  --ph-input-bg: rgba(255,255,255,.85);
+  --ph-input-border: rgba(0,0,0,.10);
+  --ph-send-btn: #4f7cee;
+  --ph-send-icon: #fff;
+  --ph-chat-me-bubble: linear-gradient(135deg,#4f7cee,#7c9ff0);
+  --ph-chat-me-text: #fff;
+  --ph-chat-them-bubble: rgba(255,255,255,.88);
+  --ph-chat-them-text: rgba(20,20,24,.88);
+  --ph-tabbar-bg: rgba(252,252,255,.90);
+  --ph-tabbar-border: rgba(0,0,0,.06);
+  --ph-tabbar-on: #4f7cee;
+  --ph-tabbar-off: rgba(20,20,24,.38);
+  --ph-appbar-bg: rgba(248,249,252,.94);
+  --ph-appbody-bg: rgba(244,245,250,.97);
+  --ph-topbar-bg: rgba(252,252,255,.94);
+  --ph-topbar-border: rgba(0,0,0,.055);
+  --ph-topbar-title: rgba(20,20,24,.90);
+  --ph-topbar-btn: rgba(20,20,24,.45);
+  --ph-sticker-bg: rgba(246,247,250,.97);
+  --ph-input-area-bg: rgba(248,249,252,.96);
+  --ph-input-text: rgba(20,20,24,.88);
+  --ph-input-ph: rgba(20,20,24,.28);
+  --ph-wechat-me-bubble: linear-gradient(135deg,#4f7cee,#7c9ff0);
+  --ph-wechat-me-text: #fff;
+  --ph-wechat-them-bubble: rgba(255,255,255,.92);
+  --ph-wechat-them-text: rgba(20,20,24,.88);
+  --ph-wechat-bg: rgba(234,236,242,.88);
+  --ph-plus-popup-bg: rgba(55,55,68,.92);
+  --ph-modal-bg: rgba(255,255,255,.98);
+  --ph-modal-text: rgba(20,20,24,.88);
+  --ph-confirm-bg: #fff;
+  --ph-confirm-text: rgba(20,20,24,.88);
+  --ph-confirm-sep: rgba(0,0,0,.07);
+  --ph-confirm-cancel: rgba(20,20,24,.45);
+  --ph-confirm-danger: #ef4444;
+  --ph-ico-list: rgba(255,255,255,.96);
+  --ph-discover-bg: rgba(255,255,255,.72);
+  --ph-discover-border: rgba(0,0,0,.045);
+  --ph-discover-name: rgba(20,20,24,.88);
+  --ph-discover-arrow: rgba(0,0,0,.20);
+  --ph-searchbox-bg: rgba(255,255,255,.60);
+  --ph-searchbox-text: rgba(20,20,24,.45);
+}
+
+/* ── medieval：深棕皮革 ── */
+#${ID}[data-theme="medieval"]{
+  --ph-bg-primary: linear-gradient(145deg,#1e1008 0%,#2e1a0c 50%,#3c2210 100%);
+  --ph-glass: rgba(210,175,130,.10);
+  --ph-glass-strong: rgba(210,175,130,.17);
+  --ph-glass-border: rgba(210,175,130,.22);
+  --ph-glass-blur: 18px;
+  --ph-text: rgba(255,238,210,.92);
+  --ph-text-sub: rgba(255,220,180,.58);
+  --ph-text-dim: rgba(255,200,150,.32);
+  --ph-accent: #d4956a;
+  --ph-accent2: #e8b488;
+  --ph-accent-grad: linear-gradient(135deg,#c07840,#e0a060);
+  --ph-shadow: rgba(0,0,0,.32);
+  --ph-sep: rgba(210,175,130,.12);
+  --ph-row-bg: rgba(210,175,130,.08);
+  --ph-row-hover: rgba(210,175,130,.14);
+  --ph-input-bg: rgba(210,175,130,.10);
+  --ph-input-border: rgba(210,175,130,.20);
+  --ph-send-btn: #c07840;
+  --ph-send-icon: #fff;
+  --ph-chat-me-bubble: linear-gradient(135deg,#c07840,#e0a060);
+  --ph-chat-me-text: #fff;
+  --ph-chat-them-bubble: rgba(210,175,130,.14);
+  --ph-chat-them-text: rgba(255,238,210,.92);
+  --ph-tabbar-bg: rgba(20,10,4,.96);
+  --ph-tabbar-border: rgba(210,175,130,.14);
+  --ph-tabbar-on: #d4956a;
+  --ph-tabbar-off: rgba(255,220,180,.38);
+  --ph-appbar-bg: rgba(20,10,4,.96);
+  --ph-appbody-bg: rgba(18,9,3,.98);
+  --ph-topbar-bg: rgba(20,10,4,.96);
+  --ph-topbar-border: rgba(210,175,130,.12);
+  --ph-topbar-title: rgba(255,238,210,.90);
+  --ph-topbar-btn: rgba(255,220,180,.50);
+  --ph-sticker-bg: rgba(18,9,3,.98);
+  --ph-input-area-bg: rgba(20,10,4,.97);
+  --ph-input-text: rgba(255,238,210,.88);
+  --ph-input-ph: rgba(255,200,150,.30);
+  --ph-wechat-me-bubble: linear-gradient(135deg,#c07840,#e0a060);
+  --ph-wechat-me-text: #fff;
+  --ph-wechat-them-bubble: rgba(210,175,130,.14);
+  --ph-wechat-them-text: rgba(255,238,210,.90);
+  --ph-wechat-bg: rgba(14,7,2,.99);
+  --ph-plus-popup-bg: rgba(30,14,6,.97);
+  --ph-modal-bg: rgba(30,15,6,.97);
+  --ph-modal-text: rgba(255,238,210,.88);
+  --ph-confirm-bg: rgba(28,13,5,.99);
+  --ph-confirm-text: rgba(255,238,210,.88);
+  --ph-confirm-sep: rgba(210,175,130,.12);
+  --ph-confirm-cancel: rgba(255,220,180,.40);
+  --ph-confirm-danger: #f87171;
+  --ph-ico-list: rgba(255,238,210,.88);
+  --ph-discover-bg: rgba(210,175,130,.08);
+  --ph-discover-border: rgba(210,175,130,.10);
+  --ph-discover-name: rgba(255,238,210,.88);
+  --ph-discover-arrow: rgba(255,200,150,.28);
+  --ph-searchbox-bg: rgba(210,175,130,.10);
+  --ph-searchbox-text: rgba(255,220,180,.45);
+}
+
+/* ── cyber：赛博朋克 ── */
+#${ID}[data-theme="cyber"]{
+  --ph-bg-primary: linear-gradient(145deg,#040408 0%,#06080f 50%,#040c18 100%);
+  --ph-glass: rgba(0,220,120,.06);
+  --ph-glass-strong: rgba(0,220,120,.11);
+  --ph-glass-border: rgba(0,220,120,.18);
+  --ph-glass-blur: 18px;
+  --ph-text: rgba(200,255,230,.94);
+  --ph-text-sub: rgba(150,240,200,.60);
+  --ph-text-dim: rgba(100,200,160,.35);
+  --ph-accent: #00e890;
+  --ph-accent2: #00ccff;
+  --ph-accent-grad: linear-gradient(135deg,#00e890,#00ccff);
+  --ph-shadow: rgba(0,0,0,.50);
+  --ph-sep: rgba(0,220,120,.10);
+  --ph-row-bg: rgba(0,220,120,.05);
+  --ph-row-hover: rgba(0,220,120,.09);
+  --ph-input-bg: rgba(0,220,120,.07);
+  --ph-input-border: rgba(0,220,120,.18);
+  --ph-send-btn: #00e890;
+  --ph-send-icon: #000;
+  --ph-chat-me-bubble: linear-gradient(135deg,#00e890,#00ccff);
+  --ph-chat-me-text: #000;
+  --ph-chat-them-bubble: rgba(0,220,120,.10);
+  --ph-chat-them-text: rgba(200,255,230,.92);
+  --ph-tabbar-bg: rgba(4,4,8,.97);
+  --ph-tabbar-border: rgba(0,220,120,.12);
+  --ph-tabbar-on: #00e890;
+  --ph-tabbar-off: rgba(150,240,200,.35);
+  --ph-appbar-bg: rgba(4,4,8,.97);
+  --ph-appbody-bg: rgba(4,4,8,.99);
+  --ph-topbar-bg: rgba(4,4,8,.97);
+  --ph-topbar-border: rgba(0,220,120,.10);
+  --ph-topbar-title: rgba(200,255,230,.92);
+  --ph-topbar-btn: rgba(150,240,200,.50);
+  --ph-sticker-bg: rgba(4,4,8,.99);
+  --ph-input-area-bg: rgba(4,4,8,.97);
+  --ph-input-text: rgba(200,255,230,.88);
+  --ph-input-ph: rgba(100,200,160,.35);
+  --ph-wechat-me-bubble: linear-gradient(135deg,#00e890,#00ccff);
+  --ph-wechat-me-text: #000;
+  --ph-wechat-them-bubble: rgba(0,220,120,.10);
+  --ph-wechat-them-text: rgba(200,255,230,.92);
+  --ph-wechat-bg: rgba(3,3,6,.99);
+  --ph-plus-popup-bg: rgba(8,14,20,.97);
+  --ph-modal-bg: rgba(6,10,16,.98);
+  --ph-modal-text: rgba(200,255,230,.88);
+  --ph-confirm-bg: rgba(6,10,16,.99);
+  --ph-confirm-text: rgba(200,255,230,.88);
+  --ph-confirm-sep: rgba(0,220,120,.10);
+  --ph-confirm-cancel: rgba(150,240,200,.40);
+  --ph-confirm-danger: #ff5f5f;
+  --ph-ico-list: rgba(200,255,230,.88);
+  --ph-discover-bg: rgba(0,220,120,.05);
+  --ph-discover-border: rgba(0,220,120,.09);
+  --ph-discover-name: rgba(200,255,230,.90);
+  --ph-discover-arrow: rgba(100,200,160,.35);
+  --ph-searchbox-bg: rgba(0,220,120,.07);
+  --ph-searchbox-text: rgba(150,240,200,.42);
+}
+
+/* ── sakura：暗紫樱花 ── */
+#${ID}[data-theme="sakura"]{
+  --ph-bg-primary: linear-gradient(145deg,#180d1c 0%,#22103a 50%,#2e1240 100%);
+  --ph-glass: rgba(255,160,200,.08);
+  --ph-glass-strong: rgba(255,160,200,.14);
+  --ph-glass-border: rgba(255,160,200,.20);
+  --ph-glass-blur: 20px;
+  --ph-text: rgba(255,230,240,.92);
+  --ph-text-sub: rgba(255,200,220,.58);
+  --ph-text-dim: rgba(230,170,200,.32);
+  --ph-accent: #f472b6;
+  --ph-accent2: #c084fc;
+  --ph-accent-grad: linear-gradient(135deg,#f472b6,#c084fc);
+  --ph-shadow: rgba(0,0,0,.35);
+  --ph-sep: rgba(255,160,200,.10);
+  --ph-row-bg: rgba(255,160,200,.07);
+  --ph-row-hover: rgba(255,160,200,.12);
+  --ph-input-bg: rgba(255,160,200,.08);
+  --ph-input-border: rgba(255,160,200,.18);
+  --ph-send-btn: #f472b6;
+  --ph-send-icon: #fff;
+  --ph-chat-me-bubble: linear-gradient(135deg,#f472b6,#c084fc);
+  --ph-chat-me-text: #fff;
+  --ph-chat-them-bubble: rgba(255,160,200,.11);
+  --ph-chat-them-text: rgba(255,230,240,.92);
+  --ph-tabbar-bg: rgba(18,8,22,.96);
+  --ph-tabbar-border: rgba(255,160,200,.12);
+  --ph-tabbar-on: #f472b6;
+  --ph-tabbar-off: rgba(255,200,220,.38);
+  --ph-appbar-bg: rgba(18,8,22,.96);
+  --ph-appbody-bg: rgba(16,7,20,.98);
+  --ph-topbar-bg: rgba(18,8,22,.96);
+  --ph-topbar-border: rgba(255,160,200,.10);
+  --ph-topbar-title: rgba(255,230,240,.90);
+  --ph-topbar-btn: rgba(255,200,220,.50);
+  --ph-sticker-bg: rgba(16,7,20,.97);
+  --ph-input-area-bg: rgba(18,8,22,.97);
+  --ph-input-text: rgba(255,230,240,.88);
+  --ph-input-ph: rgba(230,170,200,.32);
+  --ph-wechat-me-bubble: linear-gradient(135deg,#f472b6,#c084fc);
+  --ph-wechat-me-text: #fff;
+  --ph-wechat-them-bubble: rgba(255,160,200,.12);
+  --ph-wechat-them-text: rgba(255,230,240,.92);
+  --ph-wechat-bg: rgba(14,6,18,.99);
+  --ph-plus-popup-bg: rgba(28,10,36,.97);
+  --ph-modal-bg: rgba(26,10,32,.98);
+  --ph-modal-text: rgba(255,230,240,.88);
+  --ph-confirm-bg: rgba(26,10,32,.99);
+  --ph-confirm-text: rgba(255,230,240,.88);
+  --ph-confirm-sep: rgba(255,160,200,.10);
+  --ph-confirm-cancel: rgba(255,200,220,.40);
+  --ph-confirm-danger: #fb7185;
+  --ph-ico-list: rgba(255,230,240,.88);
+  --ph-discover-bg: rgba(255,160,200,.07);
+  --ph-discover-border: rgba(255,160,200,.09);
+  --ph-discover-name: rgba(255,230,240,.90);
+  --ph-discover-arrow: rgba(230,170,200,.32);
+  --ph-searchbox-bg: rgba(255,160,200,.08);
+  --ph-searchbox-text: rgba(255,200,220,.42);
 }
 
 /* ---------- Root ---------- */
@@ -2549,17 +2854,23 @@ default: return emoji||'';
 
 /* Theme cards */
 #${ID} .themeGrid{
-  display:grid; grid-template-columns:repeat(3,1fr); gap:8px; padding:8px 14px;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:12px 14px;
 }
 #${ID} .themeCard{
-  appearance:none; border:2px solid var(--ph-glass-border); cursor:pointer;
-  border-radius:var(--ph-radius-md); padding:12px 8px; text-align:center;
-  background:var(--ph-glass); transition:all .15s; color:var(--ph-text-sub); font-size:11px;
+  appearance:none; border:1.5px solid var(--ph-sep); cursor:pointer;
+  border-radius:var(--ph-radius-md); padding:10px 6px 8px; text-align:center;
+  background:var(--ph-glass); transition:all .15s; font-size:11px; font-weight:500;
+  color:var(--ph-text-sub);
 }
+#${ID} .themeCard:hover{ border-color:var(--ph-glass-border); transform:translateY(-1px); }
 #${ID} .themeCard .tcPreview{
-  width:100%; height:40px; border-radius:8px; margin-bottom:6px;
+  width:100%; height:44px; border-radius:10px; margin-bottom:8px;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
 }
-#${ID} .themeCard.active{ border-color:var(--ph-accent); box-shadow:0 0 12px rgba(99,102,241,.3); }
+#${ID} .themeCard.active{
+  border-color:var(--ph-accent);
+  box-shadow:0 0 0 1px var(--ph-accent), 0 4px 16px rgba(79,124,238,.18);
+}
 
 /* ---------- Photos ---------- */
 #${ID} .photosGrid{
@@ -16333,7 +16644,7 @@ const npc = _wxGetChatTargetMeta(npcId);
 
       /* ========== 设置 App ========== */
       function renderSettings(container){
-        const currentTheme = root.getAttribute('data-theme') || 'modern';
+        const currentTheme = root.getAttribute('data-theme') || 'frost';
         const cfg = phoneLoadSettings();
 
         // ✅ 设置页左侧图标统一成“扁平实心 SVG”（App 内部识别度更高）
@@ -17088,13 +17399,13 @@ function renderSettingsUIApp(container){
       /* ========== 主题选择 App ========== */
       function renderThemes(container){
         const themes = [
-          {id:'modern',name:'现代',preview:'linear-gradient(135deg,#1a1a2e,#0f3460)'},
-          {id:'medieval',name:'中世纪',preview:'linear-gradient(135deg,#2c1810,#4a2c1a)'},
-          {id:'cyber',name:'赛博朋克',preview:'linear-gradient(135deg,#0a0a0a,#0a1628)'},
-          {id:'sakura',name:'樱花',preview:'linear-gradient(135deg,#2d1f2f,#4a1942)'},
-          {id:'frost',name:'霜雪',preview:'linear-gradient(135deg,#e8edf2,#cfd8e3)'},
+          {id:'frost',   name:'霜雪',   preview:'linear-gradient(135deg,#fafafa,#dde4f0)',previewText:'rgba(20,20,24,.7)'},
+          {id:'modern',  name:'现代',   preview:'linear-gradient(135deg,#0a0a0a,#1a1a1a)',previewText:'rgba(255,255,255,.7)'},
+          {id:'medieval',name:'中世纪', preview:'linear-gradient(135deg,#2e1a0c,#4a2c10)',previewText:'rgba(255,220,180,.75)'},
+          {id:'cyber',   name:'赛博朋克',preview:'linear-gradient(135deg,#040408,#040c18)',previewText:'rgba(0,220,120,.75)'},
+          {id:'sakura',  name:'樱花',   preview:'linear-gradient(135deg,#22103a,#2e1240)',previewText:'rgba(255,160,200,.75)'},
         ];
-        const current = root.getAttribute('data-theme') || 'modern';
+        const current = root.getAttribute('data-theme') || 'frost';
         let html = `<div style="padding:14px;"><div style="font-weight:600;color:var(--ph-text);font-size:15px;margin-bottom:4px;">选择主题</div>
           <div style="font-size:12px;color:var(--ph-text-dim);margin-bottom:12px;">手机是酒馆拓展社交系统，选择你喜欢的风格</div>
         </div>
@@ -17102,7 +17413,7 @@ function renderSettingsUIApp(container){
         themes.forEach(t=>{
           html += `<button class="themeCard${t.id===current?' active':''}" data-act="setTheme" data-theme="${t.id}">
             <div class="tcPreview" style="background:${t.preview};"></div>
-            ${t.name}
+            <span style="color:${t.previewText||'var(--ph-text-sub)'}">${t.name}</span>
           </button>`;
         });
         html += '</div>';
@@ -17116,8 +17427,8 @@ function renderSettingsUIApp(container){
       function applyTheme(themeId){
         if (!themeId) return;
 
-        // UI：modern 视为默认，不挂 data-theme
-        root.setAttribute('data-theme', themeId === 'modern' ? '' : themeId);
+        // UI：始终挂 data-theme（frost 也显式挂，CSS 变量才能生效）
+        root.setAttribute('data-theme', themeId || 'frost');
 
         // 存储：统一走 LS_PHONE_G_THEME
         try{
@@ -17161,9 +17472,13 @@ function renderSettingsUIApp(container){
             }catch(_){}
           }
 
-          // 应用到 UI
-          if (t){
-            root.setAttribute('data-theme', t === 'modern' ? '' : t);
+          // 应用到 UI：没有保存值则默认 frost（空 data-theme = frost）
+          if (t && t !== 'frost'){
+            root.setAttribute('data-theme', t);
+          } else {
+            // frost 或未设置：不挂 data-theme 属性（CSS 里 [data-theme="frost"] 匹配）
+            // 但为了让 frost 的 CSS 变量生效，需要显式挂 frost
+            root.setAttribute('data-theme', 'frost');
           }
         }catch(e){}
       }
