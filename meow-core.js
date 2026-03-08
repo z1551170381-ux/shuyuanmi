@@ -1386,8 +1386,8 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   position:fixed;
   width:220px; height:220px;
   border-radius:50%;
-  background:rgba(255,255,255,.02);
-  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.01);
+  border:1px solid rgba(255,255,255,.08);
   box-shadow:0 10px 32px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.16);
   backdrop-filter:blur(18px) saturate(1.03);
   -webkit-backdrop-filter:blur(18px) saturate(1.03);
