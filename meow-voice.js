@@ -1206,8 +1206,8 @@ ${t}
         const color = _hsl2css(s.hue, s.sat, s.lit);
         if (cur) { cur.style.fontSize = s.size + 'px'; cur.style.color = color; }
         if (nxt) { nxt.style.fontSize = Math.max(10, Math.round(s.size * 0.70)) + 'px'; }
-        // sync sliders
-        const _sv = (id, v, vid) => { const el=doc.getElementById(id); if(el)el.value=v; const vv=doc.getElementById(vid); if(vv)vv.textContent=v; };
+        // sync sliders — use _fl.querySelector so it works before/after DOM append
+        const _sv = (id, v, vid) => { const el=_fl.querySelector('#'+id); if(el)el.value=v; const vv=_fl.querySelector('#'+vid); if(vv)vv.textContent=v; };
         _sv('mv-fl-size', s.size, 'mv-fl-size-v');
         _sv('mv-fl-hue', s.hue, 'mv-fl-hue-v');
         _sv('mv-fl-sat', s.sat, 'mv-fl-sat-v');
@@ -1258,7 +1258,7 @@ ${t}
 
       // long-press → toggle settings
       let _lpTimer=null, _lpMoved=false;
-      const _lpS=e=>{ if(e.target.closest('#mv-fl-settings,.mv-fl-close'))return; _lpMoved=false; _lpTimer=setTimeout(()=>{ const s=doc.getElementById('mv-fl-settings'); if(s)s.classList.toggle('open'); },500); };
+      const _lpS=e=>{ if(e.target.closest('#mv-fl-settings,.mv-fl-close'))return; _lpMoved=false; _lpTimer=setTimeout(()=>{ const s=_fl.querySelector('#mv-fl-settings'); if(s)s.classList.toggle('open'); },500); };
       const _lpE=()=>clearTimeout(_lpTimer);
       const _lpM=e=>{ if(Math.abs(0)>6){clearTimeout(_lpTimer);} };
       _inn.addEventListener('mousedown',_lpS); _inn.addEventListener('touchstart',_lpS,{passive:true});
@@ -1267,7 +1267,7 @@ ${t}
 
       // slider listeners
       const _onSlider = (id, key, vid) => {
-        const el = doc.getElementById(id);
+        const el = _fl.querySelector('#'+id);
         if (!el) return;
         el.addEventListener('input', () => {
           const s = lsGet('meow_voice_fl_style', {size:18,hue:0,sat:0,lit:100});
