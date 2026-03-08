@@ -805,9 +805,9 @@ ${t}
             </div>
             <div class="mv-bgm-ctrl-col">
               <div class="mv-bgm-ctrl-top">
-                <button type="button" class="mv-bgm-back-home" title="主菜单"><svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
                 <div style="flex:1"></div>
-                <button type="button" class="mv-bgm-open-settings" title="综合菜单" aria-label="综合菜单"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></button>
+                <button type="button" class="mv-bgm-back-home" title="主菜单"><svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+                <button type="button" class="mv-bgm-open-settings" title="综合菜单" aria-label="综合菜单"><svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></button>
               </div>
               <div class="mv-bgm-controls">
                 <button type="button" class="mv-bgm-prev" title="上一首"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
@@ -816,13 +816,13 @@ ${t}
                 <button type="button" class="mv-bgm-float-lyric-toggle" title="悬浮歌词">词</button>
               </div>
               <div class="mv-bgm-groups"></div>
-              <div class="mv-bgm-song-list"></div>
             </div>
           </div>
           <div class="mv-bgm-bottom-row">
             <div class="mv-bgm-progress"><input type="range" class="mv-bgm-seek" min="0" max="1000" step="1" value="0"></div>
             <div class="mv-bgm-track-count"></div>
           </div>
+          <div class="mv-bgm-song-list"></div>
           <div class="mv-bgm-extra-panel">
             <div class="mv-bgm-ep-search-row">
               <input type="text" class="mv-bgm-ep-input" placeholder="搜索歌曲…">
@@ -892,8 +892,8 @@ ${t}
 
       /* LEFT: title + sub + lyric, vertically centered */
       #meow-voice-bgm-dock .mv-bgm-meta-col{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px}
-      #meow-voice-bgm-dock .mv-bgm-name{font-size:16px;line-height:1.2;font-weight:800;color:#1a2a30;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
-      #meow-voice-bgm-dock .mv-bgm-sub{font-size:10px;color:rgba(44,57,63,.50);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      #meow-voice-bgm-dock .mv-bgm-name{font-size:18px;line-height:1.15;font-weight:800;color:#0e1e24;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.02em}
+      #meow-voice-bgm-dock .mv-bgm-sub{font-size:10px;color:rgba(44,57,63,.42);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
       #meow-voice-bgm-dock .mv-bgm-lyric{margin-top:5px;display:flex;flex-direction:column;align-items:flex-start;gap:1px;overflow:hidden;background:none;border:none;padding:0;min-height:0}
       #meow-voice-bgm-dock .mv-bgm-lyric:empty::before{content:'歌词';font-size:11px;color:rgba(44,57,63,.20);font-style:italic}
       #meow-voice-bgm-dock .mv-bgm-lrc-line{width:100%;font-size:11px;font-weight:400;color:rgba(44,57,63,.36);line-height:1.5;padding:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -902,12 +902,12 @@ ${t}
       /* RIGHT: ctrl-col — 3 rows */
       #meow-voice-bgm-dock .mv-bgm-ctrl-col{flex:none;width:166px;display:flex;flex-direction:column;justify-content:space-between;gap:5px;align-self:stretch}
 
-      /* row1: ← ... ≡ */
-      #meow-voice-bgm-dock .mv-bgm-ctrl-top{display:flex;align-items:center;gap:4px}
-      #meow-voice-bgm-dock .mv-bgm-back-home{flex-shrink:0;width:22px;height:22px;border:0;border-radius:7px;background:rgba(228,228,224,.72);cursor:pointer;color:#556068;display:flex;align-items:center;justify-content:center;transition:background .15s}
-      #meow-voice-bgm-dock .mv-bgm-back-home:hover{background:rgba(210,210,206,.95)}
-      #meow-voice-bgm-dock .mv-bgm-open-settings{flex-shrink:0;width:26px;height:26px;border:0;border-radius:8px;background:rgba(228,228,224,.82);cursor:pointer;color:#556068;display:flex;align-items:center;justify-content:center;transition:background .15s}
-      #meow-voice-bgm-dock .mv-bgm-open-settings:hover{background:rgba(210,210,206,.95)}
+      /* row1: flex-end — ← ≡ same size */
+      #meow-voice-bgm-dock .mv-bgm-ctrl-top{display:flex;align-items:center;gap:3px}
+      #meow-voice-bgm-dock .mv-bgm-back-home,
+      #meow-voice-bgm-dock .mv-bgm-open-settings{flex-shrink:0;width:20px;height:20px;border:0;border-radius:6px;background:rgba(228,228,224,.75);cursor:pointer;color:#556068;display:flex;align-items:center;justify-content:center;transition:background .15s}
+      #meow-voice-bgm-dock .mv-bgm-back-home:hover,
+      #meow-voice-bgm-dock .mv-bgm-open-settings:hover{background:rgba(205,205,200,.95)}
       #meow-voice-bgm-dock .mv-bgm-open-settings.active{background:#3a474d;color:#fff}
 
       /* row2: play controls */
@@ -922,20 +922,37 @@ ${t}
 
       /* row3: group chips */
       #meow-voice-bgm-dock .mv-bgm-groups{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
-      #meow-voice-bgm-dock .mv-bgm-group-chip{border:0;border-radius:999px;padding:4px 10px;background:rgba(72,82,86,.07);color:#44535a;cursor:pointer;font-size:10px;transition:background .15s;line-height:1.4;white-space:nowrap}
+      #meow-voice-bgm-dock .mv-bgm-group-chip{border:0;border-radius:999px;padding:3px 9px;background:rgba(72,82,86,.07);color:#44535a;cursor:pointer;font-size:9.5px;transition:background .15s;line-height:1.4;white-space:nowrap}
       #meow-voice-bgm-dock .mv-bgm-group-chip.active{background:#3a474d;color:#fff}
 
-      /* song list dropdown */
-      #meow-voice-bgm-dock .mv-bgm-song-list{display:none;flex-direction:column;gap:2px;margin-top:4px;max-height:120px;overflow-y:auto;border-radius:10px;background:rgba(255,255,255,.72);border:1px solid rgba(28,24,18,.07);padding:4px 5px}
-      #meow-voice-bgm-dock .mv-bgm-song-list.open{display:flex}
-      #meow-voice-bgm-dock .mv-bgm-song-item{font-size:10.5px;padding:4px 8px;border-radius:7px;cursor:pointer;color:#3a4a52;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .12s;border:0;background:transparent;text-align:left;width:100%}
+      /* slide-out drawer base — both panels share same style */
+      #meow-voice-bgm-dock .mv-bgm-song-list,
+      #meow-voice-bgm-dock .mv-bgm-extra-panel{
+        overflow:hidden;max-height:0;
+        border-radius:0 0 18px 18px;
+        background:rgba(243,243,240,.96);
+        border:1px solid rgba(212,212,206,.65);border-top:none;
+        box-shadow:0 14px 28px rgba(0,0,0,.09),0 3px 8px rgba(0,0,0,.05);
+        transition:max-height .28s cubic-bezier(.4,0,.2,1),padding .28s cubic-bezier(.4,0,.2,1);
+        padding:0 10px;
+        /* sits visually BEHIND the main card — layered effect */
+        position:relative;z-index:-1;margin-top:-4px;
+      }
+      #meow-voice-bgm-dock .mv-bgm-song-list.open{max-height:160px;padding:8px 10px}
+      #meow-voice-bgm-dock .mv-bgm-extra-panel.open{max-height:200px;padding:10px 11px}
+
+      /* when any drawer open: main panel loses bottom radius → seamless join */
+      #meow-voice-bgm-dock.drawer-open .mv-bgm-panel{border-radius:22px 22px 0 0;border-bottom-color:transparent;transition:border-radius .18s ease}
+
+      /* song items */
+      #meow-voice-bgm-dock .mv-bgm-song-list{display:block}
+      #meow-voice-bgm-dock .mv-bgm-song-item{font-size:10.5px;padding:4px 6px;border-radius:7px;cursor:pointer;color:#3a4a52;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .12s;border:0;background:transparent;text-align:left;width:100%;display:block}
       #meow-voice-bgm-dock .mv-bgm-song-item:hover{background:rgba(58,71,77,.08)}
       #meow-voice-bgm-dock .mv-bgm-song-item.playing{font-weight:700;color:#3a474d}
 
-      /* extra panel (comprehensive menu) */
-      #meow-voice-bgm-dock .mv-bgm-extra-panel{display:none;flex-direction:column;gap:7px;margin-top:8px;padding:10px 11px;border-radius:14px;background:rgba(248,248,245,.90);border:1px solid rgba(28,24,18,.07)}
-      #meow-voice-bgm-dock .mv-bgm-extra-panel.open{display:flex}
-      #meow-voice-bgm-dock .mv-bgm-ep-search-row{display:flex;gap:5px}
+      /* extra panel inner layout */
+      #meow-voice-bgm-dock .mv-bgm-extra-panel{display:block}
+      #meow-voice-bgm-dock .mv-bgm-ep-search-row{display:flex;gap:5px;margin-bottom:6px}
       #meow-voice-bgm-dock .mv-bgm-ep-input{flex:1;font-size:11px;padding:5px 8px;border-radius:8px;border:1px solid rgba(28,24,18,.12);background:rgba(255,255,255,.90);outline:none;color:#26353a;min-width:0}
       #meow-voice-bgm-dock .mv-bgm-ep-search-btn{flex-shrink:0;font-size:10px;padding:4px 10px;border-radius:8px;border:1px solid rgba(58,71,77,.20);background:rgba(58,71,77,.08);color:#3a4a52;cursor:pointer;white-space:nowrap;transition:background .14s}
       #meow-voice-bgm-dock .mv-bgm-ep-search-btn:hover{background:rgba(58,71,77,.16)}
@@ -943,7 +960,7 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-ep-search-res.open{display:flex}
       #meow-voice-bgm-dock .mv-bgm-ep-res-item{font-size:10.5px;padding:4px 8px;border-radius:7px;cursor:pointer;color:#3a4a52;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .12s;border:0;background:transparent;text-align:left;width:100%}
       #meow-voice-bgm-dock .mv-bgm-ep-res-item:hover{background:rgba(58,71,77,.08)}
-      #meow-voice-bgm-dock .mv-bgm-ep-modes{display:flex;gap:4px;flex-wrap:wrap}
+      #meow-voice-bgm-dock .mv-bgm-ep-modes{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
       #meow-voice-bgm-dock .mv-bgm-mode-btn{font-size:10px;padding:4px 9px;border-radius:999px;border:1px solid rgba(58,71,77,.18);background:rgba(72,82,86,.06);color:#44535a;cursor:pointer;transition:background .14s,color .14s}
       #meow-voice-bgm-dock .mv-bgm-mode-btn.active{background:#3a474d;color:#fff;border-color:#3a474d}
 
@@ -1016,6 +1033,8 @@ ${t}
         if (_ep) {
           const _epOpen = _ep.classList.toggle('open');
           if (_settBtn) _settBtn.classList.toggle('active', _epOpen);
+          if (_epOpen) rootNow.classList.add('drawer-open');
+          else if (!rootNow.querySelector('.mv-bgm-song-list.open')) rootNow.classList.remove('drawer-open');
         }
         return;
       }
@@ -1098,12 +1117,14 @@ ${t}
         if (_sl) {
           if (_alreadyActive && _sl.classList.contains('open')) {
             _sl.classList.remove('open');
+            if (!rootNow.querySelector('.mv-bgm-extra-panel.open')) rootNow.classList.remove('drawer-open');
           } else {
             const _curTid = lsGet(LS.BGM_TRACK, '');
             _sl.innerHTML = _gTracks.map(t =>
               `<button type="button" class="mv-bgm-song-item${t.id===_curTid?' playing':''}" data-tid="${t.id}" data-gid="${gid}">${t.title || '未命名'}</button>`
             ).join('') || '<div style="font-size:10px;color:rgba(58,71,77,.4);padding:4px 8px">暂无歌曲</div>';
             _sl.classList.add('open');
+            rootNow.classList.add('drawer-open');
           }
         }
         return;
