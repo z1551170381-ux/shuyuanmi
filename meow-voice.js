@@ -549,8 +549,31 @@ ${t}
     return JSON.parse(JSON.stringify(_bgmLibCache));
   }
 
+  // 保存前先把当前 cache 保存版本戳到要合并的 lib，防止并发写覆盖
+  function _safeMergeAndSave(getLibFn) {
+    // getLibFn 是一个修改函数：接受 lib（deep copy）后原地修改并返回
+    const lib = _getBgmLibrary();
+    const vBefore = _bgmLibVersion;
+    getLibFn(lib);
+    // 只有 version 没变（没有并发写）才保存；否则重读再试一次
+    if (_bgmLibVersion === vBefore) {
+      _saveBgmLibrary(lib);
+      return true;
+    }
+    // 并发写：从 LS 重新读，合并新曲目
+    const freshLib = _ensureBgmLibrary(lsGet(LS.BGM_LIBRARY, []));
+    _bgmLibCache = freshLib;
+    const lib2 = _getBgmLibrary();
+    getLibFn(lib2);
+    _saveBgmLibrary(lib2);
+    return true;
+  }
+
+  let _bgmLibVersion = 0;  // increments on every save, guards against race conditions
+
   function _saveBgmLibrary(lib) {
     const ensured = _ensureBgmLibrary(lib); // lrc 字段在这里被剥离
+    _bgmLibVersion++;                       // bump version BEFORE setting cache
     _bgmLibCache = ensured;                 // 立即更新内存缓存
     const json = JSON.stringify(ensured);
     // localStorage 5MB 配额保护：写入失败时清理旧歌词缓存再重试
@@ -976,10 +999,10 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-ep-input{flex:1;font-size:11px;padding:5px 8px;border-radius:8px;border:1px solid rgba(28,24,18,.12);background:rgba(255,255,255,.90);outline:none;color:#26353a;min-width:0}
       #meow-voice-bgm-dock .mv-bgm-ep-search-btn{flex-shrink:0;font-size:10px;padding:4px 10px;border-radius:8px;border:1px solid rgba(58,71,77,.20);background:rgba(58,71,77,.08);color:#3a4a52;cursor:pointer;white-space:nowrap;transition:background .14s}
       #meow-voice-bgm-dock .mv-bgm-ep-search-btn:hover{background:rgba(58,71,77,.16)}
-      #meow-voice-bgm-dock .mv-bgm-ep-search-res{display:none;flex-direction:column;gap:2px;max-height:90px;overflow-y:auto;border-radius:9px;background:rgba(255,255,255,.82);border:1px solid rgba(28,24,18,.08);padding:4px 5px;margin-bottom:5px}
+      #meow-voice-bgm-dock .mv-bgm-ep-search-res{display:none;flex-direction:column;gap:0;max-height:120px;overflow-y:auto;border-radius:9px;background:rgba(250,250,248,.90);border:1px solid rgba(28,24,18,.10);padding:4px 5px;margin-bottom:6px}
       #meow-voice-bgm-dock .mv-bgm-ep-search-res.open{display:flex}
-      #meow-voice-bgm-dock .mv-bgm-ep-res-item{font-size:10.5px;padding:4px 8px;border-radius:7px;cursor:pointer;color:#3a4a52;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .12s;border:0;background:transparent;text-align:left;width:100%}
-      #meow-voice-bgm-dock .mv-bgm-ep-res-item:hover{background:rgba(58,71,77,.08)}
+      #meow-voice-bgm-dock .mv-bgm-ep-res-item{font-size:10.5px;padding:5px 8px;border-radius:7px;cursor:pointer;color:#3a4a52;white-space:normal;word-break:break-all;line-height:1.4;transition:background .12s;border:0;background:rgba(255,255,255,.55);text-align:left;width:100%;display:block;margin-bottom:2px}
+      #meow-voice-bgm-dock .mv-bgm-ep-res-item:hover{background:rgba(58,71,77,.12);color:#1e2e35}
       #meow-voice-bgm-dock .mv-bgm-ep-modes{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:7px}
       #meow-voice-bgm-dock .mv-bgm-ep-divider{font-size:9.5px;color:rgba(58,71,77,.35);text-align:center;margin:5px 0 5px;letter-spacing:.03em}
       #meow-voice-bgm-dock .mv-bgm-ep-url-row{display:flex;flex-direction:column;gap:4px;margin-top:2px}
@@ -1223,10 +1246,6 @@ ${t}
         if (!_song) return;
         btn.textContent = '加入中…';
         try {
-          const _eLib = _getBgmLibrary();
-          const _eGid = lsGet(LS.BGM_GROUP,'') || _eLib[0]?.id || '';
-          const _eGroup = _findBgmGroup(_eLib, _eGid);
-          if (!_eGroup) { toast('请先选择一个分组'); return; }
           const _proxy = _bgmProxyBase();
           let _url = _song.url || '', _lrc = '';
           if (_proxy && _song.url_id) {
@@ -1236,12 +1255,20 @@ ${t}
             _url = _d.url || ''; _lrc = _d.lrc || '';
           }
           if (!_url) { toast('获取直链失败'); return; }
-          if (_eGroup.tracks.some(t => t.url === _url)) { toast('已在歌单中'); return; }
-          const _tid = _uid('t_');
-          const _title = _song.name + (_song.artist?' - '+_song.artist:'');
-          _eGroup.tracks.push({ id:_tid, title:_title, url:_url });
-          _saveBgmLibrary(_eLib);
-          if (_lrc) _lrcSet(_tid, _lrc);
+          // 用 _safeMergeAndSave 避免 async 等待期间缓存被其他操作覆盖
+          const _eGid = lsGet(LS.BGM_GROUP,'');
+          let _addedTid = null;
+          _safeMergeAndSave(lib => {
+            const grp = _findBgmGroup(lib, _eGid);
+            if (!grp) return;
+            if (grp.tracks.some(t => t.url === _url)) return;
+            const tid = _uid('t_');
+            _addedTid = tid;
+            const title = _song.name + (_song.artist?' - '+_song.artist:'');
+            grp.tracks.push({ id:tid, title, url:_url });
+          });
+          if (!_addedTid) { toast('已在歌单中'); return; }
+          if (_lrc) _lrcSet(_addedTid, _lrc);
           toast('✅ 已加入「' + _song.name + '」');
           if (_epRes) { _epRes.classList.remove('open'); _epRes.innerHTML = ''; }
           _renderBgmDock();
@@ -1264,14 +1291,16 @@ ${t}
           } catch(e2) {}
           if (!_title) _title = '未命名曲目';
         }
-        const _eLib = _getBgmLibrary();
-        const _eGid = lsGet(LS.BGM_GROUP,'') || _eLib[0]?.id || '';
-        const _eGroup = _findBgmGroup(_eLib, _eGid);
-        if (!_eGroup) { toast('请先选择一个分组'); return; }
-        if (_eGroup.tracks.some(t => t.url === _url)) { toast('该链接已在此分组中'); return; }
-        const _tid = _uid('t_');
-        _eGroup.tracks.push({ id:_tid, title:_title, url:_url });
-        _saveBgmLibrary(_eLib);
+        const _eGid2 = lsGet(LS.BGM_GROUP,'');
+        let _added2 = false;
+        _safeMergeAndSave(lib => {
+          const grp = _findBgmGroup(lib, _eGid2);
+          if (!grp) return;
+          if (grp.tracks.some(t => t.url === _url)) return;
+          grp.tracks.push({ id:_uid('t_'), title:_title, url:_url });
+          _added2 = true;
+        });
+        if (!_added2) { toast('该链接已在此分组中'); return; }
         if (_urlInp) _urlInp.value = '';
         if (_titleInp) _titleInp.value = '';
         toast('✅ 已加入「' + _title + '」');
