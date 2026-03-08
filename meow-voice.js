@@ -817,9 +817,10 @@ ${t}
           </div>
           <div class="mv-bgm-progress"><input type="range" class="mv-bgm-seek" min="0" max="1000" step="1" value="0"></div>
           <div class="mv-bgm-controls">
-            <button type="button" class="mv-bgm-prev" title="上一首">⏮</button>
-            <button type="button" class="mv-bgm-play" title="播放/暂停">▶</button>
-            <button type="button" class="mv-bgm-next" title="下一首">⏭</button>
+            <button type="button" class="mv-bgm-prev" title="上一首"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg></button>
+            <button type="button" class="mv-bgm-play" title="播放/暂停"><svg class="mv-icon-play" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M8 5v14l11-7z"/></svg><svg class="mv-icon-pause" viewBox="0 0 24 24" fill="currentColor" width="18" height="18" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></button>
+            <button type="button" class="mv-bgm-next" title="下一首"><svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+            <button type="button" class="mv-bgm-float-lyric-toggle" title="悬浮歌词"><svg viewBox="0 0 24 24" fill="currentColor" width="13" height="13"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M7 9h10v2H7zm0-3h10v2H7zm0 6h7v2H7z"/></svg></button>
           </div>
           <div class="mv-bgm-groups"></div>
           <div class="mv-bgm-pick-row">
@@ -852,7 +853,7 @@ ${t}
     style.textContent = `
       #meow-voice-bgm-dock{font-family:inherit;color:#26353a;overflow:visible;--mv-bgm-peek:56px}
       #meow-voice-bgm-dock .mv-bgm-shell{position:relative;min-height:114px;padding-left:42px}
-      #meow-voice-bgm-dock .mv-bgm-close{position:absolute;right:10px;top:2px;width:28px;height:28px;border:0;border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 8px 18px rgba(40,40,40,.10);cursor:pointer;color:#516068;font-size:14px;z-index:8}
+      #meow-voice-bgm-dock .mv-bgm-close{position:absolute;right:10px;top:4px;width:24px;height:24px;border:0;border-radius:999px;background:rgba(240,240,237,.90);box-shadow:0 2px 6px rgba(40,40,40,.08);cursor:pointer;color:#7a8a90;font-size:13px;z-index:8;display:flex;align-items:center;justify-content:center;line-height:1;transition:background .15s}
       #meow-voice-bgm-dock .mv-bgm-disc-wrap{position:absolute;left:-24px;top:12px;width:102px;height:102px;display:flex;align-items:center;justify-content:center;pointer-events:auto;z-index:6}
       #meow-voice-bgm-dock .mv-bgm-disc-hit{position:absolute;inset:0;border:0;background:transparent;cursor:pointer;z-index:6}
             #meow-voice-bgm-dock .mv-bgm-disc{position:relative;width:88px;height:88px;border-radius:50%;box-shadow:0 12px 26px rgba(0,0,0,.12), inset 0 0 0 1px rgba(255,255,255,.30);overflow:hidden;background:
@@ -874,16 +875,21 @@ ${t}
       #meow-voice-bgm-dock.playing.collapsed .mv-bgm-tonearm{transform:rotate(-30deg)}
       #meow-voice-bgm-dock.collapsed:not(.playing) .mv-bgm-tonearm{transform:rotate(12deg)}
       #meow-voice-bgm-dock:not(.playing):not(.collapsed) .mv-bgm-tonearm{transform:rotate(-6deg)}
-      #meow-voice-bgm-dock .mv-bgm-panel{position:relative;min-height:110px;padding:10px 10px 9px 46px;border-radius:20px;background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(244,244,240,.64));border:1px solid rgba(214,214,206,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 16px 34px rgba(0,0,0,.10);overflow:visible;transition:opacity .18s ease,max-height .18s ease,padding .18s ease;max-height:600px}
+      #meow-voice-bgm-dock .mv-bgm-panel{position:relative;min-height:110px;padding:12px 12px 10px 48px;border-radius:22px;background:linear-gradient(160deg, rgba(255,255,255,.94) 0%, rgba(246,246,242,.88) 100%);border:1px solid rgba(220,220,214,.65);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 12px 36px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.04);overflow:visible;transition:opacity .18s ease,max-height .18s ease,padding .18s ease;max-height:600px}
       #meow-voice-bgm-dock .mv-bgm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding-right:32px}
-      #meow-voice-bgm-dock .mv-bgm-open-settings{position:absolute;right:8px;top:34px;width:26px;height:26px;border:0;border-radius:999px;background:rgba(255,255,255,.78);box-shadow:0 6px 14px rgba(0,0,0,.08);cursor:pointer;color:#56656d;font-size:13px;flex:none;z-index:7}
-      #meow-voice-bgm-dock .mv-bgm-name{font-size:14px;line-height:1.15;font-weight:700;color:#2c393f;max-width:126px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      #meow-voice-bgm-dock .mv-bgm-open-settings{position:absolute;right:8px;top:34px;width:26px;height:26px;border:0;border-radius:999px;background:rgba(255,255,255,.85);box-shadow:0 2px 8px rgba(0,0,0,.10);cursor:pointer;color:#56656d;font-size:12px;flex:none;z-index:7;display:flex;align-items:center;justify-content:center;transition:background .15s}
+      #meow-voice-bgm-dock .mv-bgm-name{font-size:14px;line-height:1.2;font-weight:800;color:#1e2d32;max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
       #meow-voice-bgm-dock .mv-bgm-sub{font-size:10px;color:rgba(44,57,63,.55);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
-      #meow-voice-bgm-dock .mv-bgm-progress{margin-top:7px}
-      #meow-voice-bgm-dock .mv-bgm-progress input{width:100%}
-      #meow-voice-bgm-dock .mv-bgm-controls{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
-      #meow-voice-bgm-dock .mv-bgm-controls button{width:30px;height:30px;font-size:13px;line-height:1;border:0;border-radius:999px;background:rgba(255,255,255,.76);box-shadow:0 5px 14px rgba(16,50,55,.08);cursor:pointer;color:#3e4f56}
-      #meow-voice-bgm-dock .mv-bgm-play{width:38px;height:38px;font-size:17px;background:#3a474d;color:#fff}
+      #meow-voice-bgm-dock .mv-bgm-progress{margin-top:8px;padding:0 2px}
+      #meow-voice-bgm-dock .mv-bgm-progress input{width:100%;height:3px;cursor:pointer}
+      #meow-voice-bgm-dock .mv-bgm-controls{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px}
+      #meow-voice-bgm-dock .mv-bgm-controls button{width:30px;height:30px;font-size:13px;line-height:1;border:0;border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 3px 10px rgba(16,50,55,.10);cursor:pointer;color:#3e4f56;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .12s;flex-shrink:0}
+      #meow-voice-bgm-dock .mv-bgm-controls button:hover{background:rgba(255,255,255,1);transform:scale(1.08)}
+      #meow-voice-bgm-dock .mv-bgm-controls button svg{display:block;pointer-events:none}
+      #meow-voice-bgm-dock .mv-bgm-play{width:38px;height:38px;background:#3a474d !important;color:#fff !important;box-shadow:0 4px 14px rgba(40,56,62,.22) !important}
+      #meow-voice-bgm-dock .mv-bgm-play:hover{background:#2c3a40 !important}
+      #meow-voice-bgm-dock .mv-bgm-float-lyric-toggle{opacity:.72}
+      #meow-voice-bgm-dock .mv-bgm-float-lyric-toggle.active{background:#3a474d !important;color:#fff !important;opacity:1}
       #meow-voice-bgm-dock .mv-bgm-groups{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
       #meow-voice-bgm-dock .mv-bgm-group-chip{border:0;border-radius:999px;padding:4px 9px;background:rgba(72,82,86,.08);color:#44535a;cursor:pointer;font-size:10px}
       #meow-voice-bgm-dock .mv-bgm-group-chip.active{background:#434f55;color:#fff}
@@ -965,6 +971,53 @@ ${t}
         
       }
       #meow-voice-bgm-dock input[type="range"]{accent-color:#727f86}
+
+      /* ── 悬浮歌词 (QQ音乐风格) ── */
+      #mv-float-lyric{
+        position:fixed;left:50%;top:auto;bottom:88px;transform:translateX(-50%);
+        z-index:2147483645;pointer-events:auto;
+        max-width:72vw;min-width:160px;
+        display:none;
+        user-select:none;-webkit-user-select:none;
+      }
+      #mv-float-lyric.visible{display:block}
+      #mv-float-lyric .mv-fl-inner{
+        display:flex;flex-direction:column;align-items:center;gap:4px;
+        padding:10px 20px 10px 20px;
+        border-radius:999px;
+        background:rgba(22,28,30,.52);
+        backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+        border:1px solid rgba(255,255,255,.10);
+        box-shadow:0 8px 32px rgba(0,0,0,.32);
+        transition:background .2s;
+        cursor:move;
+      }
+      #mv-float-lyric .mv-fl-cur{
+        font-size:15px;font-weight:600;
+        color:rgba(255,255,255,.96);
+        text-align:center;line-height:1.45;
+        text-shadow:0 1px 6px rgba(0,0,0,.5);
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68vw;
+        transition:opacity .25s;
+      }
+      #mv-float-lyric .mv-fl-next{
+        font-size:12px;font-weight:400;
+        color:rgba(255,255,255,.46);
+        text-align:center;line-height:1.4;
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw;
+        transition:opacity .25s;
+      }
+      #mv-float-lyric .mv-fl-close{
+        position:absolute;right:-8px;top:-8px;
+        width:20px;height:20px;border-radius:50%;
+        background:rgba(40,50,54,.78);border:1px solid rgba(255,255,255,.18);
+        color:rgba(255,255,255,.70);font-size:12px;line-height:1;
+        display:none;align-items:center;justify-content:center;
+        cursor:pointer;border:0;
+      }
+      #mv-float-lyric:hover .mv-fl-close{display:flex}
+      #mv-float-lyric.no-lyric .mv-fl-inner{background:rgba(22,28,30,.38)}
+      #mv-float-lyric.no-lyric .mv-fl-cur{color:rgba(255,255,255,.38);font-style:italic;font-weight:400;font-size:13px}
     `;
     if (!doc.getElementById(style.id)) (doc.head || doc.documentElement).appendChild(style);
     root.addEventListener('click', async (e) => {
@@ -974,6 +1027,18 @@ ${t}
 
       if (e.target.closest('.mv-bgm-open-settings')) {
         openModal();
+        return;
+      }
+      if (e.target.closest('.mv-bgm-float-lyric-toggle')) {
+        const btn = e.target.closest('.mv-bgm-float-lyric-toggle');
+        const fl = doc.getElementById('mv-float-lyric');
+        const isOn = !btn.classList.contains('active');
+        btn.classList.toggle('active', isOn);
+        lsSet('meow_voice_float_lyric_on', isOn);
+        if (fl) {
+          fl.classList.toggle('visible', isOn);
+          if (isOn) _updateFloatLyric();
+        }
         return;
       }
       if (e.target.closest('.mv-bgm-disc-hit')) {
@@ -1157,7 +1222,83 @@ ${t}
     if (W.visualViewport) W.visualViewport.addEventListener('resize', relayoutDock);
 
     (doc.documentElement || doc.body).appendChild(root);
+
+    // ── 创建悬浮歌词元素 ──
+    if (!doc.getElementById('mv-float-lyric')) {
+      const fl = doc.createElement('div');
+      fl.id = 'mv-float-lyric';
+      fl.innerHTML = `<div class="mv-fl-inner">
+        <div class="mv-fl-cur">歌词同步中…</div>
+        <div class="mv-fl-next"></div>
+        <button type="button" class="mv-fl-close" title="关闭悬浮歌词">×</button>
+      </div>`;
+      Object.assign(fl.style, { position:'fixed', zIndex:'2147483645' });
+      // 拖动支持
+      let flDrag=false, flSx=0, flSy=0, flBx=0, flBy=0;
+      const inner = fl.querySelector('.mv-fl-inner');
+      const onFlDown = e => {
+        const p = e.touches ? e.touches[0] : e;
+        flDrag=true; flSx=p.clientX; flSy=p.clientY;
+        const r = fl.getBoundingClientRect();
+        flBx=r.left; flBy=r.top;
+        fl.style.transform='none';
+        fl.style.left = r.left + 'px';
+        fl.style.top = r.top + 'px';
+        fl.style.bottom = 'auto';
+        if (e.cancelable) e.preventDefault();
+        e.stopPropagation();
+      };
+      const onFlMove = e => {
+        if (!flDrag) return;
+        const p = e.touches ? e.touches[0] : e;
+        const nx = Math.max(4, Math.min((W.innerWidth||400) - (fl.offsetWidth||200) - 4, flBx + p.clientX - flSx));
+        const ny = Math.max(4, Math.min((W.innerHeight||600) - (fl.offsetHeight||50) - 4, flBy + p.clientY - flSy));
+        fl.style.left = nx + 'px';
+        fl.style.top = ny + 'px';
+        if (e.cancelable) e.preventDefault();
+      };
+      const onFlUp = () => { flDrag=false; };
+      inner.addEventListener('mousedown', onFlDown);
+      inner.addEventListener('touchstart', onFlDown, {passive:false});
+      W.addEventListener('mousemove', onFlMove);
+      W.addEventListener('touchmove', onFlMove, {passive:false});
+      W.addEventListener('mouseup', onFlUp);
+      W.addEventListener('touchend', onFlUp);
+      fl.querySelector('.mv-fl-close').addEventListener('click', () => {
+        fl.classList.remove('visible');
+        lsSet('meow_voice_float_lyric_on', false);
+        // 取消激活按钮
+        const dock = doc.getElementById('meow-voice-bgm-dock');
+        if (dock) dock.querySelector('.mv-bgm-float-lyric-toggle')?.classList.remove('active');
+      });
+      (doc.documentElement || doc.body).appendChild(fl);
+    }
+
     return root;
+  }
+
+  /** 更新悬浮歌词显示内容 */
+  function _updateFloatLyric() {
+    const fl = doc.getElementById('mv-float-lyric');
+    if (!fl || !fl.classList.contains('visible')) return;
+    const curEl = fl.querySelector('.mv-fl-cur');
+    const nextEl = fl.querySelector('.mv-fl-next');
+    if (!_bgmLyricLines.length) {
+      fl.classList.add('no-lyric');
+      if (curEl) curEl.textContent = '暂无歌词';
+      if (nextEl) nextEl.textContent = '';
+      return;
+    }
+    fl.classList.remove('no-lyric');
+    const cur = _bgmLyricIdx;
+    if (cur >= 0 && cur < _bgmLyricLines.length) {
+      if (curEl) curEl.textContent = _bgmLyricLines[cur].text;
+      const next = _bgmLyricLines[cur + 1];
+      if (nextEl) nextEl.textContent = next ? next.text : '';
+    } else {
+      if (curEl) curEl.textContent = '…';
+      if (nextEl) nextEl.textContent = '';
+    }
   }
 
   function _renderBgmDock(cArg) {
@@ -1184,7 +1325,13 @@ ${t}
     root.querySelector('.mv-bgm-name').textContent = title;
     root.querySelector('.mv-bgm-sub').textContent = sub;
     const playBtn = root.querySelector('.mv-bgm-play');
-    if (playBtn) playBtn.textContent = (_bgmState.active || (_bgmAudio && !_bgmAudio.paused)) ? '⏸' : '▶';
+    if (playBtn) {
+      const playing = (_bgmState.active || (_bgmAudio && !_bgmAudio.paused));
+      const iconPlay = playBtn.querySelector('.mv-icon-play');
+      const iconPause = playBtn.querySelector('.mv-icon-pause');
+      if (iconPlay) iconPlay.style.display = playing ? 'none' : '';
+      if (iconPause) iconPause.style.display = playing ? '' : 'none';
+    }
 
     const seek = root.querySelector('.mv-bgm-seek');
     if (seek) {
@@ -1225,6 +1372,15 @@ ${t}
         lyricWrap.innerHTML = '';
       }
     }
+    // 悬浮歌词状态同步
+    const floatBtn = root.querySelector('.mv-bgm-float-lyric-toggle');
+    const floatLyricOn = lsGet('meow_voice_float_lyric_on', false);
+    if (floatBtn) floatBtn.classList.toggle('active', !!floatLyricOn);
+    const fl = doc.getElementById('mv-float-lyric');
+    if (fl) {
+      fl.classList.toggle('visible', !!floatLyricOn);
+      if (floatLyricOn) _updateFloatLyric();
+    }
 
     const countWrap = root.querySelector('.mv-bgm-track-count');
     if (countWrap) countWrap.textContent = tracks.length ? `当前分组共 ${tracks.length} 首` : '当前分组暂无歌曲';
@@ -1257,7 +1413,13 @@ ${t}
       seek.value = String(Math.max(0, Math.min(1000, Math.round((_bgmAudio.currentTime / _bgmAudio.duration) * 1000))));
     }
     const playBtn = root.querySelector('.mv-bgm-play');
-    if (playBtn) playBtn.textContent = (_bgmState.active || (_bgmAudio && !_bgmAudio.paused)) ? '⏸' : '▶';
+    if (playBtn) {
+      const playing2 = (_bgmState.active || (_bgmAudio && !_bgmAudio.paused));
+      const ip = playBtn.querySelector('.mv-icon-play');
+      const ip2 = playBtn.querySelector('.mv-icon-pause');
+      if (ip) ip.style.display = playing2 ? 'none' : '';
+      if (ip2) ip2.style.display = playing2 ? '' : 'none';
+    }
     root.classList.toggle('playing', !!((_bgmAudio && !_bgmAudio.paused) || _bgmState.active));
     const sub = root.querySelector('.mv-bgm-sub');
     if (sub && _bgmAudio) {
@@ -1266,7 +1428,10 @@ ${t}
     // 歌词同步
     if (_bgmAudio && _bgmLyricLines.length) {
       const ms = Math.round(_bgmAudio.currentTime * 1000);
-      if (_bgmLyricTickMs(ms)) _renderLyricInDock(root);
+      if (_bgmLyricTickMs(ms)) {
+        _renderLyricInDock(root);
+        _updateFloatLyric();
+      }
     }
   }
 
@@ -1424,6 +1589,7 @@ ${t}
             if (idx !== _bgmLyricIdx) {
               _bgmLyricIdx = idx;
               _renderLyricInDock(doc.getElementById('meow-voice-bgm-dock'));
+              _updateFloatLyric();
             }
             // 精确等到下一行的触发时刻
             const nextIdx = idx + 1;
