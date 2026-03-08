@@ -935,12 +935,12 @@ ${t}
       }
 
       /* floating lyrics — text only */
-      #mv-float-lyric{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);z-index:2147483645;pointer-events:auto;max-width:72vw;min-width:80px;display:none;user-select:none;-webkit-user-select:none}
+      #mv-float-lyric{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);z-index:2147483645;pointer-events:auto;width:max-content;max-width:80vw;display:none;user-select:none;-webkit-user-select:none;text-align:center}
       #mv-float-lyric.visible{display:block}
-      #mv-float-lyric .mv-fl-inner{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px;background:transparent;border:none;box-shadow:none;cursor:move}
-      #mv-float-lyric .mv-fl-cur{font-size:17px;font-weight:600;color:rgba(255,255,255,.88);text-align:center;line-height:1.4;text-shadow:0 1px 12px rgba(0,0,0,.7),0 0 32px rgba(0,0,0,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68vw}
-      #mv-float-lyric .mv-fl-next{font-size:13px;font-weight:400;color:rgba(255,255,255,.46);text-align:center;text-shadow:0 1px 6px rgba(0,0,0,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60vw}
-      #mv-float-lyric .mv-fl-close{position:absolute;right:-18px;top:50%;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;background:rgba(30,40,44,.55);color:rgba(255,255,255,.65);font-size:10px;line-height:1;display:none;align-items:center;justify-content:center;cursor:pointer;border:0}
+      #mv-float-lyric .mv-fl-inner{display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 0;background:transparent;border:none;box-shadow:none;cursor:move;width:100%}
+      #mv-float-lyric .mv-fl-cur{font-size:18px;font-weight:700;color:#fff;text-align:center;line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:78vw;display:block;-webkit-text-stroke:2px rgba(0,0,0,.55);paint-order:stroke fill;text-shadow:0 0 18px rgba(0,0,0,.45)}
+      #mv-float-lyric .mv-fl-next{font-size:13px;font-weight:500;color:rgba(255,255,255,.72);text-align:center;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:70vw;display:block;-webkit-text-stroke:1.2px rgba(0,0,0,.45);paint-order:stroke fill}
+      #mv-float-lyric .mv-fl-close{position:absolute;right:-20px;top:50%;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;background:rgba(40,50,54,.60);color:rgba(255,255,255,.70);font-size:10px;line-height:1;display:none;align-items:center;justify-content:center;cursor:pointer;border:0}
       #mv-float-lyric:hover .mv-fl-close{display:flex}
     `;
     if (!doc.getElementById(style.id)) (doc.head || doc.documentElement).appendChild(style);
