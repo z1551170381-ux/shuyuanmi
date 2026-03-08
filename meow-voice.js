@@ -3645,7 +3645,13 @@ async function _musicSearch(keywords) {
                 <input type="range" id="mvDramaRate" min="0.7" max="1.5" step="0.05" value="${Number(c.dramaRate||1).toFixed(2)}" style="flex:1">
                 <span class="mv-val" id="mvDramaRateVal">${Number(c.dramaRate||1).toFixed(2)}x</span>
               </div>
-              <div style="margin:14px 0 0;padding:12px;border:1px solid rgba(28,24,18,.08);border-radius:14px;background:rgba(255,255,255,.38)">
+              <div class="mv-hint" style="margin-top:4px;font-size:11px">仅作用于广播剧 API 播放阶段</div>
+            </div>
+            <div id="mvDramaCharList" style="margin-top:8px">
+              ${dramaCharRows(c.dramaMap||{}, getActiveCharNames())}
+            </div>
+            <button type="button" class="mv-btn" id="mvDramaRefresh" style="margin-top:6px;font-size:12px">↺ 刷新角色列表</button>
+            <div style="margin:14px 0 0;padding:12px;border:1px solid rgba(28,24,18,.08);border-radius:14px;background:rgba(255,255,255,.38)">
               <div style="font-size:12px;font-weight:700;margin-bottom:8px">背景音乐</div>
               <label class="mv-toggle" style="margin-bottom:8px">
                 <span>启用背景音乐</span>
