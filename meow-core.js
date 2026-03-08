@@ -2154,7 +2154,7 @@ function _builtinMenuItems(){
     if(tries>=15){ clearInterval(t); try{toast('小手机模块未就绪，请检查 meow-phone.js 是否加载成功');}catch(_){} }
   },200);
 } },
-    { id:'parallel', label:'平行界',iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="4.2"/><circle cx="15.5" cy="12" r="4.2" opacity=".72"/></svg>', action:()=>{ try{ toast('平行界即将上线，敬请期待'); }catch(_){} } },
+    { id:'parallel', label:'平行界', iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="8" cy="12" rx="5.5" ry="3.2" transform="rotate(-12 8 12)"/><ellipse cx="16" cy="12" rx="5.5" ry="3.2" transform="rotate(12 16 12)"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/></svg>', action:()=>{ try{ toast('平行界即将上线，敬请期待'); }catch(_){} } },
   ];
 }
 function modalShell(id, title, icon){
