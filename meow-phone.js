@@ -710,6 +710,330 @@ function ensureTuneStyle(){
 #${ID} .phDockBtn svg.phIco{ filter: drop-shadow(0 1px 2px var(--ph-ico-shadow)); }
 /* 发现/我 页图标底色 */
 #${ID} .wxDIcoThemed svg.phIco{ fill: var(--ph-ico-list, rgba(255,255,255,.90)) !important; }
+
+/* ===== 2026 UI polish · css only ===== */
+#${ID}{
+  --ph-shell-border: rgba(255,255,255,.26);
+  --ph-shell-shadow: 0 26px 70px rgba(16,22,36,.18), 0 10px 24px rgba(16,22,36,.08);
+  --ph-status-fg: var(--ph-text);
+  --ph-status-shadow: none;
+  --ph-home-label: var(--ph-text-sub);
+  --ph-card-soft: var(--ph-glass);
+  --ph-card-strong: var(--ph-glass-strong);
+  --ph-card-line: var(--ph-glass-border);
+  --ph-app-icon-bg: var(--ph-glass-strong);
+  --ph-app-icon-border: var(--ph-glass-border);
+  --ph-app-icon-fg: var(--ph-text);
+  --ph-app-icon-shadow: 0 10px 24px rgba(16,22,36,.10);
+  --ph-dock-surface: var(--ph-glass);
+  --ph-dock-line: var(--ph-glass-border);
+}
+#${ID}[data-theme="frost"]{
+  --ph-shell-border: rgba(255,255,255,.58);
+  --ph-shell-shadow: 0 28px 72px rgba(118,130,155,.18), 0 10px 24px rgba(118,130,155,.09);
+  --ph-status-fg: rgba(32,40,53,.86);
+  --ph-status-shadow: 0 1px 0 rgba(255,255,255,.45);
+  --ph-home-label: rgba(38,45,58,.72);
+  --ph-card-soft: rgba(255,255,255,.48);
+  --ph-card-strong: rgba(255,255,255,.68);
+  --ph-card-line: rgba(255,255,255,.74);
+  --ph-app-icon-bg: linear-gradient(180deg, rgba(255,255,255,.82), rgba(244,247,251,.58));
+  --ph-app-icon-border: rgba(255,255,255,.86);
+  --ph-app-icon-fg: rgba(40,47,60,.82);
+  --ph-app-icon-shadow: 0 14px 30px rgba(112,126,152,.14);
+  --ph-dock-surface: rgba(255,255,255,.32);
+  --ph-dock-line: rgba(255,255,255,.52);
+}
+#${ID}[data-theme="modern"]{
+  --ph-shell-border: rgba(255,255,255,.08);
+  --ph-shell-shadow: 0 28px 78px rgba(0,0,0,.44), 0 8px 18px rgba(0,0,0,.24);
+  --ph-status-fg: rgba(255,255,255,.94);
+  --ph-status-shadow: 0 1px 2px rgba(0,0,0,.28);
+  --ph-home-label: rgba(255,255,255,.68);
+  --ph-card-soft: rgba(255,255,255,.05);
+  --ph-card-strong: rgba(255,255,255,.08);
+  --ph-card-line: rgba(255,255,255,.10);
+  --ph-app-icon-bg: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+  --ph-app-icon-border: rgba(255,255,255,.10);
+  --ph-app-icon-fg: rgba(255,255,255,.92);
+  --ph-app-icon-shadow: 0 14px 28px rgba(0,0,0,.22);
+  --ph-dock-surface: rgba(255,255,255,.035);
+  --ph-dock-line: rgba(255,255,255,.08);
+}
+#${ID}[data-theme="medieval"]{
+  --ph-status-fg: rgba(255,238,210,.92);
+  --ph-home-label: rgba(255,224,190,.72);
+}
+#${ID}[data-theme="cyber"]{
+  --ph-status-fg: rgba(200,255,230,.94);
+  --ph-home-label: rgba(160,232,204,.74);
+}
+#${ID}[data-theme="sakura"]{
+  --ph-status-fg: rgba(255,233,242,.94);
+  --ph-home-label: rgba(255,210,226,.72);
+}
+
+#${ID} .phShell{
+  border: 1px solid var(--ph-shell-border);
+  box-shadow: var(--ph-shell-shadow);
+}
+#${ID}[data-theme="frost"] .phShell{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.04)),
+    var(--ph-bg-primary);
+}
+#${ID} .phWallpaper{
+  filter: saturate(.92) contrast(1.02);
+}
+#${ID}[data-theme="frost"] .phWallpaper{
+  filter: saturate(.88) brightness(1.01);
+}
+
+#${ID} .phStatus,
+#${ID} .phAppBar,
+#${ID} .wxTopBar{
+  padding-left: 16px;
+  padding-right: 16px;
+}
+#${ID} .phTime{
+  color: var(--ph-status-fg);
+  text-shadow: var(--ph-status-shadow);
+}
+#${ID} .iosSignal i,
+#${ID} .iosWifi span,
+#${ID} .iosBattery .bat::after{
+  background: var(--ph-status-fg);
+}
+#${ID} .iosWifi::before,
+#${ID} .iosWifi::after{
+  border-top-color: var(--ph-status-fg);
+}
+#${ID} .iosBattery .bat{
+  border-color: var(--ph-status-fg);
+}
+#${ID} .iosBattery .pct,
+#${ID} .phSysBtn,
+#${ID} .phNavBtn,
+#${ID} .phAppBarSpacer .phBarRBtn{
+  color: var(--ph-status-fg);
+}
+#${ID} .phSysBtn{
+  background: rgba(255,255,255,.12);
+  border-color: rgba(255,255,255,.14);
+}
+#${ID}[data-theme="frost"] .phSysBtn{
+  background: rgba(255,255,255,.46);
+  border-color: rgba(255,255,255,.62);
+}
+
+#${ID} .phPages{ bottom: 132px; }
+#${ID} .phPage{ padding: 12px 16px; }
+#${ID} .phGrid{ gap: 12px; }
+
+#${ID} .pw,
+#${ID} .phCard,
+#${ID} .wxSearchBox,
+#${ID} .wxChatRow,
+#${ID} .wxDiscoverItem,
+#${ID} .wxContactHeader,
+#${ID} .wxContactItem,
+#${ID} .wxMeProfile,
+#${ID} .forumCard,
+#${ID} .forumComposeInner,
+#${ID} .forumComposeHeader,
+#${ID} .forumComposeTitleInput,
+#${ID} .forumComposeTextArea{
+  background: var(--ph-card-soft) !important;
+  border: 1px solid var(--ph-card-line) !important;
+  box-shadow: 0 10px 28px rgba(16,22,36,.06);
+  backdrop-filter: blur(var(--ph-glass-blur));
+  -webkit-backdrop-filter: blur(var(--ph-glass-blur));
+}
+#${ID} .phCard,
+#${ID} .pw{
+  box-shadow: 0 12px 28px rgba(16,22,36,.07);
+}
+#${ID} .wxChatRow,
+#${ID} .wxDiscoverItem,
+#${ID} .wxContactHeader,
+#${ID} .wxContactItem,
+#${ID} .wxMeProfile{
+  margin: 0 10px 8px;
+  border-radius: 22px;
+  border-bottom: none !important;
+}
+#${ID} .wxSearchRow{ padding: 8px 12px 10px; }
+#${ID} .wxSearchBox{
+  justify-content: flex-start;
+  padding: 0 12px;
+  border-radius: 16px;
+  min-height: 40px;
+}
+#${ID} .wxChatList,
+#${ID} .wxDiscoverList,
+#${ID} .wxContactList,
+#${ID} .wxMeWrap{ padding-top: 6px; padding-bottom: 12px; }
+
+#${ID}[data-view="app"] .phAppBar,
+#${ID} .wxTopBar,
+#${ID} .wxTabbar,
+#${ID} .phDock{
+  backdrop-filter: blur(calc(var(--ph-glass-blur) + 4px));
+  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) + 4px));
+}
+#${ID}[data-view="app"] .phAppBar{
+  background: color-mix(in srgb, var(--ph-appbar-bg) 82%, transparent) !important;
+  border-bottom: 1px solid var(--ph-sep) !important;
+}
+#${ID}[data-view="app"] .phAppBody{
+  background: color-mix(in srgb, var(--ph-appbody-bg) 92%, transparent) !important;
+}
+#${ID} .wxTopBar{
+  background: color-mix(in srgb, var(--ph-topbar-bg) 86%, transparent) !important;
+}
+#${ID} .wxTabbar{
+  background: color-mix(in srgb, var(--ph-tabbar-bg) 84%, transparent) !important;
+  border-top: 1px solid var(--ph-tabbar-border) !important;
+}
+#${ID} .wxTabBtn{ min-height: 50px; }
+#${ID} .wxTabBtn .txt{ font-size: 10.5px; font-weight: 600; letter-spacing: .02em; }
+#${ID} .wxTabBtn.on{ color: var(--ph-tabbar-on) !important; }
+#${ID}[data-theme="frost"] .wxTabBtn.on{ text-shadow: 0 0 14px rgba(110,136,200,.18); }
+
+#${ID} .phAppIcon,
+#${ID} .phDockBtn{
+  background: transparent;
+}
+#${ID} .phAppIcon{
+  gap: 8px;
+}
+#${ID} .phAppIcon .ai,
+#${ID} .phDockBtn .di,
+#${ID} .wxDIco,
+#${ID} .wxCHIco,
+#${ID} .forumComposeTabIcon,
+#${ID} .settingRow .sIcon{
+  background: var(--ph-app-icon-bg) !important;
+  border: 1px solid var(--ph-app-icon-border);
+  color: var(--ph-app-icon-fg);
+  box-shadow: var(--ph-app-icon-shadow);
+  backdrop-filter: blur(calc(var(--ph-glass-blur) * .7));
+  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) * .7));
+}
+#${ID} .phAppIcon .ai{
+  width: 58px;
+  height: 58px;
+  border-radius: 20px;
+}
+#${ID} .phDockBtn .di{
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+}
+#${ID} .wxDIco,
+#${ID} .wxCHIco,
+#${ID} .settingRow .sIcon{
+  width: 34px;
+  height: 34px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#${ID} .forumComposeTabIcon{
+  border-radius: 14px;
+}
+#${ID} .phAppIcon .ai svg.phIco,
+#${ID} .phDockBtn .di svg.phIco,
+#${ID} .wxDIco svg.phIco,
+#${ID} .wxCHIco svg.phIco,
+#${ID} .settingRow .sIcon svg.phIco,
+#${ID} .forumComposeTabIcon svg,
+#${ID} .wxDIcoThemed svg.phIco{
+  fill: currentColor !important;
+}
+#${ID} .phAppIcon .at,
+#${ID} .phDockBtn .dt{
+  color: var(--ph-home-label) !important;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+#${ID} .phAppIcon .at{ font-size: 11px; }
+#${ID} .phDockBtn .dt{ font-size: 9.5px; }
+
+#${ID} .phDock{
+  left: 16px;
+  right: 16px;
+  bottom: 14px;
+  height: 64px;
+  border-radius: 30px;
+  background: var(--ph-dock-surface);
+  border: 1px solid var(--ph-dock-line);
+  box-shadow: 0 14px 34px rgba(16,22,36,.10);
+}
+#${ID} .phDockBtn{
+  width: 58px;
+  height: 48px;
+  border-radius: 18px;
+}
+#${ID} .phDockBtn:hover{ background: rgba(255,255,255,.10); }
+#${ID}[data-theme="frost"] .phDockBtn:hover{ background: rgba(255,255,255,.26); }
+
+#${ID} .phAppTitleMain{
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+#${ID} .phAppSubTitle{
+  color: var(--ph-text-sub);
+}
+#${ID} .phNavBtn,
+#${ID} .phBarRBtn{
+  border-radius: 14px;
+}
+
+#${ID} .wxChatDetailWrap,
+#${ID} .wxChatMsgs,
+#${ID} .wxChatInputBar,
+#${ID} .wxStickerPanel,
+#${ID} .wxVoicePanel,
+#${ID} .wxChatPlusGrid{
+  background: color-mix(in srgb, var(--ph-wechat-bg) 96%, transparent) !important;
+}
+#${ID} .wxChatInputBar textarea,
+#${ID} .phModalTa,
+#${ID} .sTimeInput,
+#${ID} .forumComposeTitleInput,
+#${ID} .forumComposeTextArea,
+#${ID} .wxEditMsgBox textarea{
+  background: color-mix(in srgb, var(--ph-input-bg) 94%, transparent) !important;
+  color: var(--ph-input-text) !important;
+  border: 1px solid var(--ph-input-border) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+}
+#${ID} .wxChatBubble.them .wxCBContent{
+  box-shadow: 0 8px 18px rgba(16,22,36,.05);
+}
+#${ID}[data-theme="frost"] .wxChatBubble.them .wxCBContent,
+#${ID}[data-theme="frost"] .wxChatBubble.me .wxCBContent{
+  border-radius: 18px;
+}
+
+#${ID} .settingRow{
+  min-height: 58px;
+  border-radius: 18px;
+  background: var(--ph-card-soft);
+  border: 1px solid var(--ph-card-line);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+#${ID} .settingRow .sLabel{ font-weight: 600; }
+#${ID} .settingRow .sValue{ color: var(--ph-text-sub); }
+
+#${ID}.mini{
+  box-shadow: var(--ph-shell-shadow);
+}
+
     `;
     (doc.head || doc.documentElement).appendChild(st);
   }catch(e){}
