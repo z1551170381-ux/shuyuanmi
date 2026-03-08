@@ -481,7 +481,8 @@ function ensureTuneStyle(){
     st.textContent = `
 /* ===== MEOW PHONE TUNE — UI clarity + wallpaper (scoped) ===== */
 #${ID} .weatherIcon{ font-size:64px; color:var(--ph-text); display:flex; align-items:center; justify-content:center; line-height:1; }
-#${ID} .weatherIcon svg{ width:64px; height:64px; stroke:var(--ph-text); }{
+#${ID} .weatherIcon svg{ width:64px; height:64px; stroke:var(--ph-text); }
+#${ID}{
   --phHomeA: .36;
   --phHomeStrongA: .46;
   --phHomeBorderA: .52;
@@ -524,15 +525,15 @@ function ensureTuneStyle(){
   --ph-wallpaper-url:     var(--phAppWallUrl);
 }
 
-/* frost 桌面：暖白半透玻璃 */
+/* frost 桌面：纯净白半透玻璃 */
 #${ID}[data-theme="frost"][data-view="home"]{
-  --ph-glass:        rgba(255,253,250,var(--phHomeA));
-  --ph-glass-strong: rgba(255,253,250,var(--phHomeStrongA));
+  --ph-glass:        rgba(255,255,254,var(--phHomeA));
+  --ph-glass-strong: rgba(255,255,254,var(--phHomeStrongA));
   --ph-glass-border: rgba(255,255,255,var(--phHomeBorderA));
 }
 #${ID}[data-theme="frost"][data-view="app"]{
-  --ph-glass:        rgba(255,253,250,var(--phAppA));
-  --ph-glass-strong: rgba(255,253,250,var(--phAppStrongA));
+  --ph-glass:        rgba(255,255,254,var(--phAppA));
+  --ph-glass-strong: rgba(255,255,254,var(--phAppStrongA));
   --ph-glass-border: rgba(255,255,255,var(--phAppBorderA));
 }
 
@@ -544,16 +545,16 @@ function ensureTuneStyle(){
   background-color: var(--ph-wallpaper-base, #0a0a0a);
   opacity: var(--ph-wallpaper-opacity, 1);
 }
-/* frost 壁纸：奶白暖光晕（对标 Nube 参考图） */
+/* frost 壁纸：极白+极淡暖光晕（Nube 参考） */
 #${ID}[data-theme="frost"] .phWallpaper{
-  background-color: #f5f2ee;
+  background-color: #f7f6f4;
   background-image:
     var(--ph-wallpaper-url, none),
-    radial-gradient(ellipse 900px 700px at 30% 15%, rgba(255,252,246,.95), transparent),
-    radial-gradient(ellipse 700px 600px at 75% 60%, rgba(232,222,208,.35), transparent),
-    radial-gradient(ellipse 600px 500px at 50% 90%, rgba(215,208,198,.20), transparent);
+    radial-gradient(ellipse 1000px 800px at 25% 10%, rgba(255,255,255,.96), transparent),
+    radial-gradient(ellipse 800px 700px at 80% 55%, rgba(240,235,228,.28), transparent),
+    radial-gradient(ellipse 700px 600px at 50% 95%, rgba(228,222,215,.18), transparent);
   background-size: cover, auto, auto, auto;
-  background-position: center, 30% 15%, 75% 60%, 50% 90%;
+  background-position: center, 25% 10%, 80% 55%, 50% 95%;
 }
 
 /* APP 内容底：跟随各主题变量 */
@@ -1036,40 +1037,40 @@ default: return emoji||'';
 
 /* ── frost：奶白暖调玻璃拟态（默认视觉主题） ── */
 #${ID}[data-theme="frost"]{
-  /* 底色：不透明（透出壁纸靠玻璃面板，phShell 本身不透明防止透出网页） */
-  --ph-bg-primary: linear-gradient(160deg,#f9f7f4 0%,#f5f2ee 55%,#ede9e4 100%);
-  --ph-glass: rgba(255,253,250,.52);
-  --ph-glass-strong: rgba(255,253,250,.72);
-  --ph-glass-border: rgba(255,255,255,.72);
-  --ph-glass-blur: 32px;
-  --ph-text: rgba(28,22,16,.90);
-  --ph-text-sub: rgba(28,22,16,.52);
-  --ph-text-dim: rgba(28,22,16,.30);
+  /* 底色：纯净白+极淡暖调（对标 Nube，更白更亮） */
+  --ph-bg-primary: linear-gradient(160deg,#fdfcfb 0%,#faf9f7 55%,#f5f3ef 100%);
+  --ph-glass: rgba(255,255,254,.56);
+  --ph-glass-strong: rgba(255,255,254,.78);
+  --ph-glass-border: rgba(255,255,255,.88);
+  --ph-glass-blur: 36px;
+  --ph-text: rgba(22,18,14,.88);
+  --ph-text-sub: rgba(22,18,14,.50);
+  --ph-text-dim: rgba(22,18,14,.28);
   /* 强调色：莫兰迪鼠尾草绿（可被 accentHex 覆盖） */
   --ph-accent: #7d9b8a;
   --ph-accent2: #a3bab0;
   --ph-accent-grad: linear-gradient(135deg,#7d9b8a,#a3bab0);
-  --ph-shadow: rgba(60,44,28,.08);
-  --ph-shadow-up: rgba(255,255,255,.85);
-  --ph-sep: rgba(28,22,16,.048);
-  --ph-row-bg: rgba(255,253,250,.58);
-  --ph-row-hover: rgba(255,253,250,.80);
-  --ph-input-bg: rgba(255,253,250,.80);
-  --ph-input-border: rgba(28,22,16,.09);
+  --ph-shadow: rgba(40,30,20,.07);
+  --ph-shadow-up: rgba(255,255,255,.95);
+  --ph-sep: rgba(22,18,14,.040);
+  --ph-row-bg: rgba(255,255,254,.62);
+  --ph-row-hover: rgba(255,255,254,.86);
+  --ph-input-bg: rgba(255,255,254,.85);
+  --ph-input-border: rgba(22,18,14,.08);
   --ph-send-btn: #7d9b8a;
   --ph-send-icon: #fff;
   --ph-chat-me-bubble: linear-gradient(135deg,#7d9b8a,#a3bab0);
   --ph-chat-me-text: #fff;
   --ph-chat-them-bubble: rgba(255,253,250,.92);
   --ph-chat-them-text: rgba(28,22,16,.88);
-  --ph-tabbar-bg: rgba(250,248,244,.75);
-  --ph-tabbar-border: rgba(255,255,255,.65);
+  --ph-tabbar-bg: rgba(253,252,250,.82);
+  --ph-tabbar-border: rgba(255,255,255,.80);
   --ph-tabbar-on: #7d9b8a;
-  --ph-tabbar-off: rgba(28,22,16,.36);
-  --ph-appbar-bg: rgba(249,247,243,.78);
-  --ph-appbody-bg: rgba(246,243,239,.82);
-  --ph-topbar-bg: rgba(250,248,244,.80);
-  --ph-topbar-border: rgba(255,255,255,.60);
+  --ph-tabbar-off: rgba(22,18,14,.32);
+  --ph-appbar-bg: rgba(253,252,250,.85);
+  --ph-appbody-bg: rgba(250,249,247,.88);
+  --ph-topbar-bg: rgba(253,252,250,.85);
+  --ph-topbar-border: rgba(255,255,255,.80);
   --ph-topbar-title: rgba(28,22,16,.88);
   --ph-topbar-btn: rgba(28,22,16,.44);
   --ph-sticker-bg: rgba(246,243,239,.80);
@@ -1080,23 +1081,23 @@ default: return emoji||'';
   --ph-wechat-me-text: #fff;
   --ph-wechat-them-bubble: rgba(255,253,250,.92);
   --ph-wechat-them-text: rgba(28,22,16,.88);
-  --ph-wechat-bg: rgba(232,228,222,.62);
+  --ph-wechat-bg: rgba(242,240,237,.65);
   --ph-plus-popup-bg: rgba(52,46,38,.90);
   --ph-modal-bg: rgba(254,252,249,.96);
   --ph-modal-text: rgba(28,22,16,.88);
-  --ph-confirm-bg: rgba(254,252,249,.98);
+  --ph-confirm-bg: rgba(255,255,254,.98);
   --ph-confirm-text: rgba(28,22,16,.88);
   --ph-confirm-sep: rgba(28,22,16,.07);
   --ph-confirm-cancel: rgba(28,22,16,.44);
   --ph-confirm-danger: #c0392b;
-  --ph-wallpaper-base: #f0ece6;   /* 无壁纸时的暖白底 */
+  --ph-wallpaper-base: #f7f6f4;   /* 无壁纸时的浅暖白底 */
   --ph-ico-list: rgba(255,253,250,.95);
-  --ph-discover-bg: rgba(255,253,250,.72);
-  --ph-discover-border: rgba(28,22,16,.048);
-  --ph-discover-name: rgba(28,22,16,.86);
-  --ph-discover-arrow: rgba(28,22,16,.20);
-  --ph-searchbox-bg: rgba(255,253,250,.65);
-  --ph-searchbox-text: rgba(28,22,16,.42);
+  --ph-discover-bg: rgba(255,255,254,.72);
+  --ph-discover-border: rgba(22,18,14,.040);
+  --ph-discover-name: rgba(22,18,14,.85);
+  --ph-discover-arrow: rgba(22,18,14,.18);
+  --ph-searchbox-bg: rgba(255,255,254,.70);
+  --ph-searchbox-text: rgba(22,18,14,.38);
 }
 
 /* ── medieval：深棕皮革 ── */
@@ -1621,7 +1622,7 @@ default: return emoji||'';
   fill: var(--ph-icon-inner-tint, currentColor) !important;
 }
 /* ✅ 通讯录图标底色：联动设置中的 iconTint */
-#${ID} .wxCHIco{ background: var(--ph-icon-tint, #07c160); }
+/* wxCHIco uses glass style not icon-tint */
 /* 点赞保持红色 */
 #${ID} .feedAction.liked svg.phIco,
 #${ID} .momentAction.liked svg.phIco{
@@ -1774,8 +1775,8 @@ default: return emoji||'';
 #${ID} .phAppBody{
   position:absolute; left:0; right:0; top:52px; bottom:0;
   overflow:auto;
-  background:linear-gradient(180deg, rgba(10,18,36,.12), rgba(10,18,36,.06));
-  scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.08) transparent;
+  background:transparent;
+  scrollbar-width:thin; scrollbar-color:rgba(128,128,128,.15) transparent;
 }
 #${ID} .phAppBody::-webkit-scrollbar{ width:4px; }
 #${ID} .phAppBody::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.08); border-radius:2px; }
@@ -1908,7 +1909,7 @@ default: return emoji||'';
 #${ID} .chatItem{
   display:flex; align-items:center; gap:12px;
   padding:10px 14px; cursor:pointer; transition:background .1s;
-  border-bottom:1px solid rgba(255,255,255,.03);
+  border-bottom:1px solid var(--ph-sep);
 }
 #${ID} .chatItem:hover{ background:var(--ph-glass); }
 #${ID} .chatItem:active{ background:var(--ph-glass-strong); }
@@ -2138,32 +2139,42 @@ default: return emoji||'';
 #${ID} .chatItemPinned .chatItemInner{ background:rgba(237,237,237,.85); }
 
 /* === Discover Page (发现) === */
-#${ID} .wxDiscoverList{ padding:0; }
-#${ID} .wxDiscoverGroup{ margin-top:8px; }
-#${ID} .wxDiscoverGroup:first-child{ margin-top:0; }
+#${ID} .wxDiscoverList{ padding:8px 0; }
+#${ID} .wxDiscoverGroup{
+  margin:0 12px 10px;
+  background:var(--ph-glass-strong);
+  border-radius:var(--ph-radius-lg);
+  border:1px solid var(--ph-glass-border);
+  overflow:hidden;
+  box-shadow:0 1px 0 rgba(255,255,255,.85) inset, 0 2px 10px var(--ph-shadow);
+  backdrop-filter:blur(var(--ph-glass-blur)); -webkit-backdrop-filter:blur(var(--ph-glass-blur));
+}
+#${ID} .wxDiscoverGroup:first-child{ margin-top:8px; }
 #${ID} .wxDiscoverItem{
   display:flex; align-items:center; gap:14px;
   padding:13px 16px; cursor:pointer;
-  background:rgba(255,255,255,.72);
-  border-bottom:1px solid rgba(0,0,0,.04);
+  background:transparent;
+  border-bottom:1px solid var(--ph-sep);
   transition:background .1s;
 }
 #${ID} .wxDiscoverItem:hover{ background:rgba(255,255,255,.85); }
 #${ID} .wxDiscoverItem:active{ background:rgba(0,0,0,.04); }
 #${ID} .wxDiscoverItem:last-child{ border-bottom:0; }
 #${ID} .wxDiscoverItem .wxDIco{
-  width:38px; height:38px; border-radius:10px; flex-shrink:0;
+  width:36px; height:36px; border-radius:9px; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
-  font-size:18px; color:#fff;
+  font-size:18px; color:var(--ph-text-sub);
 }
-#${ID} .wxDiscoverItem .wxDIco svg.phIco{ width:20px; height:20px; fill:currentColor; }
-/* ✅ 统一主题化图标底色：联动设置中的图标底色 */
+#${ID} .wxDiscoverItem .wxDIco svg.phIco{ width:19px; height:19px; fill:currentColor; }
+/* ✅ 发现/我 页：镂空线条风格，不受图标色设置控制 */
 #${ID} .wxDIcoThemed{
-  background: var(--ph-icon-tint, #07c160) !important;
+  background: var(--ph-glass-strong) !important;
+  border: 1px solid var(--ph-glass-border) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 0 rgba(255,255,255,.72) inset !important;
 }
-/* ✅ A: 发现/我 页列表图标使用独立 --ph-list-icon，不受 --ph-icon-inner-tint 联动 */
 #${ID} .wxDIcoThemed svg.phIco{
-  fill: var(--ph-list-icon, rgba(20,24,28,.72)) !important;
+  fill: var(--ph-text-sub) !important;
+  opacity: .80;
 }
 #${ID} .wxDiscoverItem .wxDName{ flex:1; font-size:14.5px; color:rgba(20,24,28,.88); font-weight:400; }
 #${ID} .wxDiscoverItem .wxDArrow{ color:rgba(0,0,0,.2); font-size:16px; flex-shrink:0; }
@@ -2171,10 +2182,12 @@ default: return emoji||'';
 /* === Me Page (我的) === */
 #${ID} .wxMeProfile{
   display:flex; align-items:center; gap:14px;
-  padding:18px 16px; background:rgba(255,255,255,.72);
+  padding:18px 16px;
+  background:var(--ph-glass-strong);
+  border-bottom:1px solid var(--ph-sep);
   cursor:pointer; transition:background .1s;
 }
-#${ID} .wxMeProfile:hover{ background:rgba(255,255,255,.85); }
+#${ID} .wxMeProfile:hover{ background:var(--ph-row-hover); }
 #${ID} .wxMeProfile .wxMeAvatar{
   width:58px; height:58px; border-radius:12px; flex-shrink:0;
   background:var(--ph-glass-strong); border:1px solid var(--ph-glass-border);
@@ -2184,22 +2197,34 @@ default: return emoji||'';
 #${ID} .wxMeProfile .wxMeInfo{ flex:1; }
 #${ID} .wxMeProfile .wxMeName{ font-size:17px; font-weight:700; color:rgba(20,24,28,.88); }
 #${ID} .wxMeProfile .wxMeId{ font-size:12px; color:rgba(20,24,28,.4); margin-top:4px; }
-#${ID} .wxMeMenu{ margin-top:8px; }
+#${ID} .wxMeMenu{ margin-top:0; }
+#${ID} .wxDiscoverGroup, #${ID} .wxMeGroup{
+  margin:8px 12px;
+  background:var(--ph-glass-strong);
+  border-radius:var(--ph-radius-lg);
+  border:1px solid var(--ph-glass-border);
+  overflow:hidden;
+  box-shadow:0 1px 0 rgba(255,255,255,.82) inset, 0 2px 10px var(--ph-shadow);
+  backdrop-filter:blur(var(--ph-glass-blur)); -webkit-backdrop-filter:blur(var(--ph-glass-blur));
+}
 
 /* === Contact Groups Accordion (通讯录) === */
 #${ID} .wxContactHeader{
   display:flex; align-items:center; gap:14px;
-  padding:13px 16px; background:rgba(255,255,255,.72);
-  border-bottom:1px solid rgba(0,0,0,.04);
+  padding:13px 16px; background:var(--ph-glass-strong);
+  border-bottom:1px solid var(--ph-sep);
   cursor:pointer; transition:background .1s;
 }
-#${ID} .wxContactHeader:hover{ background:rgba(255,255,255,.85); }
+#${ID} .wxContactHeader:hover{ background:var(--ph-row-hover); }
 #${ID} .wxContactHeader .wxCHIco{
-  width:38px; height:38px; border-radius:10px; flex-shrink:0;
+  width:36px; height:36px; border-radius:9px; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
-  font-size:16px; color:#fff;
+  font-size:16px; color:var(--ph-text-sub);
+  background: var(--ph-glass-strong) !important;
+  border: 1px solid var(--ph-glass-border) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 0 rgba(255,255,255,.72) inset !important;
 }
-#${ID} .wxContactHeader .wxCHIco svg.phIco{ width:18px; height:18px; fill:#fff !important; }
+#${ID} .wxContactHeader .wxCHIco svg.phIco{ width:18px; height:18px; fill:var(--ph-text-sub) !important; opacity:.80; }
 #${ID} .wxContactHeader .wxCHName{ flex:1; font-size:14.5px; color:rgba(20,24,28,.88); }
 #${ID} .wxContactHeader .wxCHBadge{
   background:rgba(0,0,0,.06); border-radius:10px;
@@ -2850,17 +2875,23 @@ default: return emoji||'';
 
 /* ---------- Settings ---------- */
 #${ID} .settingSection{
-  padding:6px 0; margin-top:4px;
+  padding:0; margin:0 12px 12px;
+  background:var(--ph-glass);
+  border-radius:var(--ph-radius-lg);
+  border:1px solid var(--ph-glass-border);
+  overflow:hidden;
+  box-shadow:0 1px 0 rgba(255,255,255,.80) inset, 0 2px 10px var(--ph-shadow);
+  backdrop-filter:blur(var(--ph-glass-blur)); -webkit-backdrop-filter:blur(var(--ph-glass-blur));
 }
 #${ID} .settingSectionTitle{
-  padding:4px 16px; font-size:11px; color:var(--ph-text-dim); font-weight:600;
-  text-transform:uppercase; letter-spacing:.5px;
+  padding:10px 16px 6px; font-size:10.5px; color:var(--ph-text-dim); font-weight:600;
+  text-transform:uppercase; letter-spacing:.6px;
 }
 #${ID} .settingRow{
   display:flex; align-items:center; justify-content:space-between;
-  padding:13px 16px; border-bottom:1px solid var(--ph-sep);
-  box-shadow: 0 1px 0 var(--ph-sep) inset;
+  padding:14px 16px; border-bottom:1px solid var(--ph-sep);
 }
+#${ID} .settingRow:last-child{ border-bottom:0; }
 #${ID} .settingRow .sIcon{ font-size:18px; margin-right:10px; flex-shrink:0; }
 #${ID} .settingRow .sLabel{ color:var(--ph-text); font-size:14px; flex:1; }
 #${ID} .settingRow .sValue{ color:var(--ph-text-dim); font-size:13px; }
@@ -2944,9 +2975,14 @@ default: return emoji||'';
 #${ID} .browserBmItem:hover{ background:var(--ph-glass); }
 #${ID} .browserBmIcon{
   width:36px; height:36px; border-radius:10px;
-  background:var(--ph-glass-strong); display:flex; align-items:center; justify-content:center;
-  font-size:16px;
+  background:var(--ph-glass-strong);
+  border:1px solid var(--ph-glass-border);
+  box-shadow: 0 1px 0 rgba(255,255,255,.75) inset, 0 1px 4px var(--ph-shadow);
+  display:flex; align-items:center; justify-content:center;
+  font-size:0; color:var(--ph-text-sub);
 }
+#${ID} .browserBmIcon svg{ width:18px; height:18px; fill:currentColor; }
+#${ID} .browserBmIcon svg{ width:18px; height:18px; fill:currentColor; }
 #${ID} .browserBmTitle{ color:var(--ph-text); font-size:13px; font-weight:500; }
 #${ID} .browserBmDesc{ color:var(--ph-text-dim); font-size:11.5px; margin-top:2px; }
 
@@ -16546,11 +16582,11 @@ const npc = _wxGetChatTargetMeta(npcId);
       function renderBrowser(container){
         setAppBarRight('<button class="phBarRBtn" data-act="afBrowserSettings" title="浏览器资讯设置">' + _phFlatIcon('⚙️') + '</button>');
         const bookmarks = [
-          {icon:_phFlatIcon('📰'),title:'世界资讯',desc:'查看最新世界观资讯与八卦'},
-          {icon:_phFlatIcon('⭐'),title:'收藏夹',desc:'你收藏的网页和资讯'},
-          {icon:_phFlatIcon('🔮'),title:'NPC 情报站',desc:'角色背景、关系图谱'},
-          {icon:_phFlatIcon('📖'),title:'世界书百科',desc:'世界设定与知识库'},
-          {icon:_phFlatIcon('🎮'),title:'娱乐频道',desc:'趣味内容与互动小游戏'},
+          {icon:'<svg style="width:18px;height:18px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><line x1="2" y1="15" x2="11" y2="15"/><line x1="2" y1="19" x2="11" y2="19"/><line x1="2" y1="11" x2="7" y2="11"/></svg>',title:'世界资讯',desc:'查看最新世界观资讯与八卦'},
+          {icon:'<svg style="width:18px;height:18px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',title:'收藏夹',desc:'你收藏的网页和资讯'},
+          {icon:'<svg style="width:18px;height:18px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',title:'NPC 情报站',desc:'角色背景、关系图谱'},
+          {icon:'<svg style="width:18px;height:18px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',title:'世界书百科',desc:'世界设定与知识库'},
+          {icon:'<svg style="width:18px;height:18px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4"/><path d="M8 10v4"/><circle cx="16" cy="12" r="1"/><circle cx="18.5" cy="10.5" r="1"/></svg>',title:'娱乐频道',desc:'趣味内容与互动小游戏'},
         ];
         let html = `<div class="browserBar">
           <span style="font-size:14px;">${_phFlatIcon('🔒')}</span>
@@ -16727,13 +16763,22 @@ const npc = _wxGetChatTargetMeta(npcId);
         }
 
         const sections = [
+          { title:'高级', rows:[
+            {icon:'🔑',label:'API 设置',type:'nav',subpage:'apiSettings'},
+            {icon:'🎯',label:'API 自动运行设置',type:'nav',subpage:'autoFeedSettings'},
+            {icon:'💾',label:'数据管理',type:'nav',subpage:'dataManager'},
+          ]},
+          { title:'高级', rows:[
+            {icon:'🔑',label:'API 设置',type:'nav',subpage:'apiSettings'},
+            {icon:'🎯',label:'API 自动运行设置',type:'nav',subpage:'autoFeedSettings'},
+            {icon:'💾',label:'数据管理',type:'nav',subpage:'dataManager'},
+          ]},
           { title:'外观', rows:[
             {icon:'🎨',label:'主题风格',value:currentTheme||'modern',type:'nav',subpage:'themes'},
             {icon:'🖼️',label:'壁纸',value:(cfg.wallpaperHomeName||cfg.wallpaperName||'默认')+' / '+(cfg.wallpaperAppName||'APP默认'),type:'nav',subpage:'wallpaper'},
             {icon:'🫧',label:'桌面清晰度',value:`${cfg.uiHomeOpacity}% / ${cfg.uiHomeBlur}px`,type:'nav',subpage:'uiHome'},
             {icon:'📄',label:'App清晰度',value:`底${cfg.uiAppSolidOpacity}% 玻璃${cfg.uiAppOpacity}%`,type:'nav',subpage:'uiApp'},
             {icon:'🔤',label:'字体大小',value:cfg.fontSize+'px',type:'nav',subpage:'fontsize'},
-            {icon:'🎨',label:'强调色',value:cfg.accentHex?'自定义':'跟随主题',type:'nav',subpage:'accentColor'},
             {icon:'✦',label:'强调色',value:cfg.accentHex?'自定义':'跟随主题',type:'nav',subpage:'accentColor'},
             {icon:'🎯',label:'图标底色',value:cfg.iconTint||'默认',type:'nav',subpage:'iconTint'},
             {icon:'🔮',label:'内部图标色',value:cfg.iconInnerTint||'默认',type:'nav',subpage:'iconInner'},
@@ -16745,12 +16790,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             {icon:'⌨️',label:'打字效果',value:({none:'无',typewriter:'打字机',fadein:'淡入',glitch:'故障风'})[cfg.typingEffect||'none']||'无',type:'nav',subpage:'typingEffect'},
             {icon:'⏰',label:'时间模式',value:cfg.timeMode==='story'?'故事时间':'现实时间',type:'nav',subpage:'timeMode'},
           ]},
-          { title:'高级', rows:[
-            {icon:'🔑',label:'API 设置',type:'nav',subpage:'apiSettings'},
-            {icon:'🎯',label:'API 自动运行设置',type:'nav',subpage:'autoFeedSettings'},
-            {icon:'💾',label:'数据管理',type:'nav',subpage:'dataManager'},
-          ]},
-          { title:'关于', rows:[
+                    { title:'关于', rows:[
             {icon:'ℹ️',label:'版本',value:'MEOW Phone v2.1',type:'info'},
           ]},
           { title:'危险区域', rows:[
@@ -16762,7 +16802,7 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         let html = '';
         sections.forEach(s=>{
-          html += `<div class="settingSection"><div class="settingSectionTitle">${s.title}</div>`;
+          html += `<div style="padding:0 0 0 0;"><div style="font-size:10.5px;color:var(--ph-text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.6px;padding:10px 16px 4px;">${s.title}</div><div class="settingSection">`;
           s.rows.forEach(r=>{
             const navAttr = (r.type==='nav' && r.subpage) ? ` data-act="settingsNav" data-subpage="${r.subpage}"` : '';
             const themeAttr = (r.subpage==='themes') ? ' data-act="openThemes"' : '';
@@ -16778,7 +16818,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             }
             html += '</div>';
           });
-          html += '</div>';
+          html += '</div></div>';
         });
         container.innerHTML = html;
 
