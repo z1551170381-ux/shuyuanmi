@@ -1395,29 +1395,33 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   overflow:visible;
   pointer-events:auto;
   opacity:0;
-  transform:scale(.84);
-  transition:opacity .18s ease, transform .2s cubic-bezier(.2,.8,.3,1);
+  transform:none;
+  transition:opacity .16s ease;
   touch-action:none;
   user-select:none;
   -webkit-user-select:none;
+  isolation:isolate;
+  backface-visibility:hidden;
+  -webkit-backface-visibility:hidden;
 }
 #${ID_MENU}.meowRotary::before{
   content:'';
   position:absolute;
   inset:0;
   border-radius:50%;
-  background:linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.32));
-  backdrop-filter:blur(14px) saturate(1.06);
-  -webkit-backdrop-filter:blur(14px) saturate(1.06);
-  filter:drop-shadow(0 18px 40px rgba(0,0,0,.18));
-  border:1px solid rgba(255,255,255,.38);
-  box-shadow:0 0 0 1px rgba(0,0,0,.08) inset, 0 16px 34px rgba(0,0,0,.16);
+  background:linear-gradient(180deg, rgba(255,255,255,.20), rgba(255,255,255,.08));
+  backdrop-filter:blur(6px) saturate(1.01);
+  -webkit-backdrop-filter:blur(6px) saturate(1.01);
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow:0 6px 16px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.12);
   pointer-events:none;
   z-index:0;
+  transform:translateZ(0);
+  will-change:opacity;
 }
 #${ID_MENU}.meowRotary.show{
   opacity:1;
-  transform:scale(1);
+  transform:none;
 }
 /* 指示器隐藏：保留结构，不影响功能 */
 #${ID_MENU} .rotaryPtr{
