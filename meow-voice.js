@@ -2872,7 +2872,13 @@ async function _speakWithCfg(rawText, charName, c) {
   function _renderBgmLibraryEditor(box) {
     if (!box) return;
     const q = id => box.querySelector('#' + id);
-    // 始终从缓存读最新数据
+    // 每次渲染编辑器时强制从 localStorage 校验缓存，确保多标签/页面同步
+    const _lsRaw = (() => { try { const v = W.localStorage.getItem('meow_voice_bgm_library_v1'); return v ? JSON.parse(v) : null; } catch(e) { return null; } })();
+    if (_lsRaw && Array.isArray(_lsRaw)) {
+      const _cacheLen = (_bgmLibCache || []).reduce((s,g)=>s+((g.tracks||[]).length),0);
+      const _lsLen = _lsRaw.reduce((s,g)=>s+((g.tracks||[]).length),0);
+      if (_lsLen > _cacheLen) _bgmLibCache = null; // localStorage 比缓存更新，强制刷新
+    }
     const lib = _getBgmLibrary();
     const state = _ensureBgmEditorState(box);
     const activeGid = String(state.groupId || (lib[0]?.id || ''));
@@ -2955,7 +2961,8 @@ async function _speakWithCfg(rawText, charName, c) {
   }
 
   function openModal() {
-    _bgmLibCache = null; // 打开弹窗时强制从 localStorage 读取最新数据
+    // 不清缓存：_saveBgmLibrary 已经保证缓存与 localStorage 同步
+    // 之前的 null 会导致弹窗打开期间歌曲放完时读到旧的 localStorage
     injectCSS();
     doc.getElementById(ID.MODAL)?.remove();
     closeModePop();
