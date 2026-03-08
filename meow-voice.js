@@ -30,6 +30,20 @@
     try { W.localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
   }
 
+  // 读取悬浮歌词样式，自动兼容旧格式 {size, color} → 新格式 {size, hue, sat, lit}
+  function _lsGetFlStyle() {
+    const raw = lsGet('meow_voice_fl_style', null);
+    if (!raw) return {size:18, hue:0, sat:0, lit:100};
+    // 旧格式只有 color 字段，没有 hue/sat/lit
+    if (raw.hue == null || raw.sat == null || raw.lit == null) {
+      // 迁移：白色默认
+      const migrated = {size: raw.size || 18, hue: 0, sat: 0, lit: 100};
+      lsSet('meow_voice_fl_style', migrated);
+      return migrated;
+    }
+    return {size: raw.size||18, hue: raw.hue||0, sat: raw.sat||0, lit: raw.lit??100};
+  }
+
   function toast(msg) {
     try {
       const fn = window.MEOW?.core?.toast;
@@ -1199,13 +1213,13 @@ ${t}
       const _hsl2css = (h,s,l) => `hsl(${h},${s}%,${l}%)`;
 
       // restore style
-      const _flStyle = lsGet('meow_voice_fl_style', {size:18,hue:0,sat:0,lit:100});
+      const _flStyle = _lsGetFlStyle();
       const _applyFlStyle = (s) => {
         const cur = _fl.querySelector('.mv-fl-cur');
         const nxt = _fl.querySelector('.mv-fl-next');
         const color = _hsl2css(s.hue, s.sat, s.lit);
-        if (cur) { cur.style.fontSize = s.size + 'px'; cur.style.color = color; }
-        if (nxt) { nxt.style.fontSize = Math.max(10, Math.round(s.size * 0.70)) + 'px'; }
+        if (cur) { cur.style.setProperty('font-size', s.size + 'px', 'important'); cur.style.setProperty('color', color, 'important'); }
+        if (nxt) { nxt.style.setProperty('font-size', Math.max(10, Math.round(s.size * 0.70)) + 'px', 'important'); }
         // sync sliders — use _fl.querySelector so it works before/after DOM append
         const _sv = (id, v, vid) => { const el=_fl.querySelector('#'+id); if(el)el.value=v; const vv=_fl.querySelector('#'+vid); if(vv)vv.textContent=v; };
         _sv('mv-fl-size', s.size, 'mv-fl-size-v');
@@ -1270,7 +1284,7 @@ ${t}
         const el = _fl.querySelector('#'+id);
         if (!el) return;
         el.addEventListener('input', () => {
-          const s = lsGet('meow_voice_fl_style', {size:18,hue:0,sat:0,lit:100});
+          const s = _lsGetFlStyle();
           s[key] = parseInt(el.value);
           lsSet('meow_voice_fl_style', s);
           _applyFlStyle(s);
@@ -1299,10 +1313,11 @@ ${t}
     if (!fl || !fl.classList.contains('visible')) return;
     const curEl = fl.querySelector('.mv-fl-cur');
     const nextEl = fl.querySelector('.mv-fl-next');
-    const _fls = lsGet('meow_voice_fl_style', {size:18,hue:0,sat:0,lit:100});
-    const _color = `hsl(${_fls.hue},${_fls.sat}%,${_fls.lit}%)`;
-    if (curEl) { curEl.style.fontSize = _fls.size + 'px'; curEl.style.color = _color; }
-    if (nextEl) nextEl.style.fontSize = Math.max(10, Math.round(_fls.size * 0.70)) + 'px';
+    const _fls = _lsGetFlStyle();
+    const _color = `hsl(${_fls.hue},${_fls.sat}%,${Math.min(100,_fls.lit)}%)`;
+    const _colorNext = `hsl(${_fls.hue},${_fls.sat}%,${Math.min(100,_fls.lit)}%)`;
+    if (curEl) { curEl.style.fontSize = _fls.size + 'px'; curEl.style.color = _color; curEl.style.setProperty('color', _color, 'important'); }
+    if (nextEl) { nextEl.style.fontSize = Math.max(10, Math.round(_fls.size * 0.70)) + 'px'; }
     if (!_bgmLyricLines.length) {
       if (curEl) curEl.textContent = '暂无歌词';
       if (nextEl) nextEl.textContent = '';
