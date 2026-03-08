@@ -935,21 +935,20 @@ ${t}
       }
 
       /* floating lyrics — text only */
-      #mv-float-lyric{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);z-index:2147483645;pointer-events:auto;width:min(680px,90vw);display:none;user-select:none;-webkit-user-select:none}
+      #mv-float-lyric{position:fixed;left:50%;bottom:72px;transform:translateX(-50%);z-index:2147483645;pointer-events:auto;width:min(600px,88vw);display:none;user-select:none;-webkit-user-select:none}
       #mv-float-lyric.visible{display:block}
       #mv-float-lyric.dragged{transform:none}
-      #mv-float-lyric .mv-fl-inner{display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 0;background:transparent;border:none;box-shadow:none;cursor:move;width:100%;position:relative}
-      #mv-float-lyric .mv-fl-cur{font-size:18px;font-weight:700;color:#fff;text-align:center;line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;display:block;-webkit-text-stroke:2px rgba(0,0,0,.55);paint-order:stroke fill;text-shadow:0 0 18px rgba(0,0,0,.45)}
-      #mv-float-lyric .mv-fl-next{font-size:13px;font-weight:500;color:rgba(255,255,255,.72);text-align:center;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;display:block;-webkit-text-stroke:1.2px rgba(0,0,0,.45);paint-order:stroke fill}
-      #mv-float-lyric .mv-fl-close{position:absolute;right:-22px;top:50%;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;background:rgba(40,50,54,.60);color:rgba(255,255,255,.70);font-size:10px;line-height:1;display:none;align-items:center;justify-content:center;cursor:pointer;border:0}
+      #mv-float-lyric .mv-fl-inner{display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0;background:transparent;border:none;box-shadow:none;cursor:move;width:100%;position:relative}
+      #mv-float-lyric .mv-fl-cur{font-size:18px;font-weight:700;color:#fff;text-align:center;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;display:block;-webkit-text-stroke:2px rgba(0,0,0,.55);paint-order:stroke fill;text-shadow:0 0 16px rgba(0,0,0,.4)}
+      #mv-float-lyric .mv-fl-next{font-size:13px;font-weight:500;color:rgba(255,255,255,.65);text-align:center;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;display:block;-webkit-text-stroke:1px rgba(0,0,0,.45);paint-order:stroke fill}
+      #mv-float-lyric .mv-fl-close{position:absolute;right:-20px;top:50%;transform:translateY(-50%);width:15px;height:15px;border-radius:50%;background:rgba(40,50,54,.60);color:rgba(255,255,255,.70);font-size:10px;line-height:1;display:none;align-items:center;justify-content:center;cursor:pointer;border:0}
       #mv-float-lyric:hover .mv-fl-close{display:flex}
-      #mv-fl-settings{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);background:rgba(36,46,52,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:14px;padding:12px 16px;display:none;flex-direction:column;gap:10px;width:220px;box-shadow:0 6px 24px rgba(0,0,0,.35);z-index:1}
+      #mv-fl-settings{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:rgba(30,38,44,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:12px;padding:10px 12px;display:none;flex-direction:column;gap:8px;width:180px;box-shadow:0 4px 18px rgba(0,0,0,.40);z-index:10;white-space:nowrap}
       #mv-fl-settings.open{display:flex}
-      #mv-fl-settings label{font-size:11px;color:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:space-between;gap:8px}
-      #mv-fl-settings input[type=range]{flex:1;accent-color:#aac4cc}
-      #mv-fl-settings .mv-fl-colors{display:flex;gap:6px;flex-wrap:wrap}
-      #mv-fl-settings .mv-fl-color-btn{width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:border-color .15s}
-      #mv-fl-settings .mv-fl-color-btn.active{border-color:#fff}
+      #mv-fl-settings .mv-fl-row{display:flex;align-items:center;gap:6px}
+      #mv-fl-settings .mv-fl-lbl{font-size:10px;color:rgba(255,255,255,.5);flex-shrink:0;width:22px}
+      #mv-fl-settings input[type=range]{flex:1;height:3px;accent-color:#aac4cc;cursor:pointer}
+      #mv-fl-settings .mv-fl-val{font-size:10px;color:rgba(255,255,255,.5);width:18px;text-align:right;flex-shrink:0}
     `;
     if (!doc.getElementById(style.id)) (doc.head || doc.documentElement).appendChild(style);
     root.addEventListener('click', async (e) => {
@@ -967,7 +966,29 @@ ${t}
         const _fon = !_ftb.classList.contains('active');
         _ftb.classList.toggle('active', _fon);
         lsSet('meow_voice_float_lyric_on', _fon);
-        if (_fle) { _fle.classList.toggle('visible', _fon); if (_fon) _updateFloatLyric(); }
+        if (_fle) {
+          _fle.classList.toggle('visible', _fon);
+          if (_fon) {
+            // if no saved position or position is off-screen, place in viewport center
+            if (!_fle.classList.contains('dragged')) {
+              const vw = W.innerWidth || 375, vh = W.innerHeight || 600;
+              _fle.style.left = '50%'; _fle.style.top = '';
+              _fle.style.bottom = Math.min(88, Math.round(vh * 0.14)) + 'px';
+              _fle.style.transform = 'translateX(-50%)';
+            } else {
+              // clamp saved pos into current viewport
+              const vw = W.innerWidth||375, vh = W.innerHeight||600;
+              const r = _fle.getBoundingClientRect();
+              if (r.top < 0 || r.left < 0 || r.bottom > vh || r.right > vw) {
+                _fle.style.left = '50%'; _fle.style.top = '';
+                _fle.style.bottom = '72px'; _fle.style.transform = 'translateX(-50%)';
+                _fle.classList.remove('dragged');
+                lsSet('meow_voice_fl_pos', null);
+              }
+            }
+            _updateFloatLyric();
+          }
+        }
         return;
       }
       if (e.target.closest('.mv-bgm-disc-hit')) {
@@ -1163,18 +1184,10 @@ ${t}
       _fl.innerHTML = `
         <div class="mv-fl-inner">
           <div id="mv-fl-settings">
-            <label>字号 <input type="range" id="mv-fl-size" min="12" max="36" step="1" value="18"><span id="mv-fl-size-v">18</span></label>
-            <label style="flex-direction:column;align-items:flex-start;gap:4px">颜色
-              <div class="mv-fl-colors">
-                <div class="mv-fl-color-btn active" data-color="#ffffff" style="background:#fff"></div>
-                <div class="mv-fl-color-btn" data-color="#ffe066" style="background:#ffe066"></div>
-                <div class="mv-fl-color-btn" data-color="#a8e6cf" style="background:#a8e6cf"></div>
-                <div class="mv-fl-color-btn" data-color="#ffb3ba" style="background:#ffb3ba"></div>
-                <div class="mv-fl-color-btn" data-color="#aec6e8" style="background:#aec6e8"></div>
-                <div class="mv-fl-color-btn" data-color="#f0c0f0" style="background:#f0c0f0"></div>
-                <div class="mv-fl-color-btn" data-color="#cccccc" style="background:#ccc"></div>
-              </div>
-            </label>
+            <div class="mv-fl-row"><span class="mv-fl-lbl">字号</span><input type="range" id="mv-fl-size" min="12" max="36" step="1" value="18"><span class="mv-fl-val" id="mv-fl-size-v">18</span></div>
+            <div class="mv-fl-row"><span class="mv-fl-lbl">色相</span><input type="range" id="mv-fl-hue" min="0" max="360" step="1" value="0"><span class="mv-fl-val" id="mv-fl-hue-v">0</span></div>
+            <div class="mv-fl-row"><span class="mv-fl-lbl">饱和</span><input type="range" id="mv-fl-sat" min="0" max="100" step="1" value="0"><span class="mv-fl-val" id="mv-fl-sat-v">0</span></div>
+            <div class="mv-fl-row"><span class="mv-fl-lbl">亮度</span><input type="range" id="mv-fl-lit" min="50" max="100" step="1" value="100"><span class="mv-fl-val" id="mv-fl-lit-v">100</span></div>
           </div>
           <div class="mv-fl-cur"></div>
           <div class="mv-fl-next"></div>
@@ -1182,100 +1195,100 @@ ${t}
         </div>`;
       Object.assign(_fl.style, { position:'fixed', zIndex:'2147483645' });
 
-      // restore position + style from localStorage
-      const _flPos = lsGet('meow_voice_fl_pos', null);
-      if (_flPos && _flPos.left != null) {
-        _fl.style.left = _flPos.left + 'px';
-        _fl.style.top = _flPos.top + 'px';
-        _fl.style.bottom = 'auto';
-        _fl.classList.add('dragged');
-      }
-      const _flStyle = lsGet('meow_voice_fl_style', {size:18, color:'#ffffff'});
+      // helper: hsl→css color
+      const _hsl2css = (h,s,l) => `hsl(${h},${s}%,${l}%)`;
+
+      // restore style
+      const _flStyle = lsGet('meow_voice_fl_style', {size:18,hue:0,sat:0,lit:100});
       const _applyFlStyle = (s) => {
         const cur = _fl.querySelector('.mv-fl-cur');
         const nxt = _fl.querySelector('.mv-fl-next');
-        if (cur) { cur.style.fontSize = s.size + 'px'; cur.style.color = s.color; }
-        if (nxt) { nxt.style.fontSize = Math.round(s.size * 0.72) + 'px'; }
-        const sizeEl = doc.getElementById('mv-fl-size');
-        const sizeV = doc.getElementById('mv-fl-size-v');
-        if (sizeEl) sizeEl.value = s.size;
-        if (sizeV) sizeV.textContent = s.size;
-        _fl.querySelectorAll('.mv-fl-color-btn').forEach(b => {
-          b.classList.toggle('active', b.dataset.color === s.color);
-        });
+        const color = _hsl2css(s.hue, s.sat, s.lit);
+        if (cur) { cur.style.fontSize = s.size + 'px'; cur.style.color = color; }
+        if (nxt) { nxt.style.fontSize = Math.max(10, Math.round(s.size * 0.70)) + 'px'; }
+        // sync sliders
+        const _sv = (id, v, vid) => { const el=doc.getElementById(id); if(el)el.value=v; const vv=doc.getElementById(vid); if(vv)vv.textContent=v; };
+        _sv('mv-fl-size', s.size, 'mv-fl-size-v');
+        _sv('mv-fl-hue', s.hue, 'mv-fl-hue-v');
+        _sv('mv-fl-sat', s.sat, 'mv-fl-sat-v');
+        _sv('mv-fl-lit', s.lit, 'mv-fl-lit-v');
       };
       _applyFlStyle(_flStyle);
+
+      // restore position — ensure it stays in viewport
+      const _flPos = lsGet('meow_voice_fl_pos', null);
+      if (_flPos && _flPos.left != null) {
+        const vw = W.innerWidth || 375, vh = W.innerHeight || 600;
+        const fw = Math.min(600, vw * 0.88);
+        const safeL = Math.max(4, Math.min(vw - fw - 4, _flPos.left));
+        const safeT = Math.max(4, Math.min(vh - 60, _flPos.top));
+        _fl.style.left = safeL + 'px'; _fl.style.top = safeT + 'px';
+        _fl.style.bottom = 'auto'; _fl.classList.add('dragged');
+      }
 
       const _inn = _fl.querySelector('.mv-fl-inner');
 
       // drag
-      let _fd=false, _fx=0, _fy=0, _fbx=0, _fby=0, _fmoved=false;
+      let _fd=false,_fx=0,_fy=0,_fbx=0,_fby=0,_fmoved=false;
       const _fd1 = e => {
         if (e.target.closest('#mv-fl-settings, .mv-fl-close')) return;
-        const p = e.touches ? e.touches[0] : e;
-        _fd = true; _fmoved = false; _fx = p.clientX; _fy = p.clientY;
-        const r = _fl.getBoundingClientRect(); _fbx = r.left; _fby = r.top;
-        _fl.style.transform = 'none'; _fl.style.left = r.left+'px'; _fl.style.top = r.top+'px'; _fl.style.bottom = 'auto';
+        const p = e.touches?e.touches[0]:e;
+        _fd=true; _fmoved=false; _fx=p.clientX; _fy=p.clientY;
+        const r=_fl.getBoundingClientRect(); _fbx=r.left; _fby=r.top;
+        _fl.style.transform='none'; _fl.style.left=r.left+'px'; _fl.style.top=r.top+'px'; _fl.style.bottom='auto';
         _fl.classList.add('dragged');
-        if(e.cancelable) e.preventDefault(); e.stopPropagation();
+        if(e.cancelable)e.preventDefault(); e.stopPropagation();
       };
       const _fm = e => {
-        if (!_fd) return;
-        const p = e.touches ? e.touches[0] : e;
-        if (Math.abs(p.clientX-_fx)+Math.abs(p.clientY-_fy) > 4) _fmoved = true;
-        const nl = Math.max(4, Math.min((W.innerWidth||400)-(_fl.offsetWidth||600)-4, _fbx+p.clientX-_fx));
-        const nt = Math.max(4, Math.min((W.innerHeight||600)-(_fl.offsetHeight||50)-4, _fby+p.clientY-_fy));
-        _fl.style.left = nl + 'px'; _fl.style.top = nt + 'px';
-        if(e.cancelable) e.preventDefault();
+        if(!_fd)return;
+        const p=e.touches?e.touches[0]:e;
+        if(Math.abs(p.clientX-_fx)+Math.abs(p.clientY-_fy)>4)_fmoved=true;
+        const nl=Math.max(4,Math.min((W.innerWidth||400)-(_fl.offsetWidth||600)-4,_fbx+p.clientX-_fx));
+        const nt=Math.max(4,Math.min((W.innerHeight||600)-(_fl.offsetHeight||50)-4,_fby+p.clientY-_fy));
+        _fl.style.left=nl+'px'; _fl.style.top=nt+'px';
+        if(e.cancelable)e.preventDefault();
       };
       const _fu = () => {
-        if (_fd) {
-          // save position
-          const r = _fl.getBoundingClientRect();
-          lsSet('meow_voice_fl_pos', { left: Math.round(r.left), top: Math.round(r.top) });
-        }
-        _fd = false;
+        if(_fd){ const r=_fl.getBoundingClientRect(); lsSet('meow_voice_fl_pos',{left:Math.round(r.left),top:Math.round(r.top)}); }
+        _fd=false;
       };
-      _inn.addEventListener('mousedown', _fd1); _inn.addEventListener('touchstart', _fd1, {passive:false});
-      W.addEventListener('mousemove', _fm); W.addEventListener('touchmove', _fm, {passive:false});
-      W.addEventListener('mouseup', _fu); W.addEventListener('touchend', _fu);
+      _inn.addEventListener('mousedown',_fd1); _inn.addEventListener('touchstart',_fd1,{passive:false});
+      W.addEventListener('mousemove',_fm); W.addEventListener('touchmove',_fm,{passive:false});
+      W.addEventListener('mouseup',_fu); W.addEventListener('touchend',_fu);
 
-      // long-press → open settings
-      let _lpTimer = null;
-      const _lpStart = e => {
-        if (e.target.closest('#mv-fl-settings, .mv-fl-close')) return;
-        _lpTimer = setTimeout(() => {
-          const s = doc.getElementById('mv-fl-settings');
-          if (s) s.classList.toggle('open');
-        }, 500);
-      };
-      const _lpEnd = () => { clearTimeout(_lpTimer); };
-      _inn.addEventListener('mousedown', _lpStart); _inn.addEventListener('touchstart', _lpStart, {passive:true});
-      _inn.addEventListener('mouseup', _lpEnd); _inn.addEventListener('touchend', _lpEnd);
-      _inn.addEventListener('mousemove', e => { if (Math.abs(0) > 6) clearTimeout(_lpTimer); });
+      // long-press → toggle settings
+      let _lpTimer=null, _lpMoved=false;
+      const _lpS=e=>{ if(e.target.closest('#mv-fl-settings,.mv-fl-close'))return; _lpMoved=false; _lpTimer=setTimeout(()=>{ const s=doc.getElementById('mv-fl-settings'); if(s)s.classList.toggle('open'); },500); };
+      const _lpE=()=>clearTimeout(_lpTimer);
+      const _lpM=e=>{ if(Math.abs(0)>6){clearTimeout(_lpTimer);} };
+      _inn.addEventListener('mousedown',_lpS); _inn.addEventListener('touchstart',_lpS,{passive:true});
+      _inn.addEventListener('mouseup',_lpE); _inn.addEventListener('touchend',_lpE);
+      _inn.addEventListener('mousemove',_lpM);
 
-      // settings controls
-      const _sizeEl = doc.getElementById('mv-fl-size');
-      const _sizeV = doc.getElementById('mv-fl-size-v');
-      if (_sizeEl) _sizeEl.addEventListener('input', () => {
-        const s = lsGet('meow_voice_fl_style', {size:18,color:'#ffffff'});
-        s.size = parseInt(_sizeEl.value); if (_sizeV) _sizeV.textContent = s.size;
-        lsSet('meow_voice_fl_style', s); _applyFlStyle(s);
-      });
-      _fl.querySelectorAll('.mv-fl-color-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const s = lsGet('meow_voice_fl_style', {size:18,color:'#ffffff'});
-          s.color = btn.dataset.color; lsSet('meow_voice_fl_style', s); _applyFlStyle(s);
+      // slider listeners
+      const _onSlider = (id, key, vid) => {
+        const el = doc.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', () => {
+          const s = lsGet('meow_voice_fl_style', {size:18,hue:0,sat:0,lit:100});
+          s[key] = parseInt(el.value);
+          lsSet('meow_voice_fl_style', s);
+          _applyFlStyle(s);
         });
+      };
+      _onSlider('mv-fl-size','size','mv-fl-size-v');
+      _onSlider('mv-fl-hue','hue','mv-fl-hue-v');
+      _onSlider('mv-fl-sat','sat','mv-fl-sat-v');
+      _onSlider('mv-fl-lit','lit','mv-fl-lit-v');
+
+      // close
+      _fl.querySelector('.mv-fl-close').addEventListener('click',()=>{
+        _fl.classList.remove('visible'); lsSet('meow_voice_float_lyric_on',false);
+        const _dk=doc.getElementById('meow-voice-bgm-dock');
+        if(_dk)_dk.querySelector('.mv-bgm-float-lyric-toggle')?.classList.remove('active');
       });
 
-      _fl.querySelector('.mv-fl-close').addEventListener('click', () => {
-        _fl.classList.remove('visible'); lsSet('meow_voice_float_lyric_on', false);
-        const _dk = doc.getElementById('meow-voice-bgm-dock');
-        if (_dk) _dk.querySelector('.mv-bgm-float-lyric-toggle')?.classList.remove('active');
-      });
-
-      (doc.documentElement || doc.body).appendChild(_fl);
+      (doc.documentElement||doc.body).appendChild(_fl);
     }
 
     return root;
@@ -1286,10 +1299,10 @@ ${t}
     if (!fl || !fl.classList.contains('visible')) return;
     const curEl = fl.querySelector('.mv-fl-cur');
     const nextEl = fl.querySelector('.mv-fl-next');
-    // apply saved style
-    const _fls = lsGet('meow_voice_fl_style', {size:18, color:'#ffffff'});
-    if (curEl) { curEl.style.fontSize = _fls.size + 'px'; curEl.style.color = _fls.color; }
-    if (nextEl) nextEl.style.fontSize = Math.round(_fls.size * 0.72) + 'px';
+    const _fls = lsGet('meow_voice_fl_style', {size:18,hue:0,sat:0,lit:100});
+    const _color = `hsl(${_fls.hue},${_fls.sat}%,${_fls.lit}%)`;
+    if (curEl) { curEl.style.fontSize = _fls.size + 'px'; curEl.style.color = _color; }
+    if (nextEl) nextEl.style.fontSize = Math.max(10, Math.round(_fls.size * 0.70)) + 'px';
     if (!_bgmLyricLines.length) {
       if (curEl) curEl.textContent = '暂无歌词';
       if (nextEl) nextEl.textContent = '';
