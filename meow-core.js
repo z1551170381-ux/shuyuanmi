@@ -1425,7 +1425,7 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   transition:transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
 }
 #${ID_MENU} .rotaryItem.sel{
-  background:rgba(255,253,247,.78);
+  background:rgba(255,253,247,.18);
   border-color:rgba(226,213,183,.56);
   transform:scale(1.10) !important;
   box-shadow:
