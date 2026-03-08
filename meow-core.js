@@ -1417,9 +1417,9 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
   gap:2px;
-  background:rgba(255,255,255,.62);
-  border:1px solid rgba(255,255,255,.46);
-  box-shadow:0 2px 8px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.28);
+  background:rgba(255,255,255,.32);
+  border:1px solid rgba(255,255,255,.28);
+  box-shadow:0 2px 8px rgba(0,0,0,.03), inset 0 1px 0 rgba(255,255,255,.18);
   pointer-events:auto;
   cursor:pointer;
   transition:transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
