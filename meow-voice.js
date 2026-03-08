@@ -952,17 +952,18 @@ ${t}
         margin-bottom:-22px;  /* pull back so total height is unchanged */
       }
       #meow-voice-bgm-dock.drawer-song .mv-bgm-drawer-wrap{max-height:202px}
-      #meow-voice-bgm-dock.drawer-menu .mv-bgm-drawer-wrap{max-height:302px}
+      #meow-voice-bgm-dock.drawer-menu .mv-bgm-drawer-wrap{max-height:340px}
 
       /* inner drawer card — looks like a separate card below */
       #meow-voice-bgm-dock .mv-bgm-song-list,
       #meow-voice-bgm-dock .mv-bgm-extra-panel{
         display:none;
-        padding:10px 12px 13px;
+        padding:10px 11px 12px;
         background:linear-gradient(180deg,rgba(240,240,237,.98),rgba(246,246,243,.97));
         border:1px solid rgba(210,210,205,.70);
         border-radius:14px;
         box-shadow:0 10px 28px rgba(0,0,0,.09),0 2px 6px rgba(0,0,0,.04);
+        box-sizing:border-box;
       }
       #meow-voice-bgm-dock .mv-bgm-song-list.open,
       #meow-voice-bgm-dock .mv-bgm-extra-panel.open{display:block}
@@ -975,13 +976,13 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-ep-input{flex:1;font-size:11px;padding:5px 8px;border-radius:8px;border:1px solid rgba(28,24,18,.12);background:rgba(255,255,255,.90);outline:none;color:#26353a;min-width:0}
       #meow-voice-bgm-dock .mv-bgm-ep-search-btn{flex-shrink:0;font-size:10px;padding:4px 10px;border-radius:8px;border:1px solid rgba(58,71,77,.20);background:rgba(58,71,77,.08);color:#3a4a52;cursor:pointer;white-space:nowrap;transition:background .14s}
       #meow-voice-bgm-dock .mv-bgm-ep-search-btn:hover{background:rgba(58,71,77,.16)}
-      #meow-voice-bgm-dock .mv-bgm-ep-search-res{display:none;flex-direction:column;gap:2px;max-height:110px;overflow-y:auto;border-radius:9px;background:rgba(255,255,255,.82);border:1px solid rgba(28,24,18,.08);padding:4px 5px}
+      #meow-voice-bgm-dock .mv-bgm-ep-search-res{display:none;flex-direction:column;gap:2px;max-height:90px;overflow-y:auto;border-radius:9px;background:rgba(255,255,255,.82);border:1px solid rgba(28,24,18,.08);padding:4px 5px;margin-bottom:5px}
       #meow-voice-bgm-dock .mv-bgm-ep-search-res.open{display:flex}
       #meow-voice-bgm-dock .mv-bgm-ep-res-item{font-size:10.5px;padding:4px 8px;border-radius:7px;cursor:pointer;color:#3a4a52;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .12s;border:0;background:transparent;text-align:left;width:100%}
       #meow-voice-bgm-dock .mv-bgm-ep-res-item:hover{background:rgba(58,71,77,.08)}
-      #meow-voice-bgm-dock .mv-bgm-ep-modes{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+      #meow-voice-bgm-dock .mv-bgm-ep-modes{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:7px}
       #meow-voice-bgm-dock .mv-bgm-ep-divider{font-size:9.5px;color:rgba(58,71,77,.35);text-align:center;margin:5px 0 5px;letter-spacing:.03em}
-      #meow-voice-bgm-dock .mv-bgm-ep-url-row{display:flex;flex-direction:column;gap:4px}
+      #meow-voice-bgm-dock .mv-bgm-ep-url-row{display:flex;flex-direction:column;gap:4px;margin-top:2px}
       #meow-voice-bgm-dock .mv-bgm-ep-url-input,
       #meow-voice-bgm-dock .mv-bgm-ep-title-input{font-size:10.5px;padding:5px 8px;border-radius:8px;border:1px solid rgba(28,24,18,.12);background:rgba(255,255,255,.92);outline:none;color:#26353a;width:100%;box-sizing:border-box}
       #meow-voice-bgm-dock .mv-bgm-ep-add-btn{align-self:flex-end;font-size:10px;padding:5px 12px;border-radius:8px;border:1px solid rgba(58,71,77,.22);background:#3a474d;color:#fff;cursor:pointer;white-space:nowrap;transition:background .14s}
@@ -3487,7 +3488,9 @@ async function _musicSearch(keywords) {
               <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">广播剧整体语速</label>
               <div style="display:flex;gap:10px;align-items:center">
                 <input type="range" id="mvDramaRate" min="0.7" max="1.5" step="0.05" value="${Number(c.dramaRate||1).toFixed(2)}" style="flex:1">
-                <span class="mv-val" id="mvDramaRateVal">$<div style="margin:14px 0 0;padding:12px;border:1px solid rgba(28,24,18,.08);border-radius:14px;background:rgba(255,255,255,.38)">
+                <span class="mv-val" id="mvDramaRateVal">${Number(c.dramaRate||1).toFixed(2)}x</span>
+              </div>
+              <div style="margin:14px 0 0;padding:12px;border:1px solid rgba(28,24,18,.08);border-radius:14px;background:rgba(255,255,255,.38)">
               <div style="font-size:12px;font-weight:700;margin-bottom:8px">背景音乐</div>
               <label class="mv-toggle" style="margin-bottom:8px">
                 <span>启用背景音乐</span>
