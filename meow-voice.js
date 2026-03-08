@@ -2941,6 +2941,7 @@ async function _speakWithCfg(rawText, charName, c) {
   }
 
   function openModal() {
+    _bgmLibCache = null; // 打开弹窗时强制从 localStorage 读取最新数据
     injectCSS();
     doc.getElementById(ID.MODAL)?.remove();
     closeModePop();
