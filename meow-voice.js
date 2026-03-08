@@ -939,16 +939,15 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-panel{position:relative;z-index:2;
         transition:border-bottom-left-radius .22s ease,border-bottom-right-radius .22s ease,box-shadow .22s ease}
       /* when drawer open: flatten panel bottom + dim its bottom shadow slightly */
-      #meow-voice-bgm-dock.drawer-song .mv-bgm-panel,
-      #meow-voice-bgm-dock.drawer-menu .mv-bgm-panel{border-bottom-left-radius:0;border-bottom-right-radius:0}
+      /* panel keeps its radius - drawer is a separate card below with a gap */
 
       /* clip wrapper — zero-height until open, hides the card while it slides up */
       #meow-voice-bgm-dock .mv-bgm-drawer-wrap{
         overflow:hidden;max-height:0;
         transition:max-height .32s cubic-bezier(.4,0,.2,1);
         position:relative;z-index:1;
-        margin-top:-8px;
-        padding-top:8px;
+        margin-top:4px;   /* small gap between panel and drawer */
+        padding-top:0;
         padding-bottom:22px;  /* must be >= border-radius to avoid clip */
         margin-bottom:-22px;  /* pull back so total height is unchanged */
       }
@@ -962,7 +961,7 @@ ${t}
         padding:10px 12px 13px;
         background:linear-gradient(180deg,rgba(240,240,237,.98),rgba(246,246,243,.97));
         border:1px solid rgba(210,210,205,.70);
-        border-radius:0 0 20px 20px;
+        border-radius:14px;
         box-shadow:0 10px 28px rgba(0,0,0,.09),0 2px 6px rgba(0,0,0,.04);
       }
       #meow-voice-bgm-dock .mv-bgm-song-list.open,
@@ -991,7 +990,7 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-mode-btn.active{background:#3a474d;color:#fff;border-color:#3a474d}
 
       /* bottom row: progress + count */
-      #meow-voice-bgm-dock .mv-bgm-bottom-row{display:flex;align-items:center;gap:8px;margin-top:5px}
+      #meow-voice-bgm-dock .mv-bgm-bottom-row{display:flex;align-items:center;gap:8px;margin-top:7px}
       #meow-voice-bgm-dock .mv-bgm-bottom-row .mv-bgm-progress{flex:1;padding:0;margin:0}
       #meow-voice-bgm-dock .mv-bgm-bottom-row .mv-bgm-progress input{width:100%;height:3px;cursor:pointer;display:block}
       #meow-voice-bgm-dock .mv-bgm-track-count{flex:none;font-size:8px;color:rgba(57,72,80,.30);white-space:nowrap}
@@ -3228,6 +3227,49 @@ async function _speakWithCfg(rawText, charName, c) {
     buildModal();
   }
 
+async function _musicSearch(keywords) {
+    const proxy = _bgmProxyBase();
+    if (proxy) {
+      // 走 Cloudflare Worker 代理
+      try {
+        const res = await fetch(`${proxy}/search?q=${encodeURIComponent(keywords)}&limit=15`,
+          { signal: AbortSignal.timeout(12000) });
+        if (!res.ok) throw new Error('proxy ' + res.status);
+        const arr = await res.json();
+        if (!Array.isArray(arr)) throw new Error('格式异常');
+        return arr.map(s => ({
+          id:       String(s.id || ''),
+          url_id:   String(s.url_id   || s.id || ''),
+          lyric_id: String(s.lyric_id || s.id || ''),
+          name:     s.name   || '未知',
+          artist:   s.artist || '',
+          album:    s.album  || '',
+          source:   s.source || 'netease',
+          gd_src:   s.gd_src || 'netease',
+          lrc:      '',
+          url:      '',  // 点加入时才通过 /song 接口拿直链
+        }));
+      } catch(e) {
+        toast('代理搜索失败，尝试直连…');
+      }
+    }
+    // 无代理或代理失败：直接用 lrclib（仅有歌词，无直链）
+    const res = await fetch(
+      `https://lrclib.net/api/search?q=${encodeURIComponent(keywords)}&limit=20`,
+      { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) throw new Error('lrclib 搜索失败 ' + res.status);
+    const arr = await res.json();
+    if (!Array.isArray(arr)) throw new Error('格式异常');
+    return arr.map(s => ({
+      id:     String(s.id || ''),
+      name:   s.trackName  || '未知',
+      artist: s.artistName || '',
+      album:  s.albumName  || '',
+      lrc:    s.syncedLyrics || '',
+      url:    '',  // lrclib 没有直链
+    }));
+  }
+
   async function buildModal() {
     const voices    = await getVoices();
     const c         = cfg();
@@ -3473,14 +3515,6 @@ async function _speakWithCfg(rawText, charName, c) {
               </div>
               <div class="mv-hint" style="margin-top:6px;font-size:11px">搜歌、添加歌曲、切换播放模式请在右侧播放器 ≡ 菜单操作。</div>
               <input type="hidden" id="mvBgmTitle" value="${esc(c.bgmTitle||'背景音乐')}">
-            </div>amp; Pages」→「Create」→「Worker」<br>
-                  3. 把插件目录下 <b>cloudflare-worker.js</b> 的内容粘贴进编辑器<br>
-                  4. 点「Deploy」，复制页面上的 <b>https://xxx.workers.dev</b> 地址<br>
-                  5. 粘贴到上方「音乐代理地址」→ 保存设置<br>
-                  <span style="color:rgba(100,140,80,.9)">✅ 之后搜歌、歌词全部自动走代理，云酒馆也能用</span>
-                </div>
-              </details>
-              <input type="hidden" id="mvBgmTitle" value="${esc(c.bgmTitle||'背景音乐')}">
             </div>
           </div>
         </div>
@@ -3580,49 +3614,6 @@ async function _speakWithCfg(rawText, charName, c) {
 
     // ── 搜歌系统（多节点网易云 API，自动切换）─────────────────
     // ── 搜歌 + 歌词（走代理 or lrclib 直连）────────────────────
-    async function _musicSearch(keywords) {
-      const proxy = _bgmProxyBase();
-      if (proxy) {
-        // 走 Cloudflare Worker 代理
-        try {
-          const res = await fetch(`${proxy}/search?q=${encodeURIComponent(keywords)}&limit=15`,
-            { signal: AbortSignal.timeout(12000) });
-          if (!res.ok) throw new Error('proxy ' + res.status);
-          const arr = await res.json();
-          if (!Array.isArray(arr)) throw new Error('格式异常');
-          return arr.map(s => ({
-            id:       String(s.id || ''),
-            url_id:   String(s.url_id   || s.id || ''),
-            lyric_id: String(s.lyric_id || s.id || ''),
-            name:     s.name   || '未知',
-            artist:   s.artist || '',
-            album:    s.album  || '',
-            source:   s.source || 'netease',
-            gd_src:   s.gd_src || 'netease',
-            lrc:      '',
-            url:      '',  // 点加入时才通过 /song 接口拿直链
-          }));
-        } catch(e) {
-          toast('代理搜索失败，尝试直连…');
-        }
-      }
-      // 无代理或代理失败：直接用 lrclib（仅有歌词，无直链）
-      const res = await fetch(
-        `https://lrclib.net/api/search?q=${encodeURIComponent(keywords)}&limit=20`,
-        { signal: AbortSignal.timeout(8000) });
-      if (!res.ok) throw new Error('lrclib 搜索失败 ' + res.status);
-      const arr = await res.json();
-      if (!Array.isArray(arr)) throw new Error('格式异常');
-      return arr.map(s => ({
-        id:     String(s.id || ''),
-        name:   s.trackName  || '未知',
-        artist: s.artistName || '',
-        album:  s.albumName  || '',
-        lrc:    s.syncedLyrics || '',
-        url:    '',  // lrclib 没有直链
-      }));
-    }
-
     async function _musicGetLyric(songId, name, artist) {
       const proxy = _bgmProxyBase();
       const kw = (name + (artist ? ' ' + artist : '')).trim();
