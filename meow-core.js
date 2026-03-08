@@ -1386,65 +1386,90 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   position:fixed;
   width:220px; height:220px;
   border-radius:50%;
-  background:rgba(245,242,236,.12);
-  border:1px solid rgba(255,255,255,.24);
-  box-shadow:0 8px 30px rgba(0,0,0,.10);
-  backdrop-filter:blur(16px) saturate(1.05);
-  -webkit-backdrop-filter:blur(16px) saturate(1.05);
+  background:transparent !important;
+  border:0 !important;
+  box-shadow:none !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
   z-index:2147483200;
   overflow:visible;
   pointer-events:auto;
   opacity:0;
-  transform:scale(.84);
-  transition:opacity .18s ease, transform .2s cubic-bezier(.2,.8,.3,1);
+  transform:translateZ(0);
+  transition:opacity .14s ease;
   touch-action:none;
   user-select:none;
   -webkit-user-select:none;
+  isolation:isolate;
+  will-change:opacity;
+}
+#${ID_MENU}.meowRotary::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  background:linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
+  border:1px solid rgba(255,255,255,.30);
+  box-shadow:0 0 0 1px rgba(0,0,0,.08) inset, 0 16px 34px rgba(0,0,0,.16);
+  /* blur 始终开启，避免 opacity:0→1 时模糊闪动 */
+  backdrop-filter:blur(14px) saturate(1.06);
+  -webkit-backdrop-filter:blur(14px) saturate(1.06);
+  opacity:0;
+  /* 只过渡 opacity，不过渡 backdrop-filter */
+  transition:opacity .14s ease;
+  pointer-events:none;
+  z-index:0;
+  /* will-change 让浏览器提前创建合成层，防止 blur 重绘闪烁 */
+  will-change:opacity;
+  transform:translateZ(0);
+  -webkit-transform:translateZ(0);
 }
 #${ID_MENU}.meowRotary.show{
   opacity:1;
-  transform:scale(1);
+  transform:translateZ(0);
 }
-/* 指示器：JS动态旋转，始终指向最近屏幕边缘 */
+#${ID_MENU}.meowRotary.show::before{
+  opacity:1;
+}
+/* 指示器隐藏：保留结构，不影响功能 */
 #${ID_MENU} .rotaryPtr{
-  position:absolute;
-  width:0; height:0;
-  border-left:4px solid transparent;
-  border-right:4px solid transparent;
-  border-bottom:8px solid rgba(180,165,135,.75);
-  pointer-events:none;
-  z-index:5;
-  transform-origin:center center;
+  display:none !important;
 }
 /* 功能按钮（JS 动态定位） */
 #${ID_MENU} .rotaryItem{
   position:absolute;
+  z-index:2;
   width:54px; height:54px;
   border-radius:50%;
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
   gap:2px;
-  background:rgba(255,255,255,.55);
-  border:1px solid rgba(255,255,255,.50);
-  box-shadow:0 2px 8px rgba(0,0,0,.06);
+  background:rgba(255,255,255,.62);
+  border:1px solid rgba(255,255,255,.46);
+  box-shadow:0 2px 8px rgba(0,0,0,.05), inset 0 1px 0 rgba(255,255,255,.28);
   pointer-events:auto;
   cursor:pointer;
-  transition:transform .18s ease, box-shadow .18s ease;
+  transition:transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
 }
 #${ID_MENU} .rotaryItem.sel{
-  background:rgba(255,254,250,.65);
-  border-color:rgba(222,210,185,.50);
+  background:rgba(255,253,247,.78);
+  border-color:rgba(226,213,183,.56);
   transform:scale(1.10) !important;
   box-shadow:
-    0 0 0 3px rgba(230,218,190,.40),
-    0 0 16px 6px rgba(230,215,180,.20),
-    0 3px 10px rgba(0,0,0,.05);
+    0 0 0 2px rgba(233,220,191,.26),
+    0 0 14px 4px rgba(236,223,194,.12),
+    0 4px 12px rgba(0,0,0,.06),
+    inset 0 1px 0 rgba(255,255,255,.36);
   z-index:3;
 }
 #${ID_MENU} .rotaryItem .i{
   font-size:18px; line-height:18px;
   color:rgba(35,35,35,.72);
   display:flex; align-items:center; justify-content:center;
+}
+#${ID_MENU} .rotaryItem .i svg{
+  display:block;
+  width:22px; height:22px;
 }
 #${ID_MENU} .rotaryItem .t{
   font-size:11px; font-weight:900;
@@ -1453,18 +1478,19 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   pointer-events:none;
 }
 #${ID_MENU} .rotaryItem.sel .t{
-  color:rgba(100,82,54,1);
+  color:rgba(98,80,54,.96);
 }
 /* 中心按钮（固定星星图标，不随选中项变） */
 #${ID_MENU} .rotaryCenter{
   position:absolute;
+  z-index:4;
   left:50%; top:50%;
   transform:translate(-50%,-50%);
   width:44px; height:44px;
   border-radius:50%;
-  background:rgba(255,255,255,.62);
-  border:1px solid rgba(255,255,255,.50);
-  box-shadow:0 3px 12px rgba(0,0,0,.09);
+  background:rgba(255,255,255,.54);
+  border:1px solid rgba(255,255,255,.30);
+  box-shadow:0 3px 12px rgba(0,0,0,.07), inset 0 1px 0 rgba(255,255,255,.22);
   display:flex; align-items:center; justify-content:center;
   pointer-events:auto;
   cursor:pointer;
@@ -1472,12 +1498,12 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   transition:background .14s, transform .12s;
 }
 #${ID_MENU} .rotaryCenter:active{
-  background:rgba(240,234,220,.75);
+  background:rgba(248,243,233,.66);
   transform:translate(-50%,-50%) scale(.90);
 }
 #${ID_MENU} .rotaryCenter .rc-star{
   display:flex; align-items:center; justify-content:center;
-  color:rgba(80,68,52,.55);
+  color:rgba(80,68,52,.48);
   pointer-events:none;
 }
 
@@ -2128,7 +2154,7 @@ function _builtinMenuItems(){
     if(tries>=15){ clearInterval(t); try{toast('小手机模块未就绪，请检查 meow-phone.js 是否加载成功');}catch(_){} }
   },200);
 } },
-    { id:'parallel', label:'平行界', iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="4.2"/><circle cx="15.5" cy="12" r="4.2" opacity=".72"/></svg>', action:()=>{ try{ toast('平行界即将上线，敬请期待'); }catch(_){} } },
+    { id:'parallel', label:'平行界',iconHTML:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="4.2"/><circle cx="15.5" cy="12" r="4.2" opacity=".72"/></svg>', action:()=>{ try{ toast('平行界即将上线，敬请期待'); }catch(_){} } },
   ];
 }
 function modalShell(id, title, icon){
@@ -2316,7 +2342,7 @@ function modalShell(id, title, icon){
 }
   );
   MEOW.addMenuItem('parallel', '平行界',
-    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="4.2"/><circle cx="15.5" cy="12" r="4.2" opacity=".72"/></svg>',
+    '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12c-1.5-2.5-3.2-4-5-4a4 4 0 0 0 0 8c1.8 0 3.5-1.5 5-4Z"/><path d="M12 12c1.5 2.5 3.2 4 5 4a4 4 0 0 0 0-8c-1.8 0-3.5 1.5-5 4Z"/></svg>',
     ()=>{ try{ toast('平行界即将上线，敬请期待'); }catch(_){} }
   );
 })();
