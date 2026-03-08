@@ -1386,11 +1386,11 @@ details[open] > summary .meow-pack-arrow{ transform:rotate(90deg); }
   position:fixed;
   width:220px; height:220px;
   border-radius:50%;
-  background:rgba(255,255,255,.01);
-  border:1px solid rgba(255,255,255,.05);
-  box-shadow:0 10px 32px rgba(0,0,0,.03), inset 0 1px 0 rgba(255,255,255,.06);
-  backdrop-filter:blur(18px) saturate(1.03);
-  -webkit-backdrop-filter:blur(18px) saturate(1.03);
+  background:rgba(255,255,255,.015);
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow:0 2px 8px rgba(0,0,0,.02);
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
   z-index:2147483200;
   overflow:visible;
   pointer-events:auto;
