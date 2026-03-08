@@ -158,7 +158,7 @@
       bgmVolume:    lsGet(LS.BGM_VOLUME,    0.18),
       bgmLoop:      lsGet(LS.BGM_LOOP,      true),
       bgmMode:      lsGet(LS.BGM_MODE,      'sequence'),
-      bgmLibrary:   _bgmLibCache ? JSON.parse(JSON.stringify(_bgmLibCache)) : lsGet(LS.BGM_LIBRARY, []),
+      bgmLibrary:   lsGet(LS.BGM_LIBRARY, []),
       bgmProxy:     lsGet(LS.BGM_PROXY,     ''),
       bgmGroup:     lsGet(LS.BGM_GROUP,     ''),
       bgmTrack:     lsGet(LS.BGM_TRACK,     ''),
@@ -540,42 +540,23 @@ ${t}
   }
 
   // 内存缓存：避免 save→get 的读写时序问题
-  let _bgmLibCache = null;
-
+  // 始终从 localStorage 读（唯一真实数据源），避免内存缓存与 LS 不同步
   function _getBgmLibrary() {
-    if (!_bgmLibCache) {
-      _bgmLibCache = _ensureBgmLibrary(lsGet(LS.BGM_LIBRARY, []));
-    }
-    // 始终返回深拷贝，防止外部代码意外修改 cache 内部对象
-    return JSON.parse(JSON.stringify(_bgmLibCache));
+    return _ensureBgmLibrary(lsGet(LS.BGM_LIBRARY, []));
   }
 
-  // 保存前先把当前 cache 保存版本戳到要合并的 lib，防止并发写覆盖
-  function _safeMergeAndSave(getLibFn) {
-    // getLibFn 是一个修改函数：接受 lib（deep copy）后原地修改并返回
-    const lib = _getBgmLibrary();
-    const vBefore = _bgmLibVersion;
-    getLibFn(lib);
-    // 只有 version 没变（没有并发写）才保存；否则重读再试一次
-    if (_bgmLibVersion === vBefore) {
-      _saveBgmLibrary(lib);
-      return true;
-    }
-    // 并发写：从 LS 重新读，合并新曲目
-    const freshLib = _ensureBgmLibrary(lsGet(LS.BGM_LIBRARY, []));
-    _bgmLibCache = freshLib;
-    const lib2 = _getBgmLibrary();
-    getLibFn(lib2);
-    _saveBgmLibrary(lib2);
+  // 原子合并写入：读最新 LS → 修改 → 写回 → 校验
+  // mutatorFn(lib) 原地修改 lib 数组，返回 true 表示实际有修改
+  function _safeMergeAndSave(mutatorFn) {
+    const lib = _getBgmLibrary();          // 每次都从 LS 拿最新
+    const changed = mutatorFn(lib);
+    if (changed === false) return false;   // mutator 明确说明无需保存
+    _saveBgmLibrary(lib);
     return true;
   }
 
-  let _bgmLibVersion = 0;  // increments on every save, guards against race conditions
-
   function _saveBgmLibrary(lib) {
     const ensured = _ensureBgmLibrary(lib); // lrc 字段在这里被剥离
-    _bgmLibVersion++;                       // bump version BEFORE setting cache
-    _bgmLibCache = ensured;                 // 立即更新内存缓存
     const json = JSON.stringify(ensured);
     // localStorage 5MB 配额保护：写入失败时清理旧歌词缓存再重试
     const _tryWrite = () => {
@@ -856,13 +837,10 @@ ${t}
               <button type="button" class="mv-bgm-mode-btn" data-mode="single-loop">单曲循环</button>
             </div>
             <button type="button" class="mv-bgm-ep-skin-btn">
-              <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="2" width="16" height="16" rx="3"/>
-                <path d="M2 7h16"/>
-                <circle cx="6.5" cy="4.5" r="0.8" fill="currentColor" stroke="none"/>
-                <circle cx="10" cy="4.5" r="0.8" fill="currentColor" stroke="none"/>
-                <circle cx="13.5" cy="4.5" r="0.8" fill="currentColor" stroke="none"/>
-                <path d="M6 11 Q10 8.5 14 11 Q10 13.5 6 11Z" stroke-width="1.2"/>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
               </svg>
               壁纸
             </button>
@@ -997,13 +975,15 @@ ${t}
       }
       /* skin icon button in extra panel */
       #meow-voice-bgm-dock .mv-bgm-ep-skin-btn{
-        display:flex;align-items:center;gap:5px;
-        font-size:10px;color:rgba(44,57,63,.55);
-        background:none;border:none;cursor:pointer;padding:0;
-        margin-bottom:8px;
-        transition:color .14s;
+        display:flex;align-items:center;justify-content:center;gap:4px;
+        font-size:10px;color:rgba(44,57,63,.48);letter-spacing:.3px;
+        background:none;border:none;cursor:pointer;padding:3px 0;
+        width:100%;margin-bottom:6px;
+        border-top:1px solid rgba(28,24,18,.07);
+        border-bottom:1px solid rgba(28,24,18,.07);
+        transition:color .14s,background .14s;
       }
-      #meow-voice-bgm-dock .mv-bgm-ep-skin-btn:hover{color:#3a474d}
+      #meow-voice-bgm-dock .mv-bgm-ep-skin-btn:hover{color:#3a474d;background:rgba(58,71,77,.04)}
       #meow-voice-bgm-dock .mv-bgm-ep-skin-btn svg{flex-shrink:0}
       /* skin input row */
       #meow-voice-bgm-dock .mv-bgm-ep-skin-row{
@@ -1385,8 +1365,8 @@ ${t}
           let _addedTid = null;
           _safeMergeAndSave(lib => {
             const grp = _findBgmGroup(lib, _eGid);
-            if (!grp) return;
-            if (grp.tracks.some(t => t.url === _url)) return;
+            if (!grp) return false;
+            if (grp.tracks.some(t => t.url === _url)) return false;
             const tid = _uid('t_');
             _addedTid = tid;
             const title = _song.name + (_song.artist?' - '+_song.artist:'');
@@ -1420,8 +1400,8 @@ ${t}
         let _added2 = false;
         _safeMergeAndSave(lib => {
           const grp = _findBgmGroup(lib, _eGid2);
-          if (!grp) return;
-          if (grp.tracks.some(t => t.url === _url)) return;
+          if (!grp) return false;
+          if (grp.tracks.some(t => t.url === _url)) return false;
           grp.tracks.push({ id:_uid('t_'), title:_title, url:_url });
           _added2 = true;
         });
