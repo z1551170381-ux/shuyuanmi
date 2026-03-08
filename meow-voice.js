@@ -1170,6 +1170,12 @@ ${t}
         const gid = btn.dataset.groupId || '';
         const _alreadySongOpen = rootNow.classList.contains('drawer-song');
         const _alreadyThisGroup = btn.classList.contains('active');
+        // 同组且歌单已开 → 仅收起，不重置当前曲目
+        if (_alreadySongOpen && _alreadyThisGroup) {
+          _closeAllDrawers(rootNow);
+          return;
+        }
+        // 切换到新分组 → 重置曲目选择并展开歌单
         lsSet(LS.BGM_GROUP, gid);
         const group = _findBgmGroup(lib, gid);
         const _gTracks = _bgmTrackList(group);
@@ -1180,12 +1186,7 @@ ${t}
         _bgmState.trackId = first ? first.id : '';
         _bgmState.title = first ? (first.title || '') : '';
         _renderBgmDock();
-        // 同组且歌单已开 → 关闭；否则开歌单（会自动关菜单）
-        if (_alreadySongOpen && _alreadyThisGroup) {
-          _closeAllDrawers(rootNow);
-        } else {
-          _openSongDrawer(rootNow, gid, _gTracks, lsGet(LS.BGM_TRACK,''));
-        }
+        _openSongDrawer(rootNow, gid, _gTracks, lsGet(LS.BGM_TRACK,''));
         return;
       }
       // 歌单列表点击 → 直接播放
