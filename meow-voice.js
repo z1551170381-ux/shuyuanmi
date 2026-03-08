@@ -822,8 +822,9 @@ ${t}
             <div class="mv-bgm-progress"><input type="range" class="mv-bgm-seek" min="0" max="1000" step="1" value="0"></div>
             <div class="mv-bgm-track-count"></div>
           </div>
-          <div class="mv-bgm-song-list"></div>
-          <div class="mv-bgm-extra-panel">
+          <div class="mv-bgm-drawer-wrap">
+            <div class="mv-bgm-song-list"></div>
+            <div class="mv-bgm-extra-panel">
             <div class="mv-bgm-ep-search-row">
               <input type="text" class="mv-bgm-ep-input" placeholder="搜索歌曲…">
               <button type="button" class="mv-bgm-ep-search-btn">搜索</button>
@@ -835,6 +836,7 @@ ${t}
               <button type="button" class="mv-bgm-mode-btn" data-mode="single-loop">单曲循环</button>
             </div>
           </div>
+          </div><!-- /mv-bgm-drawer-wrap -->
           <div class="mv-bgm-pick-row"><select class="mv-bgm-track-select" aria-label="选择歌曲"></select></div>
           <div class="mv-bgm-list"></div>
           <div class="mv-bgm-embed"></div>
@@ -885,13 +887,13 @@ ${t}
       #meow-voice-bgm-dock:not(.playing):not(.collapsed) .mv-bgm-tonearm{transform:rotate(-6deg)}
 
       /* panel */
-      #meow-voice-bgm-dock .mv-bgm-panel{position:relative;padding:10px 13px 9px 56px;border-radius:22px;background:linear-gradient(160deg,rgba(255,255,255,.97),rgba(246,246,242,.92));border:1px solid rgba(212,212,206,.65);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 14px 40px rgba(0,0,0,.09),0 2px 6px rgba(0,0,0,.04);overflow:visible;transition:opacity .18s ease,max-height .18s ease,padding .18s ease;max-height:600px}
+      #meow-voice-bgm-dock .mv-bgm-panel{position:relative;padding:14px 14px 12px 60px;border-radius:22px;background:linear-gradient(160deg,rgba(255,255,255,.97),rgba(246,246,242,.92));border:1px solid rgba(212,212,206,.65);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 14px 40px rgba(0,0,0,.09),0 2px 6px rgba(0,0,0,.04);overflow:visible;transition:opacity .18s ease,max-height .18s ease,padding .18s ease;max-height:600px}
 
       /* top row */
-      #meow-voice-bgm-dock .mv-bgm-top-row{display:flex;align-items:center;gap:10px;min-height:76px}
+      #meow-voice-bgm-dock .mv-bgm-top-row{display:flex;align-items:flex-start;gap:10px;padding-top:2px}
 
       /* LEFT: title + sub + lyric, vertically centered */
-      #meow-voice-bgm-dock .mv-bgm-meta-col{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:2px}
+      #meow-voice-bgm-dock .mv-bgm-meta-col{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-start;gap:3px}
       #meow-voice-bgm-dock .mv-bgm-name{font-size:18px;line-height:1.15;font-weight:800;color:#0e1e24;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.02em}
       #meow-voice-bgm-dock .mv-bgm-sub{font-size:10px;color:rgba(44,57,63,.42);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
       #meow-voice-bgm-dock .mv-bgm-lyric{margin-top:5px;display:flex;flex-direction:column;align-items:flex-start;gap:1px;overflow:hidden;background:none;border:none;padding:0;min-height:0}
@@ -900,7 +902,7 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-lrc-cur{font-size:13px;font-weight:700;color:rgba(22,36,42,.80);white-space:normal;word-break:break-all}
 
       /* RIGHT: ctrl-col — 3 rows */
-      #meow-voice-bgm-dock .mv-bgm-ctrl-col{flex:none;width:166px;display:flex;flex-direction:column;justify-content:space-between;gap:5px;align-self:stretch}
+      #meow-voice-bgm-dock .mv-bgm-ctrl-col{flex:none;width:158px;display:flex;flex-direction:column;justify-content:flex-start;gap:7px}
 
       /* row1: flex-end — ← ≡ same size */
       #meow-voice-bgm-dock .mv-bgm-ctrl-top{display:flex;align-items:center;gap:3px}
@@ -912,12 +914,12 @@ ${t}
 
       /* row2: play controls */
       #meow-voice-bgm-dock .mv-bgm-controls{display:flex;align-items:center;justify-content:flex-end;gap:5px}
-      #meow-voice-bgm-dock .mv-bgm-controls button{border:0;border-radius:999px;background:rgba(255,255,255,.88);box-shadow:0 3px 10px rgba(16,50,55,.09);cursor:pointer;color:#3e4f56;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .12s;flex-shrink:0;width:30px;height:30px}
+      #meow-voice-bgm-dock .mv-bgm-controls button{border:0;border-radius:999px;background:rgba(255,255,255,.88);box-shadow:0 3px 10px rgba(16,50,55,.09);cursor:pointer;color:#3e4f56;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .12s;flex-shrink:0;width:28px;height:28px}
       #meow-voice-bgm-dock .mv-bgm-controls button:hover{background:#fff;transform:scale(1.06)}
       #meow-voice-bgm-dock .mv-bgm-controls button svg{display:block;pointer-events:none}
-      #meow-voice-bgm-dock .mv-bgm-play{width:38px !important;height:38px !important;background:#3a474d !important;color:#fff !important;box-shadow:0 4px 14px rgba(40,56,62,.22) !important}
+      #meow-voice-bgm-dock .mv-bgm-play{width:34px !important;height:34px !important;background:#3a474d !important;color:#fff !important;box-shadow:0 4px 14px rgba(40,56,62,.22) !important}
       #meow-voice-bgm-dock .mv-bgm-play:hover{background:#2c3a40 !important}
-      #meow-voice-bgm-dock .mv-bgm-float-lyric-toggle{border-radius:999px !important;font-size:11px !important;font-weight:700;width:auto !important;height:28px !important;padding:0 10px !important;background:rgba(255,255,255,.88) !important;color:#44535a !important;box-shadow:0 2px 8px rgba(16,50,55,.08) !important}
+      #meow-voice-bgm-dock .mv-bgm-float-lyric-toggle{border-radius:999px !important;font-size:10px !important;font-weight:700;width:auto !important;height:26px !important;padding:0 8px !important;background:rgba(255,255,255,.88) !important;color:#44535a !important;box-shadow:0 2px 8px rgba(16,50,55,.08) !important}
       #meow-voice-bgm-dock .mv-bgm-float-lyric-toggle.active{background:#3a474d !important;color:#fff !important}
 
       /* row3: group chips */
@@ -925,33 +927,53 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-group-chip{border:0;border-radius:999px;padding:3px 9px;background:rgba(72,82,86,.07);color:#44535a;cursor:pointer;font-size:9.5px;transition:background .15s;line-height:1.4;white-space:nowrap}
       #meow-voice-bgm-dock .mv-bgm-group-chip.active{background:#3a474d;color:#fff}
 
-      /* slide-out drawer base — both panels share same style */
+      /* ── 滑盖效果：主卡片在上，抽屉从底部滑出 ── */
+      /* outer clip wrapper — sits just below the main panel, hidden until open */
+      #meow-voice-bgm-dock .mv-bgm-drawer-wrap{
+        overflow:hidden;
+        /* collapsed height = 0, so nothing peeks out */
+        max-height:0;
+        transition:max-height .30s cubic-bezier(.4,0,.2,1);
+        /* same horizontal footprint as panel */
+        border-radius:0 0 20px 20px;
+        /* cast a shadow that appears under the main card */
+        box-shadow:0 12px 32px rgba(0,0,0,.10),0 2px 6px rgba(0,0,0,.05);
+        position:relative;
+        z-index:1;
+        margin-top:-6px;     /* tuck under panel's bottom edge */
+      }
+      #meow-voice-bgm-dock.drawer-song .mv-bgm-drawer-wrap{max-height:170px}
+      #meow-voice-bgm-dock.drawer-menu .mv-bgm-drawer-wrap{max-height:220px}
+
+      /* main panel: always on top, bottom radius fades to square when drawer open */
+      #meow-voice-bgm-dock .mv-bgm-panel{
+        position:relative;z-index:2;
+        transition:border-bottom-left-radius .22s ease,border-bottom-right-radius .22s ease;
+      }
+      #meow-voice-bgm-dock.drawer-song .mv-bgm-panel,
+      #meow-voice-bgm-dock.drawer-menu .mv-bgm-panel{
+        border-bottom-left-radius:0;border-bottom-right-radius:0;
+      }
+
+      /* drawer inner panes — only one visible at a time */
       #meow-voice-bgm-dock .mv-bgm-song-list,
       #meow-voice-bgm-dock .mv-bgm-extra-panel{
-        overflow:hidden;max-height:0;
-        border-radius:0 0 18px 18px;
-        background:rgba(243,243,240,.96);
+        display:none;
+        padding:10px 12px 12px;
+        background:linear-gradient(180deg,rgba(238,238,234,.97),rgba(244,244,241,.97));
         border:1px solid rgba(212,212,206,.65);border-top:none;
-        box-shadow:0 14px 28px rgba(0,0,0,.09),0 3px 8px rgba(0,0,0,.05);
-        transition:max-height .28s cubic-bezier(.4,0,.2,1),padding .28s cubic-bezier(.4,0,.2,1);
-        padding:0 10px;
-        /* sits visually BEHIND the main card — layered effect */
-        position:relative;z-index:-1;margin-top:-4px;
+        border-radius:0 0 20px 20px;
       }
-      #meow-voice-bgm-dock .mv-bgm-song-list.open{max-height:160px;padding:8px 10px}
-      #meow-voice-bgm-dock .mv-bgm-extra-panel.open{max-height:200px;padding:10px 11px}
-
-      /* when any drawer open: main panel loses bottom radius → seamless join */
-      #meow-voice-bgm-dock.drawer-open .mv-bgm-panel{border-radius:22px 22px 0 0;border-bottom-color:transparent;transition:border-radius .18s ease}
+      #meow-voice-bgm-dock .mv-bgm-song-list.open,
+      #meow-voice-bgm-dock .mv-bgm-extra-panel.open{display:block}
 
       /* song items */
-      #meow-voice-bgm-dock .mv-bgm-song-list{display:block}
-      #meow-voice-bgm-dock .mv-bgm-song-item{font-size:10.5px;padding:4px 6px;border-radius:7px;cursor:pointer;color:#3a4a52;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .12s;border:0;background:transparent;text-align:left;width:100%;display:block}
-      #meow-voice-bgm-dock .mv-bgm-song-item:hover{background:rgba(58,71,77,.08)}
-      #meow-voice-bgm-dock .mv-bgm-song-item.playing{font-weight:700;color:#3a474d}
+      #meow-voice-bgm-dock .mv-bgm-song-item{font-size:10.5px;padding:5px 8px;border-radius:7px;cursor:pointer;color:#3a4a52;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .12s;border:0;background:transparent;text-align:left;width:100%;display:block}
+      #meow-voice-bgm-dock .mv-bgm-song-item:hover{background:rgba(58,71,77,.09)}
+      #meow-voice-bgm-dock .mv-bgm-song-item.playing{font-weight:700;color:#2a3a42;background:rgba(58,71,77,.06)}
 
       /* extra panel inner layout */
-      #meow-voice-bgm-dock .mv-bgm-extra-panel{display:block}
+      #meow-voice-bgm-dock .mv-bgm-extra-panel{padding-top:10px}
       #meow-voice-bgm-dock .mv-bgm-ep-search-row{display:flex;gap:5px;margin-bottom:6px}
       #meow-voice-bgm-dock .mv-bgm-ep-input{flex:1;font-size:11px;padding:5px 8px;border-radius:8px;border:1px solid rgba(28,24,18,.12);background:rgba(255,255,255,.90);outline:none;color:#26353a;min-width:0}
       #meow-voice-bgm-dock .mv-bgm-ep-search-btn{flex-shrink:0;font-size:10px;padding:4px 10px;border-radius:8px;border:1px solid rgba(58,71,77,.20);background:rgba(58,71,77,.08);color:#3a4a52;cursor:pointer;white-space:nowrap;transition:background .14s}
@@ -965,7 +987,7 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-mode-btn.active{background:#3a474d;color:#fff;border-color:#3a474d}
 
       /* bottom row: progress + count */
-      #meow-voice-bgm-dock .mv-bgm-bottom-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+      #meow-voice-bgm-dock .mv-bgm-bottom-row{display:flex;align-items:center;gap:8px;margin-top:10px}
       #meow-voice-bgm-dock .mv-bgm-bottom-row .mv-bgm-progress{flex:1;padding:0;margin:0}
       #meow-voice-bgm-dock .mv-bgm-bottom-row .mv-bgm-progress input{width:100%;height:3px;cursor:pointer;display:block}
       #meow-voice-bgm-dock .mv-bgm-track-count{flex:none;font-size:8px;color:rgba(57,72,80,.30);white-space:nowrap}
@@ -1033,8 +1055,13 @@ ${t}
         if (_ep) {
           const _epOpen = _ep.classList.toggle('open');
           if (_settBtn) _settBtn.classList.toggle('active', _epOpen);
-          if (_epOpen) rootNow.classList.add('drawer-open');
-          else if (!rootNow.querySelector('.mv-bgm-song-list.open')) rootNow.classList.remove('drawer-open');
+          if (_epOpen) {
+            rootNow.querySelector('.mv-bgm-song-list')?.classList.remove('open');
+            rootNow.classList.remove('drawer-song');
+            rootNow.classList.add('drawer-menu');
+          } else {
+            rootNow.classList.remove('drawer-menu');
+          }
         }
         return;
       }
@@ -1117,14 +1144,15 @@ ${t}
         if (_sl) {
           if (_alreadyActive && _sl.classList.contains('open')) {
             _sl.classList.remove('open');
-            if (!rootNow.querySelector('.mv-bgm-extra-panel.open')) rootNow.classList.remove('drawer-open');
+            rootNow.classList.remove('drawer-song');
           } else {
             const _curTid = lsGet(LS.BGM_TRACK, '');
             _sl.innerHTML = _gTracks.map(t =>
               `<button type="button" class="mv-bgm-song-item${t.id===_curTid?' playing':''}" data-tid="${t.id}" data-gid="${gid}">${t.title || '未命名'}</button>`
             ).join('') || '<div style="font-size:10px;color:rgba(58,71,77,.4);padding:4px 8px">暂无歌曲</div>';
             _sl.classList.add('open');
-            rootNow.classList.add('drawer-open');
+            rootNow.classList.remove('drawer-menu');
+            rootNow.classList.add('drawer-song');
           }
         }
         return;
@@ -2977,13 +3005,7 @@ async function _speakWithCfg(rawText, charName, c) {
   function _renderBgmLibraryEditor(box) {
     if (!box) return;
     const q = id => box.querySelector('#' + id);
-    // 每次渲染编辑器时强制从 localStorage 校验缓存，确保多标签/页面同步
-    const _lsRaw = (() => { try { const v = W.localStorage.getItem('meow_voice_bgm_library_v1'); return v ? JSON.parse(v) : null; } catch(e) { return null; } })();
-    if (_lsRaw && Array.isArray(_lsRaw)) {
-      const _cacheLen = (_bgmLibCache || []).reduce((s,g)=>s+((g.tracks||[]).length),0);
-      const _lsLen = _lsRaw.reduce((s,g)=>s+((g.tracks||[]).length),0);
-      if (_lsLen > _cacheLen) _bgmLibCache = null; // localStorage 比缓存更新，强制刷新
-    }
+    // 始终从内存缓存读（_saveBgmLibrary 保证 cache 与 localStorage 实时同步）
     const lib = _getBgmLibrary();
     const state = _ensureBgmEditorState(box);
     const activeGid = String(state.groupId || (lib[0]?.id || ''));
@@ -3298,71 +3320,35 @@ async function _speakWithCfg(rawText, charName, c) {
               <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px">广播剧整体语速</label>
               <div style="display:flex;gap:10px;align-items:center">
                 <input type="range" id="mvDramaRate" min="0.7" max="1.5" step="0.05" value="${Number(c.dramaRate||1).toFixed(2)}" style="flex:1">
-                <span class="mv-val" id="mvDramaRateVal">${Number(c.dramaRate||1).toFixed(2)}x</span>
-              </div>
-              <div class="mv-hint" style="margin-top:4px;font-size:11px">仅作用于广播剧 API 播放阶段</div>
-            </div>
-            <div id="mvDramaCharList" style="margin-top:8px">
-              ${dramaCharRows(c.dramaMap||{}, getActiveCharNames())}
-            </div>
-            <button type="button" class="mv-btn" id="mvDramaRefresh" style="margin-top:6px;font-size:12px">↺ 刷新角色列表</button>
-            <div style="margin:14px 0 0;padding:12px;border:1px solid rgba(28,24,18,.08);border-radius:14px;background:rgba(255,255,255,.38)">
+                <span class="mv-val" id="mvDramaRateVal">$<div style="margin:14px 0 0;padding:12px;border:1px solid rgba(28,24,18,.08);border-radius:14px;background:rgba(255,255,255,.38)">
               <div style="font-size:12px;font-weight:700;margin-bottom:8px">背景音乐</div>
               <label class="mv-toggle" style="margin-bottom:8px">
                 <span>启用背景音乐</span>
                 <div class="mv-sw"><input type="checkbox" id="mvBgmEnabled" ${c.bgmEnabled?'checked':''}><div class="mv-slider"></div></div>
               </label>
-              <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">
+              <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
                 <span style="font-size:12px;min-width:28px">音量</span>
                 <input type="range" id="mvBgmVolume" min="0" max="1" step="0.01" value="${_clampNum(c.bgmVolume,0,1,0.18)}" style="flex:1">
                 <span class="mv-val" id="mvBgmVolumeVal">${Math.round(_clampNum(c.bgmVolume,0,1,0.18)*100)}%</span>
               </div>
-              <label class="mv-toggle" style="margin-bottom:10px">
-                <span>循环播放</span>
-                <div class="mv-sw"><input type="checkbox" id="mvBgmLoop" ${c.bgmLoop!==false?'checked':''}><div class="mv-slider"></div></div>
-              </label>
               <div style="margin-bottom:10px">
-                <label style="font-size:11px;font-weight:600;color:rgba(46,38,30,.55);display:block;margin-bottom:4px">🌐 音乐代理地址（解决搜索/歌词 CORS）</label>
-                <input type="text" id="mvBgmProxy" placeholder="留空则直连 lrclib（仅歌词）；填入 Worker 地址后可搜歌+获取直链" value="${esc(c.bgmProxy||'')}" style="font-size:11px">
-                <div class="mv-hint" style="margin-top:3px">部署教程：见下方「如何部署代理」</div>
+                <label style="font-size:11px;font-weight:600;color:rgba(46,38,30,.55);display:block;margin-bottom:4px">🌐 音乐代理地址（搜歌/歌词 CORS）</label>
+                <input type="text" id="mvBgmProxy" placeholder="留空仅能直连 lrclib 歌词；填入 Worker 地址后可搜歌+获取直链" value="${esc(c.bgmProxy||'')}" style="font-size:11px">
+                <div class="mv-hint" style="margin-top:3px">格式：https://xxx.workers.dev/（Cloudflare Worker，5 分钟免费部署）</div>
               </div>
               <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px">
                 <input type="text" id="mvBgmNewGroup" placeholder="新分组名（如：暧昧 / 夜路）" style="flex:1">
                 <button type="button" class="mv-btn" id="mvBgmAddGroup" style="font-size:12px;white-space:nowrap">＋ 新建分组</button>
               </div>
-              <div style="background:rgba(139,115,85,.07);border:1px solid rgba(139,115,85,.18);border-radius:12px;padding:10px;margin-bottom:10px">
-                <div style="font-size:11px;font-weight:600;color:rgba(46,38,30,.55);margin-bottom:7px">添加歌曲</div>
-                <select id="mvBgmAddToGroup" style="margin-bottom:6px"></select>
-
-                <!-- 搜歌区 -->
-                <div style="display:flex;gap:6px;margin-bottom:6px">
-                  <input type="text" id="mvBgmSearch" placeholder="搜索歌名 / 歌手…" style="flex:1">
-                  <button type="button" class="mv-btn" id="mvBgmSearchBtn" style="font-size:12px;white-space:nowrap">🔍 搜索</button>
-                </div>
-                <div id="mvBgmSearchResults" style="display:none;max-height:180px;overflow-y:auto;border:1px solid rgba(139,115,85,.22);border-radius:9px;background:rgba(255,255,255,.82);margin-bottom:6px"></div>
-
-                <!-- 手动填链接区 -->
-                <div style="font-size:10px;color:rgba(46,38,30,.38);margin-bottom:5px;text-align:center">— 或手动填入链接 —</div>
-                <input type="text" id="mvBgmNewTitle" placeholder="曲名（留空自动提取）" style="margin-bottom:6px">
-                <div style="display:flex;gap:6px">
-                  <input type="text" id="mvBgmUrl" placeholder="mp3 直链 / 网易云歌曲页 / outchain iframe" style="flex:1">
-                  <button type="button" class="mv-btn primary" id="mvBgmAddTrack" style="font-size:12px;white-space:nowrap">＋ 加入</button>
-                </div>
-              </div>
-              <div id="mvBgmLibraryList" style="max-height:260px;overflow-y:auto;border:1px solid rgba(28,24,18,.06);border-radius:12px;background:rgba(255,255,255,.42);padding:8px;margin-bottom:8px"></div>
+              <div id="mvBgmLibraryList" style="max-height:220px;overflow-y:auto;border:1px solid rgba(28,24,18,.06);border-radius:12px;background:rgba(255,255,255,.42);padding:8px;margin-bottom:8px"></div>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button type="button" class="mv-btn" id="mvBgmTest" style="font-size:12px">▶ 试听</button>
-                <button type="button" class="mv-btn" id="mvBgmStop" style="font-size:12px">■ 停止</button>
                 <button type="button" class="mv-btn" id="mvBgmShowDock" style="font-size:12px">📻 显示播放器</button>
                 <button type="button" class="mv-btn" id="mvBgmStopAll" style="font-size:12px;color:rgba(160,55,55,.85)">⏹ 关闭播放</button>
                 <button type="button" class="mv-btn" id="mvBgmResetDock" style="font-size:12px">↺ 复位唱片机</button>
               </div>
-              <div class="mv-hint" style="margin-top:6px;font-size:11px">歌单同步到右侧贴边唱片机。mp3 直链可完整控制进度；网易云以嵌入播放器方式播放。</div>
-              <details style="margin-top:8px;font-size:11px;color:rgba(46,38,30,.6)">
-                <summary style="cursor:pointer;font-weight:600;color:rgba(46,38,30,.5)">📖 如何部署代理（5 分钟，永久免费）</summary>
-                <div style="margin-top:6px;line-height:1.7;background:rgba(0,0,0,.03);border-radius:8px;padding:8px">
-                  1. 注册 <b>cloudflare.com</b>（免费）<br>
-                  2. 进「Workers &amp; Pages」→「Create」→「Worker」<br>
+              <div class="mv-hint" style="margin-top:6px;font-size:11px">搜歌、添加歌曲、切换播放模式请在右侧播放器 ≡ 菜单操作。</div>
+              <input type="hidden" id="mvBgmTitle" value="${esc(c.bgmTitle||'背景音乐')}">
+            </div>amp; Pages」→「Create」→「Worker」<br>
                   3. 把插件目录下 <b>cloudflare-worker.js</b> 的内容粘贴进编辑器<br>
                   4. 点「Deploy」，复制页面上的 <b>https://xxx.workers.dev</b> 地址<br>
                   5. 粘贴到上方「音乐代理地址」→ 保存设置<br>
@@ -3813,37 +3799,7 @@ async function _speakWithCfg(rawText, charName, c) {
     });
 
     // ── 试听 / 停止 / 复位 ──────────────────────────────────
-    q('mvBgmTest')?.addEventListener('click', async () => {
-      // 优先试听「添加」输入框中的链接，否则播当前选中曲
-      let url = q('mvBgmUrl')?.value.trim() || '';
-      let title = q('mvBgmNewTitle')?.value.trim() || '';
-      if (!url) {
-        const s = box.__mvBgmState || {};
-        const lib = _getBgmLibrary();
-        const t = s.trackId ? ((_findBgmGroup(lib, s.groupId)?.tracks||[]).find(x=>x.id===s.trackId)) : null;
-        url = t?.url || ''; title = t?.title || '背景音乐';
-      }
-      if (!url) { toast('请先填写音乐链接，或在歌单选一首'); return; }
-      if (!title) title = '背景音乐';
-      const s = box.__mvBgmState || {};
-      try {
-        const tmpCfg = Object.assign({}, cfg(), {
-          bgmEnabled: true, bgmTitle: title, bgmUrl: url,
-          bgmVolume: _clampNum(q('mvBgmVolume')?.value, 0, 1, 0.18),
-          bgmLoop: !!q('mvBgmLoop')?.checked,
-          bgmGroup: s.groupId || '', bgmTrack: s.trackId || '', bgmLibrary: _getBgmLibrary(),
-        });
-        const parsed = _parseDramaBgmSource(url);
-        await _setDramaBgmActive(true, tmpCfg,
-          { preview: true, sourceUrl: url, title, groupId: s.groupId || '', trackId: s.trackId || '', restart: true });
-        toast(parsed.kind === 'netease_iframe' ? '▶ 已打开贴边唱片机' : '▶ 背景音乐已开始');
-      } catch(err) {
-        toast('试听失败：' + ((err && err.message) || err || '未知错误'));
-      }
-    });
-    q('mvBgmStop')?.addEventListener('click', async () => {
-      try { await _setDramaBgmActive(false, Object.assign({}, cfg(), { bgmEnabled: false })); } catch(e) {}
-    });
+
     q('mvBgmShowDock')?.addEventListener('click', () => {
       try {
         _bgmState.closed = false;
@@ -3923,7 +3879,7 @@ async function _speakWithCfg(rawText, charName, c) {
       lsSet(LS.DRAMA_RATE, _clampNum(q('mvDramaRate')?.value, 0.7, 1.5, 1.0));
       lsSet(LS.BGM_ENABLED, !!q('mvBgmEnabled')?.checked);
       lsSet(LS.BGM_VOLUME, _clampNum(q('mvBgmVolume')?.value, 0, 1, 0.18));
-      lsSet(LS.BGM_LOOP, !!q('mvBgmLoop')?.checked);
+      // mvBgmLoop removed from modal (handled by dock mode buttons)
       lsSet(LS.BGM_PROXY, q('mvBgmProxy')?.value.trim() || '');
       const s = box.__mvBgmState || {};
       const saveLib = _getBgmLibrary();
