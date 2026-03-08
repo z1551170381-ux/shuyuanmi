@@ -835,15 +835,14 @@ ${t}
               <button type="button" class="mv-bgm-mode-btn" data-mode="sequence">顺序</button>
               <button type="button" class="mv-bgm-mode-btn" data-mode="list-loop">列表循环</button>
               <button type="button" class="mv-bgm-mode-btn" data-mode="single-loop">单曲循环</button>
+              <button type="button" class="mv-bgm-ep-skin-btn" title="设置壁纸">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="3"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+              </button>
             </div>
-            <button type="button" class="mv-bgm-ep-skin-btn">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="3"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-              </svg>
-              壁纸
-            </button>
             <div class="mv-bgm-ep-skin-row">
               <input type="text" class="mv-bgm-ep-skin-input" placeholder="图片直链 URL（jpg/png/webp）">
               <div class="mv-bgm-ep-skin-actions">
@@ -975,15 +974,14 @@ ${t}
       }
       /* skin icon button in extra panel */
       #meow-voice-bgm-dock .mv-bgm-ep-skin-btn{
-        display:flex;align-items:center;justify-content:center;gap:4px;
-        font-size:10px;color:rgba(44,57,63,.48);letter-spacing:.3px;
-        background:none;border:none;cursor:pointer;padding:3px 0;
-        width:100%;margin-bottom:6px;
-        border-top:1px solid rgba(28,24,18,.07);
-        border-bottom:1px solid rgba(28,24,18,.07);
-        transition:color .14s,background .14s;
+        display:flex;align-items:center;justify-content:center;
+        background:none;cursor:pointer;padding:4px 6px;
+        border:1px solid rgba(28,24,18,.12);border-radius:8px;
+        color:rgba(44,57,63,.52);
+        margin-left:auto;flex-shrink:0;
+        transition:color .14s,background .14s,border-color .14s;
       }
-      #meow-voice-bgm-dock .mv-bgm-ep-skin-btn:hover{color:#3a474d;background:rgba(58,71,77,.04)}
+      #meow-voice-bgm-dock .mv-bgm-ep-skin-btn:hover{color:#2a3840;background:rgba(58,71,77,.07);border-color:rgba(28,24,18,.22)}
       #meow-voice-bgm-dock .mv-bgm-ep-skin-btn svg{flex-shrink:0}
       /* skin input row */
       #meow-voice-bgm-dock .mv-bgm-ep-skin-row{
@@ -1029,15 +1027,20 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-song-list,
       #meow-voice-bgm-dock .mv-bgm-extra-panel{
         display:none;
-        padding:10px 11px 12px;
-        background:linear-gradient(180deg,rgba(240,240,237,.98),rgba(246,246,243,.97));
-        border:1px solid rgba(210,210,205,.70);
+        padding:10px 11px 14px;
+        background:linear-gradient(180deg,
+          rgba(245,245,242,.97) 0%,
+          rgba(246,246,243,.88) 55%,
+          rgba(248,248,245,.55) 82%,
+          rgba(250,250,248,.18) 100%);
+        border:1px solid rgba(210,210,205,.60);
+        border-bottom-color:rgba(210,210,205,.25);
         border-radius:14px;
-        box-shadow:0 10px 28px rgba(0,0,0,.09),0 2px 6px rgba(0,0,0,.04);
+        box-shadow:0 10px 28px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.03);
         box-sizing:border-box;
       }
-      #meow-voice-bgm-dock .mv-bgm-song-list.open,
-      #meow-voice-bgm-dock .mv-bgm-extra-panel.open{display:block}
+      #meow-voice-bgm-dock .mv-bgm-song-list.open{display:flex;flex-direction:column;max-height:160px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(58,71,77,.2) transparent}
+      #meow-voice-bgm-dock .mv-bgm-extra-panel.open{display:block;overflow-y:auto;max-height:330px}
 
       /* song items */
       #meow-voice-bgm-dock .mv-bgm-song-item{font-size:10.5px;padding:5px 8px;border-radius:7px;cursor:pointer;color:#3a4a52;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .12s;border:0;background:transparent;text-align:left;width:100%;display:block}
@@ -1051,7 +1054,7 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-ep-search-res.open{display:flex}
       #meow-voice-bgm-dock .mv-bgm-ep-res-item{font-size:10.5px;padding:5px 8px;border-radius:7px;cursor:pointer;color:#3a4a52;white-space:normal;word-break:break-all;line-height:1.4;transition:background .12s;border:0;background:rgba(255,255,255,.55);text-align:left;width:100%;display:block;margin-bottom:2px}
       #meow-voice-bgm-dock .mv-bgm-ep-res-item:hover{background:rgba(58,71,77,.12);color:#1e2e35}
-      #meow-voice-bgm-dock .mv-bgm-ep-modes{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:7px}
+      #meow-voice-bgm-dock .mv-bgm-ep-modes{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;align-items:center}
       #meow-voice-bgm-dock .mv-bgm-ep-divider{font-size:9.5px;color:rgba(58,71,77,.35);text-align:center;margin:5px 0 5px;letter-spacing:.03em}
       #meow-voice-bgm-dock .mv-bgm-ep-url-row{display:flex;flex-direction:column;gap:4px;margin-top:2px}
       #meow-voice-bgm-dock .mv-bgm-ep-url-input,
@@ -1377,6 +1380,12 @@ ${t}
           toast('✅ 已加入「' + _song.name + '」');
           if (_epRes) { _epRes.classList.remove('open'); _epRes.innerHTML = ''; }
           _renderBgmDock();
+          // 如果歌单抽屉是当前分组则立刻刷新列表（新曲立即可见）
+          if (rootNow.classList.contains('drawer-song')) {
+            const _rLib = _getBgmLibrary();
+            const _rGid = lsGet(LS.BGM_GROUP,'') || _rLib[0]?.id || '';
+            _openSongDrawer(rootNow, _rGid, _bgmTrackList(_findBgmGroup(_rLib, _rGid)), lsGet(LS.BGM_TRACK,''));
+          }
         } catch(e2) { toast('加入失败'); }
         return;
       }
@@ -1410,6 +1419,11 @@ ${t}
         if (_titleInp) _titleInp.value = '';
         toast('✅ 已加入「' + _title + '」');
         _renderBgmDock();
+        if (rootNow.classList.contains('drawer-song')) {
+          const _rLib2 = _getBgmLibrary();
+          const _rGid2 = lsGet(LS.BGM_GROUP,'') || _rLib2[0]?.id || '';
+          _openSongDrawer(rootNow, _rGid2, _bgmTrackList(_findBgmGroup(_rLib2, _rGid2)), lsGet(LS.BGM_TRACK,''));
+        }
         return;
       }
 
