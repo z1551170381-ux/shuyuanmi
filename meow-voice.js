@@ -113,6 +113,7 @@
     BGM_DOCK_COLLAPSED: 'meow_voice_bgm_dock_collapsed_v1',
     BGM_DOCK_POS: 'meow_voice_bgm_dock_pos_v1',
     BGM_MODE:     'meow_voice_bgm_mode_v1',
+    BGM_WALLPAPER:'meow_voice_bgm_wallpaper_v1',
   };
 
   const ID = {
@@ -820,6 +821,7 @@ ${t}
           </button>
         </div>
         <div class="mv-bgm-panel">
+          <div class="mv-bgm-wallpaper-layer"></div>
           <div class="mv-bgm-top-row">
             <div class="mv-bgm-meta-col">
               <div class="mv-bgm-name">背景音乐</div>
@@ -852,6 +854,24 @@ ${t}
               <button type="button" class="mv-bgm-mode-btn" data-mode="sequence">顺序</button>
               <button type="button" class="mv-bgm-mode-btn" data-mode="list-loop">列表循环</button>
               <button type="button" class="mv-bgm-mode-btn" data-mode="single-loop">单曲循环</button>
+            </div>
+            <button type="button" class="mv-bgm-ep-skin-btn">
+              <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="16" height="16" rx="3"/>
+                <path d="M2 7h16"/>
+                <circle cx="6.5" cy="4.5" r="0.8" fill="currentColor" stroke="none"/>
+                <circle cx="10" cy="4.5" r="0.8" fill="currentColor" stroke="none"/>
+                <circle cx="13.5" cy="4.5" r="0.8" fill="currentColor" stroke="none"/>
+                <path d="M6 11 Q10 8.5 14 11 Q10 13.5 6 11Z" stroke-width="1.2"/>
+              </svg>
+              壁纸
+            </button>
+            <div class="mv-bgm-ep-skin-row">
+              <input type="text" class="mv-bgm-ep-skin-input" placeholder="图片直链 URL（jpg/png/webp）">
+              <div class="mv-bgm-ep-skin-actions">
+                <button type="button" class="mv-bgm-ep-skin-clear">清除</button>
+                <button type="button" class="mv-bgm-ep-skin-apply">应用</button>
+              </div>
             </div>
             <div class="mv-bgm-ep-search-row">
               <input type="text" class="mv-bgm-ep-input" placeholder="搜索歌名 / 歌手…">
@@ -919,7 +939,7 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-panel{position:relative;padding:13px 13px 10px 58px;border-radius:22px;background:linear-gradient(160deg,rgba(255,255,255,.97),rgba(246,246,242,.92));border:1px solid rgba(212,212,206,.65);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 14px 40px rgba(0,0,0,.09),0 2px 6px rgba(0,0,0,.04);overflow:visible;transition:opacity .18s ease,max-height .18s ease,padding .18s ease;max-height:600px}
 
       /* top row */
-      #meow-voice-bgm-dock .mv-bgm-top-row{display:flex;align-items:flex-start;gap:10px;padding-top:2px}
+      #meow-voice-bgm-dock .mv-bgm-top-row{display:flex;align-items:flex-start;gap:10px;padding-top:2px;position:relative;z-index:1}
 
       /* LEFT: title + sub + lyric, vertically centered */
       #meow-voice-bgm-dock .mv-bgm-meta-col{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-start;gap:3px}
@@ -959,8 +979,56 @@ ${t}
       /* ── 滑盖：主卡片(z:2)压在独立小卡片(z:1)之上，小卡片从底部滑出 ── */
 
       /* main panel always on top */
-      #meow-voice-bgm-dock .mv-bgm-panel{position:relative;z-index:2;
+      #meow-voice-bgm-dock .mv-bgm-panel{position:relative;z-index:2;overflow:hidden;
         transition:border-bottom-left-radius .22s ease,border-bottom-right-radius .22s ease,box-shadow .22s ease}
+
+      /* wallpaper layer — sits behind content, fades top→bottom */
+      #meow-voice-bgm-dock .mv-bgm-panel .mv-bgm-wallpaper-layer{
+        position:absolute;inset:0;z-index:0;pointer-events:none;
+        background-size:cover;background-position:center top;
+        border-radius:inherit;
+        -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,.92) 0%,rgba(0,0,0,.72) 42%,rgba(0,0,0,.18) 78%,rgba(0,0,0,0) 100%);
+        mask-image:linear-gradient(to bottom,rgba(0,0,0,.92) 0%,rgba(0,0,0,.72) 42%,rgba(0,0,0,.18) 78%,rgba(0,0,0,0) 100%);
+        transition:opacity .3s ease;
+      }
+      /* when wallpaper is active, lighten the panel background slightly */
+      #meow-voice-bgm-dock .mv-bgm-panel.has-wallpaper{
+        background:linear-gradient(160deg,rgba(255,255,255,.72),rgba(246,246,242,.55));
+      }
+      /* skin icon button in extra panel */
+      #meow-voice-bgm-dock .mv-bgm-ep-skin-btn{
+        display:flex;align-items:center;gap:5px;
+        font-size:10px;color:rgba(44,57,63,.55);
+        background:none;border:none;cursor:pointer;padding:0;
+        margin-bottom:8px;
+        transition:color .14s;
+      }
+      #meow-voice-bgm-dock .mv-bgm-ep-skin-btn:hover{color:#3a474d}
+      #meow-voice-bgm-dock .mv-bgm-ep-skin-btn svg{flex-shrink:0}
+      /* skin input row */
+      #meow-voice-bgm-dock .mv-bgm-ep-skin-row{
+        display:none;flex-direction:column;gap:4px;margin-bottom:8px;
+        padding:7px 9px;border-radius:10px;
+        background:rgba(255,255,255,.55);border:1px solid rgba(210,210,205,.65);
+      }
+      #meow-voice-bgm-dock .mv-bgm-ep-skin-row.open{display:flex}
+      #meow-voice-bgm-dock .mv-bgm-ep-skin-input{
+        font-size:10.5px;padding:5px 8px;border-radius:7px;
+        border:1px solid rgba(28,24,18,.12);background:rgba(255,255,255,.9);
+        outline:none;color:#26353a;width:100%;box-sizing:border-box;
+      }
+      #meow-voice-bgm-dock .mv-bgm-ep-skin-actions{
+        display:flex;gap:4px;justify-content:flex-end;
+      }
+      #meow-voice-bgm-dock .mv-bgm-ep-skin-apply{
+        font-size:10px;padding:4px 11px;border-radius:7px;
+        background:#3a474d;color:#fff;border:none;cursor:pointer;
+      }
+      #meow-voice-bgm-dock .mv-bgm-ep-skin-clear{
+        font-size:10px;padding:4px 10px;border-radius:7px;
+        background:transparent;color:rgba(44,57,63,.5);
+        border:1px solid rgba(44,57,63,.2);cursor:pointer;
+      }
       /* when drawer open: flatten panel bottom + dim its bottom shadow slightly */
       /* panel keeps its radius - drawer is a separate card below with a gap */
 
@@ -975,7 +1043,7 @@ ${t}
         margin-bottom:-22px;  /* pull back so total height is unchanged */
       }
       #meow-voice-bgm-dock.drawer-song .mv-bgm-drawer-wrap{max-height:202px}
-      #meow-voice-bgm-dock.drawer-menu .mv-bgm-drawer-wrap{max-height:340px}
+      #meow-voice-bgm-dock.drawer-menu .mv-bgm-drawer-wrap{max-height:380px}
 
       /* inner drawer card — looks like a separate card below */
       #meow-voice-bgm-dock .mv-bgm-song-list,
@@ -1014,7 +1082,7 @@ ${t}
       #meow-voice-bgm-dock .mv-bgm-mode-btn.active{background:#3a474d;color:#fff;border-color:#3a474d}
 
       /* bottom row: progress + count */
-      #meow-voice-bgm-dock .mv-bgm-bottom-row{display:flex;align-items:center;gap:8px;margin-top:7px}
+      #meow-voice-bgm-dock .mv-bgm-bottom-row{display:flex;align-items:center;gap:8px;margin-top:7px;position:relative;z-index:1}
       #meow-voice-bgm-dock .mv-bgm-bottom-row .mv-bgm-progress{flex:1;padding:0;margin:0}
       #meow-voice-bgm-dock .mv-bgm-bottom-row .mv-bgm-progress input{width:100%;height:3px;cursor:pointer;display:block}
       #meow-voice-bgm-dock .mv-bgm-track-count{flex:none;font-size:8px;color:rgba(57,72,80,.30);white-space:nowrap}
@@ -1071,6 +1139,26 @@ ${t}
       #mv-fl-settings .mv-fl-val{font-size:10px;color:rgba(255,255,255,.5);width:18px;text-align:right;flex-shrink:0}
     `;
     if (!doc.getElementById(style.id)) (doc.head || doc.documentElement).appendChild(style);
+    // ── 壁纸辅助 ──────────────────────────────────────────────────────
+    const _applyWallpaper = (url) => {
+      const panel = doc.querySelector('#meow-voice-bgm-dock .mv-bgm-panel');
+      const layer = doc.querySelector('#meow-voice-bgm-dock .mv-bgm-wallpaper-layer');
+      if (!panel || !layer) return;
+      if (url) {
+        layer.style.backgroundImage = `url(${JSON.stringify(url)})`;
+        panel.classList.add('has-wallpaper');
+      } else {
+        layer.style.backgroundImage = '';
+        panel.classList.remove('has-wallpaper');
+      }
+      lsSet(LS.BGM_WALLPAPER, url || '');
+    };
+    // Apply saved wallpaper on init
+    const _initWallpaper = () => {
+      const saved = lsGet(LS.BGM_WALLPAPER, '');
+      if (saved) _applyWallpaper(saved);
+    };
+
     // ── 抽屉互斥辅助 ──────────────────────────────────────────
     const _closeAllDrawers = (root) => {
       root.querySelector('.mv-bgm-song-list')?.classList.remove('open');
@@ -1204,6 +1292,42 @@ ${t}
           rootNow.querySelectorAll('.mv-bgm-song-item').forEach(b => b.classList.toggle('playing', b.dataset.tid === _siTid));
           await _setDramaBgmActive(true, cfg(), { preview:true, sourceUrl:_siTrack.url, title:_siTrack.title, groupId:_siGid, trackId:_siTid, restart:true });
         }
+        return;
+      }
+
+      // 壁纸按钮 → toggle input row
+      if (btn.classList.contains('mv-bgm-ep-skin-btn')) {
+        const _sr = rootNow.querySelector('.mv-bgm-ep-skin-row');
+        if (_sr) {
+          const _open = _sr.classList.toggle('open');
+          if (_open) {
+            const saved = lsGet(LS.BGM_WALLPAPER, '');
+            const _inp = _sr.querySelector('.mv-bgm-ep-skin-input');
+            if (_inp && saved) _inp.value = saved;
+            setTimeout(() => _sr.querySelector('.mv-bgm-ep-skin-input')?.focus(), 50);
+          }
+        }
+        return;
+      }
+
+      // 壁纸应用
+      if (btn.classList.contains('mv-bgm-ep-skin-apply')) {
+        const _inp = rootNow.querySelector('.mv-bgm-ep-skin-input');
+        const _url = _inp?.value.trim() || '';
+        if (!_url) { toast('请填入图片直链'); return; }
+        _applyWallpaper(_url);
+        rootNow.querySelector('.mv-bgm-ep-skin-row')?.classList.remove('open');
+        toast('✅ 壁纸已应用');
+        return;
+      }
+
+      // 壁纸清除
+      if (btn.classList.contains('mv-bgm-ep-skin-clear')) {
+        _applyWallpaper('');
+        const _inp = rootNow.querySelector('.mv-bgm-ep-skin-input');
+        if (_inp) _inp.value = '';
+        rootNow.querySelector('.mv-bgm-ep-skin-row')?.classList.remove('open');
+        toast('壁纸已清除');
         return;
       }
 
@@ -1591,6 +1715,8 @@ ${t}
     const c = cArg || cfg();
     const root = _getBgmDock();
     if (_bgmState.closed) return;
+    // restore wallpaper (idempotent — only sets if not yet applied)
+    { const _wUrl = lsGet(LS.BGM_WALLPAPER,''); const _wL = root.querySelector('.mv-bgm-wallpaper-layer'); if (_wL && _wUrl && !root.querySelector('.mv-bgm-panel.has-wallpaper')) { _wL.style.backgroundImage='url('+JSON.stringify(_wUrl)+')'; root.querySelector('.mv-bgm-panel')?.classList.add('has-wallpaper'); } }
     const selection = _resolveBgmSelection(c, _bgmState.sourceUrl ? { sourceUrl: _bgmState.sourceUrl, title: _bgmState.title, groupId: _bgmState.groupId, trackId: _bgmState.trackId } : null) || _resolveBgmSelection(c);
     const title = String(_bgmState.title || selection?.title || c.bgmTitle || '背景音乐').trim() || '背景音乐';
     const sub = _bgmState.active
