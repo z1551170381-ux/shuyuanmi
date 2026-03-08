@@ -246,6 +246,7 @@ function phoneMakeDefaultG(){
   return {
     v: 1,
     theme: 'frost',
+    accentHex: '',      // 强调色自定义（空=跟随主题默认）
     layout: null,   // 以后存桌面布局 JSON
     settings: {
       typingEffect: true,
@@ -479,7 +480,8 @@ function ensureTuneStyle(){
     st.id = STYLE_TUNE_ID;
     st.textContent = `
 /* ===== MEOW PHONE TUNE — UI clarity + wallpaper (scoped) ===== */
-#${ID}{
+#${ID} .weatherIcon{ font-size:64px; color:var(--ph-text); display:flex; align-items:center; justify-content:center; line-height:1; }
+#${ID} .weatherIcon svg{ width:64px; height:64px; stroke:var(--ph-text); }{
   --phHomeA: .36;
   --phHomeStrongA: .46;
   --phHomeBorderA: .52;
@@ -522,23 +524,36 @@ function ensureTuneStyle(){
   --ph-wallpaper-url:     var(--phAppWallUrl);
 }
 
+/* frost 桌面：暖白半透玻璃 */
+#${ID}[data-theme="frost"][data-view="home"]{
+  --ph-glass:        rgba(255,253,250,var(--phHomeA));
+  --ph-glass-strong: rgba(255,253,250,var(--phHomeStrongA));
+  --ph-glass-border: rgba(255,255,255,var(--phHomeBorderA));
+}
+#${ID}[data-theme="frost"][data-view="app"]{
+  --ph-glass:        rgba(255,253,250,var(--phAppA));
+  --ph-glass-strong: rgba(255,253,250,var(--phAppStrongA));
+  --ph-glass-border: rgba(255,255,255,var(--phAppBorderA));
+}
+
 /* modern 壁纸：纯黑 */
 #${ID} .phWallpaper{
   background-image: var(--ph-wallpaper-url, none), none;
   background-size: cover, auto;
   background-position: center, center;
-  background-color: #0a0a0a;
+  background-color: var(--ph-wallpaper-base, #0a0a0a);
   opacity: var(--ph-wallpaper-opacity, 1);
 }
-/* frost 壁纸：柔和米白光晕 */
+/* frost 壁纸：奶白暖光晕（对标 Nube 参考图） */
 #${ID}[data-theme="frost"] .phWallpaper{
-  background-color: #f5f5f7;
+  background-color: #f5f2ee;
   background-image:
     var(--ph-wallpaper-url, none),
-    radial-gradient(ellipse 800px 600px at 35% 20%, rgba(255,255,255,.90), transparent),
-    radial-gradient(ellipse 600px 560px at 70% 65%, rgba(200,215,255,.25), transparent);
-  background-size: cover, auto, auto;
-  background-position: center, 35% 20%, 70% 65%;
+    radial-gradient(ellipse 900px 700px at 30% 15%, rgba(255,252,246,.95), transparent),
+    radial-gradient(ellipse 700px 600px at 75% 60%, rgba(232,222,208,.35), transparent),
+    radial-gradient(ellipse 600px 500px at 50% 90%, rgba(215,208,198,.20), transparent);
+  background-size: cover, auto, auto, auto;
+  background-position: center, 30% 15%, 75% 60%, 50% 90%;
 }
 
 /* APP 内容底：跟随各主题变量 */
@@ -562,6 +577,7 @@ function ensureTuneStyle(){
 #${ID} .wxTabbar{
   background: var(--ph-tabbar-bg, rgba(10,10,10,.94));
   border-top: 1px solid var(--ph-tabbar-border, rgba(255,255,255,.07));
+  box-shadow: 0 -4px 20px rgba(0,0,0,.08), 0 1px 0 rgba(255,255,255,.55) inset;
 }
 #${ID} .wxTabBtn{ color: var(--ph-tabbar-off, rgba(255,255,255,.35)); }
 #${ID} .wxTabBtn.on{ color: var(--ph-tabbar-on, rgba(255,255,255,.95)); background: transparent; }
@@ -570,6 +586,7 @@ function ensureTuneStyle(){
 #${ID} .wxTopBar{
   background: var(--ph-topbar-bg, rgba(10,10,10,.95));
   border-bottom: 1px solid var(--ph-topbar-border, rgba(255,255,255,.07));
+  box-shadow: 0 4px 16px rgba(0,0,0,.06), 0 -1px 0 rgba(255,255,255,.50) inset;
 }
 #${ID} .wxTopBar .wxTopTitle{ color: var(--ph-topbar-title, rgba(255,255,255,.92)); }
 #${ID} .wxTopBar .wxTopBtn{ color: var(--ph-topbar-btn, rgba(255,255,255,.50)); }
@@ -663,7 +680,7 @@ function ensureTuneStyle(){
 #${ID} .wxPlusPopup{ background: var(--ph-plus-popup-bg, rgba(28,28,28,.97)); }
 
 /* 确认对话框 全主题化 */
-#${ID} .wxConfirmBox{ background: var(--ph-confirm-bg, rgba(22,22,22,.99)); }
+#${ID} .wxConfirmBox{ background: var(--ph-confirm-bg, rgba(22,22,22,.99)); box-shadow: 0 1px 0 rgba(255,255,255,.75) inset, 0 16px 48px rgba(0,0,0,.18); border-radius: 16px; }
 #${ID} .wxConfirmBox .wxCMsg{ color: var(--ph-confirm-text); }
 #${ID} .wxConfirmBox .wxCBtns{ border-top-color: var(--ph-confirm-sep); }
 #${ID} .wxConfirmBox .wxCBtn:first-child{ border-right-color: var(--ph-confirm-sep); color: var(--ph-confirm-cancel); }
@@ -710,342 +727,6 @@ function ensureTuneStyle(){
 #${ID} .phDockBtn svg.phIco{ filter: drop-shadow(0 1px 2px var(--ph-ico-shadow)); }
 /* 发现/我 页图标底色 */
 #${ID} .wxDIcoThemed svg.phIco{ fill: var(--ph-ico-list, rgba(255,255,255,.90)) !important; }
-
-/* ===== 2026 UI polish · css only ===== */
-#${ID}{
-  --ph-shell-border: rgba(255,255,255,.26);
-  --ph-shell-shadow: 0 26px 70px rgba(16,22,36,.18), 0 10px 24px rgba(16,22,36,.08);
-  --ph-status-fg: var(--ph-text);
-  --ph-status-shadow: none;
-  --ph-home-label: var(--ph-text-sub);
-  --ph-card-soft: var(--ph-glass);
-  --ph-card-strong: var(--ph-glass-strong);
-  --ph-card-line: var(--ph-glass-border);
-  --ph-app-icon-bg: var(--ph-glass-strong);
-  --ph-app-icon-border: var(--ph-glass-border);
-  --ph-app-icon-fg: var(--ph-text);
-  --ph-app-icon-shadow: 0 10px 24px rgba(16,22,36,.10);
-  --ph-dock-surface: var(--ph-glass);
-  --ph-dock-line: var(--ph-glass-border);
-}
-#${ID}[data-theme="frost"]{
-  --ph-shell-border: rgba(255,255,255,.58);
-  --ph-shell-shadow: 0 28px 72px rgba(118,130,155,.18), 0 10px 24px rgba(118,130,155,.09);
-  --ph-status-fg: rgba(32,40,53,.86);
-  --ph-status-shadow: 0 1px 0 rgba(255,255,255,.45);
-  --ph-home-label: rgba(38,45,58,.72);
-  --ph-card-soft: rgba(255,255,255,.48);
-  --ph-card-strong: rgba(255,255,255,.68);
-  --ph-card-line: rgba(255,255,255,.74);
-  --ph-app-icon-bg: linear-gradient(180deg, rgba(255,255,255,.82), rgba(244,247,251,.58));
-  --ph-app-icon-border: rgba(255,255,255,.86);
-  --ph-app-icon-fg: rgba(40,47,60,.82);
-  --ph-app-icon-shadow: 0 14px 30px rgba(112,126,152,.14);
-  --ph-dock-surface: rgba(255,255,255,.32);
-  --ph-dock-line: rgba(255,255,255,.52);
-  --ph-accent: var(--ph-icon-tint, #8DA8B8);
-  --ph-accent2: #C8D4DD;
-  --ph-accent-grad: linear-gradient(135deg, var(--ph-icon-tint, #8DA8B8), #C8D4DD);
-}
-#${ID}[data-theme="modern"]{
-  --ph-shell-border: rgba(255,255,255,.08);
-  --ph-shell-shadow: 0 28px 78px rgba(0,0,0,.44), 0 8px 18px rgba(0,0,0,.24);
-  --ph-status-fg: rgba(255,255,255,.94);
-  --ph-status-shadow: 0 1px 2px rgba(0,0,0,.28);
-  --ph-home-label: rgba(255,255,255,.68);
-  --ph-card-soft: rgba(255,255,255,.05);
-  --ph-card-strong: rgba(255,255,255,.08);
-  --ph-card-line: rgba(255,255,255,.10);
-  --ph-app-icon-bg: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
-  --ph-app-icon-border: rgba(255,255,255,.10);
-  --ph-app-icon-fg: rgba(255,255,255,.92);
-  --ph-app-icon-shadow: 0 14px 28px rgba(0,0,0,.22);
-  --ph-dock-surface: rgba(255,255,255,.035);
-  --ph-dock-line: rgba(255,255,255,.08);
-}
-#${ID}[data-theme="medieval"]{
-  --ph-status-fg: rgba(255,238,210,.92);
-  --ph-home-label: rgba(255,224,190,.72);
-}
-#${ID}[data-theme="cyber"]{
-  --ph-status-fg: rgba(200,255,230,.94);
-  --ph-home-label: rgba(160,232,204,.74);
-}
-#${ID}[data-theme="sakura"]{
-  --ph-status-fg: rgba(255,233,242,.94);
-  --ph-home-label: rgba(255,210,226,.72);
-}
-
-#${ID} .phShell{
-  border: 1px solid var(--ph-shell-border);
-  box-shadow: var(--ph-shell-shadow);
-}
-#${ID}[data-theme="frost"] .phShell{
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.04)),
-    var(--ph-bg-primary);
-}
-#${ID} .phWallpaper{
-  filter: saturate(.92) contrast(1.02);
-}
-#${ID}[data-theme="frost"] .phWallpaper{
-  filter: saturate(.88) brightness(1.01);
-}
-
-#${ID} .phStatus,
-#${ID} .phAppBar,
-#${ID} .wxTopBar{
-  padding-left: 16px;
-  padding-right: 16px;
-}
-#${ID} .phTime{
-  color: var(--ph-status-fg);
-  text-shadow: var(--ph-status-shadow);
-}
-#${ID} .iosSignal i,
-#${ID} .iosWifi span,
-#${ID} .iosBattery .bat::after{
-  background: var(--ph-status-fg);
-}
-#${ID} .iosWifi::before,
-#${ID} .iosWifi::after{
-  border-top-color: var(--ph-status-fg);
-}
-#${ID} .iosBattery .bat{
-  border-color: var(--ph-status-fg);
-}
-#${ID} .iosBattery .pct,
-#${ID} .phSysBtn,
-#${ID} .phNavBtn,
-#${ID} .phAppBarSpacer .phBarRBtn{
-  color: var(--ph-status-fg);
-}
-#${ID} .phSysBtn{
-  background: rgba(255,255,255,.12);
-  border-color: rgba(255,255,255,.14);
-}
-#${ID}[data-theme="frost"] .phSysBtn{
-  background: rgba(255,255,255,.46);
-  border-color: rgba(255,255,255,.62);
-}
-
-#${ID} .phPages{ bottom: 132px; }
-#${ID} .phPage{ padding: 12px 16px; }
-#${ID} .phGrid{ gap: 12px; }
-
-#${ID} .pw,
-#${ID} .phCard,
-#${ID} .wxSearchBox,
-#${ID} .wxChatRow,
-#${ID} .wxDiscoverItem,
-#${ID} .wxContactHeader,
-#${ID} .wxContactItem,
-#${ID} .wxMeProfile,
-#${ID} .forumCard,
-#${ID} .forumComposeInner,
-#${ID} .forumComposeHeader,
-#${ID} .forumComposeTitleInput,
-#${ID} .forumComposeTextArea{
-  background: var(--ph-card-soft) !important;
-  border: 1px solid var(--ph-card-line) !important;
-  box-shadow: 0 10px 28px rgba(16,22,36,.06);
-  backdrop-filter: blur(var(--ph-glass-blur));
-  -webkit-backdrop-filter: blur(var(--ph-glass-blur));
-}
-#${ID} .phCard,
-#${ID} .pw{
-  box-shadow: 0 12px 28px rgba(16,22,36,.07);
-}
-#${ID} .wxChatRow,
-#${ID} .wxDiscoverItem,
-#${ID} .wxContactHeader,
-#${ID} .wxContactItem,
-#${ID} .wxMeProfile{
-  margin: 0 10px 8px;
-  border-radius: 22px;
-  border-bottom: none !important;
-}
-#${ID} .wxSearchRow{ padding: 8px 12px 10px; }
-#${ID} .wxSearchBox{
-  justify-content: flex-start;
-  padding: 0 12px;
-  border-radius: 16px;
-  min-height: 40px;
-}
-#${ID} .wxChatList,
-#${ID} .wxDiscoverList,
-#${ID} .wxContactList,
-#${ID} .wxMeWrap{ padding-top: 6px; padding-bottom: 12px; }
-
-#${ID}[data-view="app"] .phAppBar,
-#${ID} .wxTopBar,
-#${ID} .wxTabbar,
-#${ID} .phDock{
-  backdrop-filter: blur(calc(var(--ph-glass-blur) + 4px));
-  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) + 4px));
-}
-#${ID}[data-view="app"] .phAppBar{
-  background: color-mix(in srgb, var(--ph-appbar-bg) 82%, transparent) !important;
-  border-bottom: 1px solid var(--ph-sep) !important;
-}
-#${ID}[data-view="app"] .phAppBody{
-  background: color-mix(in srgb, var(--ph-appbody-bg) 92%, transparent) !important;
-}
-#${ID} .wxTopBar{
-  background: color-mix(in srgb, var(--ph-topbar-bg) 86%, transparent) !important;
-}
-#${ID} .wxTabbar{
-  background: color-mix(in srgb, var(--ph-tabbar-bg) 84%, transparent) !important;
-  border-top: 1px solid var(--ph-tabbar-border) !important;
-}
-#${ID} .wxTabBtn{ min-height: 50px; }
-#${ID} .wxTabBtn .txt{ font-size: 10.5px; font-weight: 600; letter-spacing: .02em; }
-#${ID} .wxTabBtn.on{ color: var(--ph-tabbar-on) !important; }
-#${ID}[data-theme="frost"] .wxTabBtn.on{ text-shadow: 0 0 14px rgba(110,136,200,.18); }
-
-#${ID} .phAppIcon,
-#${ID} .phDockBtn{
-  background: transparent;
-}
-#${ID} .phAppIcon{
-  gap: 6px;
-  padding: 8px 0 10px;
-  align-content: center;
-}
-#${ID} .phAppIcon .ai,
-#${ID} .phDockBtn .di,
-#${ID} .wxDIco,
-#${ID} .wxCHIco,
-#${ID} .forumComposeTabIcon,
-#${ID} .settingRow .sIcon{
-  background: var(--ph-app-icon-bg) !important;
-  border: 1px solid var(--ph-app-icon-border);
-  color: var(--ph-app-icon-fg);
-  box-shadow: var(--ph-app-icon-shadow);
-  backdrop-filter: blur(calc(var(--ph-glass-blur) * .7));
-  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) * .7));
-}
-#${ID} .wxDIco,
-#${ID} .wxCHIco,
-#${ID} .forumComposeTabIcon,
-#${ID} .settingRow .sIcon{
-  background: var(--ph-icon-tint, var(--ph-app-icon-bg)) !important;
-  color: var(--ph-icon-inner-tint, var(--ph-app-icon-fg)) !important;
-}
-#${ID} .phAppIcon .ai{
-  width: 52px;
-  height: 52px;
-  border-radius: 18px;
-}
-#${ID} .phDockBtn .di{
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
-}
-#${ID} .wxDIco,
-#${ID} .wxCHIco,
-#${ID} .settingRow .sIcon{
-  width: 34px;
-  height: 34px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-#${ID} .forumComposeTabIcon{
-  border-radius: 14px;
-}
-#${ID} .phAppIcon .ai svg.phIco,
-#${ID} .phDockBtn .di svg.phIco,
-#${ID} .wxDIco svg.phIco,
-#${ID} .wxCHIco svg.phIco,
-#${ID} .settingRow .sIcon svg.phIco,
-#${ID} .forumComposeTabIcon svg,
-#${ID} .wxDIcoThemed svg.phIco{
-  fill: currentColor !important;
-}
-#${ID} .phAppIcon .at,
-#${ID} .phDockBtn .dt{
-  color: var(--ph-home-label) !important;
-  font-weight: 600;
-  letter-spacing: .02em;
-}
-#${ID} .phAppIcon .at{ font-size: 10.5px; max-width: 92%; }
-#${ID} .phDockBtn .dt{ font-size: 9.5px; }
-
-#${ID} .phDock{
-  left: 16px;
-  right: 16px;
-  bottom: 14px;
-  height: 64px;
-  border-radius: 30px;
-  background: var(--ph-dock-surface);
-  border: 1px solid var(--ph-dock-line);
-  box-shadow: 0 14px 34px rgba(16,22,36,.10);
-}
-#${ID} .phDockBtn{
-  width: 58px;
-  height: 48px;
-  border-radius: 18px;
-}
-#${ID} .phDockBtn:hover{ background: rgba(255,255,255,.10); }
-#${ID}[data-theme="frost"] .phDockBtn:hover{ background: rgba(255,255,255,.26); }
-
-#${ID} .phAppTitleMain{
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -.01em;
-}
-#${ID} .phAppSubTitle{
-  color: var(--ph-text-sub);
-}
-#${ID} .phNavBtn,
-#${ID} .phBarRBtn{
-  border-radius: 14px;
-}
-
-#${ID} .wxChatDetailWrap,
-#${ID} .wxChatMsgs,
-#${ID} .wxChatInputBar,
-#${ID} .wxStickerPanel,
-#${ID} .wxVoicePanel,
-#${ID} .wxChatPlusGrid{
-  background: color-mix(in srgb, var(--ph-wechat-bg) 96%, transparent) !important;
-}
-#${ID} .wxChatInputBar textarea,
-#${ID} .phModalTa,
-#${ID} .sTimeInput,
-#${ID} .forumComposeTitleInput,
-#${ID} .forumComposeTextArea,
-#${ID} .wxEditMsgBox textarea{
-  background: color-mix(in srgb, var(--ph-input-bg) 94%, transparent) !important;
-  color: var(--ph-input-text) !important;
-  border: 1px solid var(--ph-input-border) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
-}
-#${ID} .wxChatBubble.them .wxCBContent{
-  box-shadow: 0 8px 18px rgba(16,22,36,.05);
-}
-#${ID}[data-theme="frost"] .wxChatBubble.them .wxCBContent,
-#${ID}[data-theme="frost"] .wxChatBubble.me .wxCBContent{
-  border-radius: 18px;
-}
-
-#${ID} .settingRow{
-  min-height: 58px;
-  border-radius: 18px;
-  background: var(--ph-card-soft);
-  border: 1px solid var(--ph-card-line);
-  padding: 12px 14px;
-  margin-bottom: 8px;
-}
-#${ID} .settingRow .sLabel{ font-weight: 600; }
-#${ID} .settingRow .sValue{ color: var(--ph-text-sub); }
-
-#${ID}.mini{
-  box-shadow: var(--ph-shell-shadow);
-}
-
     `;
     (doc.head || doc.documentElement).appendChild(st);
   }catch(e){}
@@ -1114,6 +795,8 @@ function phoneApplyVisualFromSettings(cfg){
     } else {
       root.style.removeProperty('--ph-icon-inner-tint');
     }
+    // ✅ 强调色覆盖：用户自定义强调色（覆盖主题默认 --ph-accent*）
+    _applyAccentColor(cfg);
   }catch(e){}
 }
 
@@ -1351,65 +1034,69 @@ default: return emoji||'';
   --ph-searchbox-text: rgba(255,255,255,.40);
 }
 
-/* ── frost：米白玻璃拟态（默认视觉主题） ── */
+/* ── frost：奶白暖调玻璃拟态（默认视觉主题） ── */
 #${ID}[data-theme="frost"]{
-  --ph-bg-primary: linear-gradient(145deg,#fafafa 0%,#f5f5f7 55%,#eff0f3 100%);
-  --ph-glass: rgba(255,255,255,.62);
-  --ph-glass-strong: rgba(255,255,255,.80);
-  --ph-glass-border: rgba(255,255,255,.82);
-  --ph-glass-blur: 24px;
-  --ph-text: rgba(20,20,24,.90);
-  --ph-text-sub: rgba(20,20,24,.52);
-  --ph-text-dim: rgba(20,20,24,.30);
-  --ph-accent: #4f7cee;
-  --ph-accent2: #7c9ff0;
-  --ph-accent-grad: linear-gradient(135deg,#4f7cee,#7c9ff0);
-  --ph-shadow: rgba(80,100,160,.10);
-  --ph-sep: rgba(0,0,0,.055);
-  --ph-row-bg: rgba(255,255,255,.72);
-  --ph-row-hover: rgba(255,255,255,.92);
-  --ph-input-bg: rgba(255,255,255,.85);
-  --ph-input-border: rgba(0,0,0,.10);
-  --ph-send-btn: #4f7cee;
+  /* 底色：不透明（透出壁纸靠玻璃面板，phShell 本身不透明防止透出网页） */
+  --ph-bg-primary: linear-gradient(160deg,#f9f7f4 0%,#f5f2ee 55%,#ede9e4 100%);
+  --ph-glass: rgba(255,253,250,.52);
+  --ph-glass-strong: rgba(255,253,250,.72);
+  --ph-glass-border: rgba(255,255,255,.72);
+  --ph-glass-blur: 32px;
+  --ph-text: rgba(28,22,16,.90);
+  --ph-text-sub: rgba(28,22,16,.52);
+  --ph-text-dim: rgba(28,22,16,.30);
+  /* 强调色：莫兰迪鼠尾草绿（可被 accentHex 覆盖） */
+  --ph-accent: #7d9b8a;
+  --ph-accent2: #a3bab0;
+  --ph-accent-grad: linear-gradient(135deg,#7d9b8a,#a3bab0);
+  --ph-shadow: rgba(60,44,28,.08);
+  --ph-shadow-up: rgba(255,255,255,.85);
+  --ph-sep: rgba(28,22,16,.048);
+  --ph-row-bg: rgba(255,253,250,.58);
+  --ph-row-hover: rgba(255,253,250,.80);
+  --ph-input-bg: rgba(255,253,250,.80);
+  --ph-input-border: rgba(28,22,16,.09);
+  --ph-send-btn: #7d9b8a;
   --ph-send-icon: #fff;
-  --ph-chat-me-bubble: linear-gradient(135deg,#4f7cee,#7c9ff0);
+  --ph-chat-me-bubble: linear-gradient(135deg,#7d9b8a,#a3bab0);
   --ph-chat-me-text: #fff;
-  --ph-chat-them-bubble: rgba(255,255,255,.88);
-  --ph-chat-them-text: rgba(20,20,24,.88);
-  --ph-tabbar-bg: rgba(252,252,255,.90);
-  --ph-tabbar-border: rgba(0,0,0,.06);
-  --ph-tabbar-on: #4f7cee;
-  --ph-tabbar-off: rgba(20,20,24,.38);
-  --ph-appbar-bg: rgba(248,249,252,.94);
-  --ph-appbody-bg: rgba(244,245,250,.97);
-  --ph-topbar-bg: rgba(252,252,255,.94);
-  --ph-topbar-border: rgba(0,0,0,.055);
-  --ph-topbar-title: rgba(20,20,24,.90);
-  --ph-topbar-btn: rgba(20,20,24,.45);
-  --ph-sticker-bg: rgba(246,247,250,.97);
-  --ph-input-area-bg: rgba(248,249,252,.96);
-  --ph-input-text: rgba(20,20,24,.88);
-  --ph-input-ph: rgba(20,20,24,.28);
-  --ph-wechat-me-bubble: linear-gradient(135deg,#4f7cee,#7c9ff0);
+  --ph-chat-them-bubble: rgba(255,253,250,.92);
+  --ph-chat-them-text: rgba(28,22,16,.88);
+  --ph-tabbar-bg: rgba(250,248,244,.75);
+  --ph-tabbar-border: rgba(255,255,255,.65);
+  --ph-tabbar-on: #7d9b8a;
+  --ph-tabbar-off: rgba(28,22,16,.36);
+  --ph-appbar-bg: rgba(249,247,243,.78);
+  --ph-appbody-bg: rgba(246,243,239,.82);
+  --ph-topbar-bg: rgba(250,248,244,.80);
+  --ph-topbar-border: rgba(255,255,255,.60);
+  --ph-topbar-title: rgba(28,22,16,.88);
+  --ph-topbar-btn: rgba(28,22,16,.44);
+  --ph-sticker-bg: rgba(246,243,239,.80);
+  --ph-input-area-bg: rgba(249,247,243,.80);
+  --ph-input-text: rgba(28,22,16,.88);
+  --ph-input-ph: rgba(28,22,16,.28);
+  --ph-wechat-me-bubble: linear-gradient(135deg,#7d9b8a,#a3bab0);
   --ph-wechat-me-text: #fff;
-  --ph-wechat-them-bubble: rgba(255,255,255,.92);
-  --ph-wechat-them-text: rgba(20,20,24,.88);
-  --ph-wechat-bg: rgba(234,236,242,.88);
-  --ph-plus-popup-bg: rgba(55,55,68,.92);
-  --ph-modal-bg: rgba(255,255,255,.98);
-  --ph-modal-text: rgba(20,20,24,.88);
-  --ph-confirm-bg: #fff;
-  --ph-confirm-text: rgba(20,20,24,.88);
-  --ph-confirm-sep: rgba(0,0,0,.07);
-  --ph-confirm-cancel: rgba(20,20,24,.45);
-  --ph-confirm-danger: #ef4444;
-  --ph-ico-list: rgba(255,255,255,.96);
-  --ph-discover-bg: rgba(255,255,255,.72);
-  --ph-discover-border: rgba(0,0,0,.045);
-  --ph-discover-name: rgba(20,20,24,.88);
-  --ph-discover-arrow: rgba(0,0,0,.20);
-  --ph-searchbox-bg: rgba(255,255,255,.60);
-  --ph-searchbox-text: rgba(20,20,24,.45);
+  --ph-wechat-them-bubble: rgba(255,253,250,.92);
+  --ph-wechat-them-text: rgba(28,22,16,.88);
+  --ph-wechat-bg: rgba(232,228,222,.62);
+  --ph-plus-popup-bg: rgba(52,46,38,.90);
+  --ph-modal-bg: rgba(254,252,249,.96);
+  --ph-modal-text: rgba(28,22,16,.88);
+  --ph-confirm-bg: rgba(254,252,249,.98);
+  --ph-confirm-text: rgba(28,22,16,.88);
+  --ph-confirm-sep: rgba(28,22,16,.07);
+  --ph-confirm-cancel: rgba(28,22,16,.44);
+  --ph-confirm-danger: #c0392b;
+  --ph-wallpaper-base: #f0ece6;   /* 无壁纸时的暖白底 */
+  --ph-ico-list: rgba(255,253,250,.95);
+  --ph-discover-bg: rgba(255,253,250,.72);
+  --ph-discover-border: rgba(28,22,16,.048);
+  --ph-discover-name: rgba(28,22,16,.86);
+  --ph-discover-arrow: rgba(28,22,16,.20);
+  --ph-searchbox-bg: rgba(255,253,250,.65);
+  --ph-searchbox-text: rgba(28,22,16,.42);
 }
 
 /* ── medieval：深棕皮革 ── */
@@ -1831,7 +1518,7 @@ default: return emoji||'';
 
 /* Profile Card (glass) */
 #${ID} .pwProfile{
-  background:linear-gradient(135deg, rgba(99,102,241,.15), rgba(139,92,246,.1));
+  background:linear-gradient(135deg, rgba(var(--ph-accent-rgb,125,155,138),.10), rgba(139,92,246,.1));
   backdrop-filter:blur(var(--ph-glass-blur)); -webkit-backdrop-filter:blur(var(--ph-glass-blur));
 }
 #${ID} .pwProfile .pwAvatar{
@@ -2138,7 +1825,11 @@ default: return emoji||'';
   backdrop-filter:blur(var(--ph-glass-blur)); -webkit-backdrop-filter:blur(var(--ph-glass-blur));
   border:1px solid var(--ph-glass-border);
   padding:14px; color:var(--ph-text-sub); font-size:13px; line-height:1.5;
-  box-shadow:0 4px 16px var(--ph-shadow);
+  box-shadow:
+    0 1px 0 0 rgba(255,255,255,.70) inset,   /* 顶边高光 */
+    0 -1px 0 0 rgba(0,0,0,.04) inset,         /* 底边轻压 */
+    0 4px 16px var(--ph-shadow),
+    0 1px 3px rgba(0,0,0,.05);
 }
 
 /* ---------- Chat (WeChat-like) ---------- */
@@ -2355,7 +2046,7 @@ default: return emoji||'';
   width:36px; height:36px; border-radius:50%; flex-shrink:0;
   background:var(--ph-accent-grad);
   color:#fff; font-size:16px; display:flex; align-items:center; justify-content:center;
-  transition:transform .1s; box-shadow:0 2px 8px rgba(99,102,241,.3);
+  transition:transform .1s; box-shadow:0 2px 6px var(--ph-shadow);
 }
 #${ID} .chatSendBtn:active{ transform:scale(.92); }
 
@@ -2508,30 +2199,7 @@ default: return emoji||'';
   display:flex; align-items:center; justify-content:center;
   font-size:16px; color:#fff;
 }
-#${ID} .wxContactHeader .wxCHIco svg.phIco{ width:18px; height:18px; fill:currentColor !important; }
-#${ID}[data-theme="frost"] .wxContactHeader,
-#${ID}[data-theme="frost"] .wxContactItem,
-#${ID}[data-theme="frost"] .wxGroupHeader{
-  background: rgba(255,255,255,.54);
-}
-#${ID}[data-theme="frost"] .forumInnerTabBtn.on,
-#${ID}[data-theme="frost"] .forumDetailTag,
-#${ID}[data-theme="frost"] .forumComposeTagChip.selected,
-#${ID}[data-theme="frost"] .forumComposeImgChip.selected,
-#${ID}[data-theme="frost"] .weatherIcon{
-  color: var(--ph-accent) !important;
-}
-#${ID}[data-theme="frost"] .forumPostBtn,
-#${ID}[data-theme="frost"] .forumComposeSubmitBtn,
-#${ID}[data-theme="frost"] .forumDMChatSend{
-  background: var(--ph-accent-grad) !important;
-  box-shadow: 0 8px 18px rgba(141,168,184,.18);
-}
-#${ID}[data-theme="frost"] .forumInnerTabBtn.on::after,
-#${ID}[data-theme="frost"] .forumMeSubTab.on::after,
-#${ID}[data-theme="frost"] .forumTab.on::after{
-  background: var(--ph-accent-grad) !important;
-}
+#${ID} .wxContactHeader .wxCHIco svg.phIco{ width:18px; height:18px; fill:#fff !important; }
 #${ID} .wxContactHeader .wxCHName{ flex:1; font-size:14.5px; color:rgba(20,24,28,.88); }
 #${ID} .wxContactHeader .wxCHBadge{
   background:rgba(0,0,0,.06); border-radius:10px;
@@ -3067,7 +2735,7 @@ default: return emoji||'';
   content:''; position:absolute; bottom:0; left:30%; right:30%; height:2px;
   border-radius:1px; background:var(--ph-accent-grad);
 }
-#${ID} .feedItem{ padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.04); }
+#${ID} .feedItem{ padding:12px 14px; border-bottom:1px solid var(--ph-sep); background:var(--ph-glass); }
 #${ID} .feedItem .feedHead{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
 #${ID} .feedItem .feedAvatar{
   width:38px; height:38px; border-radius:50%;
@@ -3150,7 +2818,8 @@ default: return emoji||'';
   padding:10px 14px; border-bottom:1px solid rgba(255,255,255,.04);
 }
 #${ID} .forecastRow .fDay{ color:var(--ph-text-sub); width:50px; font-size:13px; }
-#${ID} .forecastRow .fIcon{ font-size:20px; width:30px; text-align:center; }
+#${ID} .forecastRow .fIcon{ font-size:20px; width:30px; text-align:center; display:flex; align-items:center; justify-content:center; }
+#${ID} .fIcon svg{ width:20px; height:20px; stroke:currentColor; fill:none; }
 #${ID} .forecastRow .fRange{ display:flex; align-items:center; gap:8px; }
 #${ID} .forecastRow .fLow{ color:var(--ph-text-dim); font-size:13px; width:30px; text-align:right; }
 #${ID} .forecastRow .fHigh{ color:var(--ph-text); font-size:13px; width:30px; }
@@ -3189,7 +2858,8 @@ default: return emoji||'';
 }
 #${ID} .settingRow{
   display:flex; align-items:center; justify-content:space-between;
-  padding:13px 16px; border-bottom:1px solid rgba(255,255,255,.04);
+  padding:13px 16px; border-bottom:1px solid var(--ph-sep);
+  box-shadow: 0 1px 0 var(--ph-sep) inset;
 }
 #${ID} .settingRow .sIcon{ font-size:18px; margin-right:10px; flex-shrink:0; }
 #${ID} .settingRow .sLabel{ color:var(--ph-text); font-size:14px; flex:1; }
@@ -3201,7 +2871,7 @@ default: return emoji||'';
   position:relative; transition:background .2s; flex-shrink:0;
 }
 #${ID} .settingRow .sToggle.on,
-#${ID} .sToggle.on{ background:rgba(99,102,241,.6); }
+#${ID} .sToggle.on{ background:var(--ph-accent, rgba(99,102,241,.6)); }
 #${ID} .settingRow .sToggle::after,
 #${ID} .sToggle::after{
   content:''; position:absolute; top:3px; left:3px;
@@ -3304,7 +2974,7 @@ default: return emoji||'';
   appearance:none; border:0; cursor:pointer; z-index:50;
   padding:6px 18px; border-radius:16px;
   background:var(--ph-accent-grad); color:#fff; font-size:13px; font-weight:600;
-  box-shadow:0 2px 8px rgba(99,102,241,.3);
+  box-shadow:0 2px 6px var(--ph-shadow);
 }
 #${ID} .editShake .editDoneBtn{ display:block; }
 #${ID} .editDraggingSrc{ opacity:.18 !important; }
@@ -3498,7 +3168,7 @@ default: return emoji||'';
   background:var(--ph-glass); color:var(--ph-text-sub); font-size:13px; transition:all .15s; flex:1; min-width:70px;
 }
 #${ID} .sOptionBtn.active{
-  border-color:var(--ph-accent); color:var(--ph-text); background:rgba(99,102,241,.15);
+  border-color:var(--ph-accent); color:var(--ph-text); background:rgba(var(--ph-accent-rgb,125,155,138),.10);
   box-shadow:0 0 8px rgba(99,102,241,.2);
 }
 #${ID} .sTimeInput{
@@ -3537,7 +3207,7 @@ default: return emoji||'';
 #${ID} .npcProfileActions{ display:flex; gap:10px; justify-content:center; margin-top:12px; padding-bottom:4px; }
 #${ID} .npcFollowBtn{
   appearance:none; border:0; cursor:pointer; border-radius:16px; padding:7px 22px; font-size:13px; font-weight:600;
-  background:var(--ph-accent-grad); color:#fff; box-shadow:0 2px 8px rgba(99,102,241,.3); transition:all .12s;
+  background:var(--ph-accent-grad); color:#fff; box-shadow:0 2px 6px var(--ph-shadow); transition:all .12s;
 }
 #${ID} .npcFollowBtn.following{
   background:var(--ph-glass-strong); color:var(--ph-text-sub); box-shadow:none; border:1px solid var(--ph-glass-border);
@@ -3566,7 +3236,7 @@ default: return emoji||'';
 #${ID} .forumComposeBtns button{
   appearance:none; border:0; cursor:pointer; border-radius:14px; padding:8px 18px; font-size:13px; font-weight:600; transition:all .12s;
 }
-#${ID} .forumPostBtn{ background:var(--ph-accent-grad); color:#fff; box-shadow:0 2px 6px rgba(99,102,241,.3); }
+#${ID} .forumPostBtn{ background:var(--ph-accent-grad); color:#fff; box-shadow:0 2px 6px var(--ph-shadow); }
 #${ID} .forumCancelBtn{ background:var(--ph-glass-strong); color:var(--ph-text-sub); }
 
 /* ---------- Forum Inner Tab Bar（小红书底部导航） ---------- */
@@ -3582,22 +3252,24 @@ default: return emoji||'';
 #${ID} .forumInnerTabBar{
   position:absolute; bottom:0; left:0; right:0; height:56px;
   display:flex; z-index:20;
-  background:rgba(12,18,36,.92);
-  border-top:1px solid rgba(255,255,255,.08);
-  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  /* ✅ 和微信 tabbar 统一：使用主题变量 */
+  background: var(--ph-tabbar-bg, rgba(10,10,10,.94));
+  border-top: 1px solid var(--ph-tabbar-border, rgba(255,255,255,.07));
+  backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+  box-shadow: 0 -4px 20px rgba(0,0,0,.08), 0 1px 0 rgba(255,255,255,.55) inset;
 }
 #${ID} .forumInnerTabBtn{
   flex:1; appearance:none; border:0; background:transparent; cursor:pointer;
   padding:7px 0 10px; display:flex; flex-direction:column; align-items:center; gap:2px;
-  color:var(--ph-text-dim); font-size:10px; font-weight:500; transition:color .12s;
+  color:var(--ph-tabbar-off, rgba(255,255,255,.35)); font-size:10px; font-weight:500; transition:color .12s;
 }
-#${ID} .forumInnerTabBtn.on{ color:var(--ph-accent,#6366f1); }
+#${ID} .forumInnerTabBtn.on{ color:var(--ph-tabbar-on, rgba(255,255,255,.95)); }
 #${ID} .forumInnerTabBtn svg{ width:22px; height:22px; fill:currentColor; }
 #${ID} .forumComposeTabIcon{
   width:42px; height:26px; border-radius:7px;
-  background:var(--ph-accent-grad,linear-gradient(135deg,#6366f1,#8b5cf6));
+  background:var(--ph-accent-grad);
   display:flex; align-items:center; justify-content:center;
-  box-shadow:0 2px 8px rgba(99,102,241,.4);
+  box-shadow:0 2px 8px var(--ph-shadow);
 }
 #${ID} .forumComposeTabIcon svg{ width:16px; height:16px; fill:#fff; }
 
@@ -3610,6 +3282,8 @@ default: return emoji||'';
   border-radius:10px; overflow:hidden; cursor:pointer;
   background:var(--ph-glass); border:1px solid var(--ph-glass-border);
   transition:transform .1s; display:flex; flex-direction:column;
+  box-shadow: 0 1px 0 rgba(255,255,255,.70) inset, 0 2px 8px var(--ph-shadow);
+  border: 1px solid var(--ph-glass-border);
 }
 #${ID} .forumGridCard:active{ transform:scale(.97); }
 #${ID} .forumGridCardImg{
@@ -3794,7 +3468,7 @@ default: return emoji||'';
   border-radius:20px; padding:5px 12px; font-size:12px; color:var(--ph-text-sub); cursor:pointer;
 }
 #${ID} .forumComposeImgChip.selected{
-  border-color:var(--ph-accent,#6366f1); color:var(--ph-accent,#6366f1);
+  border-color:var(--ph-accent); color:var(--ph-accent);
   background:rgba(99,102,241,.12);
 }
 #${ID} .forumComposeTagRow{
@@ -3806,7 +3480,7 @@ default: return emoji||'';
   border-radius:20px; padding:5px 12px; font-size:12px; color:var(--ph-text-sub); cursor:pointer;
 }
 #${ID} .forumComposeTagChip.selected{
-  border-color:var(--ph-accent,#6366f1); color:var(--ph-accent,#6366f1);
+  border-color:var(--ph-accent); color:var(--ph-accent);
   background:rgba(99,102,241,.12);
 }
 
@@ -3828,13 +3502,13 @@ default: return emoji||'';
 #${ID} .forumDMChatShell{ position:absolute; inset:0; display:flex; flex-direction:column; }
 #${ID} .forumDMChatMessages{ flex:1; overflow-y:auto; padding:10px 12px; display:flex; flex-direction:column; gap:8px; scrollbar-width:thin; }
 #${ID} .forumDMBubble{ max-width:72%; padding:9px 12px; border-radius:16px; font-size:13.5px; line-height:1.5; word-break:break-word; }
-#${ID} .forumDMBubble.mine{ align-self:flex-end; background:var(--ph-accent-grad,linear-gradient(135deg,#6366f1,#8b5cf6)); color:#fff; border-bottom-right-radius:4px; }
+#${ID} .forumDMBubble.mine{ align-self:flex-end; background:var(--ph-accent-grad); color:#fff; border-bottom-right-radius:4px; }
 #${ID} .forumDMBubble.theirs{ align-self:flex-start; background:var(--ph-glass-strong); color:var(--ph-text); border:1px solid var(--ph-glass-border); border-bottom-left-radius:4px; }
 #${ID} .forumDMTheirRow{ display:flex; align-items:flex-end; gap:6px; }
 #${ID} .forumDMTheirAvatar{ width:28px; height:28px; border-radius:50%; flex-shrink:0; background:var(--ph-glass-strong); border:1px solid var(--ph-glass-border); display:flex; align-items:center; justify-content:center; font-size:12px; }
 #${ID} .forumDMChatBar{ flex-shrink:0; display:flex; align-items:center; gap:8px; padding:8px 12px 10px; border-top:1px solid rgba(255,255,255,.06); background:rgba(12,18,36,.9); }
 #${ID} .forumDMChatInput{ flex:1; padding:9px 14px; border-radius:20px; border:1px solid var(--ph-glass-border); background:var(--ph-glass); color:var(--ph-text); font-size:13.5px; outline:none; }
-#${ID} .forumDMChatSend{ appearance:none; border:0; background:var(--ph-accent-grad); color:#fff; width:36px; height:36px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+#${ID} .forumDMChatSend{ appearance:none; border:0; background:var(--ph-accent-grad); color:var(--ph-send-icon,#fff); width:36px; height:36px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 #${ID} .forumDMChatSend svg{ width:18px; height:18px; fill:#fff; }
 #${ID} .forumDMEmpty{ padding:70px 20px; text-align:center; color:var(--ph-text-dim); font-size:13px; }
 
@@ -3909,6 +3583,7 @@ default: return emoji||'';
         ensureStyle();
         ensureTuneStyle();
         root = doc.createElement('div');
+        root.setAttribute('data-theme','frost'); // ✅ 初始默认防止黑屏
         root.id = ID;
         root.setAttribute('data-view','home');
 
@@ -9698,19 +9373,19 @@ ${lines}
               <b>🔄 重试 IndexedDB</b><br><span style="font-size:11px;color:var(--ph-text-dim);">删除旧数据库后重新初始化</span>
             </button>
             <button data-act="dmBackupAll" style="padding:14px;border-radius:14px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:13px;cursor:pointer;text-align:left;">
-              <b>💾 备份全部</b><br><span style="font-size:11px;color:var(--ph-text-dim);">一键导出所有小手机数据</span>
+              <b>备份全部</b><br><span style="font-size:11px;color:var(--ph-text-dim);">一键导出所有小手机数据</span>
             </button>
             <button data-act="dmExportSelected" style="padding:14px;border-radius:14px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:13px;cursor:pointer;text-align:left;">
-              <b>📤 选择导出</b><br><span style="font-size:11px;color:var(--ph-text-dim);">勾选模块分别导出</span>
+              <b>选择导出</b><br><span style="font-size:11px;color:var(--ph-text-dim);">勾选模块分别导出</span>
             </button>
             <button data-act="dmImport" style="padding:14px;border-radius:14px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:13px;cursor:pointer;text-align:left;">
-              <b>📥 导入数据</b><br><span style="font-size:11px;color:var(--ph-text-dim);">粘贴 JSON 或选择文件导入</span>
+              <b>导入数据</b><br><span style="font-size:11px;color:var(--ph-text-dim);">粘贴 JSON 或选择文件导入</span>
             </button>
             <button data-act="dmClearAICache" style="padding:14px;border-radius:14px;border:1px solid rgba(239,68,68,.1);background:var(--ph-glass);color:var(--ph-text);font-size:13px;cursor:pointer;text-align:left;">
               <b>🗑️ 清空 AI 资讯缓存</b><br><span style="font-size:11px;color:var(--ph-text-dim);">清除 AutoFeed 生成的临时资讯</span>
             </button>
             <button data-act="dmClearAll" style="padding:14px;border-radius:14px;border:1px solid rgba(239,68,68,.15);background:var(--ph-glass);color:#ef4444;font-size:13px;cursor:pointer;text-align:left;">
-              <b>🗑️ 清空所有数据</b><br><span style="font-size:11px;color:rgba(239,68,68,.4);">二次确认后清空（仅小手机）</span>
+              <b>清空所有数据</b><br><span style="font-size:11px;color:rgba(239,68,68,.4);">二次确认后清空（仅小手机）</span>
             </button>
           </div>
         </div>`;
@@ -15880,7 +15555,7 @@ const npc = _wxGetChatTargetMeta(npcId);
       function _fIco(path){ return '<svg viewBox="0 0 24 24" fill="currentColor">'+path+'</svg>'; }
 
       function renderForum(container){
-        setAppBarRight('<button class="phBarRBtn" data-act="afForumSettings" title="论坛资讯设置">⚙️</button>');
+        setAppBarRight('<button class="phBarRBtn" data-act="afForumSettings" title="论坛资讯设置">' + _phFlatIcon('⚙️') + '</button>');
         // 重置容器（避免旧内容残留）
         container.style.cssText = '';
         // 如果在详情页，直接渲染详情
@@ -15925,7 +15600,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         _forumNav.tab = tab;
         _forumDMCurrent = null; // 切 tab 时退出 DM 聊天
         // 恢复右上角设置按钮
-        setAppBarRight('<button class="phBarRBtn" data-act="afForumSettings" title="论坛资讯设置">⚙️</button>');
+        setAppBarRight('<button class="phBarRBtn" data-act="afForumSettings" title="论坛资讯设置">' + _phFlatIcon('⚙️') + '</button>');
         // 更新底栏按钮选中状态
         root.querySelectorAll('.forumInnerTabBtn[data-tab]').forEach(function(b){
           b.classList.toggle('on', b.getAttribute('data-tab')===tab);
@@ -16274,7 +15949,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--ph-text-dim);">帖子不存在</div>';
           return;
         }
-        setAppBarRight('<button class="phBarRBtn" data-act="afForumSettings" title="论坛资讯设置">⚙️</button>');
+        setAppBarRight('<button class="phBarRBtn" data-act="afForumSettings" title="论坛资讯设置">' + _phFlatIcon('⚙️') + '</button>');
         var cmts = Array.isArray(post.comments) ? post.comments : [];
         var imgArr = Array.isArray(post.images) ? post.images : [];
         var imgHtml = imgArr.length ? '<div class="forumDetailImgArea">'+renderFakeImages(imgArr)+'</div>' : '';
@@ -16816,16 +16491,32 @@ const npc = _wxGetChatTargetMeta(npcId);
       }
 
       /* ========== 天气 App ========== */
+      // 天气 SVG 图标（扁平线条风）
+      function _weatherSVG(type){
+        const s=(d,extra)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle;${extra||''}">${d}</svg>`;
+        switch(type){
+          case 'sunny':    return s('<circle cx="12" cy="12" r="4.5"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>');
+          case 'cloudy':   return s('<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>');
+          case 'partcloud':return s('<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="18.36" y1="4.64" x2="17" y2="6"/><line x1="20" y1="10" x2="22" y2="10"/>');
+          case 'rainy':    return s('<path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/><line x1="8" y1="19" x2="8" y2="21"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="16" y1="19" x2="16" y2="21"/><line x1="16" y1="13" x2="16" y2="15"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="12" y1="15" x2="12" y2="17"/>');
+          case 'thunder':  return s('<path d="M19 16.9A5 5 0 0 0 18 7h-1.26a8 8 0 1 0-11.62 9"/><polyline points="13 11 9 17 15 17 11 23"/>');
+          case 'snow':     return s('<path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="8" y1="20" x2="8.01" y2="20"/><line x1="12" y1="18" x2="12.01" y2="18"/><line x1="12" y1="22" x2="12.01" y2="22"/><line x1="16" y1="16" x2="16.01" y2="16"/><line x1="16" y1="20" x2="16.01" y2="20"/>');
+          case 'calendar': return s('<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>');
+          case 'news':     return s('<path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="M2 15h10"/><path d="M2 19h6"/><path d="M2 11h12"/>');
+          default:         return s('<circle cx="12" cy="12" r="5"/>');
+        }
+      }
+
       function renderWeather(container){
         const fc=[
-          {day:'今天',icon:'⛅',high:'26°',low:'18°'},
-          {day:'明天',icon:'🌤️',high:'28°',low:'19°'},
-          {day:'后天',icon:'☀️',high:'30°',low:'20°'},
-          {day:'周四',icon:'🌧️',high:'22°',low:'16°'},
-          {day:'周五',icon:'⛈️',high:'20°',low:'15°'}
+          {day:'今天',type:'partcloud',high:'26°',low:'18°'},
+          {day:'明天',type:'sunny',high:'28°',low:'19°'},
+          {day:'后天',type:'sunny',high:'30°',low:'20°'},
+          {day:'周四',type:'rainy',high:'22°',low:'16°'},
+          {day:'周五',type:'thunder',high:'20°',low:'15°'}
         ];
         let html=`<div class="weatherMain">
-          <div class="weatherIcon">⛅</div>
+          <div class="weatherIcon">${_weatherSVG('partcloud')}</div>
           <div class="weatherTemp">24°</div>
           <div class="weatherDesc">多云转晴</div>
           <div class="weatherDetail">
@@ -16834,17 +16525,17 @@ const npc = _wxGetChatTargetMeta(npcId);
             <div class="wd"><div class="wdVal">中等</div>紫外线</div>
           </div>
         </div>
-        <div class="phCard"><div style="font-weight:600;color:var(--ph-text);margin-bottom:10px;">📅 未来几天</div>`;
+        <div class="phCard"><div style="display:flex;align-items:center;gap:6px;font-weight:600;color:var(--ph-text);margin-bottom:10px;font-size:0;"><span style="font-size:14px;">${_weatherSVG("calendar")}</span><span style="font-size:14px;">未来几天</span></div>`;
         fc.forEach(f=>{
           html += `<div class="forecastRow">
             <span class="fDay">${f.day}</span>
-            <span class="fIcon">${f.icon}</span>
+            <span class="fIcon" style="color:var(--ph-text-sub);">${_weatherSVG(f.type)}</span>
             <div class="fRange"><span class="fLow">${f.low}</span><div class="fBar"></div><span class="fHigh">${f.high}</span></div>
           </div>`;
         });
         html += '</div>';
         // News cards
-        html += `<div class="phCard"><div style="font-weight:600;color:var(--ph-text);margin-bottom:10px;">📰 天气资讯</div>
+        html += `<div class="phCard"><div style="display:flex;align-items:center;gap:6px;font-weight:600;color:var(--ph-text);margin-bottom:10px;"><span style="font-size:0;color:var(--ph-text-sub);">${_weatherSVG("news")}</span><span style="font-size:14px;">天气资讯</span></div>
           <div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);"><div style="font-size:13px;color:var(--ph-text);">冷空气即将到来</div><div style="font-size:11px;color:var(--ph-text-dim);margin-top:2px;">预计本周后半段气温明显下降，注意保暖</div></div>
           <div style="padding:8px 0;"><div style="font-size:13px;color:var(--ph-text);">周末适合户外活动</div><div style="font-size:11px;color:var(--ph-text-dim);margin-top:2px;">周六周日阳光充足，适宜出行</div></div>
         </div>`;
@@ -16853,7 +16544,7 @@ const npc = _wxGetChatTargetMeta(npcId);
 
       /* ========== 浏览器 App ========== */
       function renderBrowser(container){
-        setAppBarRight('<button class="phBarRBtn" data-act="afBrowserSettings" title="浏览器资讯设置">⚙️</button>');
+        setAppBarRight('<button class="phBarRBtn" data-act="afBrowserSettings" title="浏览器资讯设置">' + _phFlatIcon('⚙️') + '</button>');
         const bookmarks = [
           {icon:_phFlatIcon('📰'),title:'世界资讯',desc:'查看最新世界观资讯与八卦'},
           {icon:_phFlatIcon('⭐'),title:'收藏夹',desc:'你收藏的网页和资讯'},
@@ -17011,16 +16702,14 @@ const npc = _wxGetChatTargetMeta(npcId);
           const k = String(ico||'').replace(/\uFE0F/g,''); // 去掉 emoji 变体
           const svg = (inner)=>`<svg class="phIco" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">${inner}</svg>`;
           switch(k){
+            case '✦': return svg('<circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>');  
             case '🎨': return svg('<path d="M12 2l2.1 5.5L20 10l-5.9 2.5L12 18l-2.1-5.5L4 10l5.9-2.5L12 2z"/>');
             case '🖼️': case '🖼': return svg('<path d="M4 5h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm3 4a2 2 0 1 0 0 .001A2 2 0 0 0 7 9zm13 10-5-5-3 3-2-2-6 6h16z"/>');
             case '🫧': return svg('<circle cx="9" cy="9" r="3"/><circle cx="15.5" cy="13" r="2.5"/><circle cx="10" cy="15.5" r="2"/>');
             case '📄': return svg('<path d="M6 2h9l3 3v17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V7h3.5L14 3.5z"/><path d="M7 10h10v2H7v-2zm0 4h10v2H7v-2zm0 4h7v2H7v-2z"/>');
             case '🔤': return svg('<path d="M12 3l7 18h-3l-1.5-4H9.5L8 21H5l7-18zm1.7 11L12 9l-1.7 5h3.4z"/>');
             case '💬': return svg('<path d="M6 4h12a4 4 0 0 1 4 4v7a4 4 0 0 1-4 4H10l-6 5V8a4 4 0 0 1 4-4z"/>');
-            case '📸': case '📷': return svg('<path d="M9 4l1.5-2h3L15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3zm3 15a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2.2a2.8 2.8 0 1 1 0-5.6 2.8 2.8 0 0 1 0 5.6z"/>');
-            case '🗣': return svg('<path d="M7 8a3 3 0 1 1 3 3v2a5 5 0 1 0-3-5z" opacity=".92"/><path d="M15 6a5 5 0 0 1 0 10v-2a3 3 0 1 0 0-6V6z"/><path d="M8 17h8v2H8z"/>');
             case '🤖': return svg('<path d="M10 2h4v2h-4V2z"/><path d="M7 5h10a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a4 4 0 0 1 4-4zm2.5 5a1.2 1.2 0 1 0 0 2.4A1.2 1.2 0 0 0 9.5 10zm5 0a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4z"/><path d="M8 15h8v2H8v-2z"/>');
-            case '📝': return svg('<path d="M6 3h9l4 4v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm8 1.5V8h3.5L14 4.5z"/><path d="M8 12.2l6.7-6.7 2 2-6.7 6.7-2.8.8.8-2.8z"/>');
             case '⌨️': case '⌨': return svg('<path d="M4 7h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zm2 3h2v2H6v-2zm3 0h2v2H9v-2zm3 0h2v2h-2v-2zm3 0h2v2h-2v-2zM6 14h12v2H6v-2z"/>');
             case '⏰': return svg('<path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm1 5v5l4 2-.9 1.8L11 13V7h2z"/>');
             case '🔑': return svg('<path d="M7 14a5 5 0 1 1 4.9-6H22v4h-2v2h-2v2h-2.2A5 5 0 0 1 7 14zm0-3a2 2 0 1 0 .001-4.001A2 2 0 0 0 7 11z"/>');
@@ -17030,6 +16719,9 @@ const npc = _wxGetChatTargetMeta(npcId);
             case 'ℹ️': case 'ℹ': return svg('<path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm0 4a1.2 1.2 0 1 1 0 2.4A1.2 1.2 0 0 1 12 6zm-1 4h2v8h-2v-8z"/>');
             case '🎯': return svg('<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20a10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16a8 8 0 0 0 0-16zm0 4a4 4 0 1 1 0 8a4 4 0 0 1 0-8zm0 2a2 2 0 1 0 0 4a2 2 0 0 0 0-4z"/>');
             case '🔮': return svg('<circle cx="12" cy="12" r="8" opacity=".28"/><circle cx="12" cy="12" r="3"/>');
+            case '📷': return svg('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>');
+            case '📢': return svg('<path d="M3 11v2c0 .55.45 1 1 1h1l3 6h2l-1.5-6H14l5 3V7l-5 3H4c-.55 0-1 .45-1 1zm14-1.5v5l3-1.8v-1.4L17 9.5z"/>');
+            case '📝': return svg('<path d="M20 14.66V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5.34"/><polygon points="18 2 22 6 12 16 8 16 8 12 18 2"/>');
             default: return (ico||'');
           }
         }
@@ -17041,6 +16733,8 @@ const npc = _wxGetChatTargetMeta(npcId);
             {icon:'🫧',label:'桌面清晰度',value:`${cfg.uiHomeOpacity}% / ${cfg.uiHomeBlur}px`,type:'nav',subpage:'uiHome'},
             {icon:'📄',label:'App清晰度',value:`底${cfg.uiAppSolidOpacity}% 玻璃${cfg.uiAppOpacity}%`,type:'nav',subpage:'uiApp'},
             {icon:'🔤',label:'字体大小',value:cfg.fontSize+'px',type:'nav',subpage:'fontsize'},
+            {icon:'🎨',label:'强调色',value:cfg.accentHex?'自定义':'跟随主题',type:'nav',subpage:'accentColor'},
+            {icon:'✦',label:'强调色',value:cfg.accentHex?'自定义':'跟随主题',type:'nav',subpage:'accentColor'},
             {icon:'🎯',label:'图标底色',value:cfg.iconTint||'默认',type:'nav',subpage:'iconTint'},
             {icon:'🔮',label:'内部图标色',value:cfg.iconInnerTint||'默认',type:'nav',subpage:'iconInner'},
           ]},
@@ -17061,8 +16755,8 @@ const npc = _wxGetChatTargetMeta(npcId);
           ]},
           { title:'危险区域', rows:[
             {icon:'💬',label:'清空聊天数据（联系人+记录）',type:'danger',act:'phClearAppData',appkey:'chat'},
-            {icon:'📸',label:'清空朋友圈动态',type:'danger',act:'phClearAppData',appkey:'moments'},
-            {icon:'🗣',label:'清空论坛帖子',type:'danger',act:'phClearAppData',appkey:'forum'},
+            {icon:'📷',label:'清空朋友圈动态',type:'danger',act:'phClearAppData',appkey:'moments'},
+            {icon:'📢',label:'清空论坛帖子',type:'danger',act:'phClearAppData',appkey:'forum'},
           ]},
         ];
 
@@ -17078,7 +16772,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             if(r.type==='toggle'){
               html += `<button class="sToggle${r.val?' on':''}" data-skey="${r.key}"></button>`;
             } else if(r.type==='danger'){
-              html += `<button data-act="${r.act}" data-appkey="${r.appkey}" style="border:0;background:transparent;color:#e74c3c;font-size:12px;font-weight:600;cursor:pointer;padding:0;">清空</button>`;
+              html += `<button data-act="${r.act}" data-appkey="${r.appkey}" style="border:0;background:transparent;color:var(--ph-confirm-danger,#c0392b);font-size:12px;font-weight:600;cursor:pointer;padding:0;">清空</button>`;
             } else {
               html += `<span class="sValue">${r.value||''} ${r.type==='nav'?'›':''}</span>`;
             }
@@ -17118,6 +16812,8 @@ const npc = _wxGetChatTargetMeta(npcId);
           case 'timeMode':  renderSettingsTimeMode(body); break;
           case 'typingEffect': renderSettingsTypingEffect(body); break;
           case 'chatContextN': renderSettingsChatContextN(body); break;
+          case 'accentColor': renderSettingsAccentColor(body); break;
+          case 'accentColor': renderSettingsAccentColor(body); break;
           case 'iconTint': renderSettingsIconTint(body); break;
           case 'iconInner': renderSettingsIconInner(body); break;
           case 'themes': openApp('themes'); break;
@@ -17576,6 +17272,173 @@ function renderSettingsUIApp(container){
       }
 
       // ========== 图标颜色自定义 ==========
+      // ========== 强调色自定义 ==========
+      function renderSettingsAccentColor(container){
+        const cfg = phoneLoadSettings();
+        const currentHex = cfg.accentHex || '';
+        // 莫兰迪预设色盘（去彩、低饱和、温润）
+        const presets = [
+          {id:'default',  label:'跟随主题', hex:''},
+          {id:'sage',     label:'鼠尾草绿', hex:'#7d9b8a'},
+          {id:'dustblue', label:'雾灰蓝',   hex:'#7a92a8'},
+          {id:'clay',     label:'陶土棕',   hex:'#a0826d'},
+          {id:'mauve',    label:'雾玫瑰',   hex:'#a8888e'},
+          {id:'dusk',     label:'暮色紫',   hex:'#8b84a8'},
+          {id:'sand',     label:'暖沙棕',   hex:'#a89878'},
+          {id:'slate',    label:'蓝石板',   hex:'#6b84a0'},
+          {id:'rosewood', label:'玫瑰木',   hex:'#9e6b72'},
+          {id:'eucalyptus',label:'桉树绿',  hex:'#6b9484'},
+          {id:'lavender', label:'薰衣草',   hex:'#9688b0'},
+          {id:'umber',    label:'暖棕赭',   hex:'#8e7660'},
+        ];
+        const activeId = presets.find(p=>p.hex===currentHex)?.id || (currentHex?'custom':'default');
+
+        let html = `<div class="settingSubPage">
+          <div class="settingSubTitle">强调色</div>
+          <div class="settingSubDesc" style="margin-bottom:14px;">控制按钮、选中态、发送键等高亮颜色。空=跟随主题默认。</div>
+          <div class="sAccentGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;">`;
+
+        presets.forEach(p=>{
+          const isActive = activeId===p.id;
+          const swatchBg = p.hex ? `background:${p.hex};` : 'background:linear-gradient(135deg,#7d9b8a,#a3bab0);';
+          html += `<button class="sAccentPreset${isActive?' active':''}" data-apresetid="${p.id}" data-ahex="${p.hex}"
+            style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px;
+              border-radius:12px;border:1.5px solid ${isActive?'var(--ph-accent)':'var(--ph-sep)'};
+              background:var(--ph-glass);cursor:pointer;transition:all .15s;">
+            <div style="width:32px;height:32px;border-radius:50%;${swatchBg}
+              box-shadow:0 2px 6px rgba(0,0,0,.12);
+              ${isActive?'box-shadow:0 0 0 2px var(--ph-accent), 0 2px 6px rgba(0,0,0,.12);':''}"></div>
+            <span style="font-size:10px;color:var(--ph-text-sub);line-height:1.2;text-align:center;">${p.label}</span>
+          </button>`;
+        });
+
+        html += `</div>
+          <div style="margin-top:4px;">
+            <div style="font-size:12px;color:var(--ph-text-sub);margin-bottom:8px;font-weight:500;">自定义色值</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <input type="color" data-ph="accentPicker"
+                value="${currentHex||'#7d9b8a'}"
+                style="width:40px;height:40px;border:none;border-radius:10px;background:none;cursor:pointer;padding:0;"/>
+              <input data-ph="accentHexInput"
+                value="${currentHex||''}"
+                placeholder="留空=跟随主题默认，如 #7d9b8a"
+                style="flex:1;padding:9px 12px;border-radius:12px;border:1px solid var(--ph-input-border);
+                  background:var(--ph-input-bg);color:var(--ph-input-text);font-size:13px;"/>
+              <button data-ph="accentApply"
+                style="padding:9px 14px;border-radius:12px;background:var(--ph-accent-grad);
+                  color:var(--ph-send-icon,#fff);border:none;font-weight:600;cursor:pointer;font-size:12px;
+                  white-space:nowrap;">应用</button>
+            </div>
+          </div>
+          <!-- 实时预览 -->
+          <div style="margin-top:16px;padding:14px;border-radius:14px;background:var(--ph-glass);
+            border:1px solid var(--ph-sep);">
+            <div style="font-size:12px;color:var(--ph-text-sub);margin-bottom:10px;">预览效果</div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <button data-ph="previewBtn" style="padding:8px 18px;border-radius:20px;border:none;
+                background:var(--ph-accent-grad);color:var(--ph-send-icon,#fff);
+                font-size:13px;font-weight:600;cursor:default;">发送</button>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <div data-ph="previewDot" style="width:12px;height:12px;border-radius:50%;
+                  background:var(--ph-accent);"></div>
+                <span style="font-size:12px;color:var(--ph-text-sub);">当前选中</span>
+              </div>
+              <div data-ph="previewBar" style="height:3px;flex:1;min-width:60px;border-radius:2px;
+                background:var(--ph-accent-grad);opacity:.6;"></div>
+            </div>
+          </div>
+        </div>`;
+
+        container.innerHTML = html;
+
+        const picker = container.querySelector('[data-ph="accentPicker"]');
+        const hexInput = container.querySelector('[data-ph="accentHexInput"]');
+        const applyBtn = container.querySelector('[data-ph="accentApply"]');
+
+        function livePreview(hex){
+          if (!hex){ return; }
+          try{
+            root.style.setProperty('--ph-accent', hex);
+            root.style.setProperty('--ph-accent2', hex+'cc');
+            root.style.setProperty('--ph-accent-grad', `linear-gradient(135deg,${hex},${hex}cc)`);
+          }catch(e){}
+        }
+
+        if (picker && hexInput){
+          picker.addEventListener('input',()=>{
+            hexInput.value = picker.value;
+            livePreview(picker.value);
+          });
+          hexInput.addEventListener('input',()=>{
+            const v = hexInput.value.trim();
+            if (/^#[0-9a-fA-F]{6}$/.test(v)){
+              try{ picker.value = v; }catch(_){}
+              livePreview(v);
+            }
+          });
+        }
+
+        // 预设色点击
+        container.querySelectorAll('.sAccentPreset').forEach(btn=>{
+          btn.addEventListener('click',()=>{
+            const hex = btn.getAttribute('data-ahex');
+            if (hexInput) hexInput.value = hex || '';
+            if (hex && picker){ try{ picker.value = hex; }catch(_){} }
+            // 立即预览
+            if (hex) livePreview(hex);
+            else _applyAccentColor({ accentHex: '' }); // 还原主题默认
+            // 持久化
+            const cfg2 = phoneLoadSettings();
+            cfg2.accentHex = hex || '';
+            phoneSaveSettings(cfg2);
+            _applyAccentColor(cfg2);
+            // 更新选中样式
+            container.querySelectorAll('.sAccentPreset').forEach(b=>{
+              const active = b===btn;
+              b.classList.toggle('active', active);
+              b.style.borderColor = active ? 'var(--ph-accent)' : 'var(--ph-sep)';
+            });
+          });
+        });
+
+        if (applyBtn){
+          applyBtn.addEventListener('click',()=>{
+            const hex = (hexInput?.value||'').trim();
+            const cfg2 = phoneLoadSettings();
+            cfg2.accentHex = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '';
+            phoneSaveSettings(cfg2);
+            _applyAccentColor(cfg2);
+            container.querySelectorAll('.sAccentPreset').forEach(b=>b.classList.remove('active'));
+            try{toast('强调色已应用');}catch(e){}
+          });
+        }
+      }
+
+      function _applyAccentColor(cfg){
+        if (!root) return;
+        const hex = cfg.accentHex;
+        if (hex && /^#[0-9a-fA-F]{6}$/.test(hex)){
+          // 生成略浅的 accent2（hex + 透明度）
+          const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+          const light = `rgb(${Math.min(255,r+36)},${Math.min(255,g+36)},${Math.min(255,b+36)})`;
+          root.style.setProperty('--ph-accent', hex);
+          root.style.setProperty('--ph-accent2', light);
+          root.style.setProperty('--ph-accent-grad', `linear-gradient(135deg,${hex},${light})`);
+          // 同步依赖 accent 的衍生变量
+          root.style.setProperty('--ph-send-btn', hex);
+          root.style.setProperty('--ph-tabbar-on', hex);
+          root.style.setProperty('--ph-chat-me-bubble', `linear-gradient(135deg,${hex},${light})`);
+          root.style.setProperty('--ph-wechat-me-bubble', `linear-gradient(135deg,${hex},${light})`);
+        } else {
+          // 移除覆盖，回到主题 CSS 变量默认值
+          ['--ph-accent','--ph-accent2','--ph-accent-grad',
+           '--ph-send-btn','--ph-tabbar-on',
+           '--ph-chat-me-bubble','--ph-wechat-me-bubble'].forEach(v=>{
+            root.style.removeProperty(v);
+          });
+        }
+      }
+
       function renderSettingsIconTint(container){
         const cfg = phoneLoadSettings();
         const current = cfg.iconTint || '默认';
@@ -17761,7 +17624,7 @@ function renderSettingsUIApp(container){
       /* ========== 主题选择 App ========== */
       function renderThemes(container){
         const themes = [
-          {id:'frost',   name:'霜雪',   preview:'linear-gradient(135deg,#fafafa,#dde4f0)',previewText:'rgba(20,20,24,.7)'},
+          {id:'frost',   name:'霜雪',   preview:'linear-gradient(135deg,#f5f2ee,#e8e2d8)',previewText:'rgba(28,22,16,.6)'},
           {id:'modern',  name:'现代',   preview:'linear-gradient(135deg,#0a0a0a,#1a1a1a)',previewText:'rgba(255,255,255,.7)'},
           {id:'medieval',name:'中世纪', preview:'linear-gradient(135deg,#2e1a0c,#4a2c10)',previewText:'rgba(255,220,180,.75)'},
           {id:'cyber',   name:'赛博朋克',preview:'linear-gradient(135deg,#040408,#040c18)',previewText:'rgba(0,220,120,.75)'},
@@ -18123,6 +17986,7 @@ function bindPageScroll(){
         try{
           const _cfg = phoneLoadSettings();
           try{ phoneApplyVisualFromSettings(_cfg); }catch(e){}
+        try{ _applyAccentColor(_cfg); }catch(e){}
           if (_cfg.fontSize && _cfg.fontSize !== 14) phoneApplyFontSize(_cfg.fontSize);
         }catch(e){}
         updateTime();
