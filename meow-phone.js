@@ -977,6 +977,10 @@ function phoneApplyWallpaper(base64OrEmpty, target){
         case '➕': return s('<path d="M11 5h2v14h-2V5zm-6 6h14v2H5v-2z"/>');
 case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>');
         case '🏷': return s('<path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/>');
+        case '📋': return s('<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>'); // 📋
+        case '↩': case '↩️': return s('<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>'); // ↩
+        case '🔄': return s('<polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>'); // 🔄
+        case '🌐': return s('<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'); // 🌐
         default: return emoji||'';
         }
       }
@@ -2540,35 +2544,39 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 }
 #${ID} .wxBubbleMenu{
   position:absolute; z-index:8889;
-  background:rgba(40,40,40,.94); border-radius:10px;
+  background:rgba(255,255,255,.88); border-radius:14px;
   padding:6px 4px; display:flex; align-items:stretch;
-  box-shadow:0 6px 24px rgba(0,0,0,.32);
+  box-shadow:0 8px 32px rgba(80,100,140,.18), 0 2px 8px rgba(80,100,140,.10);
+  border:1px solid rgba(255,255,255,.9);
   animation:wxBMIn .14s ease-out;
-  backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
 }
 @keyframes wxBMIn{ from{opacity:0;transform:scale(.92);} to{opacity:1;transform:scale(1);} }
 #${ID} .wxBMItem{
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:3px; padding:6px 11px; cursor:pointer;
-  color:rgba(255,255,255,.92); font-size:11px; white-space:nowrap;
-  border-radius:6px; -webkit-tap-highlight-color:transparent;
+  color:var(--ph-text); font-size:11px; white-space:nowrap;
+  border-radius:8px; -webkit-tap-highlight-color:transparent;
   min-width:40px;
 }
-#${ID} .wxBMItem:active{ background:rgba(255,255,255,.12); }
-#${ID} .wxBMItem .wxBMIco{ font-size:17px; line-height:1; }
-#${ID} .wxBMItem.wxBMDanger{ color:#ff6b6b; }
+#${ID} .wxBMItem:active{ background:var(--ph-glass-strong); }
+#${ID} .wxBMItem .wxBMIco{ font-size:0; line-height:1; display:flex; align-items:center; justify-content:center; }
+#${ID} .wxBMItem .wxBMIco svg.phIco{ width:18px; height:18px; fill:var(--ph-icon-inner-tint, var(--ph-text-sub)); }
+#${ID} .wxBMItem.wxBMDanger .wxBMIco svg.phIco{ fill:#e74c3c; }
+#${ID} .wxBMItem.wxBMDanger{ color:#e74c3c; }
 #${ID} .wxBMSep{
-  width:1px; background:rgba(255,255,255,.12);
+  width:1px; background:var(--ph-glass-border);
   margin:4px 0; flex-shrink:0; align-self:stretch;
 }
 #${ID} .wxBubbleMenu::after{
   content:''; position:absolute; width:10px; height:10px;
-  background:rgba(40,40,40,.94); transform:rotate(45deg);
+  background:rgba(255,255,255,.88); border:1px solid rgba(255,255,255,.9); transform:rotate(45deg);
+  box-shadow:0 2px 8px rgba(80,100,140,.10);
 }
 #${ID} .wxBubbleMenu.arrowDown::after{ bottom:-4px; left:calc(50% - 5px); }
 #${ID} .wxBubbleMenu.arrowUp::after{ top:-4px; left:calc(50% - 5px); }
 #${ID} .wxChatBubble.wxBubbleSelected .wxCBContent{
-  box-shadow:0 0 0 2px var(--ph-accent,var(--ph-accent, #07c160)); border-radius:8px;
+  opacity:.85;
 }
 #${ID} .wxQuoteBar{
   display:flex; align-items:center; gap:8px;
@@ -13574,7 +13582,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             if (attrs.hasOwnProperty(k)) extra += ' ' + k + '="' + esc(String(attrs[k]||'')) + '"';
           }
         }
-        return '<div class="' + cls + '" data-act="' + act + '"' + extra + '><span class="wxBMIco">' + ico + '</span>' + esc(label) + '</div>';
+        var icoHtml = _phFlatIcon(ico) || '<span>'+ico+'</span>'; return '<div class="' + cls + '" data-act="' + act + '"' + extra + '><span class="wxBMIco">' + icoHtml + '</span><span>' + esc(label) + '</span></div>';
       }
 
       function _initBubbleLongPress(){
@@ -18197,4 +18205,3 @@ function bindPageScroll(){
 
   console.log('[MEOW Phone] 小手机插件已加载 ✓');
 })();
-
