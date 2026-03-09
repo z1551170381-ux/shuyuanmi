@@ -753,7 +753,7 @@ function ensureTuneStyle(){
 #${ID} .phDockBtn svg.phIco{ filter: drop-shadow(0 1px 2px var(--ph-ico-shadow)); }
 /* 发现/我 页图标底色 */
 #${ID} .wxDIcoThemed svg.phIco,
-#${ID} .wxCHIco svg.phIco{ fill: var(--ph-text-sub) !important; }
+#${ID} .wxCHIco svg.phIco{ fill: rgba(255,255,255,.92) !important; }
     `;
     (doc.head || doc.documentElement).appendChild(st);
   }catch(e){}
@@ -2246,9 +2246,9 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 /* ✅ 发现/我 页：镂空线条风格，不受图标色设置控制 */
 /* ✅ 发现/我 页：固定镂空风格，不受内部图标色设置影响 */
 #${ID} .wxDIcoThemed{
-  background: var(--ph-glass-strong) !important;
-  border: 1px solid var(--ph-glass-border) !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,.80) inset, 0 2px 8px var(--ph-shadow) !important;
+  background: var(--ph-icon-inner-tint, var(--ph-accent)) !important;
+  border: 1px solid rgba(255,255,255,.25) !important;
+  box-shadow: 0 2px 8px var(--ph-shadow) !important;
 }
 #${ID} .wxDIcoThemed svg.phIco{
   fill: var(--ph-text-sub) !important;
@@ -2291,11 +2291,11 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   width:36px; height:36px; border-radius:9px; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
   font-size:16px; color:var(--ph-text-sub);
-  background: var(--ph-glass-strong) !important;
-  border: 1px solid var(--ph-glass-border) !important;
-  box-shadow: 0 1px 0 rgba(255,255,255,.80) inset, 0 2px 8px var(--ph-shadow) !important;
+  background: var(--ph-icon-inner-tint, var(--ph-accent)) !important;
+  border: 1px solid rgba(255,255,255,.25) !important;
+  box-shadow: 0 2px 8px var(--ph-shadow) !important;
 }
-#${ID} .wxContactHeader .wxCHIco svg.phIco{ width:18px; height:18px; fill:var(--ph-text-sub) !important; }
+#${ID} .wxContactHeader .wxCHIco svg.phIco{ width:18px; height:18px; fill:rgba(255,255,255,.92) !important; }
 #${ID} .wxContactHeader .wxCHName{ flex:1; font-size:14.5px; color:var(--ph-text); }
 #${ID} .wxContactHeader .wxCHBadge{
   background:rgba(0,0,0,.06); border-radius:10px;
@@ -2320,11 +2320,11 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .wxGroupHeader .wxCHIco{
   width:28px; height:28px; border-radius:8px; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
-  background:var(--ph-glass-strong) !important;
-  border:1px solid var(--ph-glass-border) !important;
-  box-shadow:0 1px 0 rgba(255,255,255,.80) inset !important;
+  background:var(--ph-icon-inner-tint, var(--ph-accent)) !important;
+  border:1px solid rgba(255,255,255,.25) !important;
+  box-shadow:0 2px 6px var(--ph-shadow) !important;
 }
-#${ID} .wxGroupHeader .wxCHIco svg.phIco{ width:15px; height:15px; fill:var(--ph-text-sub) !important; }
+#${ID} .wxGroupHeader .wxCHIco svg.phIco{ width:15px; height:15px; fill:rgba(255,255,255,.92) !important; }
 #${ID} .wxGroupHeader .wxGHName{ flex:1; font-size:13px; color:var(--ph-text-sub); }
 
 #${ID} .wxGroupHeader .wxGArrow{
@@ -2747,14 +2747,19 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .wxCharSettingsWrap .wxCSItem .wxCSIco{
   width:34px; height:34px; border-radius:10px; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
-  background:var(--ph-glass-strong);
-  border:1px solid var(--ph-glass-border);
-  box-shadow:0 1px 0 rgba(255,255,255,.80) inset;
-  font-size:0; color:var(--ph-text-sub);
+  background:var(--ph-icon-inner-tint, var(--ph-accent));
+  border:1px solid rgba(255,255,255,.25);
+  box-shadow:0 2px 8px var(--ph-shadow);
+  font-size:0;
 }
-#${ID} .wxCSIco svg.phIco{ width:18px; height:18px; fill:var(--ph-text-sub); }
+#${ID} .wxCSIco svg.phIco{ width:18px; height:18px; fill:rgba(255,255,255,.92); }
+#${ID} .wxCSItem[data-act="wxDelChat"] .wxCSIco,
+#${ID} .wxCSItem[data-act="wxDelFriend"] .wxCSIco{
+  background:rgba(231,76,60,.18) !important; border-color:rgba(231,76,60,.20) !important;
+}
 #${ID} .wxCSItem[data-act="wxDelChat"] .wxCSIco svg.phIco,
-#${ID} .wxCSItem[data-act="wxDelFriend"] .wxCSIco svg.phIco{ fill:rgba(231,76,60,.75) !important; }
+#${ID} .wxCSItem[data-act="wxDelFriend"] .wxCSIco svg.phIco{ fill:rgba(231,76,60,.85) !important; }
+
 #${ID} .wxCharSettingsWrap .wxCSItem .wxCSName{ flex:1; font-size:14px; color:var(--ph-text); font-weight:500; }
 #${ID} .wxCharSettingsWrap .wxCSItem .wxCSArrow{ color:var(--ph-text-dim); font-size:16px; }
 #${ID} .wxCharSettingsWrap .wxCSHeader{
@@ -3068,6 +3073,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   font-size:24px; color:var(--ph-text-dim); cursor:pointer;
   transition:opacity .12s; border-radius:2px; overflow:hidden;
 }
+#${ID} .photoThumb svg.phIco{ width:32px; height:32px; fill:rgba(180,200,220,.70); }
 #${ID} .photoThumb:active{ opacity:.7; }
 #${ID} .photoThumb img{ width:100%; height:100%; object-fit:cover; }
 #${ID} .photoTabs{ display:flex; border-bottom:1px solid rgba(255,255,255,.06); }
@@ -3101,13 +3107,11 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .browserBmItem:hover{ background:var(--ph-glass); }
 #${ID} .browserBmIcon{
   width:36px; height:36px; border-radius:10px;
-  background:var(--ph-icon-inner-tint, var(--ph-glass-strong));
-  border:1px solid var(--ph-glass-border);
-  box-shadow: 0 1px 0 rgba(255,255,255,.75) inset, 0 1px 4px var(--ph-shadow);
+  background:var(--ph-glass-strong);
   display:flex; align-items:center; justify-content:center;
-  font-size:0; color:var(--ph-text-sub);
+  font-size:16px; color:var(--ph-text-sub);
 }
-#${ID} .browserBmIcon svg{ width:18px; height:18px; fill:var(--ph-text-sub); }
+#${ID} .browserBmIcon svg{ width:18px; height:18px; fill:currentColor; }
 #${ID} .browserBmTitle{ color:var(--ph-text); font-size:13px; font-weight:500; }
 #${ID} .browserBmDesc{ color:var(--ph-text-dim); font-size:11.5px; margin-top:2px; }
 
@@ -7912,15 +7916,15 @@ ${lines}
         if (merged.length){
           html += '<div style="padding:16px 14px 4px;font-size:12px;color:rgba(20,24,28,.4);font-weight:500;display:flex;align-items:center;justify-content:space-between;"><span>候选联系人 (' + merged.length + ')</span><button data-act="wxHideAllCand" style="appearance:none;border:0;background:transparent;color:rgba(20,24,28,.35);font-size:11px;cursor:pointer;">全部清除</button></div>';
           for (const c of merged){
-            const srcTag = c.source === 'worldbook' ? '📖' : (c.source === 'stcard' ? '🎭' : (c.source === 'persona' ? '👤' : (c.source === 'scan' ? '🔍' : '✨')));
+            const srcTag = c.source === 'worldbook' ? _phFlatIcon('📖') : (c.source === 'stcard' ? _phFlatIcon('🎭') : (c.source === 'persona' ? _phFlatIcon('👤') : (c.source === 'scan' ? _phFlatIcon('🔍') : _phFlatIcon('➕'))));
             const profileSnip = (c.identity || c.profile || '').slice(0,40);
             html += '<div class="wxContactItem" style="display:flex;align-items:center;padding:10px 14px;">';
-            html += '<div class="wxCIAvatar" style="background:linear-gradient(135deg,#e8d5f5,#f5e6d5);flex-shrink:0;">' + srcTag + '</div>';
+            html += '<div class="wxCIAvatar" style="background:var(--ph-icon-inner-tint,var(--ph-accent));border:1px solid rgba(255,255,255,.25);flex-shrink:0;font-size:0;display:flex;align-items:center;justify-content:center;">' + srcTag + '</div>';
             html += '<div style="flex:1;margin-left:10px;overflow:hidden;">';
             html += '<div class="wxCIName" style="font-size:14px;">' + esc(c.name) + '</div>';
             if (profileSnip) html += '<div style="font-size:11px;color:rgba(20,24,28,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(profileSnip) + '</div>';
             html += '</div>';
-            html += '<button data-act="phAcceptCand" data-name="' + esc(c.name) + '" style="appearance:none;border:0;background:#07c160;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">+</button>';
+            html += '<button data-act="phAcceptCand" data-name="' + esc(c.name) + '" style="appearance:none;border:0;background:var(--ph-accent,#07c160);color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px var(--ph-shadow);">+</button>';
             html += '</div>';
           }
         } else {
@@ -16796,11 +16800,27 @@ const npc = _wxGetChatTargetMeta(npcId);
         const photos = phoneLoadPhotos();
         const cat = tab || 'all';
         const items = photos[cat] || [];
+        const _svgPh = (ico, bg) => `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${bg||'transparent'}">${_phFlatIcon(ico)}</div>`;
         const defaultPlaceholders = {
-          all: ['🖼️','🌸','🌙','🎨','📷','🌈','🏔️','🌊','✨','🎭','🦋','🍃'],
-          avatar: ['👤','🐱','🐶','🦊','👸','🧙'],
-          wallpaper: ['🌅','🌌','🏔️','🌊','🌸','❄️'],
-          sticker: ['😊','😂','🥺','💕','🎉','👍','✨','🔥','💪'],
+          all: [
+            _svgPh('🖼','rgba(180,200,210,.18)'), _svgPh('🌸','rgba(255,180,200,.14)'), _svgPh('🌙','rgba(180,180,255,.12)'),
+            _svgPh('🎨','rgba(255,200,150,.14)'), _svgPh('📷','rgba(160,190,180,.16)'), _svgPh('🌈','rgba(200,220,255,.14)'),
+            _svgPh('🏔','rgba(160,180,170,.16)'), _svgPh('🌊','rgba(160,210,230,.16)'), _svgPh('⭐','rgba(255,220,120,.14)'),
+            _svgPh('🎭','rgba(180,160,210,.16)'), _svgPh('🦋','rgba(210,180,240,.14)'), _svgPh('🍃','rgba(160,210,170,.16)'),
+          ],
+          avatar: [
+            _svgPh('👤','rgba(160,190,220,.16)'), _svgPh('🐱','rgba(255,210,170,.16)'), _svgPh('🐶','rgba(210,190,160,.16)'),
+            _svgPh('🔥','rgba(255,160,120,.16)'), _svgPh('⭐','rgba(255,220,120,.16)'), _svgPh('🎭','rgba(180,160,210,.16)'),
+          ],
+          wallpaper: [
+            _svgPh('🖼','rgba(180,200,210,.18)'), _svgPh('🌊','rgba(160,210,230,.18)'), _svgPh('🏔','rgba(160,180,170,.18)'),
+            _svgPh('⭐','rgba(255,220,120,.16)'), _svgPh('🌸','rgba(255,180,200,.16)'), _svgPh('❄️','rgba(200,220,255,.18)'),
+          ],
+          sticker: [
+            _svgPh('😊','rgba(255,220,120,.16)'), _svgPh('💬','rgba(160,210,230,.16)'), _svgPh('⭐','rgba(255,220,120,.16)'),
+            _svgPh('🎉','rgba(210,180,240,.16)'), _svgPh('🔥','rgba(255,160,120,.16)'), _svgPh('💕','rgba(255,170,190,.16)'),
+            _svgPh('✉️','rgba(180,200,240,.16)'), _svgPh('🎯','rgba(255,180,160,.16)'), _svgPh('🎭','rgba(180,160,210,.16)'),
+          ],
         };
         const catLabel = {all:'全部',avatar:'头像',wallpaper:'壁纸',sticker:'表情包'}[cat]||cat;
         let html = `<div style="padding:12px 14px;">
@@ -16817,7 +16837,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         });
         if (!items.length){
           const phs = defaultPlaceholders[cat] || defaultPlaceholders.all;
-          phs.forEach(p=>{ html += `<div class="photoThumb">${p}</div>`; });
+          phs.forEach(p=>{ html += `<div class="photoThumb" style="font-size:0;overflow:hidden;">${p}</div>`; });
         }
         html += '</div>';
         container.innerHTML = html;
@@ -17683,12 +17703,11 @@ function renderSettingsUIApp(container){
             el.style.background = hex;
           });
           root.style.setProperty('--ph-icon-tint', hex);
-          // ✅ 浏览器书签图标联动图标底色
-          root.querySelectorAll('.browserBmIcon').forEach(el=>{ el.style.background = hex; });
+          // browser icons: no icon-tint binding (original style)
         } else {
           root.querySelectorAll('.phAppIcon .ai').forEach(el=>{ el.style.background = ''; });
           root.querySelectorAll('.phDockBtn .di').forEach(el=>{ el.style.background = ''; });
-          root.querySelectorAll('.browserBmIcon').forEach(el=>{ el.style.background = ''; });
+          // browser icons: no reset needed
           root.style.removeProperty('--ph-icon-tint');
         }
       }
