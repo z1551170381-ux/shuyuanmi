@@ -751,14 +751,14 @@ function ensureTuneStyle(){
 #${ID} .phDockBtn .di svg.phIco{ width:18px; height:18px; }
 #${ID} .phAppIcon svg.phIco,
 #${ID} .phDockBtn svg.phIco{ filter: drop-shadow(0 1px 2px var(--ph-ico-shadow)); }
-/* 通讯录/发现/我 页 + 聊天设置 图标：白色SVG */
+/* 通讯录/发现/我页/聊天设置 图标：联动内部图标色 */
 #${ID} .wxDIcoThemed svg.phIco,
 #${ID} .wxCHIco svg.phIco,
 #${ID} .wxCSIco svg.phIco,
-#${ID} .wxCIAvatar svg.phIco{ fill: rgba(255,255,255,.92) !important; }
+#${ID} .wxCIAvatar svg.phIco{ fill: var(--ph-icon-inner-tint, var(--ph-text-sub)) !important; }
 /* 红色删除图标 */
 #${ID} .wxCSItem[data-act="wxDelChat"] .wxCSIco svg.phIco,
-#${ID} .wxCSItem[data-act="wxDelFriend"] .wxCSIco svg.phIco{ fill:rgba(231,76,60,.90) !important; }
+#${ID} .wxCSItem[data-act="wxDelFriend"] .wxCSIco svg.phIco{ fill:rgba(231,76,60,.85) !important; }
     `;
     (doc.head || doc.documentElement).appendChild(st);
   }catch(e){}
@@ -2249,9 +2249,9 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 /* ✅ 发现/我 页：镂空线条风格，不受图标色设置控制 */
 /* ✅ 发现/我 页：固定镂空风格，不受内部图标色设置影响 */
 #${ID} .wxDIcoThemed{
-  background: var(--ph-accent) !important;
-  border: 1px solid rgba(255,255,255,.28) !important;
-  box-shadow: 0 2px 10px var(--ph-shadow) !important;
+  background: var(--ph-glass-strong) !important;
+  border: 1px solid var(--ph-glass-border) !important;
+  box-shadow: 0 1px 4px var(--ph-shadow) !important;
 }
 #${ID} .wxDIcoThemed svg.phIco{
   fill: var(--ph-text-sub) !important;
@@ -2294,11 +2294,11 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   width:36px; height:36px; border-radius:9px; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
   font-size:16px; color:var(--ph-text-sub);
-  background: var(--ph-accent) !important;
-  border: 1px solid rgba(255,255,255,.28) !important;
-  box-shadow: 0 2px 10px var(--ph-shadow) !important;
+  background: var(--ph-glass-strong) !important;
+  border: 1px solid var(--ph-glass-border) !important;
+  box-shadow: 0 1px 4px var(--ph-shadow) !important;
 }
-#${ID} .wxContactHeader .wxCHIco svg.phIco{ width:18px; height:18px; fill:rgba(255,255,255,.92) !important; }
+#${ID} .wxContactHeader .wxCHIco svg.phIco{ width:18px; height:18px; fill:var(--ph-icon-inner-tint, var(--ph-text-sub)) !important; }
 #${ID} .wxContactHeader .wxCHName{ flex:1; font-size:14.5px; color:var(--ph-text); }
 #${ID} .wxContactHeader .wxCHBadge{
   background:rgba(0,0,0,.06); border-radius:10px;
@@ -2323,11 +2323,11 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .wxGroupHeader .wxCHIco{
   width:28px; height:28px; border-radius:8px; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
-  background:var(--ph-accent) !important;
-  border:1px solid rgba(255,255,255,.28) !important;
-  box-shadow:0 2px 6px var(--ph-shadow) !important;
+  background:var(--ph-glass-strong) !important;
+  border:1px solid var(--ph-glass-border) !important;
+  box-shadow:0 1px 4px var(--ph-shadow) !important;
 }
-#${ID} .wxGroupHeader .wxCHIco svg.phIco{ width:15px; height:15px; fill:rgba(255,255,255,.92) !important; }
+#${ID} .wxGroupHeader .wxCHIco svg.phIco{ width:15px; height:15px; fill:var(--ph-icon-inner-tint, var(--ph-text-sub)) !important; }
 #${ID} .wxGroupHeader .wxGHName{ flex:1; font-size:13px; color:var(--ph-text-sub); }
 
 #${ID} .wxGroupHeader .wxGArrow{
@@ -2753,15 +2753,15 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .wxCharSettingsWrap .wxCSItem .wxCSIco{
   width:34px; height:34px; border-radius:10px; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
-  background:var(--ph-accent);
-  border:1px solid rgba(255,255,255,.25);
+  background:var(--ph-glass-strong);
+  border:1px solid var(--ph-glass-border);
   box-shadow:0 2px 8px var(--ph-shadow);
   font-size:0;
 }
-#${ID} .wxCSIco svg.phIco{ width:18px; height:18px; fill:rgba(255,255,255,.92); }
+#${ID} .wxCSIco svg.phIco{ width:18px; height:18px; fill:var(--ph-icon-inner-tint, var(--ph-text-sub)); }
 #${ID} .wxCSItem[data-act="wxDelChat"] .wxCSIco,
 #${ID} .wxCSItem[data-act="wxDelFriend"] .wxCSIco{
-  background:rgba(231,76,60,.18) !important; border-color:rgba(231,76,60,.20) !important;
+  background:rgba(231,76,60,.12) !important; border-color:rgba(231,76,60,.18) !important;
 }
 #${ID} .wxCSItem[data-act="wxDelChat"] .wxCSIco svg.phIco,
 #${ID} .wxCSItem[data-act="wxDelFriend"] .wxCSIco svg.phIco{ fill:rgba(231,76,60,.85) !important; }
@@ -7925,7 +7925,7 @@ ${lines}
             const srcTag = c.source === 'worldbook' ? _phFlatIcon('📖') : (c.source === 'stcard' ? _phFlatIcon('🎭') : (c.source === 'persona' ? _phFlatIcon('👤') : (c.source === 'scan' ? _phFlatIcon('🔍') : _phFlatIcon('➕'))));
             const profileSnip = (c.identity || c.profile || '').slice(0,40);
             html += '<div class="wxContactItem" style="display:flex;align-items:center;padding:10px 14px;">';
-            html += '<div class="wxCIAvatar" style="background:var(--ph-accent);border:1px solid rgba(255,255,255,.28);flex-shrink:0;font-size:0;display:flex;align-items:center;justify-content:center;">' + srcTag + '</div>';
+            html += '<div class="wxCIAvatar" style="background:var(--ph-glass-strong);border:1px solid var(--ph-glass-border);flex-shrink:0;font-size:0;display:flex;align-items:center;justify-content:center;">' + srcTag + '</div>';
             html += '<div style="flex:1;margin-left:10px;overflow:hidden;">';
             html += '<div class="wxCIName" style="font-size:14px;">' + esc(c.name) + '</div>';
             if (profileSnip) html += '<div style="font-size:11px;color:rgba(20,24,28,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(profileSnip) + '</div>';
