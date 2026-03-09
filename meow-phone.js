@@ -990,6 +990,39 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .phDockBtn[data-app="photos"] .di{ background:linear-gradient(135deg, rgba(164,196,154,.20), rgba(188,216,180,.12)) !important; }
 #${ID}[data-theme="frost"] .phDockBtn[data-app="settings"] .di{ background:linear-gradient(135deg, rgba(158,158,175,.19), rgba(184,184,200,.11)) !important; }
 
+#${ID}[data-theme="frost"]{
+  --ph-icon-inner-tint: rgba(255,255,255,.95);
+}
+
+#${ID}[data-theme="frost"] .phAppIcon,
+#${ID}[data-theme="frost"] .phSearch,
+#${ID}[data-theme="frost"] .phDock{
+  border-color:rgba(255,255,255,.30) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.40),
+    inset 0 0 0 1px rgba(255,255,255,.12),
+    0 8px 20px rgba(126,142,166,.04) !important;
+}
+
+#${ID}[data-theme="frost"] .phAppIcon .ai,
+#${ID}[data-theme="frost"] .phDockBtn .di{
+  border:1px solid rgba(255,255,255,.26) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.42),
+    inset 0 0 0 1px rgba(255,255,255,.16),
+    0 1px 2px rgba(126,142,166,.03) !important;
+  opacity:.28;
+}
+
+#${ID}[data-theme="frost"] .phAppIcon .ai svg.phIco,
+#${ID}[data-theme="frost"] .phDockBtn .di svg.phIco{
+  opacity:1 !important;
+  fill:var(--ph-icon-inner-tint, rgba(255,255,255,.95)) !important;
+  filter:none !important;
+  shape-rendering:geometricPrecision;
+  text-rendering:geometricPrecision;
+}
+
     `;
     (doc.head || doc.documentElement).appendChild(st);
   }catch(e){}
