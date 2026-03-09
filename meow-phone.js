@@ -246,7 +246,6 @@ function phoneMakeDefaultG(){
   return {
     v: 1,
     theme: 'frost',
-    accentHex: '',      // 强调色自定义（空=跟随主题默认）
     layout: null,   // 以后存桌面布局 JSON
     settings: {
       typingEffect: true,
@@ -286,6 +285,12 @@ function phoneLoadSettings(){
 
     // APP 内容底（更不透明纯色/半透明底）
     uiAppSolidOpacity: 92,
+
+    // 桌面卡片 / 高亮主题色
+    homeCardTint: '默认',
+    homeCardTintHex: '',
+    accentTint: '默认',
+    accentHex: '',
 
     // 其他
     fontSize: 14,
@@ -480,8 +485,6 @@ function ensureTuneStyle(){
     st.id = STYLE_TUNE_ID;
     st.textContent = `
 /* ===== MEOW PHONE TUNE — UI clarity + wallpaper (scoped) ===== */
-#${ID} .weatherIcon{ font-size:64px; color:var(--ph-text); display:flex; align-items:center; justify-content:center; line-height:1; }
-#${ID} .weatherIcon svg{ width:64px; height:64px; stroke:var(--ph-text); }
 #${ID}{
   --phHomeA: .36;
   --phHomeStrongA: .46;
@@ -492,11 +495,14 @@ function ensureTuneStyle(){
   --phAppBorderA: .68;
   --phAppBlur: 16px;
   --phAppSolidA: .92;
-  --phAppBodyRGB: 10,10,10;    /* 各主题覆盖 */
   --phHomeWallA: 1;
   --phAppWallA: 1;
   --phHomeWallUrl: none;
   --phAppWallUrl: none;
+  --phHomeRGB: 255,255,255;
+  --phAppRGB: 246,247,250;
+  --phAppSolidRGB: 246,247,250;
+  --ph-accent-rgb: 124,152,168;
   --ph-ico: rgba(255,255,255,.94);
   --ph-ico-dim: rgba(255,255,255,.84);
   --ph-ico-shadow: rgba(0,0,0,.22);
@@ -504,9 +510,9 @@ function ensureTuneStyle(){
 
 /* 桌面/APP 分离 */
 #${ID}[data-view="home"]{
-  --ph-glass:        rgba(255,255,255,var(--phHomeA));
-  --ph-glass-strong: rgba(255,255,255,var(--phHomeStrongA));
-  --ph-glass-border: rgba(255,255,255,var(--phHomeBorderA));
+  --ph-glass:        rgba(var(--phHomeRGB),var(--phHomeA));
+  --ph-glass-strong: rgba(var(--phHomeRGB),var(--phHomeStrongA));
+  --ph-glass-border: rgba(var(--phHomeRGB),var(--phHomeBorderA));
   --ph-glass-blur:   var(--phHomeBlur);
   --ph-ico: rgba(255,255,255,.96);
   --ph-ico-dim: rgba(255,255,255,.86);
@@ -515,9 +521,9 @@ function ensureTuneStyle(){
   --ph-wallpaper-url:     var(--phHomeWallUrl);
 }
 #${ID}[data-view="app"]{
-  --ph-glass:        rgba(255,255,255,var(--phAppA));
-  --ph-glass-strong: rgba(255,255,255,var(--phAppStrongA));
-  --ph-glass-border: rgba(255,255,255,var(--phAppBorderA));
+  --ph-glass:        rgba(var(--phAppRGB),var(--phAppA));
+  --ph-glass-strong: rgba(var(--phAppRGB),var(--phAppStrongA));
+  --ph-glass-border: rgba(var(--phAppRGB),var(--phAppBorderA));
   --ph-glass-blur:   var(--phAppBlur);
   --ph-ico: var(--ph-text);
   --ph-ico-dim: var(--ph-text-sub);
@@ -526,59 +532,28 @@ function ensureTuneStyle(){
   --ph-wallpaper-url:     var(--phAppWallUrl);
 }
 
-/* frost 桌面：纯净白半透玻璃 */
-#${ID}[data-theme="frost"][data-view="home"]{
-  --ph-glass:        rgba(255,255,254,var(--phHomeA));
-  --ph-glass-strong: rgba(255,255,254,var(--phHomeStrongA));
-  --ph-glass-border: rgba(255,255,255,var(--phHomeBorderA));
-}
-#${ID}[data-theme="frost"][data-view="app"]{
-  --ph-glass:        rgba(255,255,254,var(--phAppA));
-  --ph-glass-strong: rgba(255,255,254,var(--phAppStrongA));
-  --ph-glass-border: rgba(255,255,255,var(--phAppBorderA));
-}
-
-/* ✅ 只有聊天行是独立浮卡；discover/contact 行住在 Group 卡内 */
-#${ID} .wxChatRow{
-  margin: 4px 10px;
-  border-radius: 20px;
-  border-bottom: none !important;
-  box-shadow: 0 4px 16px rgba(16,22,36,.07);
-}
-#${ID} .wxChatList{ padding: 6px 0 14px; }
-#${ID} .wxDiscoverList,
-#${ID} .wxContactList,
-#${ID} .wxMeWrap{ padding: 6px 0 14px; }
-
-
-
-
-
 /* modern 壁纸：纯黑 */
 #${ID} .phWallpaper{
   background-image: var(--ph-wallpaper-url, none), none;
   background-size: cover, auto;
   background-position: center, center;
-  background-color: var(--ph-wallpaper-base, #0a0a0a);
+  background-color: #0a0a0a;
   opacity: var(--ph-wallpaper-opacity, 1);
 }
-/* frost 壁纸：极白+极淡暖光晕（Nube 参考） */
+/* frost 壁纸：柔和米白光晕 */
 #${ID}[data-theme="frost"] .phWallpaper{
-  background-color: #f7f6f4;
+  background-color: #f5f5f7;
   background-image:
     var(--ph-wallpaper-url, none),
-    radial-gradient(ellipse 1000px 800px at 25% 10%, rgba(255,255,255,.96), transparent),
-    radial-gradient(ellipse 800px 700px at 80% 55%, rgba(240,235,228,.28), transparent),
-    radial-gradient(ellipse 700px 600px at 50% 95%, rgba(228,222,215,.18), transparent);
-  background-size: cover, auto, auto, auto;
-  background-position: center, 25% 10%, 80% 55%, 50% 95%;
+    radial-gradient(ellipse 800px 600px at 35% 20%, rgba(255,255,255,.90), transparent),
+    radial-gradient(ellipse 600px 560px at 70% 65%, rgba(200,215,255,.25), transparent);
+  background-size: cover, auto, auto;
+  background-position: center, 35% 20%, 70% 65%;
 }
 
-/* APP 内容底：使用 --phAppBodyRGB + --phAppSolidA 实现滑块控制 */
+/* APP 内容底：跟随各主题变量 */
 #${ID}[data-view="app"] .phAppBody{
-  background: rgba(var(--phAppBodyRGB,10,10,10), var(--phAppSolidA,.92));
-  backdrop-filter: blur(calc(var(--phAppBlur,16px) * .35 + 4px));
-  -webkit-backdrop-filter: blur(calc(var(--phAppBlur,16px) * .35 + 4px));
+  background: var(--ph-appbody-bg, rgba(10,10,10,.97));
 }
 
 /* App 顶部横条 — 全主题化 */
@@ -597,9 +572,6 @@ function ensureTuneStyle(){
 #${ID} .wxTabbar{
   background: var(--ph-tabbar-bg, rgba(10,10,10,.94));
   border-top: 1px solid var(--ph-tabbar-border, rgba(255,255,255,.07));
-  box-shadow: 0 -1px 0 var(--ph-tabbar-border, rgba(255,255,255,.07));
-  backdrop-filter: blur(calc(var(--ph-glass-blur) + 6px));
-  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) + 6px));
 }
 #${ID} .wxTabBtn{ color: var(--ph-tabbar-off, rgba(255,255,255,.35)); }
 #${ID} .wxTabBtn.on{ color: var(--ph-tabbar-on, rgba(255,255,255,.95)); background: transparent; }
@@ -608,9 +580,6 @@ function ensureTuneStyle(){
 #${ID} .wxTopBar{
   background: var(--ph-topbar-bg, rgba(10,10,10,.95));
   border-bottom: 1px solid var(--ph-topbar-border, rgba(255,255,255,.07));
-  backdrop-filter: blur(calc(var(--ph-glass-blur) + 6px));
-  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) + 6px));
-  min-height: 50px;
 }
 #${ID} .wxTopBar .wxTopTitle{ color: var(--ph-topbar-title, rgba(255,255,255,.92)); }
 #${ID} .wxTopBar .wxTopBtn{ color: var(--ph-topbar-btn, rgba(255,255,255,.50)); }
@@ -704,7 +673,7 @@ function ensureTuneStyle(){
 #${ID} .wxPlusPopup{ background: var(--ph-plus-popup-bg, rgba(28,28,28,.97)); }
 
 /* 确认对话框 全主题化 */
-#${ID} .wxConfirmBox{ background: var(--ph-confirm-bg, rgba(22,22,22,.99)); box-shadow: 0 1px 0 rgba(255,255,255,.75) inset, 0 16px 48px rgba(0,0,0,.18); border-radius: 16px; }
+#${ID} .wxConfirmBox{ background: var(--ph-confirm-bg, rgba(22,22,22,.99)); }
 #${ID} .wxConfirmBox .wxCMsg{ color: var(--ph-confirm-text); }
 #${ID} .wxConfirmBox .wxCBtns{ border-top-color: var(--ph-confirm-sep); }
 #${ID} .wxConfirmBox .wxCBtn:first-child{ border-right-color: var(--ph-confirm-sep); color: var(--ph-confirm-cancel); }
@@ -751,6 +720,344 @@ function ensureTuneStyle(){
 #${ID} .phDockBtn svg.phIco{ filter: drop-shadow(0 1px 2px var(--ph-ico-shadow)); }
 /* 发现/我 页图标底色 */
 #${ID} .wxDIcoThemed svg.phIco{ fill: var(--ph-ico-list, rgba(255,255,255,.90)) !important; }
+
+/* ===== 2026 UI polish · css only ===== */
+#${ID}{
+  --ph-shell-border: rgba(255,255,255,.26);
+  --ph-shell-shadow: 0 26px 70px rgba(16,22,36,.18), 0 10px 24px rgba(16,22,36,.08);
+  --ph-status-fg: var(--ph-text);
+  --ph-status-shadow: none;
+  --ph-home-label: var(--ph-text-sub);
+  --ph-card-soft: var(--ph-glass);
+  --ph-card-strong: var(--ph-glass-strong);
+  --ph-card-line: var(--ph-glass-border);
+  --ph-app-icon-bg: var(--ph-glass-strong);
+  --ph-app-icon-border: var(--ph-glass-border);
+  --ph-app-icon-fg: var(--ph-text);
+  --ph-app-icon-shadow: 0 10px 24px rgba(16,22,36,.10);
+  --ph-dock-surface: var(--ph-glass);
+  --ph-dock-line: var(--ph-glass-border);
+}
+#${ID}[data-theme="frost"]{
+  --ph-shell-border: rgba(255,255,255,.58);
+  --ph-shell-shadow: 0 28px 72px rgba(118,130,155,.18), 0 10px 24px rgba(118,130,155,.09);
+  --ph-status-fg: rgba(32,40,53,.86);
+  --ph-status-shadow: 0 1px 0 rgba(255,255,255,.45);
+  --ph-home-label: rgba(38,45,58,.72);
+  --ph-card-soft: rgba(255,255,255,.48);
+  --ph-card-strong: rgba(255,255,255,.68);
+  --ph-card-line: rgba(255,255,255,.74);
+  --ph-app-icon-bg: linear-gradient(180deg, rgba(255,255,255,.82), rgba(244,247,251,.58));
+  --ph-app-icon-border: rgba(255,255,255,.86);
+  --ph-app-icon-fg: rgba(40,47,60,.82);
+  --ph-app-icon-shadow: 0 14px 30px rgba(112,126,152,.14);
+  --ph-dock-surface: rgba(255,255,255,.32);
+  --ph-dock-line: rgba(255,255,255,.52);
+  --ph-accent: var(--ph-icon-tint, #8DA8B8);
+  --ph-accent2: #C8D4DD;
+  --ph-accent-grad: linear-gradient(135deg, var(--ph-icon-tint, #8DA8B8), #C8D4DD);
+}
+#${ID}[data-theme="modern"]{
+  --ph-shell-border: rgba(255,255,255,.08);
+  --ph-shell-shadow: 0 28px 78px rgba(0,0,0,.44), 0 8px 18px rgba(0,0,0,.24);
+  --ph-status-fg: rgba(255,255,255,.94);
+  --ph-status-shadow: 0 1px 2px rgba(0,0,0,.28);
+  --ph-home-label: rgba(255,255,255,.68);
+  --ph-card-soft: rgba(255,255,255,.05);
+  --ph-card-strong: rgba(255,255,255,.08);
+  --ph-card-line: rgba(255,255,255,.10);
+  --ph-app-icon-bg: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+  --ph-app-icon-border: rgba(255,255,255,.10);
+  --ph-app-icon-fg: rgba(255,255,255,.92);
+  --ph-app-icon-shadow: 0 14px 28px rgba(0,0,0,.22);
+  --ph-dock-surface: rgba(255,255,255,.035);
+  --ph-dock-line: rgba(255,255,255,.08);
+}
+#${ID}[data-theme="medieval"]{
+  --ph-status-fg: rgba(255,238,210,.92);
+  --ph-home-label: rgba(255,224,190,.72);
+}
+#${ID}[data-theme="cyber"]{
+  --ph-status-fg: rgba(200,255,230,.94);
+  --ph-home-label: rgba(160,232,204,.74);
+}
+#${ID}[data-theme="sakura"]{
+  --ph-status-fg: rgba(255,233,242,.94);
+  --ph-home-label: rgba(255,210,226,.72);
+}
+
+#${ID} .phShell{
+  border: 1px solid var(--ph-shell-border);
+  box-shadow: var(--ph-shell-shadow);
+}
+#${ID}[data-theme="frost"] .phShell{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.04)),
+    var(--ph-bg-primary);
+}
+#${ID} .phWallpaper{
+  filter: saturate(.92) contrast(1.02);
+}
+#${ID}[data-theme="frost"] .phWallpaper{
+  filter: saturate(.88) brightness(1.01);
+}
+
+#${ID} .phStatus,
+#${ID} .phAppBar,
+#${ID} .wxTopBar{
+  padding-left: 16px;
+  padding-right: 16px;
+}
+#${ID} .phTime{
+  color: var(--ph-status-fg);
+  text-shadow: var(--ph-status-shadow);
+}
+#${ID} .iosSignal i,
+#${ID} .iosWifi span,
+#${ID} .iosBattery .bat::after{
+  background: var(--ph-status-fg);
+}
+#${ID} .iosWifi::before,
+#${ID} .iosWifi::after{
+  border-top-color: var(--ph-status-fg);
+}
+#${ID} .iosBattery .bat{
+  border-color: var(--ph-status-fg);
+}
+#${ID} .iosBattery .pct,
+#${ID} .phSysBtn,
+#${ID} .phNavBtn,
+#${ID} .phAppBarSpacer .phBarRBtn{
+  color: var(--ph-status-fg);
+}
+#${ID} .phSysBtn{
+  background: rgba(255,255,255,.12);
+  border-color: rgba(255,255,255,.14);
+}
+#${ID}[data-theme="frost"] .phSysBtn{
+  background: rgba(255,255,255,.46);
+  border-color: rgba(255,255,255,.62);
+}
+
+#${ID} .phPages{ bottom: 132px; }
+#${ID} .phPage{ padding: 12px 16px; }
+#${ID} .phGrid{ gap: 12px; }
+
+#${ID} .pw,
+#${ID} .phCard,
+#${ID} .wxSearchBox,
+#${ID} .wxChatRow,
+#${ID} .wxDiscoverItem,
+#${ID} .wxContactHeader,
+#${ID} .wxContactItem,
+#${ID} .wxMeProfile,
+#${ID} .forumCard,
+#${ID} .forumComposeInner,
+#${ID} .forumComposeHeader,
+#${ID} .forumComposeTitleInput,
+#${ID} .forumComposeTextArea{
+  background: var(--ph-card-soft) !important;
+  border: 1px solid var(--ph-card-line) !important;
+  box-shadow: 0 10px 28px rgba(16,22,36,.06);
+  backdrop-filter: blur(var(--ph-glass-blur));
+  -webkit-backdrop-filter: blur(var(--ph-glass-blur));
+}
+#${ID} .phCard,
+#${ID} .pw{
+  box-shadow: 0 12px 28px rgba(16,22,36,.07);
+}
+#${ID} .wxChatRow,
+#${ID} .wxDiscoverItem,
+#${ID} .wxContactHeader,
+#${ID} .wxContactItem,
+#${ID} .wxMeProfile{
+  margin: 0 10px 8px;
+  border-radius: 22px;
+  border-bottom: none !important;
+}
+#${ID} .wxSearchRow{ padding: 8px 12px 10px; }
+#${ID} .wxSearchBox{
+  justify-content: flex-start;
+  padding: 0 12px;
+  border-radius: 16px;
+  min-height: 40px;
+}
+#${ID} .wxChatList,
+#${ID} .wxDiscoverList,
+#${ID} .wxContactList,
+#${ID} .wxMeWrap{ padding-top: 6px; padding-bottom: 12px; }
+
+#${ID}[data-view="app"] .phAppBar,
+#${ID} .wxTopBar,
+#${ID} .wxTabbar,
+#${ID} .phDock{
+  backdrop-filter: blur(calc(var(--ph-glass-blur) + 4px));
+  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) + 4px));
+}
+#${ID}[data-view="app"] .phAppBar{
+  background: color-mix(in srgb, var(--ph-appbar-bg) 82%, transparent) !important;
+  border-bottom: 1px solid var(--ph-sep) !important;
+}
+#${ID}[data-view="app"] .phAppBody{
+  background: rgba(var(--phAppSolidRGB,246,247,250), var(--phAppSolidA,0.92)) !important;
+  backdrop-filter: blur(calc(var(--phAppBlur,16px) * .35 + 6px));
+  -webkit-backdrop-filter: blur(calc(var(--phAppBlur,16px) * .35 + 6px));
+}
+#${ID} .wxTopBar{
+  background: color-mix(in srgb, var(--ph-topbar-bg) 86%, transparent) !important;
+}
+#${ID} .wxTabbar{
+  background: color-mix(in srgb, var(--ph-tabbar-bg) 84%, transparent) !important;
+  border-top: 1px solid var(--ph-tabbar-border) !important;
+}
+#${ID} .wxTabBtn{ min-height: 50px; }
+#${ID} .wxTabBtn .txt{ font-size: 10.5px; font-weight: 600; letter-spacing: .02em; }
+#${ID} .wxTabBtn.on{ color: var(--ph-tabbar-on) !important; }
+#${ID}[data-theme="frost"] .wxTabBtn.on{ text-shadow: 0 0 14px rgba(var(--ph-accent-rgb,124,152,168),.14); }
+
+#${ID} .phAppIcon,
+#${ID} .phDockBtn{
+  background: transparent;
+}
+#${ID} .phAppIcon{
+  gap: 6px;
+  padding: 8px 0 10px;
+  align-content: center;
+}
+#${ID} .phAppIcon .ai,
+#${ID} .phDockBtn .di,
+#${ID} .wxDIco,
+#${ID} .wxCHIco,
+#${ID} .forumComposeTabIcon,
+#${ID} .settingRow .sIcon{
+  background: var(--ph-app-icon-bg) !important;
+  border: 1px solid var(--ph-app-icon-border);
+  color: var(--ph-app-icon-fg);
+  box-shadow: var(--ph-app-icon-shadow);
+  backdrop-filter: blur(calc(var(--ph-glass-blur) * .7));
+  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) * .7));
+}
+#${ID} .wxDIco,
+#${ID} .wxCHIco,
+#${ID} .forumComposeTabIcon,
+#${ID} .settingRow .sIcon{
+  background: var(--ph-icon-tint, var(--ph-app-icon-bg)) !important;
+  color: var(--ph-icon-inner-tint, var(--ph-app-icon-fg)) !important;
+}
+#${ID} .phAppIcon .ai{
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+}
+#${ID} .phDockBtn .di{
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+}
+#${ID} .wxDIco,
+#${ID} .wxCHIco,
+#${ID} .settingRow .sIcon{
+  width: 34px;
+  height: 34px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#${ID} .forumComposeTabIcon{
+  border-radius: 14px;
+}
+#${ID} .phAppIcon .ai svg.phIco,
+#${ID} .phDockBtn .di svg.phIco,
+#${ID} .wxDIco svg.phIco,
+#${ID} .wxCHIco svg.phIco,
+#${ID} .settingRow .sIcon svg.phIco,
+#${ID} .forumComposeTabIcon svg,
+#${ID} .wxDIcoThemed svg.phIco{
+  fill: currentColor !important;
+}
+#${ID} .phAppIcon .at,
+#${ID} .phDockBtn .dt{
+  color: var(--ph-home-label) !important;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+#${ID} .phAppIcon .at{ font-size: 10.5px; max-width: 92%; }
+#${ID} .phDockBtn .dt{ font-size: 9.5px; }
+
+#${ID} .phDock{
+  left: 16px;
+  right: 16px;
+  bottom: 14px;
+  height: 64px;
+  border-radius: 30px;
+  background: var(--ph-dock-surface);
+  border: 1px solid var(--ph-dock-line);
+  box-shadow: 0 14px 34px rgba(16,22,36,.10);
+}
+#${ID} .phDockBtn{
+  width: 58px;
+  height: 48px;
+  border-radius: 18px;
+}
+#${ID} .phDockBtn:hover{ background: rgba(255,255,255,.10); }
+#${ID}[data-theme="frost"] .phDockBtn:hover{ background: rgba(255,255,255,.26); }
+
+#${ID} .phAppTitleMain{
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+#${ID} .phAppSubTitle{
+  color: var(--ph-text-sub);
+}
+#${ID} .phNavBtn,
+#${ID} .phBarRBtn{
+  border-radius: 14px;
+}
+
+#${ID} .wxChatDetailWrap,
+#${ID} .wxChatMsgs,
+#${ID} .wxChatInputBar,
+#${ID} .wxStickerPanel,
+#${ID} .wxVoicePanel,
+#${ID} .wxChatPlusGrid{
+  background: color-mix(in srgb, var(--ph-wechat-bg) 96%, transparent) !important;
+}
+#${ID} .wxChatInputBar textarea,
+#${ID} .phModalTa,
+#${ID} .sTimeInput,
+#${ID} .forumComposeTitleInput,
+#${ID} .forumComposeTextArea,
+#${ID} .wxEditMsgBox textarea{
+  background: color-mix(in srgb, var(--ph-input-bg) 94%, transparent) !important;
+  color: var(--ph-input-text) !important;
+  border: 1px solid var(--ph-input-border) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
+}
+#${ID} .wxChatBubble.them .wxCBContent{
+  box-shadow: 0 8px 18px rgba(16,22,36,.05);
+}
+#${ID}[data-theme="frost"] .wxChatBubble.them .wxCBContent,
+#${ID}[data-theme="frost"] .wxChatBubble.me .wxCBContent{
+  border-radius: 18px;
+}
+
+#${ID} .settingRow{
+  min-height: 58px;
+  border-radius: 18px;
+  background: var(--ph-card-soft);
+  border: 1px solid var(--ph-card-line);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+#${ID} .settingRow .sLabel{ font-weight: 600; }
+#${ID} .settingRow .sValue{ color: var(--ph-text-sub); }
+
+#${ID}.mini{
+  box-shadow: var(--ph-shell-shadow);
+}
+
     `;
     (doc.head || doc.documentElement).appendChild(st);
   }catch(e){}
@@ -763,56 +1070,34 @@ function phoneApplyVisualFromSettings(cfg){
     if (!root) return;
     cfg = cfg || phoneLoadSettings();
 
-    // 桌面玻璃（0~100 -> 0~1）
     const homeA = _meowClamp01((cfg.uiHomeOpacity||0)/100);
     const homeStrong = _meowClamp01(homeA + 0.10);
     const homeBorder  = _meowClamp01(homeA + 0.16);
     const homeBlurPx  = _meowClampInt(cfg.uiHomeBlur, 0, 40, 22);
 
-    // APP玻璃
     const appA = _meowClamp01((cfg.uiAppOpacity||0)/100);
     const appStrong = _meowClamp01(appA + 0.10);
     const appBorder  = _meowClamp01(appA + 0.16);
     const appBlurPx  = _meowClampInt(cfg.uiAppBlur, 0, 40, 16);
-
-    // APP底色不透明度
     const appSolidA = _meowClamp01((cfg.uiAppSolidOpacity||0)/100);
 
     root.style.setProperty('--phHomeA', String(homeA));
     root.style.setProperty('--phHomeStrongA', String(homeStrong));
     root.style.setProperty('--phHomeBorderA', String(homeBorder));
     root.style.setProperty('--phHomeBlur', homeBlurPx + 'px');
-
     root.style.setProperty('--phAppA', String(appA));
     root.style.setProperty('--phAppStrongA', String(appStrong));
     root.style.setProperty('--phAppBorderA', String(appBorder));
     root.style.setProperty('--phAppBlur', appBlurPx + 'px');
-
     root.style.setProperty('--phAppSolidA', String(appSolidA));
 
-    // ✅ 动态设置 appBody RGB（匹配当前主题底色）
-    try{
-      const _theme = (root.getAttribute('data-theme') || 'modern');
-      const _rgbMap = {
-        frost: '250,249,247',
-        modern: '10,10,10',
-        medieval: '26,14,4',
-        cyber: '4,4,8',
-        sakura: '16,7,20',
-      };
-      root.style.setProperty('--phAppBodyRGB', _rgbMap[_theme] || '10,10,10');
-    }catch(_e){}
-
-    // 壁纸透明度
     const homeWallA = _meowClamp01((cfg.wallpaperHomeOpacity ?? 100)/100);
     const appWallA  = _meowClamp01((cfg.wallpaperAppOpacity  ?? 100)/100);
     root.style.setProperty('--phHomeWallA', String(homeWallA));
     root.style.setProperty('--phAppWallA',  String(appWallA));
 
-    // 壁纸 url
     var homeWP = cfg.wallpaperHome || '';
     var appWP = cfg.wallpaperApp || '';
-    // 修复：清除 idb: 残留引用
     if (homeWP.indexOf('idb:') === 0) homeWP = '';
     if (appWP.indexOf('idb:') === 0) appWP = '';
     const homeUrl = homeWP ? `url("${homeWP}")` : 'none';
@@ -820,20 +1105,51 @@ function phoneApplyVisualFromSettings(cfg){
     root.style.setProperty('--phHomeWallUrl', homeUrl);
     root.style.setProperty('--phAppWallUrl',  appUrl);
 
-    // ✅ 图标自定义色
-    if (cfg.iconTintHex){
-      root.style.setProperty('--ph-icon-tint', cfg.iconTintHex);
-    } else {
-      root.style.removeProperty('--ph-icon-tint');
+    const themeId = root.getAttribute('data-theme') || 'frost';
+    let homeRgb = '255,255,255';
+    let appRgb = '246,247,250';
+    let accentRgb = '124,152,168';
+    if (themeId === 'modern'){
+      homeRgb = '255,255,255';
+      appRgb = '244,245,247';
+      accentRgb = '32,36,42';
+    }else if (themeId === 'medieval'){
+      homeRgb = '87,60,38';
+      appRgb = '58,40,24';
+      accentRgb = '192,120,64';
+    }else if (themeId === 'cyber'){
+      homeRgb = '12,26,22';
+      appRgb = '8,18,20';
+      accentRgb = '0,232,144';
+    }else if (themeId === 'sakura'){
+      homeRgb = '255,247,250';
+      appRgb = '248,239,246';
+      accentRgb = '244,114,182';
     }
-    // ✅ 内部图标色（独立于 app 底色）
-    if (cfg.iconInnerHex){
-      root.style.setProperty('--ph-icon-inner-tint', cfg.iconInnerHex);
+
+    root.style.setProperty('--phHomeRGB', _meowHexToRgbString(cfg.homeCardTintHex || '', homeRgb) || homeRgb);
+    root.style.setProperty('--phAppRGB', appRgb);
+    root.style.setProperty('--phAppSolidRGB', appRgb);
+
+    if (cfg.iconTintHex) root.style.setProperty('--ph-icon-tint', cfg.iconTintHex);
+    else root.style.removeProperty('--ph-icon-tint');
+
+    if (cfg.iconInnerHex) root.style.setProperty('--ph-icon-inner-tint', cfg.iconInnerHex);
+    else root.style.removeProperty('--ph-icon-inner-tint');
+
+    const accentHex = _meowHexNormalize(cfg.accentHex || '');
+    if (accentHex){
+      const accent2 = _meowBlendHex(accentHex, '#FFFFFF', 0.34, accentHex);
+      root.style.setProperty('--ph-accent', accentHex);
+      root.style.setProperty('--ph-accent2', accent2);
+      root.style.setProperty('--ph-accent-grad', `linear-gradient(135deg, ${accentHex}, ${accent2})`);
+      root.style.setProperty('--ph-accent-rgb', _meowHexToRgbString(accentHex, accentRgb) || accentRgb);
     } else {
-      root.style.removeProperty('--ph-icon-inner-tint');
+      root.style.removeProperty('--ph-accent');
+      root.style.removeProperty('--ph-accent2');
+      root.style.removeProperty('--ph-accent-grad');
+      root.style.setProperty('--ph-accent-rgb', accentRgb);
     }
-    // ✅ 强调色覆盖：用户自定义强调色（覆盖主题默认 --ph-accent*）
-    _applyAccentColor(cfg);
   }catch(e){}
 }
 
@@ -954,15 +1270,8 @@ function phoneApplyWallpaper(base64OrEmpty, target){
           case '🗑': return s('<path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z"/><path d="M4 7h16v2H4V7z"/>');
           case '🖼': return s('<path d="M4 5h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm3 4a2 2 0 1 0 0 .001A2 2 0 0 0 7 9zm13 10-5-5-3 3-2-2-6 6h16z"/>');
           case '📷': return s('<path d="M9 4l1.5-2h3L15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3zm3 15a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2.2a2.8 2.8 0 1 1 0-5.6 2.8 2.8 0 0 1 0 5.6z"/>');
-          case '🎭': return s('<path d="M20 2H4a2 2 0 0 0-2 2v14l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm-9 9H9V9h2v2zm4 0h-2V9h2v2zm4 0h-2V9h2v2z"/>');
-        case '👤': return s('<path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>');
-        case '🤖': return s('<path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7H3a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2zM7.5 14a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm9 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zM5 19v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1H5z"/>');
-        case '🔗': return s('<path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>');
-        case '🎙': return s('<path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>');
-        case '➕': return s('<path d="M11 5h2v14h-2V5zm-6 6h14v2H5v-2z"/>');
-case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>');
-        case '🏷': return s('<path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/>');
-        default: return emoji||'';
+          case '➕': return s('<path d="M11 5h2v14h-2V5zm-6 6h14v2H5v-2z"/>');
+default: return emoji||'';
         }
       }
 
@@ -1013,147 +1322,126 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 
 /* ---------- Theme CSS Variables ---------- */
 
-/* ── modern（默认）：纯黑白极简，字重驱动层次 ── */
+/* ── frost（默认）：霜雪玻璃拟态 ── */
 #${ID}{
-  --ph-bg-primary: #0a0a0a;
-  --ph-glass: rgba(255,255,255,.055);
-  --ph-glass-strong: rgba(255,255,255,.09);
-  --ph-glass-border: rgba(255,255,255,.10);
-  --ph-glass-blur: 20px;
-  --ph-text: rgba(255,255,255,.92);
-  --ph-text-sub: rgba(255,255,255,.50);
-  --ph-text-dim: rgba(255,255,255,.26);
-  --ph-accent: #ffffff;
-  --ph-accent2: rgba(255,255,255,.72);
-  --ph-accent-grad: linear-gradient(135deg,rgba(255,255,255,.95),rgba(220,220,220,.90));
-  --ph-shadow: rgba(0,0,0,.38);
-  --ph-radius-lg: 22px;
-  --ph-radius-md: 16px;
-  --ph-radius-sm: 12px;
-  --ph-radius-xs: 8px;
-  --ph-sep: rgba(255,255,255,.07);
-  --ph-row-bg: rgba(255,255,255,.04);
-  --ph-row-hover: rgba(255,255,255,.07);
-  --ph-input-bg: rgba(255,255,255,.07);
-  --ph-input-border: rgba(255,255,255,.12);
-  --ph-send-btn: rgba(255,255,255,.92);
-  --ph-send-icon: #000;
-  --ph-chat-me-bubble: rgba(255,255,255,.92);
-  --ph-chat-me-text: #111;
-  --ph-chat-them-bubble: rgba(255,255,255,.08);
-  --ph-chat-them-text: rgba(255,255,255,.90);
-  --ph-tabbar-bg: rgba(10,10,10,.94);
-  --ph-tabbar-border: rgba(255,255,255,.07);
-  --ph-tabbar-on: rgba(255,255,255,.95);
-  --ph-tabbar-off: rgba(255,255,255,.35);
-  --ph-appbar-bg: rgba(10,10,10,.95);
-  --ph-appbody-bg: rgba(10,10,10,.97);
-  --ph-topbar-bg: rgba(10,10,10,.95);
-  --ph-topbar-border: rgba(255,255,255,.07);
-  --ph-topbar-title: rgba(255,255,255,.92);
-  --ph-topbar-btn: rgba(255,255,255,.50);
-  --ph-sticker-bg: rgba(16,16,16,.97);
-  --ph-input-area-bg: rgba(10,10,10,.96);
-  --ph-input-text: rgba(255,255,255,.88);
-  --ph-input-ph: rgba(255,255,255,.28);
-  --ph-wechat-me-bubble: rgba(255,255,255,.92);
-  --ph-wechat-me-text: #111;
-  --ph-wechat-them-bubble: rgba(255,255,255,.09);
-  --ph-wechat-them-text: rgba(255,255,255,.88);
-  --ph-wechat-bg: rgba(12,12,12,.99);
-  --ph-plus-popup-bg: rgba(28,28,28,.97);
-  --ph-modal-bg: rgba(20,20,20,.97);
-  --ph-modal-text: rgba(255,255,255,.88);
-  --ph-confirm-bg: rgba(22,22,22,.99);
-  --ph-confirm-text: rgba(255,255,255,.88);
-  --ph-confirm-sep: rgba(255,255,255,.08);
-  --ph-confirm-cancel: rgba(255,255,255,.45);
-  --ph-confirm-danger: #ff5858;
-  --ph-ico-list: rgba(255,255,255,.90);
-  --ph-discover-bg: rgba(255,255,255,.05);
-  --ph-discover-border: rgba(255,255,255,.07);
-  --ph-discover-name: rgba(255,255,255,.90);
-  --ph-discover-arrow: rgba(255,255,255,.26);
-  --ph-searchbox-bg: rgba(255,255,255,.07);
-  --ph-searchbox-text: rgba(255,255,255,.40);
+  --ph-bg-primary: linear-gradient(145deg,#fafafa 0%,#f5f5f7 55%,#eff0f3 100%);
+  --ph-glass: rgba(255,255,255,.62);
+  --ph-glass-strong: rgba(255,255,255,.80);
+  --ph-glass-border: rgba(255,255,255,.82);
+  --ph-glass-blur: 24px;
+  --ph-text: rgba(20,20,24,.90);
+  --ph-text-sub: rgba(20,20,24,.52);
+  --ph-text-dim: rgba(20,20,24,.30);
+  --ph-accent: #7C98A8;
+  --ph-accent2: #AFC2CC;
+  --ph-accent-grad: linear-gradient(135deg,#7C98A8,#AFC2CC);
+  --ph-shadow: rgba(80,100,160,.10);
+  --ph-sep: rgba(0,0,0,.055);
+  --ph-row-bg: rgba(255,255,255,.72);
+  --ph-row-hover: rgba(255,255,255,.92);
+  --ph-input-bg: rgba(255,255,255,.85);
+  --ph-input-border: rgba(0,0,0,.10);
+  --ph-send-btn: #7C98A8;
+  --ph-send-icon: #fff;
+  --ph-chat-me-bubble: linear-gradient(135deg,#7C98A8,#AFC2CC);
+  --ph-chat-me-text: #fff;
+  --ph-chat-them-bubble: rgba(255,255,255,.88);
+  --ph-chat-them-text: rgba(20,20,24,.88);
+  --ph-tabbar-bg: rgba(252,252,255,.90);
+  --ph-tabbar-border: rgba(0,0,0,.06);
+  --ph-tabbar-on: #7C98A8;
+  --ph-tabbar-off: rgba(20,20,24,.38);
+  --ph-appbar-bg: rgba(248,249,252,.94);
+  --ph-appbody-bg: rgba(244,245,250,.97);
+  --ph-topbar-bg: rgba(252,252,255,.94);
+  --ph-topbar-border: rgba(0,0,0,.055);
+  --ph-topbar-title: rgba(20,20,24,.90);
+  --ph-topbar-btn: rgba(20,20,24,.45);
+  --ph-sticker-bg: rgba(246,247,250,.97);
+  --ph-input-area-bg: rgba(248,249,252,.96);
+  --ph-input-text: rgba(20,20,24,.88);
+  --ph-input-ph: rgba(20,20,24,.28);
+  --ph-wechat-me-bubble: linear-gradient(135deg,#7C98A8,#AFC2CC);
+  --ph-wechat-me-text: #fff;
+  --ph-wechat-them-bubble: rgba(255,255,255,.92);
+  --ph-wechat-them-text: rgba(20,20,24,.88);
+  --ph-wechat-bg: rgba(234,236,242,.88);
+  --ph-plus-popup-bg: rgba(55,55,68,.92);
+  --ph-modal-bg: rgba(255,255,255,.98);
+  --ph-modal-text: rgba(20,20,24,.88);
+  --ph-confirm-bg: #fff;
+  --ph-confirm-text: rgba(20,20,24,.88);
+  --ph-confirm-sep: rgba(0,0,0,.07);
+  --ph-confirm-cancel: rgba(20,20,24,.45);
+  --ph-confirm-danger: #ef4444;
+  --ph-ico-list: rgba(255,255,255,.96);
+  --ph-discover-bg: rgba(255,255,255,.72);
+  --ph-discover-border: rgba(0,0,0,.045);
+  --ph-discover-name: rgba(20,20,24,.88);
+  --ph-discover-arrow: rgba(0,0,0,.20);
+  --ph-searchbox-bg: rgba(255,255,255,.60);
+  --ph-searchbox-text: rgba(20,20,24,.45);
 }
 
-/* ── frost：奶白暖调玻璃拟态（默认视觉主题） ── */
-#${ID}[data-theme="frost"]{
-  /* 底色：纯净白+极淡暖调（对标 Nube，更白更亮） */
-  --ph-bg-primary: linear-gradient(160deg,#fdfcfb 0%,#faf9f7 55%,#f5f3ef 100%);
-  --ph-glass: rgba(255,255,255,.50);       /* GPT-aligned: card-soft */
-  --ph-glass-strong: rgba(255,255,255,.70); /* card-strong */
-  --ph-glass-border: rgba(255,255,255,.76); /* card-line */
-  --ph-glass-blur: 32px;
-  --ph-text: rgba(22,18,14,.88);
-  --ph-text-sub: rgba(22,18,14,.50);
-  --ph-text-dim: rgba(22,18,14,.28);
-  /* 强调色：莫兰迪鼠尾草绿（可被 accentHex 覆盖） */
-  --ph-accent: #7d9b8a;
-  --ph-accent2: #a3bab0;
-  --ph-accent-grad: linear-gradient(135deg,#7d9b8a,#a3bab0);
-  --ph-shadow: rgba(40,30,20,.07);
-  --ph-shadow-up: rgba(255,255,255,.95);
-  --phAppBodyRGB: 250,249,247;   /* frost App底色 RGB */
-  --phHomeBodyRGB: 253,252,250;
-  --ph-sep: rgba(22,18,14,.040);
-  --ph-row-bg: rgba(255,255,254,.62);
-  --ph-row-hover: rgba(255,255,254,.86);
-  --ph-input-bg: rgba(255,255,254,.85);
-  --ph-input-border: rgba(22,18,14,.08);
-  --ph-send-btn: #7d9b8a;
+/* ── modern：克制留白的现代简洁风 ── */
+#${ID}[data-theme="modern"]{
+  --ph-bg-primary: linear-gradient(145deg,#f6f7f8 0%,#f2f3f5 55%,#eceef0 100%);
+  --ph-glass: rgba(255,255,255,.78);
+  --ph-glass-strong: rgba(255,255,255,.92);
+  --ph-glass-border: rgba(255,255,255,.92);
+  --ph-glass-blur: 14px;
+  --ph-text: rgba(18,20,24,.92);
+  --ph-text-sub: rgba(18,20,24,.54);
+  --ph-text-dim: rgba(18,20,24,.28);
+  --ph-accent: #20242A;
+  --ph-accent2: #5E6672;
+  --ph-accent-grad: linear-gradient(135deg,#20242A,#5E6672);
+  --ph-shadow: rgba(20,24,28,.08);
+  --ph-sep: rgba(20,24,28,.055);
+  --ph-row-bg: rgba(255,255,255,.86);
+  --ph-row-hover: rgba(255,255,255,.96);
+  --ph-input-bg: rgba(255,255,255,.92);
+  --ph-input-border: rgba(20,24,28,.10);
+  --ph-send-btn: #20242A;
   --ph-send-icon: #fff;
-  --ph-chat-me-bubble: linear-gradient(135deg,#7d9b8a,#a3bab0);
+  --ph-chat-me-bubble: linear-gradient(135deg,#20242A,#5E6672);
   --ph-chat-me-text: #fff;
-  --ph-chat-them-bubble: rgba(255,253,250,.92);
-  --ph-chat-them-text: rgba(28,22,16,.88);
-  --ph-tabbar-bg: rgba(253,252,250,.82);
-  --ph-tabbar-border: rgba(255,255,255,.80);
-  --ph-tabbar-on: #7d9b8a;
-  --ph-tabbar-off: rgba(22,18,14,.32);
-  --ph-appbar-bg: rgba(253,252,250,.85);
-  --ph-appbody-bg: rgba(250,249,247,.88);
-  --ph-topbar-bg: rgba(253,252,250,.85);
-  --ph-topbar-border: rgba(255,255,255,.80);
-  --ph-topbar-title: rgba(28,22,16,.88);
-  --ph-topbar-btn: rgba(28,22,16,.44);
-  --ph-sticker-bg: rgba(246,243,239,.80);
-  --ph-input-area-bg: rgba(249,247,243,.80);
-  --ph-input-text: rgba(28,22,16,.88);
-  --ph-input-ph: rgba(28,22,16,.28);
-  --ph-wechat-me-bubble: linear-gradient(135deg,#7d9b8a,#a3bab0);
+  --ph-chat-them-bubble: rgba(255,255,255,.95);
+  --ph-chat-them-text: rgba(18,20,24,.90);
+  --ph-tabbar-bg: rgba(255,255,255,.94);
+  --ph-tabbar-border: rgba(20,24,28,.06);
+  --ph-tabbar-on: #20242A;
+  --ph-tabbar-off: rgba(18,20,24,.34);
+  --ph-appbar-bg: rgba(251,252,253,.96);
+  --ph-appbody-bg: rgba(244,245,247,.98);
+  --ph-topbar-bg: rgba(255,255,255,.94);
+  --ph-topbar-border: rgba(20,24,28,.055);
+  --ph-topbar-title: rgba(18,20,24,.92);
+  --ph-topbar-btn: rgba(18,20,24,.45);
+  --ph-sticker-bg: rgba(248,249,250,.98);
+  --ph-input-area-bg: rgba(250,251,252,.96);
+  --ph-input-text: rgba(18,20,24,.90);
+  --ph-input-ph: rgba(18,20,24,.28);
+  --ph-wechat-me-bubble: linear-gradient(135deg,#20242A,#5E6672);
   --ph-wechat-me-text: #fff;
-  --ph-wechat-them-bubble: rgba(255,253,250,.92);
-  --ph-wechat-them-text: rgba(28,22,16,.88);
-  --ph-wechat-bg: rgba(242,240,237,.65);
-  --ph-plus-popup-bg: rgba(52,46,38,.90);
-  --ph-modal-bg: rgba(254,252,249,.96);
-  --ph-modal-text: rgba(28,22,16,.88);
-  --ph-confirm-bg: rgba(255,255,254,.98);
-  --ph-confirm-text: rgba(28,22,16,.88);
-  --ph-confirm-sep: rgba(28,22,16,.07);
-  --ph-confirm-cancel: rgba(28,22,16,.44);
-  --ph-confirm-danger: #c0392b;
-  --ph-wallpaper-base: #f5f5f7;   /* 同 GPT: 浅灰白 */
-  --ph-ico-list: rgba(255,253,250,.95);
-  /* GPT-aligned shell/status */
-  --ph-shell-border: rgba(255,255,255,.58);
-  --ph-shell-shadow: 0 28px 72px rgba(118,130,155,.16), 0 10px 24px rgba(118,130,155,.08);
-  --ph-status-fg: rgba(32,40,53,.86);
-  --ph-status-shadow: 0 1px 0 rgba(255,255,255,.50);
-  --ph-home-label: rgba(38,45,58,.70);
-  --ph-app-icon-bg: linear-gradient(180deg, rgba(255,255,255,.84), rgba(244,247,251,.60));
-  --ph-app-icon-border: rgba(255,255,255,.88);
-  --ph-app-icon-shadow: 0 12px 28px rgba(112,126,152,.12);
-  --ph-dock-surface: rgba(255,255,255,.32);
-  --ph-dock-line: rgba(255,255,255,.52);
-  --ph-discover-bg: rgba(255,255,254,.72);
-  --ph-discover-border: rgba(22,18,14,.040);
-  --ph-discover-name: rgba(22,18,14,.85);
-  --ph-discover-arrow: rgba(22,18,14,.18);
-  --ph-searchbox-bg: rgba(255,255,254,.70);
-  --ph-searchbox-text: rgba(22,18,14,.38);
+  --ph-wechat-them-bubble: rgba(255,255,255,.94);
+  --ph-wechat-them-text: rgba(18,20,24,.90);
+  --ph-wechat-bg: rgba(242,243,245,.94);
+  --ph-plus-popup-bg: rgba(36,40,46,.92);
+  --ph-modal-bg: rgba(255,255,255,.98);
+  --ph-modal-text: rgba(18,20,24,.90);
+  --ph-confirm-bg: #fff;
+  --ph-confirm-text: rgba(18,20,24,.90);
+  --ph-confirm-sep: rgba(20,24,28,.07);
+  --ph-confirm-cancel: rgba(18,20,24,.45);
+  --ph-confirm-danger: #ef4444;
+  --ph-ico-list: rgba(255,255,255,.96);
+  --ph-discover-bg: rgba(255,255,255,.84);
+  --ph-discover-border: rgba(20,24,28,.045);
+  --ph-discover-name: rgba(18,20,24,.88);
+  --ph-discover-arrow: rgba(20,24,28,.20);
+  --ph-searchbox-bg: rgba(255,255,255,.72);
+  --ph-searchbox-text: rgba(18,20,24,.45);
 }
 
 /* ── medieval：深棕皮革 ── */
@@ -1399,17 +1687,6 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   transition:transform .2s ease;
   transform-origin:top left;
 }
-/* frost shell：精细高光 + 阴影（GPT-aligned） */
-#${ID}[data-theme="frost"] .phShell{
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.03)),
-    var(--ph-bg-primary);
-}
-/* modern shell */
-#${ID}[data-theme="modern"] .phShell{
-  background: var(--ph-bg-primary);
-}
-
 #${ID}.mini .phShell{
   width:100%; height:100%; max-width:none; max-height:none; border-radius:28px;
 }
@@ -1561,7 +1838,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 }
 #${ID} .phGrid{
   display:grid; grid-template-columns:repeat(4,1fr);
-  grid-auto-rows:80px; gap:10px;
+  grid-auto-rows:80px; gap:12px;
 }
 
 /* ---------- Glass Widget Cards ---------- */
@@ -1586,7 +1863,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 
 /* Profile Card (glass) */
 #${ID} .pwProfile{
-  background:linear-gradient(135deg, rgba(var(--ph-accent-rgb,125,155,138),.10), rgba(139,92,246,.1));
+  background:linear-gradient(135deg, rgba(var(--ph-accent-rgb,124,152,168),.18), rgba(var(--ph-accent-rgb,124,152,168),.08));
   backdrop-filter:blur(var(--ph-glass-blur)); -webkit-backdrop-filter:blur(var(--ph-glass-blur));
 }
 #${ID} .pwProfile .pwAvatar{
@@ -1605,7 +1882,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 
 /* Music Card */
 #${ID} .pwMusic{
-  background:linear-gradient(135deg, rgba(236,72,153,.14), rgba(244,63,94,.08));
+  background:linear-gradient(135deg, rgba(var(--ph-accent-rgb,124,152,168),.16), rgba(var(--ph-accent-rgb,124,152,168),.06));
   backdrop-filter:blur(var(--ph-glass-blur)); -webkit-backdrop-filter:blur(var(--ph-glass-blur));
 }
 #${ID} .pwMusic .pwMusicControls{ display:flex; align-items:center; gap:14px; padding:4px 14px 10px; }
@@ -1622,7 +1899,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 }
 #${ID} .pwMusic .pwMusicBar::after{
   content:''; position:absolute; left:0; top:0; bottom:0; width:35%; border-radius:2px;
-  background:linear-gradient(90deg, rgba(236,72,153,.7), rgba(244,63,94,.6));
+  background:var(--ph-accent-grad);
 }
 
 /* ---------- App Icons ---------- */
@@ -1689,7 +1966,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   fill: var(--ph-icon-inner-tint, currentColor) !important;
 }
 /* ✅ 通讯录图标底色：联动设置中的 iconTint */
-/* wxCHIco uses glass style not icon-tint */
+#${ID} .wxCHIco{ background: var(--ph-icon-tint, var(--ph-accent)); }
 /* 点赞保持红色 */
 #${ID} .feedAction.liked svg.phIco,
 #${ID} .momentAction.liked svg.phIco{
@@ -1700,21 +1977,21 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .chatSendBtn svg.phIco{ fill: currentColor !important; }
 #${ID} .forumCompose svg.phIco{ fill: currentColor !important; }
 #${ID} .phAppIcon{
-  appearance:none; border:0; cursor:pointer; border-radius:var(--ph-radius-md);
+  appearance:none; border:0; cursor:pointer; border-radius:24px;
   background:var(--ph-glass);
   backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
   border:1px solid var(--ph-glass-border);
   display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:5px; transition:transform .12s, background .12s;
+  gap:6px; padding:8px 0 10px; transition:transform .12s, background .12s;
   box-shadow:0 4px 16px var(--ph-shadow);
-  position:relative;
+  position:relative; overflow:hidden;
 }
 #${ID} .phAppIcon:hover{ background:var(--ph-glass-strong); }
 #${ID} .phAppIcon:active{ transform:scale(.9); }
 #${ID} .phAppIcon .ai{
-  width:36px; height:36px; border-radius:10px;
+  width:40px; height:40px; border-radius:14px;
   display:flex; align-items:center; justify-content:center;
-  font-size:18px; line-height:1; color:#fff;
+  font-size:18px; line-height:1; color:#fff; flex-shrink:0;
   background:var(--ph-accent-grad);
 }
 #${ID} .phAppIcon[data-app="chats"] .ai{ background:var(--ph-icon-tint, linear-gradient(135deg,#7B9EA8,#9AB8C2)); }
@@ -1723,8 +2000,9 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .phAppIcon[data-app="weather"] .ai{ background:var(--ph-icon-tint, linear-gradient(135deg,#C4A882,#D9C4A8)); }
 #${ID} .phAppIcon[data-app="themes"] .ai{ background:var(--ph-icon-tint, linear-gradient(135deg,#B8A9C9,#D1C4E0)); }
 #${ID} .phAppIcon .at{
-  font-size:10.5px; color:var(--ph-text-sub); font-weight:500;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:90%;
+  font-size:10.5px; line-height:1.18; color:var(--ph-text-sub); font-weight:600;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:92%;
+  min-height:12px; text-align:center; padding:0 2px; flex-shrink:0;
 }
 
 /* ---------- Search bar ---------- */
@@ -1752,13 +2030,13 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 
 /* ---------- Dock ---------- */
 #${ID} .phDock{
-  position:absolute; left:16px; right:16px; bottom:14px;
-  height:62px; border-radius:30px;
-  background:var(--ph-dock-surface, var(--ph-glass));
-  backdrop-filter:blur(calc(var(--ph-glass-blur) + 4px)); -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) + 4px));
-  border:1px solid var(--ph-dock-line, var(--ph-glass-border));
-  display:flex; align-items:center; justify-content:space-around; padding:0 10px;
-  box-shadow:0 14px 34px rgba(16,22,36,.10);
+  position:absolute; left:14px; right:14px; bottom:12px;
+  height:58px; border-radius:26px;
+  background:var(--ph-glass);
+  backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px);
+  border:1px solid var(--ph-glass-border);
+  display:flex; align-items:center; justify-content:space-around; padding:0 8px;
+  box-shadow:0 8px 32px var(--ph-shadow);
 }
 #${ID} .phDockBtn{
   appearance:none; border:0; cursor:pointer;
@@ -1842,8 +2120,8 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .phAppBody{
   position:absolute; left:0; right:0; top:52px; bottom:0;
   overflow:auto;
-  background:transparent;
-  scrollbar-width:thin; scrollbar-color:rgba(128,128,128,.15) transparent;
+  background:linear-gradient(180deg, rgba(10,18,36,.12), rgba(10,18,36,.06));
+  scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.08) transparent;
 }
 #${ID} .phAppBody::-webkit-scrollbar{ width:4px; }
 #${ID} .phAppBody::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.08); border-radius:2px; }
@@ -1892,10 +2170,8 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   background:var(--ph-glass);
   backdrop-filter:blur(var(--ph-glass-blur)); -webkit-backdrop-filter:blur(var(--ph-glass-blur));
   border:1px solid var(--ph-glass-border);
-  padding:14px; color:var(--ph-text-sub); font-size:13px; line-height:1.55;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,.80) inset,
-    0 12px 28px rgba(16,22,36,.07);
+  padding:14px; color:var(--ph-text-sub); font-size:13px; line-height:1.5;
+  box-shadow:0 4px 16px var(--ph-shadow);
 }
 
 /* ---------- Chat (WeChat-like) ---------- */
@@ -1932,11 +2208,12 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .wxSearchRow{ padding:6px 12px 8px; }
 #${ID} .wxSearchBox{
   height:34px; border-radius:10px;
-  background:var(--ph-searchbox-bg, rgba(255,255,255,.58));
-  border:1px solid var(--ph-glass-border, rgba(0,0,0,.06));
+  background:rgba(255,255,255,.58);
+  border:1px solid rgba(0,0,0,.06);
   display:flex; align-items:center; justify-content:center; gap:6px;
-  color:var(--ph-searchbox-text, rgba(20,24,28,.38));
-  font-size:13px; cursor:text;
+  color:rgba(20,24,28,.55);
+  font-size:12px;
+  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
 }
 #${ID} .wxSearchBox svg.phIco{ width:14px; height:14px; opacity:.65; }
 #${ID} .wxBadge{
@@ -1973,7 +2250,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .chatItem{
   display:flex; align-items:center; gap:12px;
   padding:10px 14px; cursor:pointer; transition:background .1s;
-  border-bottom:1px solid var(--ph-sep);
+  border-bottom:1px solid rgba(255,255,255,.03);
 }
 #${ID} .chatItem:hover{ background:var(--ph-glass); }
 #${ID} .chatItem:active{ background:var(--ph-glass-strong); }
@@ -2111,7 +2388,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   width:36px; height:36px; border-radius:50%; flex-shrink:0;
   background:var(--ph-accent-grad);
   color:#fff; font-size:16px; display:flex; align-items:center; justify-content:center;
-  transition:transform .1s; box-shadow:0 2px 6px var(--ph-shadow);
+  transition:transform .1s; box-shadow:0 2px 8px rgba(var(--ph-accent-rgb,124,152,168),.3);
 }
 #${ID} .chatSendBtn:active{ transform:scale(.92); }
 
@@ -2203,56 +2480,43 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .chatItemPinned .chatItemInner{ background:rgba(237,237,237,.85); }
 
 /* === Discover Page (发现) === */
-#${ID} .wxDiscoverList{ padding:8px 0; }
-#${ID} .wxDiscoverGroup{
-  margin:0 12px 10px;
-  background:var(--ph-glass-strong);
-  border-radius:var(--ph-radius-lg);
-  border:1px solid var(--ph-glass-border);
-  overflow:hidden;
-  box-shadow:0 1px 0 rgba(255,255,255,.85) inset, 0 2px 10px var(--ph-shadow);
-  backdrop-filter:blur(var(--ph-glass-blur)); -webkit-backdrop-filter:blur(var(--ph-glass-blur));
-}
-#${ID} .wxDiscoverGroup:first-child{ margin-top:8px; }
+#${ID} .wxDiscoverList{ padding:0; }
+#${ID} .wxDiscoverGroup{ margin-top:8px; }
+#${ID} .wxDiscoverGroup:first-child{ margin-top:0; }
 #${ID} .wxDiscoverItem{
   display:flex; align-items:center; gap:14px;
   padding:13px 16px; cursor:pointer;
-  background:transparent;
-  border-bottom:1px solid var(--ph-sep);
+  background:rgba(255,255,255,.72);
+  border-bottom:1px solid rgba(0,0,0,.04);
   transition:background .1s;
 }
-#${ID} .wxDiscoverItem:hover{ background:var(--ph-row-hover); }
-#${ID} .wxDiscoverItem:active{ background:var(--ph-row-hover); }
+#${ID} .wxDiscoverItem:hover{ background:rgba(255,255,255,.85); }
+#${ID} .wxDiscoverItem:active{ background:rgba(0,0,0,.04); }
 #${ID} .wxDiscoverItem:last-child{ border-bottom:0; }
 #${ID} .wxDiscoverItem .wxDIco{
-  width:36px; height:36px; border-radius:9px; flex-shrink:0;
+  width:38px; height:38px; border-radius:10px; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
-  font-size:18px; color:var(--ph-text-sub);
+  font-size:18px; color:#fff;
 }
-#${ID} .wxDiscoverItem .wxDIco svg.phIco{ width:19px; height:19px; fill:currentColor; }
-/* ✅ 发现/我 页：镂空线条风格，不受图标色设置控制 */
+#${ID} .wxDiscoverItem .wxDIco svg.phIco{ width:20px; height:20px; fill:currentColor; }
+/* ✅ 统一主题化图标底色：联动设置中的图标底色 */
 #${ID} .wxDIcoThemed{
-  background: var(--ph-icon-inner-tint, var(--ph-glass-strong)) !important;
-  border: 1px solid var(--ph-glass-border) !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 0 rgba(255,255,255,.72) inset !important;
+  background: var(--ph-icon-tint, var(--ph-accent)) !important;
 }
+/* ✅ A: 发现/我 页列表图标使用独立 --ph-list-icon，不受 --ph-icon-inner-tint 联动 */
 #${ID} .wxDIcoThemed svg.phIco{
-  fill: rgba(255,255,255,.90) !important;
-  opacity: 1;
+  fill: var(--ph-list-icon, rgba(20,24,28,.72)) !important;
 }
-
 #${ID} .wxDiscoverItem .wxDName{ flex:1; font-size:14.5px; color:rgba(20,24,28,.88); font-weight:400; }
 #${ID} .wxDiscoverItem .wxDArrow{ color:rgba(0,0,0,.2); font-size:16px; flex-shrink:0; }
 
 /* === Me Page (我的) === */
 #${ID} .wxMeProfile{
   display:flex; align-items:center; gap:14px;
-  padding:18px 16px;
-  background:transparent;
-  border-bottom:1px solid var(--ph-sep);
+  padding:18px 16px; background:rgba(255,255,255,.72);
   cursor:pointer; transition:background .1s;
 }
-#${ID} .wxMeProfile:hover{ background:var(--ph-row-hover); }
+#${ID} .wxMeProfile:hover{ background:rgba(255,255,255,.85); }
 #${ID} .wxMeProfile .wxMeAvatar{
   width:58px; height:58px; border-radius:12px; flex-shrink:0;
   background:var(--ph-glass-strong); border:1px solid var(--ph-glass-border);
@@ -2260,59 +2524,63 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   box-shadow:0 2px 10px rgba(0,0,0,.1);
 }
 #${ID} .wxMeProfile .wxMeInfo{ flex:1; }
-#${ID} .wxMeProfile .wxMeName{ font-size:17px; font-weight:700; color:var(--ph-text); }
-#${ID} .wxMeProfile .wxMeId{ font-size:12px; color:var(--ph-text-sub); margin-top:4px; }
-#${ID} .wxMeMenu{ margin-top:0; }
-/* wxDiscoverGroup, wxMeGroup: see wxDiscoverList block above */
+#${ID} .wxMeProfile .wxMeName{ font-size:17px; font-weight:700; color:rgba(20,24,28,.88); }
+#${ID} .wxMeProfile .wxMeId{ font-size:12px; color:rgba(20,24,28,.4); margin-top:4px; }
+#${ID} .wxMeMenu{ margin-top:8px; }
 
 /* === Contact Groups Accordion (通讯录) === */
 #${ID} .wxContactHeader{
   display:flex; align-items:center; gap:14px;
-  padding:13px 16px; background:transparent;
-  border-bottom:1px solid var(--ph-sep);
+  padding:13px 16px; background:rgba(255,255,255,.72);
+  border-bottom:1px solid rgba(0,0,0,.04);
   cursor:pointer; transition:background .1s;
 }
-#${ID} .wxContactHeader:hover{ background:var(--ph-row-hover); }
+#${ID} .wxContactHeader:hover{ background:rgba(255,255,255,.85); }
 #${ID} .wxContactHeader .wxCHIco{
-  width:36px; height:36px; border-radius:9px; flex-shrink:0;
+  width:38px; height:38px; border-radius:10px; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
-  font-size:16px; color:var(--ph-text-sub);
-  background: var(--ph-icon-inner-tint, var(--ph-glass-strong)) !important;
-  border: 1px solid var(--ph-glass-border) !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 0 rgba(255,255,255,.72) inset !important;
+  font-size:16px; color:#fff;
 }
-#${ID} .wxContactHeader .wxCHIco svg.phIco{ width:18px; height:18px; fill:rgba(255,255,255,.90) !important; }
-#${ID} .wxContactHeader .wxCHName{ flex:1; font-size:14.5px; color:var(--ph-text); }
+#${ID} .wxContactHeader .wxCHIco svg.phIco{ width:18px; height:18px; fill:currentColor !important; }
+#${ID}[data-theme="frost"] .wxContactHeader,
+#${ID}[data-theme="frost"] .wxContactItem,
+#${ID}[data-theme="frost"] .wxGroupHeader{
+  background: rgba(255,255,255,.54);
+}
+#${ID}[data-theme="frost"] .forumDetailTag,
+#${ID}[data-theme="frost"] .forumComposeTagChip.selected,
+#${ID}[data-theme="frost"] .forumComposeImgChip.selected,
+#${ID}[data-theme="frost"] .weatherIcon{
+  color: var(--ph-accent) !important;
+}
+#${ID}[data-theme="frost"] .forumPostBtn,
+#${ID}[data-theme="frost"] .forumComposeSubmitBtn,
+#${ID}[data-theme="frost"] .forumDMChatSend{
+  background: var(--ph-accent-grad) !important;
+  box-shadow: 0 8px 18px rgba(141,168,184,.18);
+}
+#${ID}[data-theme="frost"] .forumInnerTabBtn.on{
+  color:#ffffff !important;
+  text-shadow:0 0 10px rgba(255,255,255,.10);
+}
+#${ID}[data-theme="frost"] .forumInnerTabBtn.on::after,
+#${ID}[data-theme="frost"] .forumMeSubTab.on::after,
+#${ID}[data-theme="frost"] .forumTab.on::after{
+  background: var(--ph-accent-grad) !important;
+}
+#${ID} .wxContactHeader .wxCHName{ flex:1; font-size:14.5px; color:rgba(20,24,28,.88); }
 #${ID} .wxContactHeader .wxCHBadge{
   background:rgba(0,0,0,.06); border-radius:10px;
   padding:2px 8px; font-size:11px; color:rgba(20,24,28,.4);
 }
-#${ID} .wxGroupAccordion{
-  margin:4px 10px 8px;
-  background:var(--ph-glass-strong);
-  border-radius:var(--ph-radius-lg);
-  border:1px solid var(--ph-glass-border);
-  overflow:hidden;
-  box-shadow:0 1px 0 rgba(255,255,255,.80) inset, 0 2px 10px var(--ph-shadow);
-  backdrop-filter:blur(var(--ph-glass-blur)); -webkit-backdrop-filter:blur(var(--ph-glass-blur));
-}
+#${ID} .wxGroupAccordion{ }
 #${ID} .wxGroupHeader{
   display:flex; align-items:center; gap:10px;
-  padding:10px 14px; cursor:pointer;
-  background:transparent;
-  border-bottom:1px solid var(--ph-sep);
-  font-size:13px; color:var(--ph-text-sub); font-weight:600;
+  padding:10px 16px; cursor:pointer;
+  background:rgba(245,245,245,.85);
+  border-bottom:1px solid rgba(0,0,0,.04);
+  font-size:13.5px; color:rgba(20,24,28,.55); font-weight:500;
 }
-#${ID} .wxGroupHeader .wxCHIco{
-  width:28px; height:28px; border-radius:8px; flex-shrink:0;
-  display:flex; align-items:center; justify-content:center;
-  background:var(--ph-icon-inner-tint, var(--ph-glass-strong)) !important;
-  border:1px solid var(--ph-glass-border) !important;
-  box-shadow:0 1px 0 rgba(255,255,255,.70) inset !important;
-}
-#${ID} .wxGroupHeader .wxCHIco svg.phIco{ width:15px; height:15px; fill:rgba(255,255,255,.88) !important; }
-#${ID} .wxGroupHeader .wxGHName{ flex:1; font-size:13px; color:var(--ph-text-sub); }
-
 #${ID} .wxGroupHeader .wxGArrow{
   transition:transform .2s; font-size:12px; color:rgba(0,0,0,.25);
 }
@@ -2322,17 +2590,17 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .wxContactItem{
   display:flex; align-items:center; gap:12px;
   padding:10px 16px 10px 30px; cursor:pointer;
-  background:transparent;
-  border-bottom:1px solid var(--ph-sep);
+  background:rgba(255,255,255,.72);
+  border-bottom:1px solid rgba(0,0,0,.03);
   transition:background .1s;
 }
-#${ID} .wxContactItem:hover{ background:var(--ph-row-hover); }
+#${ID} .wxContactItem:hover{ background:rgba(255,255,255,.88); }
 #${ID} .wxContactItem .wxCIAvatar{
   width:38px; height:38px; border-radius:50%; flex-shrink:0;
   background:var(--ph-glass-strong); border:1px solid var(--ph-glass-border);
   display:flex; align-items:center; justify-content:center; font-size:15px;
 }
-#${ID} .wxContactItem .wxCIName{ font-size:14px; color:var(--ph-text); }
+#${ID} .wxContactItem .wxCIName{ font-size:14px; color:rgba(20,24,28,.85); }
 
 /* === Confirm Dialog (删除确认) === */
 #${ID} .wxConfirmOverlay{
@@ -2428,7 +2696,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .wxChatSendBtn{
   appearance:none; border:0; cursor:pointer;
   padding:6px 14px; border-radius:6px; flex-shrink:0;
-  background:#07c160; color:#fff; font-size:13px; font-weight:600;
+  background:var(--ph-accent); color:#fff; font-size:13px; font-weight:600;
   transition:opacity .1s;
 }
 #${ID} .wxChatSendBtn:active{ opacity:.75; }
@@ -2548,7 +2816,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .wxBubbleMenu.arrowDown::after{ bottom:-4px; left:calc(50% - 5px); }
 #${ID} .wxBubbleMenu.arrowUp::after{ top:-4px; left:calc(50% - 5px); }
 #${ID} .wxChatBubble.wxBubbleSelected .wxCBContent{
-  box-shadow:0 0 0 2px var(--ph-accent,#07c160); border-radius:8px;
+  box-shadow:0 0 0 2px var(--ph-accent,var(--ph-accent)); border-radius:8px;
 }
 #${ID} .wxQuoteBar{
   display:flex; align-items:center; gap:8px;
@@ -2582,7 +2850,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   background:#fff; outline:none; font-family:inherit;
   -webkit-appearance:none;
 }
-#${ID} .wxEditMsgBox textarea:focus{ border-color:#07c160; }
+#${ID} .wxEditMsgBox textarea:focus{ border-color:var(--ph-accent); }
 #${ID} .wxEditMsgBox .wxEMBtns{
   display:flex; gap:8px; margin-top:12px; justify-content:flex-end;
 }
@@ -2594,7 +2862,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   background:rgba(0,0,0,.06); color:rgba(20,24,28,.6);
 }
 #${ID} .wxEditMsgBox .wxEMBtn.ok{
-  background:#07c160; color:#fff; font-weight:600;
+  background:var(--ph-accent); color:#fff; font-weight:600;
 }
 #${ID} .wxEditMsgBox .wxEMBtn:active{ opacity:.75; }
 /* === 已编辑标记 + 撤回样式 === */
@@ -2630,7 +2898,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   cursor:pointer; padding:2px 0; margin-top:3px;
   -webkit-tap-highlight-color:transparent;
 }
-#${ID} .wxTranslateBtn:hover{ color:#07c160; }
+#${ID} .wxTranslateBtn:hover{ color:var(--ph-accent); }
 /* === 阶段B：戳一戳系统消息 === */
 #${ID} .wxPokeMsg{
   text-align:center; font-size:11px; color:rgba(20,24,28,.35);
@@ -2669,7 +2937,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 /* === overlay 弹窗 === */
 #${ID} .wxCPOverlay{ animation:wxCPFadeIn .18s ease; }
 @keyframes wxCPFadeIn{ from{opacity:0;} to{opacity:1;} }
-#${ID} .wxCPModal input:focus{ outline:none; border-color:#07c160!important; }
+#${ID} .wxCPModal input:focus{ outline:none; border-color:var(--ph-accent)!important; }
 
 /* === 表情面板 === */
 #${ID} .wxStickerPanel{
@@ -2696,7 +2964,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   cursor:pointer; border:0; background:transparent; border-bottom:2px solid transparent;
   transition:color .12s;
 }
-#${ID} .wxStickerTabs .wxStkTab.on{ color:#07c160; border-bottom-color:#07c160; font-weight:600; }
+#${ID} .wxStickerTabs .wxStkTab.on{ color:var(--ph-accent); border-bottom-color:var(--ph-accent); font-weight:600; }
 
 /* === 语音面板 === */
 #${ID} .wxVoicePanel{
@@ -2758,7 +3026,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   position:relative; width:44px; height:24px; border-radius:12px; cursor:pointer;
   border:0; transition:background .2s; flex-shrink:0;
 }
-#${ID} .wxReminderToggle.on{ background:#07c160; }
+#${ID} .wxReminderToggle.on{ background:var(--ph-accent); }
 #${ID} .wxReminderToggle.off{ background:#ccc; }
 #${ID} .wxReminderToggle::after{
   content:''; position:absolute; top:2px; width:20px; height:20px; border-radius:50%;
@@ -2835,7 +3103,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   content:''; position:absolute; bottom:0; left:30%; right:30%; height:2px;
   border-radius:1px; background:var(--ph-accent-grad);
 }
-#${ID} .feedItem{ padding:12px 14px; border-bottom:1px solid var(--ph-sep); background:var(--ph-glass); }
+#${ID} .feedItem{ padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.04); }
 #${ID} .feedItem .feedHead{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
 #${ID} .feedItem .feedAvatar{
   width:38px; height:38px; border-radius:50%;
@@ -2861,7 +3129,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .feedCommentInput{ display:flex; gap:6px; margin-top:6px; align-items:center; }
 #${ID} .feedCommentInput input{ flex:1; padding:6px 10px; border-radius:14px; border:1px solid var(--ph-glass-border); background:var(--ph-glass); color:var(--ph-text); font-size:12px; outline:none; }
 #${ID} .feedCommentInput button{ appearance:none; border:0; background:var(--ph-accent-grad); color:#fff; font-size:11px; padding:5px 12px; border-radius:12px; cursor:pointer; white-space:nowrap; flex-shrink:0; }
-#${ID} .feedQuoteBlock{ margin-top:8px; padding:8px 10px; background:var(--ph-glass); border-radius:8px; border-left:3px solid rgba(99,102,241,.5); font-size:12px; }
+#${ID} .feedQuoteBlock{ margin-top:8px; padding:8px 10px; background:var(--ph-glass); border-radius:8px; border-left:3px solid rgba(var(--ph-accent-rgb,124,152,168),.5); font-size:12px; }
 #${ID} .feedQuoteBlock .fqAuthor{ font-weight:600; color:var(--ph-text); margin-bottom:2px; }
 #${ID} .feedQuoteBlock .fqContent{ color:var(--ph-text-sub); line-height:1.4; }
 
@@ -2876,14 +3144,14 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .fake-img{
   width:100%; aspect-ratio:1; border-radius:6px; position:relative; min-height:60px;
 }
-#${ID} .fake-img[data-theme="0"]{ background:linear-gradient(135deg,#ffecd2,#fcb69f); }
-#${ID} .fake-img[data-theme="1"]{ background:linear-gradient(135deg,#a1c4fd,#c2e9fb); }
-#${ID} .fake-img[data-theme="2"]{ background:linear-gradient(135deg,#d4fc79,#96e6a1); }
-#${ID} .fake-img[data-theme="3"]{ background:linear-gradient(135deg,#fbc2eb,#a6c1ee); }
-#${ID} .fake-img[data-theme="4"]{ background:linear-gradient(135deg,#ffd89b,#19547b); }
-#${ID} .fake-img[data-theme="5"]{ background:linear-gradient(135deg,#667eea,#764ba2); }
-#${ID} .fake-img[data-theme="6"]{ background:linear-gradient(135deg,#f093fb,#f5576c); }
-#${ID} .fake-img[data-theme="7"]{ background:linear-gradient(135deg,#4facfe,#00f2fe); }
+#${ID} .fake-img[data-theme="0"]{ background:linear-gradient(135deg,rgba(var(--ph-accent-rgb,124,152,168),.16),rgba(var(--ph-accent-rgb,124,152,168),.42)); }
+#${ID} .fake-img[data-theme="1"]{ background:linear-gradient(135deg,rgba(var(--ph-accent-rgb,124,152,168),.22),rgba(var(--ph-accent-rgb,124,152,168),.50)); }
+#${ID} .fake-img[data-theme="2"]{ background:linear-gradient(135deg,rgba(var(--ph-accent-rgb,124,152,168),.18),rgba(var(--ph-accent-rgb,124,152,168),.46)); }
+#${ID} .fake-img[data-theme="3"]{ background:linear-gradient(135deg,rgba(var(--ph-accent-rgb,124,152,168),.14),rgba(var(--ph-accent-rgb,124,152,168),.38)); }
+#${ID} .fake-img[data-theme="4"]{ background:linear-gradient(135deg,rgba(var(--ph-accent-rgb,124,152,168),.26),rgba(var(--ph-accent-rgb,124,152,168),.56)); }
+#${ID} .fake-img[data-theme="5"]{ background:linear-gradient(135deg,rgba(var(--ph-accent-rgb,124,152,168),.28),rgba(var(--ph-accent-rgb,124,152,168),.60)); }
+#${ID} .fake-img[data-theme="6"]{ background:linear-gradient(135deg,rgba(var(--ph-accent-rgb,124,152,168),.24),rgba(var(--ph-accent-rgb,124,152,168),.54)); }
+#${ID} .fake-img[data-theme="7"]{ background:linear-gradient(135deg,rgba(var(--ph-accent-rgb,124,152,168),.20),rgba(var(--ph-accent-rgb,124,152,168),.48)); }
 #${ID} .fake-img::after{
   content:'🖼'; position:absolute; top:50%; left:50%;
   transform:translate(-50%,-50%); font-size:20px; opacity:.25;
@@ -2918,8 +3186,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   padding:10px 14px; border-bottom:1px solid rgba(255,255,255,.04);
 }
 #${ID} .forecastRow .fDay{ color:var(--ph-text-sub); width:50px; font-size:13px; }
-#${ID} .forecastRow .fIcon{ font-size:20px; width:30px; text-align:center; display:flex; align-items:center; justify-content:center; }
-#${ID} .fIcon svg{ width:20px; height:20px; stroke:currentColor; fill:none; }
+#${ID} .forecastRow .fIcon{ font-size:20px; width:30px; text-align:center; }
 #${ID} .forecastRow .fRange{ display:flex; align-items:center; gap:8px; }
 #${ID} .forecastRow .fLow{ color:var(--ph-text-dim); font-size:13px; width:30px; text-align:right; }
 #${ID} .forecastRow .fHigh{ color:var(--ph-text); font-size:13px; width:30px; }
@@ -2949,42 +3216,19 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .calGrid .calD.other{ color:var(--ph-text-dim); }
 
 /* ---------- Settings ---------- */
-#${ID} .phBackBtn{
-  appearance:none; border:0; background:var(--ph-glass); border:1px solid var(--ph-glass-border);
-  color:var(--ph-text-sub); padding:7px 14px; border-radius:14px; cursor:pointer;
-  font-size:12.5px; font-weight:500; margin-bottom:14px; letter-spacing:.01em;
-  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
-  transition:background .12s; display:inline-flex; align-items:center; gap:4px;
-}
-#${ID} .phBackBtn:hover{ background:var(--ph-glass-strong); }
 #${ID} .settingSection{
-  padding:0; margin:0 12px 12px;
-  background:var(--ph-glass);
-  border-radius:var(--ph-radius-lg);
-  border:1px solid var(--ph-glass-border);
-  overflow:hidden;
-  box-shadow:0 1px 0 rgba(255,255,255,.80) inset, 0 2px 10px var(--ph-shadow);
-  backdrop-filter:blur(var(--ph-glass-blur)); -webkit-backdrop-filter:blur(var(--ph-glass-blur));
+  padding:6px 0; margin-top:4px;
 }
 #${ID} .settingSectionTitle{
-  padding:10px 16px 6px; font-size:10.5px; color:var(--ph-text-dim); font-weight:600;
-  text-transform:uppercase; letter-spacing:.6px;
+  padding:4px 16px; font-size:11px; color:var(--ph-text-dim); font-weight:600;
+  text-transform:uppercase; letter-spacing:.5px;
 }
 #${ID} .settingRow{
   display:flex; align-items:center; justify-content:space-between;
-  padding:14px 16px; border-bottom:1px solid var(--ph-sep);
+  padding:13px 16px; border-bottom:1px solid rgba(255,255,255,.04);
 }
-#${ID} .settingRow:last-child{ border-bottom:0; }
-#${ID} .settingRow .sIcon{
-  width:32px; height:32px; border-radius:10px; flex-shrink:0;
-  margin-right:12px;
-  display:flex; align-items:center; justify-content:center;
-  font-size:16px;
-  background: var(--ph-glass-strong);
-  border: 1px solid var(--ph-glass-border);
-  box-shadow: 0 1px 0 rgba(255,255,255,.80) inset, 0 1px 4px rgba(16,22,36,.06);
-}
-#${ID} .settingRow .sLabel{ color:var(--ph-text); font-size:14px; font-weight:500; flex:1; }
+#${ID} .settingRow .sIcon{ font-size:18px; margin-right:10px; flex-shrink:0; }
+#${ID} .settingRow .sLabel{ color:var(--ph-text); font-size:14px; flex:1; }
 #${ID} .settingRow .sValue{ color:var(--ph-text-dim); font-size:13px; }
 #${ID} .settingRow .sToggle,
 #${ID} .sToggle{
@@ -2993,7 +3237,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   position:relative; transition:background .2s; flex-shrink:0;
 }
 #${ID} .settingRow .sToggle.on,
-#${ID} .sToggle.on{ background:var(--ph-accent, rgba(99,102,241,.6)); }
+#${ID} .sToggle.on{ background:rgba(99,102,241,.6); }
 #${ID} .settingRow .sToggle::after,
 #${ID} .sToggle::after{
   content:''; position:absolute; top:3px; left:3px;
@@ -3020,7 +3264,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 }
 #${ID} .themeCard.active{
   border-color:var(--ph-accent);
-  box-shadow:0 0 0 1px var(--ph-accent), 0 4px 16px rgba(79,124,238,.18);
+  box-shadow:0 0 0 1px var(--ph-accent), 0 4px 16px rgba(var(--ph-accent-rgb,124,152,168),.18);
 }
 
 /* ---------- Photos ---------- */
@@ -3066,14 +3310,9 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .browserBmItem:hover{ background:var(--ph-glass); }
 #${ID} .browserBmIcon{
   width:36px; height:36px; border-radius:10px;
-  background:var(--ph-glass-strong);
-  border:1px solid var(--ph-glass-border);
-  box-shadow: 0 1px 0 rgba(255,255,255,.75) inset, 0 1px 4px var(--ph-shadow);
-  display:flex; align-items:center; justify-content:center;
-  font-size:0; color:var(--ph-text-sub);
+  background:var(--ph-glass-strong); display:flex; align-items:center; justify-content:center;
+  font-size:16px;
 }
-#${ID} .browserBmIcon svg{ width:18px; height:18px; fill:currentColor; }
-#${ID} .browserBmIcon svg{ width:18px; height:18px; fill:currentColor; }
 #${ID} .browserBmTitle{ color:var(--ph-text); font-size:13px; font-weight:500; }
 #${ID} .browserBmDesc{ color:var(--ph-text-dim); font-size:11.5px; margin-top:2px; }
 
@@ -3101,7 +3340,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   appearance:none; border:0; cursor:pointer; z-index:50;
   padding:6px 18px; border-radius:16px;
   background:var(--ph-accent-grad); color:#fff; font-size:13px; font-weight:600;
-  box-shadow:0 2px 6px var(--ph-shadow);
+  box-shadow:0 2px 8px rgba(var(--ph-accent-rgb,124,152,168),.3);
 }
 #${ID} .editShake .editDoneBtn{ display:block; }
 #${ID} .editDraggingSrc{ opacity:.18 !important; }
@@ -3295,7 +3534,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   background:var(--ph-glass); color:var(--ph-text-sub); font-size:13px; transition:all .15s; flex:1; min-width:70px;
 }
 #${ID} .sOptionBtn.active{
-  border-color:var(--ph-accent); color:var(--ph-text); background:rgba(var(--ph-accent-rgb,125,155,138),.10);
+  border-color:var(--ph-accent); color:var(--ph-text); background:rgba(var(--ph-accent-rgb,124,152,168),.15);
   box-shadow:0 0 8px rgba(99,102,241,.2);
 }
 #${ID} .sTimeInput{
@@ -3334,7 +3573,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .npcProfileActions{ display:flex; gap:10px; justify-content:center; margin-top:12px; padding-bottom:4px; }
 #${ID} .npcFollowBtn{
   appearance:none; border:0; cursor:pointer; border-radius:16px; padding:7px 22px; font-size:13px; font-weight:600;
-  background:var(--ph-accent-grad); color:#fff; box-shadow:0 2px 6px var(--ph-shadow); transition:all .12s;
+  background:var(--ph-accent-grad); color:#fff; box-shadow:0 2px 8px rgba(var(--ph-accent-rgb,124,152,168),.3); transition:all .12s;
 }
 #${ID} .npcFollowBtn.following{
   background:var(--ph-glass-strong); color:var(--ph-text-sub); box-shadow:none; border:1px solid var(--ph-glass-border);
@@ -3363,7 +3602,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .forumComposeBtns button{
   appearance:none; border:0; cursor:pointer; border-radius:14px; padding:8px 18px; font-size:13px; font-weight:600; transition:all .12s;
 }
-#${ID} .forumPostBtn{ background:var(--ph-accent-grad); color:#fff; box-shadow:0 2px 6px var(--ph-shadow); }
+#${ID} .forumPostBtn{ background:var(--ph-accent-grad); color:#fff; box-shadow:0 2px 6px rgba(var(--ph-accent-rgb,124,152,168),.3); }
 #${ID} .forumCancelBtn{ background:var(--ph-glass-strong); color:var(--ph-text-sub); }
 
 /* ---------- Forum Inner Tab Bar（小红书底部导航） ---------- */
@@ -3379,24 +3618,22 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .forumInnerTabBar{
   position:absolute; bottom:0; left:0; right:0; height:56px;
   display:flex; z-index:20;
-  /* ✅ 和微信 tabbar 统一：使用主题变量 */
-  background: var(--ph-tabbar-bg, rgba(10,10,10,.94));
-  border-top: 1px solid var(--ph-tabbar-border, rgba(255,255,255,.07));
-  backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
-  box-shadow: 0 -4px 20px rgba(0,0,0,.08), 0 1px 0 rgba(255,255,255,.55) inset;
+  background:rgba(16,24,42,.92);
+  border-top:1px solid rgba(255,255,255,.10);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
 }
 #${ID} .forumInnerTabBtn{
   flex:1; appearance:none; border:0; background:transparent; cursor:pointer;
   padding:7px 0 10px; display:flex; flex-direction:column; align-items:center; gap:2px;
-  color:var(--ph-tabbar-off, rgba(255,255,255,.35)); font-size:10px; font-weight:500; transition:color .12s;
+  color:rgba(245,248,255,.68); font-size:10px; font-weight:600; transition:color .12s, opacity .12s;
 }
-#${ID} .forumInnerTabBtn.on{ color:var(--ph-tabbar-on, rgba(255,255,255,.95)); }
+#${ID} .forumInnerTabBtn.on{ color:#ffffff; }
 #${ID} .forumInnerTabBtn svg{ width:22px; height:22px; fill:currentColor; }
 #${ID} .forumComposeTabIcon{
-  width:42px; height:26px; border-radius:7px;
-  background:var(--ph-accent-grad);
+  width:42px; height:26px; border-radius:8px;
+  background:var(--ph-accent-grad,linear-gradient(135deg,var(--ph-accent),var(--ph-accent2)));
   display:flex; align-items:center; justify-content:center;
-  box-shadow:0 2px 8px var(--ph-shadow);
+  box-shadow:0 2px 10px rgba(12,18,36,.22);
 }
 #${ID} .forumComposeTabIcon svg{ width:16px; height:16px; fill:#fff; }
 
@@ -3409,8 +3646,6 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   border-radius:10px; overflow:hidden; cursor:pointer;
   background:var(--ph-glass); border:1px solid var(--ph-glass-border);
   transition:transform .1s; display:flex; flex-direction:column;
-  box-shadow: 0 1px 0 rgba(255,255,255,.70) inset, 0 2px 8px var(--ph-shadow);
-  border: 1px solid var(--ph-glass-border);
 }
 #${ID} .forumGridCard:active{ transform:scale(.97); }
 #${ID} .forumGridCardImg{
@@ -3463,7 +3698,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   border-bottom:1px solid rgba(255,255,255,.05); white-space:pre-wrap; word-break:break-word;
 }
 #${ID} .forumDetailTag{
-  padding:6px 14px 10px; font-size:12px; color:var(--ph-accent,#6366f1);
+  padding:6px 14px 10px; font-size:12px; color:var(--ph-accent,var(--ph-accent));
   border-bottom:1px solid rgba(255,255,255,.05);
 }
 #${ID} .forumDetailActions{
@@ -3595,7 +3830,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   border-radius:20px; padding:5px 12px; font-size:12px; color:var(--ph-text-sub); cursor:pointer;
 }
 #${ID} .forumComposeImgChip.selected{
-  border-color:var(--ph-accent); color:var(--ph-accent);
+  border-color:var(--ph-accent,var(--ph-accent)); color:var(--ph-accent,var(--ph-accent));
   background:rgba(99,102,241,.12);
 }
 #${ID} .forumComposeTagRow{
@@ -3607,7 +3842,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   border-radius:20px; padding:5px 12px; font-size:12px; color:var(--ph-text-sub); cursor:pointer;
 }
 #${ID} .forumComposeTagChip.selected{
-  border-color:var(--ph-accent); color:var(--ph-accent);
+  border-color:var(--ph-accent,var(--ph-accent)); color:var(--ph-accent,var(--ph-accent));
   background:rgba(99,102,241,.12);
 }
 
@@ -3629,13 +3864,13 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .forumDMChatShell{ position:absolute; inset:0; display:flex; flex-direction:column; }
 #${ID} .forumDMChatMessages{ flex:1; overflow-y:auto; padding:10px 12px; display:flex; flex-direction:column; gap:8px; scrollbar-width:thin; }
 #${ID} .forumDMBubble{ max-width:72%; padding:9px 12px; border-radius:16px; font-size:13.5px; line-height:1.5; word-break:break-word; }
-#${ID} .forumDMBubble.mine{ align-self:flex-end; background:var(--ph-accent-grad); color:#fff; border-bottom-right-radius:4px; }
+#${ID} .forumDMBubble.mine{ align-self:flex-end; background:var(--ph-accent-grad,linear-gradient(135deg,var(--ph-accent),var(--ph-accent2))); color:#fff; border-bottom-right-radius:4px; }
 #${ID} .forumDMBubble.theirs{ align-self:flex-start; background:var(--ph-glass-strong); color:var(--ph-text); border:1px solid var(--ph-glass-border); border-bottom-left-radius:4px; }
 #${ID} .forumDMTheirRow{ display:flex; align-items:flex-end; gap:6px; }
 #${ID} .forumDMTheirAvatar{ width:28px; height:28px; border-radius:50%; flex-shrink:0; background:var(--ph-glass-strong); border:1px solid var(--ph-glass-border); display:flex; align-items:center; justify-content:center; font-size:12px; }
 #${ID} .forumDMChatBar{ flex-shrink:0; display:flex; align-items:center; gap:8px; padding:8px 12px 10px; border-top:1px solid rgba(255,255,255,.06); background:rgba(12,18,36,.9); }
 #${ID} .forumDMChatInput{ flex:1; padding:9px 14px; border-radius:20px; border:1px solid var(--ph-glass-border); background:var(--ph-glass); color:var(--ph-text); font-size:13.5px; outline:none; }
-#${ID} .forumDMChatSend{ appearance:none; border:0; background:var(--ph-accent-grad); color:var(--ph-send-icon,#fff); width:36px; height:36px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+#${ID} .forumDMChatSend{ appearance:none; border:0; background:var(--ph-accent-grad); color:#fff; width:36px; height:36px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 #${ID} .forumDMChatSend svg{ width:18px; height:18px; fill:#fff; }
 #${ID} .forumDMEmpty{ padding:70px 20px; text-align:center; color:var(--ph-text-dim); font-size:13px; }
 
@@ -3710,7 +3945,6 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
         ensureStyle();
         ensureTuneStyle();
         root = doc.createElement('div');
-        root.setAttribute('data-theme','frost'); // ✅ 初始默认防止黑屏
         root.id = ID;
         root.setAttribute('data-view','home');
 
@@ -4542,7 +4776,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
               <div class="wxCMsg">重新生成将覆盖当前总结，确定吗？</div>
               <div class="wxCBtns">
                 <button class="wxCBtn" data-act="wxCHRegenCancel">取消</button>
-                <button class="wxCBtn" data-act="wxCHRegenOk" data-chnpcid="${esc(nid)}" style="color:#07c160;font-weight:600;">确定</button>
+                <button class="wxCBtn" data-act="wxCHRegenOk" data-chnpcid="${esc(nid)}" style="color:var(--ph-accent);font-weight:600;">确定</button>
               </div>
             </div>`;
             root.appendChild(overlay);
@@ -5249,16 +5483,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           if (act === 'photoDel'){ deletePhoto(t.getAttribute('data-cat'), t.getAttribute('data-idx')); return; }
           if (act === 'setTheme'){ applyTheme(t.getAttribute('data-theme')); return; }
           if (act === 'settingsNav'){ openSettingsSubPage(t.getAttribute('data-subpage')); return; }
-          if (act === 'settingsBack'){
-            // ✅ 优先从内部栈弹出（层级返回），栈空则回主设置页
-            if (state._innerStack && state._innerStack.length > 0){
-              const restore = state._innerStack.pop();
-              try{ restore(); }catch(e){ renderSettings(root.querySelector('[data-ph="appBody"]')); }
-            } else {
-              renderSettings(root.querySelector('[data-ph="appBody"]'));
-            }
-            return;
-          }
+          if (act === 'settingsBack'){ renderSettings(root.querySelector('[data-ph="appBody"]')); return; }
           if (act === 'setWallpaper'){ triggerWallpaperUpload(t.getAttribute('data-wptarget')||'home'); return; }
           if (act === 'clearWallpaper'){ clearWallpaper(t.getAttribute('data-wptarget')||'home'); return; }
           if (act === 'pickWallpaperFromAlbum'){ pickWallpaperFromAlbum(t.getAttribute('data-wptarget')||'home'); return; }
@@ -6030,7 +6255,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           }
           case 'todayItems':{
             const items=(wd.config.itemsList||'').split(/[,，]/).filter(Boolean).slice(0,5);
-            const cs=['#6366f1','#ec4899','#8b5cf6','#f59e0b','#10b981'];
+            const cs=[getComputedStyle(root).getPropertyValue('--ph-accent').trim()||'#7C98A8', getComputedStyle(root).getPropertyValue('--ph-accent2').trim()||'#AFC2CC', getComputedStyle(root).getPropertyValue('--ph-accent').trim()||'#7C98A8', getComputedStyle(root).getPropertyValue('--ph-accent2').trim()||'#AFC2CC', getComputedStyle(root).getPropertyValue('--ph-accent').trim()||'#7C98A8'];
             let r=''; items.forEach((it,i)=>{r+=`<div style="display:flex;align-items:center;gap:6px;padding:2px 0;font-size:11px;color:var(--ph-text-sub);"><div style="width:4px;height:4px;border-radius:50%;background:${cs[i%5]};flex-shrink:0;"></div>${esc(it.trim())}</div>`;});
             if(!r) r='<div style="font-size:11px;color:var(--ph-text-dim);">暂无事项</div>';
             return `<div style="padding:10px 14px;"><div style="font-size:12px;font-weight:700;color:var(--ph-text);margin-bottom:6px;">📌 今日事项</div>${r}</div>`;
@@ -6115,7 +6340,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
         if (!isBack && state.app !== 'home') state.navStack.push(state.app);
         else if (!isBack) state.navStack = [];
         state.view = 'app'; state.app = id; state.chatTarget = null;
-        if (id !== 'settings') state._innerStack = []; // ✅ 切 app 清空子页面栈（settings 保留栈供子页导航）
+        state._innerStack = []; // ✅ 切 app 清空子页面栈
         try{ PhoneAI.abort(); _hideTypingIndicator(); _hideBubbleMenu(); _hideQuoteBar(); root.querySelectorAll('.wxEditMsgOverlay').forEach(function(o){o.remove();}); }catch(e){}
         if (id === 'chats') state._wxTab = 'msgs'; // ✅ 进入聊天 app 默认 msgs tab
         setView('app');
@@ -7421,7 +7646,7 @@ ${lines}
 
           <div style="display:flex;gap:8px;">
             <button data-act="wxAddFriendCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.10);background:#fff;color:rgba(20,24,28,.60);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="wxAddFriendConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">添加</button>
+            <button data-act="wxAddFriendConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">添加</button>
           </div>
         </div>`;
 
@@ -7554,7 +7779,7 @@ ${lines}
 
           <div style="display:flex;gap:8px;">
             <button data-act="wxCreateGroupCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.10);background:#fff;color:rgba(20,24,28,.60);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="wxCreateGroupConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">创建</button>
+            <button data-act="wxCreateGroupConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">创建</button>
           </div>
         </div>`;
 
@@ -7703,15 +7928,6 @@ ${lines}
 
       // 通讯录：微信风格 = 顶栏 + 新的朋友/分组/NPC列表(手风琴)
       // NPC来源：角色卡 > 主线AI回复 > 手动添加
-      function _grpIco(icon){
-  if(icon==='👥') return _phFlatIcon('👥');
-  if(icon==='🤖') return _phFlatIcon('🤖');
-  if(icon==='👤') return _phFlatIcon('👤');
-  if(icon==='⭐') return _phFlatIcon('⭐');
-  if(icon==='🔥') return _phFlatIcon('🔥');
-  if(icon==='💬') return _phFlatIcon('💬');
-  return '<span style="font-size:14px;">'+icon+'</span>';
-}
       function renderChatContacts(container){
         const db = loadContactsDB();
         // ✅ 隐藏被拉黑的联系人（不删除数据）
@@ -7738,7 +7954,7 @@ ${lines}
 
         // 新的朋友入口
         html += `<div class="wxContactHeader" data-act="wxNewFriends" style="margin-top:0;">
-          <div class="wxCHIco wxDIcoThemed">${_phFlatIcon('👥')}</div>
+          <div class="wxCHIco">${_phFlatIcon('👥')}</div>
           <div class="wxCHName">新的朋友</div>
           ${candCount?`<div class="wxCHBadge" style="background:#ef4444;color:#fff;border-radius:10px;padding:2px 8px;font-size:11px;">${candCount}</div>`:''}
           <div class="wxDArrow">›</div>
@@ -7746,7 +7962,7 @@ ${lines}
 
         // 分组入口
         html += `<div class="wxContactHeader" data-act="wxManageGroups">
-          <div class="wxCHIco wxDIcoThemed">${_phFlatIcon('📖')}</div>
+          <div class="wxCHIco">${_phFlatIcon('📖')}</div>
           <div class="wxCHName">分组</div>
           <div class="wxDArrow">›</div>
         </div>`;
@@ -7778,8 +7994,7 @@ ${lines}
             // if (!members.length && g.id !== 'default') continue;
             html += `<div class="wxGroupAccordion"><div class="wxGroupHeader" data-act="wxToggleGroup" data-gid="${esc(g.id)}">
               <span class="wxGArrow">›</span>
-              <div class="wxCHIco">${_grpIco(g.icon||'👥')}</div>
-              <span class="wxGHName">${esc(g.name)} (${members.length})</span>
+              <span>${esc(g.icon||'👥')} ${esc(g.name)} (${members.length})</span>
             </div><div class="wxGroupBody" data-gbody="${esc(g.id)}">`;
             for (const c of members){
               html += `<div class="wxContactItem" data-chatid="${esc(c.id)}">
@@ -7795,7 +8010,7 @@ ${lines}
           const ungrouped = contactGroups['_ungrouped'] || [];
           if (ungrouped.length){
             html += `<div class="wxGroupAccordion"><div class="wxGroupHeader" data-act="wxToggleGroup" data-gid="_ungrouped">
-              <span class="wxGArrow">›</span><div class="wxCHIco">${_grpIco('👥')}</div><span class="wxGHName">未分组 (${ungrouped.length})</span>
+              <span class="wxGArrow">›</span><span>未分组 (${ungrouped.length})</span>
             </div><div class="wxGroupBody" data-gbody="_ungrouped">`;
             for (const c of ungrouped){
               html += `<div class="wxContactItem" data-chatid="${esc(c.id)}">
@@ -7867,11 +8082,11 @@ ${lines}
 
         // C1: 四种导入方式（列表样式）
         html += '<div style="padding:12px 14px 4px;font-size:12px;color:rgba(20,24,28,.4);font-weight:500;">导入方式</div>';
-        html += '<div class="wxDiscoverGroup" style="margin:0 14px">';
-        html += '<div class="wxContactHeader" data-act="c1ImportWB" style="margin:0;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;"><div class="wxCHIco">'+ _phFlatIcon('📖') +'</div><div class="wxCHName" style="flex:1;">世界书角色导入</div><div class="wxDArrow" style="color:var(--ph-text-dim)">›</div></div>';
-        html += '<div class="wxContactHeader" data-act="c1ImportSTCard" style="margin:0;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;"><div class="wxCHIco">'+ _phFlatIcon('🎭') +'</div><div class="wxCHName" style="flex:1;">酒馆角色卡导入</div><div class="wxDArrow" style="color:var(--ph-text-dim)">›</div></div>';
-        html += '<div class="wxContactHeader" data-act="c1ImportPersona" style="margin:0;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;"><div class="wxCHIco">'+ _phFlatIcon('👤') +'</div><div class="wxCHName" style="flex:1;">用户人设导入</div><div class="wxDArrow" style="color:var(--ph-text-dim)">›</div></div>';
-        html += '<div class="wxContactHeader" data-act="c1ScanMain" style="margin:0;padding:12px 14px;cursor:pointer;"><div class="wxCHIco">'+ _phFlatIcon('🔍') +'</div><div class="wxCHName" style="flex:1;">主线扫描</div><div class="wxDArrow" style="color:var(--ph-text-dim)">›</div></div>';
+        html += '<div style="margin:0 14px;border-radius:14px;overflow:hidden;background:rgba(255,255,255,.82);border:1px solid rgba(0,0,0,.06);">';
+        html += '<div class="wxContactHeader" data-act="c1ImportWB" style="margin:0;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;"><div class="wxCHIco" style="font-size:18px;">📖</div><div class="wxCHName" style="flex:1;">世界书角色导入</div><div class="wxDArrow" style="color:rgba(20,24,28,.3);">›</div></div>';
+        html += '<div class="wxContactHeader" data-act="c1ImportSTCard" style="margin:0;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;"><div class="wxCHIco" style="font-size:18px;">🎭</div><div class="wxCHName" style="flex:1;">酒馆角色卡导入</div><div class="wxDArrow" style="color:rgba(20,24,28,.3);">›</div></div>';
+        html += '<div class="wxContactHeader" data-act="c1ImportPersona" style="margin:0;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;"><div class="wxCHIco" style="font-size:18px;">👤</div><div class="wxCHName" style="flex:1;">用户人设导入</div><div class="wxDArrow" style="color:rgba(20,24,28,.3);">›</div></div>';
+        html += '<div class="wxContactHeader" data-act="c1ScanMain" style="margin:0;padding:12px 14px;cursor:pointer;"><div class="wxCHIco" style="font-size:18px;">🔍</div><div class="wxCHName" style="flex:1;">主线扫描</div><div class="wxDArrow" style="color:rgba(20,24,28,.3);">›</div></div>';
         html += '</div>';
 
         // 候选列表
@@ -7886,7 +8101,7 @@ ${lines}
             html += '<div class="wxCIName" style="font-size:14px;">' + esc(c.name) + '</div>';
             if (profileSnip) html += '<div style="font-size:11px;color:rgba(20,24,28,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(profileSnip) + '</div>';
             html += '</div>';
-            html += '<button data-act="phAcceptCand" data-name="' + esc(c.name) + '" style="appearance:none;border:0;background:#07c160;color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">+</button>';
+            html += '<button data-act="phAcceptCand" data-name="' + esc(c.name) + '" style="appearance:none;border:0;background:var(--ph-accent);color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">+</button>';
             html += '</div>';
           }
         } else {
@@ -7987,7 +8202,7 @@ ${lines}
           html += '<div class="phPlaceholder" style="padding-top:40px;"><div class="phPlIcon">' + _phFlatIcon('📖') + '</div><div class="phPlText">未从世界书中读取到角色<br><span style="font-size:11px;color:rgba(20,24,28,.35);">请确保酒馆世界书中有包含角色表格的条目<br>（含 | 角色名 | 身份 | 外貌 | 等列）</span></div></div>';
         } else {
           html += '<div style="padding:12px 14px 6px;font-size:12px;color:rgba(20,24,28,.4);font-weight:500;">找到 ' + chars.length + ' 个角色</div>';
-          html += '<div style="padding:0 14px;"><button data-act="c1WBImportAll" style="width:100%;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.82);color:#07c160;font-size:13px;font-weight:500;cursor:pointer;margin-bottom:8px;">全部导入为候选</button></div>';
+          html += '<div style="padding:0 14px;"><button data-act="c1WBImportAll" style="width:100%;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.82);color:var(--ph-accent);font-size:13px;font-weight:500;cursor:pointer;margin-bottom:8px;">全部导入为候选</button></div>';
           for (var i = 0; i < chars.length; i++){
             var c = chars[i];
             var alreadyContact = !!findContactByName(loadContactsDB(), c.name);
@@ -7996,7 +8211,7 @@ ${lines}
             html += '<div style="margin:0 14px 8px;padding:14px;border-radius:14px;background:rgba(255,255,255,.82);border:1px solid rgba(0,0,0,.06);">';
             html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
             html += '<span style="font-size:14px;font-weight:600;color:rgba(20,24,28,.85);">' + esc(c.name) + '</span>';
-            html += statusText ? '<span style="font-size:11px;color:rgba(20,24,28,.4);">' + statusText + '</span>' : '<button data-act="c1WBImportOne" data-cidx="' + i + '" style="border:0;background:#07c160;color:#fff;font-size:11px;padding:4px 10px;border-radius:8px;cursor:pointer;">导入</button>';
+            html += statusText ? '<span style="font-size:11px;color:rgba(20,24,28,.4);">' + statusText + '</span>' : '<button data-act="c1WBImportOne" data-cidx="' + i + '" style="border:0;background:var(--ph-accent);color:#fff;font-size:11px;padding:4px 10px;border-radius:8px;cursor:pointer;">导入</button>';
             html += '</div>';
             if (c.identity) html += '<div style="font-size:12px;color:rgba(20,24,28,.55);margin-top:2px;">身份：' + esc(c.identity.slice(0,100)) + '</div>';
             if (c.appearance) html += '<div style="font-size:12px;color:rgba(20,24,28,.55);margin-top:2px;">外貌：' + esc(c.appearance.slice(0,100)) + '</div>';
@@ -8056,7 +8271,7 @@ ${lines}
             html += '<div style="margin:0 14px 8px;padding:14px;border-radius:14px;background:rgba(255,255,255,.82);border:1px solid rgba(0,0,0,.06);">';
             html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">';
             html += '<span style="font-size:14px;font-weight:600;color:rgba(20,24,28,.85);">🎭 ' + esc(c.name) + '</span>';
-            html += statusText ? '<span style="font-size:11px;color:rgba(20,24,28,.4);">' + statusText + '</span>' : '<button data-act="c1STImportOne" data-cidx="' + i + '" style="border:0;background:#07c160;color:#fff;font-size:11px;padding:4px 10px;border-radius:8px;cursor:pointer;">导入</button>';
+            html += statusText ? '<span style="font-size:11px;color:rgba(20,24,28,.4);">' + statusText + '</span>' : '<button data-act="c1STImportOne" data-cidx="' + i + '" style="border:0;background:var(--ph-accent);color:#fff;font-size:11px;padding:4px 10px;border-radius:8px;cursor:pointer;">导入</button>';
             html += '</div>';
             if (desc) html += '<div style="font-size:12px;color:rgba(20,24,28,.5);margin-top:4px;max-height:60px;overflow:hidden;white-space:pre-wrap;">' + esc(desc) + '</div>';
             html += '</div>';
@@ -8128,7 +8343,7 @@ ${lines}
           <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:nowrap;min-width:0;">
             <input data-field="newGroupIcon" placeholder="图标" style="width:42px;min-width:42px;padding:6px;border:1px solid rgba(0,0,0,.1);border-radius:6px;text-align:center;font-size:16px;box-sizing:border-box;"/>
             <input data-field="newGroupName" placeholder="新分组名称" style="flex:1;min-width:0;padding:6px 10px;border:1px solid rgba(0,0,0,.1);border-radius:6px;font-size:13px;box-sizing:border-box;"/>
-            <button data-gact="add" style="padding:6px 12px;border:0;border-radius:6px;background:#07c160;color:#fff;font-size:12px;cursor:pointer;flex-shrink:0;white-space:nowrap;">添加</button>
+            <button data-gact="add" style="padding:6px 12px;border:0;border-radius:6px;background:var(--ph-accent);color:#fff;font-size:12px;cursor:pointer;flex-shrink:0;white-space:nowrap;">添加</button>
           </div>
           <button data-gact="close" style="width:100%;padding:10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;background:#fff;font-size:13px;cursor:pointer;color:rgba(20,24,28,.6);">关闭</button>
         </div>`;
@@ -8231,8 +8446,8 @@ ${lines}
 
         let html = `<div style="padding:0;">
           <div style="display:flex;border-bottom:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.5);">
-            <button data-act="wxCHTabSwitch" data-chtab="summary" style="flex:1;padding:10px;border:0;background:transparent;font-size:13px;font-weight:${activeTab==='summary'?'600':'400'};color:${activeTab==='summary'?'#07c160':'rgba(20,24,28,.5)'};cursor:pointer;border-bottom:2px solid ${activeTab==='summary'?'#07c160':'transparent'};">聊天总结</button>
-            <button data-act="wxCHTabSwitch" data-chtab="moments" style="flex:1;padding:10px;border:0;background:transparent;font-size:13px;font-weight:${activeTab==='moments'?'600':'400'};color:${activeTab==='moments'?'#07c160':'rgba(20,24,28,.5)'};cursor:pointer;border-bottom:2px solid ${activeTab==='moments'?'#07c160':'transparent'};">朋友圈评论</button>
+            <button data-act="wxCHTabSwitch" data-chtab="summary" style="flex:1;padding:10px;border:0;background:transparent;font-size:13px;font-weight:${activeTab==='summary'?'600':'400'};color:${activeTab==='summary'?'var(--ph-accent)':'rgba(20,24,28,.5)'};cursor:pointer;border-bottom:2px solid ${activeTab==='summary'?'var(--ph-accent)':'transparent'};">聊天总结</button>
+            <button data-act="wxCHTabSwitch" data-chtab="moments" style="flex:1;padding:10px;border:0;background:transparent;font-size:13px;font-weight:${activeTab==='moments'?'600':'400'};color:${activeTab==='moments'?'var(--ph-accent)':'rgba(20,24,28,.5)'};cursor:pointer;border-bottom:2px solid ${activeTab==='moments'?'var(--ph-accent)':'transparent'};">朋友圈评论</button>
           </div>`;
 
         if (activeTab === 'moments'){
@@ -8258,7 +8473,7 @@ ${lines}
               const sumData = getChatSummary(thread.id);
               const hasSummary = !!(sumData && sumData.summaryText);
               const statusHtml = hasSummary
-                ? `<span style="color:#07c160;">✅ 已总结 · ${_timeAgo(sumData.updatedAt)}</span>`
+                ? `<span style="color:var(--ph-accent);">✅ 已总结 · ${_timeAgo(sumData.updatedAt)}</span>`
                 : `<span style="color:rgba(20,24,28,.3);">⬜ 未总结</span>`;
               const lastMsg = thread.lastMsg ? String(thread.lastMsg).slice(0,20) : '暂无消息';
               const avatar = npc.avatar || (npc.name||'?').charAt(0);
@@ -8352,7 +8567,7 @@ ${lines}
             <div style="font-size:13px;color:rgba(20,24,28,.75);margin-bottom:6px;">默认模型</div>
             <input data-el="gsModel" value="${esc(gs.defaultModel||'')}" placeholder="留空跟随API预设" style="width:100%;padding:10px 12px;border:1px solid rgba(0,0,0,.1);border-radius:10px;font-size:14px;outline:none;box-sizing:border-box;" />
           </div>
-          <button data-act="wxSumSettingsSave" style="width:100%;padding:12px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">💾 保存设置</button>
+          <button data-act="wxSumSettingsSave" style="width:100%;padding:12px;border-radius:10px;border:0;background:var(--ph-accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">💾 保存设置</button>
         </div>`;
         body.innerHTML = html;
       }
@@ -8372,7 +8587,7 @@ ${lines}
               <div style="font-size:13px;color:rgba(20,24,28,.85);">聊天时附加</div>
               <div style="font-size:11px;color:rgba(20,24,28,.4);">开启后在聊天时自动附加此世界书</div>
             </div>
-            <button data-act="gwbToggle" class="wxToggleBtn ${data.enabled?'on':'off'}" style="width:44px;height:26px;border-radius:13px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${data.enabled?'#07c160':'rgba(0,0,0,.15)'};">
+            <button data-act="gwbToggle" class="wxToggleBtn ${data.enabled?'on':'off'}" style="width:44px;height:26px;border-radius:13px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${data.enabled?'var(--ph-accent)':'rgba(0,0,0,.15)'};">
               <span style="position:absolute;top:3px;${data.enabled?'left:21px':'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
             </button>
           </div>
@@ -8385,7 +8600,7 @@ ${lines}
                 <div style="font-size:13px;color:rgba(20,24,28,.85);">附加酒馆聊天上下文</div>
                 <div style="font-size:11px;color:rgba(20,24,28,.4);">开启后自动读取最近 N 条主线消息</div>
               </div>
-              <button data-act="gwbTavernCtxToggle" style="width:44px;height:26px;border-radius:13px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${data.tavernCtxEnabled?'#07c160':'rgba(0,0,0,.15)'};">
+              <button data-act="gwbTavernCtxToggle" style="width:44px;height:26px;border-radius:13px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${data.tavernCtxEnabled?'var(--ph-accent)':'rgba(0,0,0,.15)'};">
                 <span style="position:absolute;top:3px;${data.tavernCtxEnabled?'left:21px':'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
               </button>
             </div>
@@ -8396,7 +8611,7 @@ ${lines}
             </div>
           </div>
 
-          <button data-act="gwbSave" style="width:100%;margin-top:12px;padding:12px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
+          <button data-act="gwbSave" style="width:100%;margin-top:12px;padding:12px;border-radius:10px;border:0;background:var(--ph-accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
           <div style="font-size:11px;color:rgba(20,24,28,.3);margin-top:8px;text-align:center;">此世界书仅由小手机管理，不影响 ST 现有世界书</div>
         </div>`;
         container.innerHTML = html;
@@ -8404,7 +8619,7 @@ ${lines}
         // 绑定事件
         container.querySelector('[data-act="gwbToggle"]')?.addEventListener('click', function(){
           data.enabled = !data.enabled;
-          this.style.background = data.enabled ? '#07c160' : 'rgba(0,0,0,.15)';
+          this.style.background = data.enabled ? 'var(--ph-accent)' : 'rgba(0,0,0,.15)';
           const dot = this.querySelector('span');
           if (dot) dot.style.left = data.enabled ? '21px' : '3px';
           this.classList.toggle('on', data.enabled);
@@ -8412,7 +8627,7 @@ ${lines}
         });
         container.querySelector('[data-act="gwbTavernCtxToggle"]')?.addEventListener('click', function(){
           data.tavernCtxEnabled = !data.tavernCtxEnabled;
-          this.style.background = data.tavernCtxEnabled ? '#07c160' : 'rgba(0,0,0,.15)';
+          this.style.background = data.tavernCtxEnabled ? 'var(--ph-accent)' : 'rgba(0,0,0,.15)';
           const dot = this.querySelector('span');
           if (dot) dot.style.left = data.tavernCtxEnabled ? '21px' : '3px';
         });
@@ -8457,7 +8672,7 @@ ${lines}
             <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">默认 Voice ID / 模型名</div>
             <input data-el="vaVoice" value="${esc(data.defaultVoiceId||'')}" placeholder="默认声音标识" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;"/>
           </div>
-          <button data-act="vaSaveConfig" style="width:100%;padding:10px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px;">保存配置</button>
+          <button data-act="vaSaveConfig" style="width:100%;padding:10px;border-radius:10px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px;">保存配置</button>
 
           <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.85);margin-bottom:8px;">角色绑定列表</div>
           <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:8px;">为好友/角色绑定专属 voiceId</div>
@@ -8467,7 +8682,7 @@ ${lines}
               <option value="">选择好友…</option>
               ${contacts.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}
             </select>
-            <button data-act="vaAddBind" style="padding:8px 14px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:12px;cursor:pointer;">添加</button>
+            <button data-act="vaAddBind" style="padding:8px 14px;border-radius:8px;border:0;background:var(--ph-accent);color:#fff;font-size:12px;cursor:pointer;">添加</button>
           </div>
           <div style="font-size:11px;color:rgba(20,24,28,.3);margin-top:12px;text-align:center;">当前仅保存配置，不执行真实播放</div>
 
@@ -8476,7 +8691,7 @@ ${lines}
             <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:10px;">开启后，AI 回复将自动调用语音 API 生成语音气泡，气泡内含播放器并自动展示文字转写</div>
             <div style="display:flex;align-items:center;justify-content:space-between;">
               <div style="font-size:13px;color:rgba(20,24,28,.85);">AI 回复时自动发送语音</div>
-              <button data-act="vaAutoVoiceToggle" style="width:44px;height:26px;border-radius:13px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${data.autoVoice?'#07c160':'rgba(0,0,0,.15)'};">
+              <button data-act="vaAutoVoiceToggle" style="width:44px;height:26px;border-radius:13px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${data.autoVoice?'var(--ph-accent)':'rgba(0,0,0,.15)'};">
                 <span style="position:absolute;top:3px;${data.autoVoice?'left:21px':'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
               </button>
             </div>
@@ -8501,7 +8716,7 @@ ${lines}
         });
         container.querySelector('[data-act="vaAutoVoiceToggle"]')?.addEventListener('click', function(){
           data.autoVoice = !data.autoVoice;
-          this.style.background = data.autoVoice ? '#07c160' : 'rgba(0,0,0,.15)';
+          this.style.background = data.autoVoice ? 'var(--ph-accent)' : 'rgba(0,0,0,.15)';
           const dot = this.querySelector('span');
           if (dot) dot.style.left = data.autoVoice ? '21px' : '3px';
           saveVoiceApi(data);
@@ -8551,7 +8766,7 @@ ${lines}
 
         html += `<div style="display:flex;gap:8px;margin-top:12px;">
             <button data-act="relAdd" style="flex:1;padding:10px;border-radius:10px;border:1px dashed rgba(0,0,0,.15);background:rgba(255,255,255,.5);font-size:13px;color:rgba(20,24,28,.6);cursor:pointer;">+ 新增关系</button>
-            <button data-act="relSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
+            <button data-act="relSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
           </div>
         </div>`;
         container.innerHTML = html;
@@ -8599,7 +8814,7 @@ ${lines}
             html += `<div style="display:flex;align-items:center;padding:10px 12px;margin-bottom:6px;background:rgba(255,255,255,.7);border-radius:10px;border:1px solid rgba(0,0,0,.06);">
               <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center;font-size:14px;color:rgba(20,24,28,.5);flex-shrink:0;">${esc((b.name||'?').charAt(0))}</div>
               <div style="flex:1;margin-left:10px;font-size:13px;color:rgba(20,24,28,.85);">${esc(b.name)}</div>
-              <button data-act="blRemove" data-blidx="${idx}" style="padding:4px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.08);background:#fff;font-size:11px;color:#07c160;cursor:pointer;">移除</button>
+              <button data-act="blRemove" data-blidx="${idx}" style="padding:4px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.08);background:#fff;font-size:11px;color:var(--ph-accent);cursor:pointer;">移除</button>
             </div>`;
           });
         } else {
@@ -8763,7 +8978,7 @@ ${lines}
             const d = new Date(it.time || 0);
             const ts = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
             const typeLabel = it.type === 'diary' ? '📝 日记' : '💬 语录';
-            const tagStr = _safeArr(it.tags).map(t=>`<span style="display:inline-block;padding:2px 6px;border-radius:4px;background:rgba(7,193,96,.1);color:#07c160;font-size:10px;margin-right:4px;">${esc(t)}</span>`).join('');
+            const tagStr = _safeArr(it.tags).map(t=>`<span style="display:inline-block;padding:2px 6px;border-radius:4px;background:rgba(var(--ph-accent-rgb,124,152,168),.1);color:var(--ph-accent);font-size:10px;margin-right:4px;">${esc(t)}</span>`).join('');
             html += `<div style="margin:0 14px 10px;padding:14px;border-radius:14px;background:#fff;border:1px solid rgba(0,0,0,.06);">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
                 <span style="font-size:11px;color:rgba(20,24,28,.4);">${typeLabel} · ${ts}</span>
@@ -8816,7 +9031,7 @@ ${lines}
           </div>
           <div style="display:flex;gap:8px;">
             <button data-act="favEditorCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:rgba(20,24,28,.6);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="favEditorSave" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
+            <button data-act="favEditorSave" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
           </div>
         </div>`;
         root.appendChild(overlay);
@@ -8857,21 +9072,21 @@ ${lines}
         let html = '';
 
         // 当前人设卡片
-        html += `<div style="margin:14px;padding:16px;border-radius:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;">
+        html += `<div style="margin:14px;padding:16px;border-radius:14px;background:var(--ph-accent-grad);color:#fff;">
           <div style="font-size:12px;opacity:.8;">当前人设</div>
           <div style="font-size:15px;font-weight:600;margin-top:4px;">${esc(active.id ? (list.find(p=>p.id===active.id)?.name||active.id) : '未设置')}</div>
           <div style="font-size:11px;opacity:.7;margin-top:4px;max-height:60px;overflow:hidden;white-space:pre-wrap;">${esc((active.text||'').slice(0,120))}${(active.text||'').length>120?'…':''}</div>
         </div>`;
 
         // C2: chatId 联动模式开关
-        html += `<div style="margin:0 14px 10px;padding:12px 14px;border-radius:12px;background:#fff;border:1px solid ${isFollowChatId ? '#07c160' : 'rgba(0,0,0,.06)'};">
+        html += `<div style="margin:0 14px 10px;padding:12px 14px;border-radius:12px;background:#fff;border:1px solid ${isFollowChatId ? 'var(--ph-accent)' : 'rgba(0,0,0,.06)'};">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
               <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.85);">🔗 跟随 chatId</div>
               <div style="font-size:11px;color:rgba(20,24,28,.45);margin-top:2px;">${isFollowChatId ? '自动使用当前酒馆 chatId 关联的 persona' : '已手动锁定为: ' + esc(cSettings.personaOverride || '(无)')}</div>
             </div>
             <button data-act="${isFollowChatId ? 'personaUnlinkChat' : 'personaFollowChat'}"
-              style="border:0;background:${isFollowChatId ? 'rgba(0,0,0,.06)' : '#07c160'};color:${isFollowChatId ? 'rgba(20,24,28,.5)' : '#fff'};font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;">
+              style="border:0;background:${isFollowChatId ? 'rgba(0,0,0,.06)' : 'var(--ph-accent)'};color:${isFollowChatId ? 'rgba(20,24,28,.5)' : '#fff'};font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;">
               ${isFollowChatId ? '取消自动' : '恢复自动'}
             </button>
           </div>
@@ -8890,11 +9105,11 @@ ${lines}
             const p = list[i];
             const isCur = active.id === p.id;
             const isOverride = cSettings.personaOverride === p.name || cSettings.personaOverride === p.id;
-            html += `<div style="margin:0 14px 8px;padding:14px;border-radius:14px;background:#fff;border:${isCur?'2px solid #07c160':'1px solid rgba(0,0,0,.06)'};">
+            html += `<div style="margin:0 14px 8px;padding:14px;border-radius:14px;background:#fff;border:${isCur?'2px solid var(--ph-accent)':'1px solid rgba(0,0,0,.06)'};">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <span style="font-size:14px;font-weight:600;color:rgba(20,24,28,.85);">${esc(p.name)} ${isCur?'<span style="color:#07c160;font-size:11px;">✓ 当前</span>':''} ${isOverride && !isFollowChatId ? '<span style="color:#667eea;font-size:10px;">🔒 锁定</span>' : ''}</span>
+                <span style="font-size:14px;font-weight:600;color:rgba(20,24,28,.85);">${esc(p.name)} ${isCur?'<span style="color:var(--ph-accent);font-size:11px;">✓ 当前</span>':''} ${isOverride && !isFollowChatId ? '<span style="color:var(--ph-accent);font-size:10px;">🔒 锁定</span>' : ''}</span>
                 <div style="display:flex;gap:6px;">
-                  ${!isCur ? `<button data-act="personaUse" data-pidx="${i}" style="border:0;background:#07c160;color:#fff;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;">启用</button>` : ''}
+                  ${!isCur ? `<button data-act="personaUse" data-pidx="${i}" style="border:0;background:var(--ph-accent);color:#fff;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;">启用</button>` : ''}
                   <button data-act="personaEdit" data-pidx="${i}" style="border:0;background:transparent;color:#3b82f6;font-size:11px;cursor:pointer;">编辑</button>
                   <button data-act="personaDel" data-pidx="${i}" style="border:0;background:transparent;color:#ef4444;font-size:11px;cursor:pointer;">删除</button>
                 </div>
@@ -9004,7 +9219,7 @@ ${lines}
           </div>
           <div style="display:flex;gap:8px;">
             <button data-act="pCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:rgba(20,24,28,.6);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="pSave" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
+            <button data-act="pSave" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
           </div>
         </div>`;
         root.appendChild(overlay);
@@ -9053,7 +9268,7 @@ ${lines}
         html += `<div style="display:flex;border-bottom:1px solid rgba(0,0,0,.06);margin:0 14px;">`;
         for (const g of groups){
           const isOn = g.key === curGroup;
-          html += `<button data-act="stkGroup" data-gkey="${g.key}" style="flex:1;padding:10px;border:0;border-bottom:2px solid ${isOn?'#07c160':'transparent'};background:transparent;color:${isOn?'#07c160':'rgba(20,24,28,.5)'};font-size:13px;cursor:pointer;font-weight:${isOn?'600':'400'};">${g.icon} ${g.label} (${_safeArr(packs[g.key]).length})</button>`;
+          html += `<button data-act="stkGroup" data-gkey="${g.key}" style="flex:1;padding:10px;border:0;border-bottom:2px solid ${isOn?'var(--ph-accent)':'transparent'};background:transparent;color:${isOn?'var(--ph-accent)':'rgba(20,24,28,.5)'};font-size:13px;cursor:pointer;font-weight:${isOn?'600':'400'};">${g.icon} ${g.label} (${_safeArr(packs[g.key]).length})</button>`;
         }
         html += `</div>`;
 
@@ -9174,6 +9389,7 @@ ${lines}
 
         function _renderList(){
           let html = `<div class="settingSubPage" style="padding:14px;">
+            <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;margin-bottom:12px;">‹ 返回设置</button>
             <div style="font-size:15px;font-weight:700;color:var(--ph-text);margin-bottom:14px;">API 设置</div>`;
 
           if (!presets.length){
@@ -9183,8 +9399,8 @@ ${lines}
               const isActive = p.id === activeId;
               html += `<div style="margin-bottom:10px;padding:14px;border-radius:14px;background:${isActive?'rgba(7,193,96,.08)':'rgba(255,255,255,.7)'};border:1px solid ${isActive?'rgba(7,193,96,.3)':'rgba(0,0,0,.06)'};cursor:pointer;" data-act="apiEditPreset" data-pidx="${idx}">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                  <span style="font-size:14px;font-weight:600;color:var(--ph-text);flex:1;">${_esc(p.name)}${isActive?' <span style="font-size:10px;color:#07c160;">● 使用中</span>':''}</span>
-                  <button data-act="apiActivate" data-pid="${_esc(p.id)}" style="padding:4px 10px;border-radius:8px;border:1px solid ${isActive?'#07c160':'rgba(0,0,0,.1)'};background:${isActive?'#07c160':'#fff'};color:${isActive?'#fff':'var(--ph-text-sub)'};font-size:11px;cursor:pointer;">${isActive?'已启用':'启用'}</button>
+                  <span style="font-size:14px;font-weight:600;color:var(--ph-text);flex:1;">${_esc(p.name)}${isActive?' <span style="font-size:10px;color:var(--ph-accent);">● 使用中</span>':''}</span>
+                  <button data-act="apiActivate" data-pid="${_esc(p.id)}" style="padding:4px 10px;border-radius:8px;border:1px solid ${isActive?'var(--ph-accent)':'rgba(0,0,0,.1)'};background:${isActive?'var(--ph-accent)':'#fff'};color:${isActive?'#fff':'var(--ph-text-sub)'};font-size:11px;cursor:pointer;">${isActive?'已启用':'启用'}</button>
                 </div>
                 <div style="font-size:11px;color:var(--ph-text-dim);word-break:break-all;">URL: ${_esc((p.baseUrl||'').slice(0,60)||'未设置')}</div>
                 <div style="font-size:11px;color:var(--ph-text-dim);">Model: ${_esc(p.model||'未设置')}</div>
@@ -9200,7 +9416,7 @@ ${lines}
         }
 
         function _bindApiListEvents(ct){
-          // settingsBack handled globally
+          ct.querySelectorAll('[data-act="settingsBack"]').forEach(b=>b.addEventListener('click',()=>renderSettings(ct)));
           ct.querySelectorAll('[data-act="apiAddPreset"]').forEach(b=>b.addEventListener('click',()=>{
             const name = W.prompt?.('预设名称：','新预设');
             if (!name) return;
@@ -9230,7 +9446,7 @@ ${lines}
           function _render(){
             const maskedKey = p.apiKey ? ('•'.repeat(Math.min(12,p.apiKey.length)) + p.apiKey.slice(-4)) : '';
             let html = `<div class="settingSubPage" style="padding:14px;">
-
+              <button data-act="apiEditorBack" style="appearance:none;border:0;background:var(--ph-glass);color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;margin-bottom:12px;">‹ 返回列表</button>
               <div style="font-size:15px;font-weight:700;color:var(--ph-text);margin-bottom:14px;">${_esc(p.name)}</div>
               <div style="display:flex;flex-direction:column;gap:10px;">
                 <label style="font-size:12px;color:var(--ph-text-sub);">预设名称</label>
@@ -9251,7 +9467,7 @@ ${lines}
               </div>
               <div style="display:flex;gap:8px;margin-top:16px;">
                 <button data-act="apiTestConn" style="flex:1;padding:12px;border-radius:12px;border:1px solid rgba(59,130,246,.3);background:rgba(59,130,246,.08);color:#3b82f6;font-size:13px;font-weight:600;cursor:pointer;">测试连接</button>
-                <button data-act="apiSavePreset" style="flex:1;padding:12px;border-radius:12px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
+                <button data-act="apiSavePreset" style="flex:1;padding:12px;border-radius:12px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
               </div>
               <div data-el="apiTestResult" style="margin-top:10px;"></div>
               <div style="display:flex;gap:8px;margin-top:14px;">
@@ -9303,7 +9519,7 @@ ${lines}
                 clearTimeout(timer);
                 const ms = Date.now()-t0;
                 if (resp.ok){
-                  resultEl.innerHTML = `<div style="font-size:12px;color:#07c160;font-weight:600;">✅ 连接成功（${ms}ms）</div>`;
+                  resultEl.innerHTML = `<div style="font-size:12px;color:var(--ph-accent);font-weight:600;">✅ 连接成功（${ms}ms）</div>`;
                 } else {
                   resultEl.innerHTML = `<div style="font-size:12px;color:#ef4444;">❌ HTTP ${resp.status}（${ms}ms）</div>`;
                 }
@@ -9385,12 +9601,12 @@ ${lines}
           overlay.innerHTML = `<div class="wxConfirmBox" style="min-width:280px;text-align:left;">
             <div style="font-weight:700;font-size:14px;color:var(--ph-text);margin-bottom:10px;">导出${singleMode?'当前预设':'全部预设'}</div>
             <label style="display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;">
-              <input type="checkbox" data-el="incKey" style="width:16px;height:16px;accent-color:#07c160;" />
+              <input type="checkbox" data-el="incKey" style="width:16px;height:16px;accent-color:var(--ph-accent);" />
               <span style="font-size:13px;color:var(--ph-text);">包含 API Key（敏感）</span>
             </label>
             <div style="display:flex;gap:8px;margin-top:10px;">
               <button data-act="exCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:var(--ph-text-sub);font-size:13px;cursor:pointer;">取消</button>
-              <button data-act="exConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导出</button>
+              <button data-act="exConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导出</button>
             </div>
           </div>`;
           root.appendChild(overlay);
@@ -9471,6 +9687,7 @@ ${lines}
         var ssUsageKB = (ssUsageBytes / 1024).toFixed(1);
 
         let html = `<div class="settingSubPage" style="padding:14px;">
+          <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;margin-bottom:12px;">‹ 返回设置</button>
           <div style="font-size:15px;font-weight:700;color:var(--ph-text);margin-bottom:14px;">数据管理</div>
 
           <!-- 存储使用情况 -->
@@ -9517,19 +9734,19 @@ ${lines}
               <b>🔄 重试 IndexedDB</b><br><span style="font-size:11px;color:var(--ph-text-dim);">删除旧数据库后重新初始化</span>
             </button>
             <button data-act="dmBackupAll" style="padding:14px;border-radius:14px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:13px;cursor:pointer;text-align:left;">
-              <b>备份全部</b><br><span style="font-size:11px;color:var(--ph-text-dim);">一键导出所有小手机数据</span>
+              <b>💾 备份全部</b><br><span style="font-size:11px;color:var(--ph-text-dim);">一键导出所有小手机数据</span>
             </button>
             <button data-act="dmExportSelected" style="padding:14px;border-radius:14px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:13px;cursor:pointer;text-align:left;">
-              <b>选择导出</b><br><span style="font-size:11px;color:var(--ph-text-dim);">勾选模块分别导出</span>
+              <b>📤 选择导出</b><br><span style="font-size:11px;color:var(--ph-text-dim);">勾选模块分别导出</span>
             </button>
             <button data-act="dmImport" style="padding:14px;border-radius:14px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:13px;cursor:pointer;text-align:left;">
-              <b>导入数据</b><br><span style="font-size:11px;color:var(--ph-text-dim);">粘贴 JSON 或选择文件导入</span>
+              <b>📥 导入数据</b><br><span style="font-size:11px;color:var(--ph-text-dim);">粘贴 JSON 或选择文件导入</span>
             </button>
             <button data-act="dmClearAICache" style="padding:14px;border-radius:14px;border:1px solid rgba(239,68,68,.1);background:var(--ph-glass);color:var(--ph-text);font-size:13px;cursor:pointer;text-align:left;">
               <b>🗑️ 清空 AI 资讯缓存</b><br><span style="font-size:11px;color:var(--ph-text-dim);">清除 AutoFeed 生成的临时资讯</span>
             </button>
             <button data-act="dmClearAll" style="padding:14px;border-radius:14px;border:1px solid rgba(239,68,68,.15);background:var(--ph-glass);color:#ef4444;font-size:13px;cursor:pointer;text-align:left;">
-              <b>清空所有数据</b><br><span style="font-size:11px;color:rgba(239,68,68,.4);">二次确认后清空（仅小手机）</span>
+              <b>🗑️ 清空所有数据</b><br><span style="font-size:11px;color:rgba(239,68,68,.4);">二次确认后清空（仅小手机）</span>
             </button>
           </div>
         </div>`;
@@ -9627,7 +9844,7 @@ ${lines}
                 if (!W.confirm?.('删除 key: ' + key + '？')) return;
                 try{ W.localStorage.removeItem(key); }catch(e){}
                 try{ toast('已删除'); }catch(e){}
-                state._innerStack.push(()=>renderApiSettingsPage(container)); renderDataManagerPage(container);
+                renderDataManagerPage(container);
               });
             });
           }catch(e){ console.warn('[MEOW] storage analyzer error:', e); }
@@ -9662,7 +9879,7 @@ ${lines}
           }catch(e){}
         })();
 
-        // settingsBack is handled globally via handleClick + _innerStack
+        container.querySelector('[data-act="settingsBack"]')?.addEventListener('click',()=> renderSettings(container));
 
         // ===== 一键存储优化 =====
         container.querySelector('[data-act="dmStorageOptimize"]')?.addEventListener('click',()=>{
@@ -9859,7 +10076,7 @@ ${lines}
           var freedKB = (freed / 1024).toFixed(1);
           var msg = details.length ? '已清理: ' + details.join('、') + '\n释放约 ' + freedKB + ' KB' : '没有可清理的数据';
           try{ toast(msg); }catch(e){ try{ W.alert(msg); }catch(e2){} }
-          state._innerStack.push(()=>renderApiSettingsPage(container)); renderDataManagerPage(container);
+          renderDataManagerPage(container);
         });
 
         // ===== 重试 IndexedDB =====
@@ -9873,7 +10090,7 @@ ${lines}
             } else {
               toast('❌ IndexedDB 仍不可用，可能浏览器限制');
             }
-            state._innerStack.push(()=>renderApiSettingsPage(container)); renderDataManagerPage(container);
+            renderDataManagerPage(container);
           }catch(e){
             toast('重试失败: ' + e.message);
           }
@@ -9963,7 +10180,7 @@ ${lines}
 
             var savedKB = (totalSaved / 1024).toFixed(0);
             toast(compressed > 0 ? '✅ 压缩了 ' + compressed + ' 张图片，释放约 ' + savedKB + ' KB' : '所有图片已经是最优大小');
-            state._innerStack.push(()=>renderApiSettingsPage(container)); renderDataManagerPage(container);
+            renderDataManagerPage(container);
           }catch(e){
             toast('压缩失败: ' + e.message);
           }
@@ -9986,7 +10203,7 @@ ${lines}
             MeowDB.clear('feedPacks').catch(function(){});
           }
           try{toast('已清空 AI 资讯缓存');}catch(e){}
-          state._innerStack.push(()=>renderApiSettingsPage(container)); renderDataManagerPage(container);
+          renderDataManagerPage(container);
         });
         container.querySelector('[data-act="dmClearAll"]')?.addEventListener('click',()=>{
           if (!W.confirm?.('⚠️ 确定清空所有小手机数据？此操作不可恢复！')) return;
@@ -10001,7 +10218,7 @@ ${lines}
             MeowDB._stores.forEach(function(s){ try{ MeowDB.clear(s); }catch(e){} });
           }
           try{toast(`已清空 ${count} 条数据`);}catch(e){}
-          state._innerStack.push(()=>renderApiSettingsPage(container)); renderDataManagerPage(container);
+          renderDataManagerPage(container);
         });
       }
 
@@ -10028,7 +10245,7 @@ ${lines}
           const count = _getKeysForModule(mod).length;
           if (count === 0 && mod.isCatchAll) return;
           checkHtml += `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;">
-            <input type="checkbox" value="${mod.key}" checked style="width:16px;height:16px;accent-color:#07c160;" />
+            <input type="checkbox" value="${mod.key}" checked style="width:16px;height:16px;accent-color:var(--ph-accent);" />
             <span style="flex:1;font-size:13px;color:var(--ph-text);">${esc(mod.label)}</span>
             <span style="font-size:10px;color:var(--ph-text-dim);">${count} keys</span>
           </label>`;
@@ -10036,13 +10253,13 @@ ${lines}
         overlay.innerHTML = `<div class="wxConfirmBox" style="min-width:280px;text-align:left;max-height:80vh;overflow-y:auto;">
           <div style="font-weight:700;font-size:15px;color:var(--ph-text);margin-bottom:10px;">选择导出模块</div>
           <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;border-bottom:1px solid rgba(0,0,0,.06);margin-bottom:8px;">
-            <input type="checkbox" data-el="selAll" checked style="width:16px;height:16px;accent-color:#07c160;"/>
+            <input type="checkbox" data-el="selAll" checked style="width:16px;height:16px;accent-color:var(--ph-accent);"/>
             <span style="font-size:13px;font-weight:600;">全选</span>
           </label>
           <div style="max-height:260px;overflow-y:auto;">${checkHtml}</div>
           <div style="display:flex;gap:8px;margin-top:14px;">
             <button data-act="exCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:var(--ph-text-sub);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="exConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导出</button>
+            <button data-act="exConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导出</button>
           </div>
         </div>`;
         root.appendChild(overlay);
@@ -10086,17 +10303,17 @@ ${lines}
           <textarea data-el="imText" rows="6" placeholder="粘贴导出的 JSON 内容…" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid rgba(0,0,0,.12);border-radius:8px;font-size:11px;font-family:monospace;resize:vertical;color:var(--ph-text);background:#fff;"></textarea>
           <div style="margin-top:10px;">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-              <input type="radio" name="imMode" value="overwrite" checked style="accent-color:#07c160;"/>
+              <input type="radio" name="imMode" value="overwrite" checked style="accent-color:var(--ph-accent);"/>
               <span style="font-size:12px;color:var(--ph-text);">覆盖同 key（默认）</span>
             </label>
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:4px;">
-              <input type="radio" name="imMode" value="merge" style="accent-color:#07c160;"/>
+              <input type="radio" name="imMode" value="merge" style="accent-color:var(--ph-accent);"/>
               <span style="font-size:12px;color:var(--ph-text);">合并列表类数据（通讯录/表情/收藏）</span>
             </label>
           </div>
           <div style="display:flex;gap:8px;margin-top:12px;">
             <button data-act="imCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:var(--ph-text-sub);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="imConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导入</button>
+            <button data-act="imConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导入</button>
           </div>
         </div>`;
         root.appendChild(overlay);
@@ -10271,7 +10488,7 @@ ${lines}
             MeowDB._stores.forEach(function(s){ try{ MeowDB.clear(s); }catch(e){} });
           }
           try{toast(`已清空 ${count} 条数据`);}catch(e){}
-          _state._innerStack.push(()=>renderApiSettingsPage(container)); renderMeSettingsPage(container);
+          _renderMeSettingsPage(container);
         });
       }
 
@@ -10302,7 +10519,7 @@ ${lines}
           <textarea data-el="copyBox" rows="10" readonly style="width:100%;box-sizing:border-box;padding:8px;border:1px solid rgba(0,0,0,.12);border-radius:8px;font-size:11px;font-family:monospace;resize:vertical;">${esc(text)}</textarea>
           <div style="display:flex;gap:8px;margin-top:10px;">
             <button data-act="cbClose" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:rgba(20,24,28,.6);font-size:13px;cursor:pointer;">关闭</button>
-            <button data-act="cbCopy" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">全选复制</button>
+            <button data-act="cbCopy" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">全选复制</button>
           </div>
         </div>`;
         root.appendChild(overlay);
@@ -10327,27 +10544,27 @@ ${lines}
         let checkHtml = '';
         contacts.forEach(c=>{
           checkHtml += `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;">
-            <input type="checkbox" value="${esc(c.id)}" data-type="contact" checked style="width:16px;height:16px;accent-color:#07c160;"/>
+            <input type="checkbox" value="${esc(c.id)}" data-type="contact" checked style="width:16px;height:16px;accent-color:var(--ph-accent);"/>
             <span style="font-size:13px;color:rgba(20,24,28,.8);">👤 ${esc(c.name)}</span>
           </label>`;
         });
         Object.keys(groups||{}).forEach(gid=>{
           const g = groups[gid];
           checkHtml += `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;">
-            <input type="checkbox" value="${esc(gid)}" data-type="group" checked style="width:16px;height:16px;accent-color:#07c160;"/>
+            <input type="checkbox" value="${esc(gid)}" data-type="group" checked style="width:16px;height:16px;accent-color:var(--ph-accent);"/>
             <span style="font-size:13px;color:rgba(20,24,28,.8);">👥 ${esc(g.name||gid)}</span>
           </label>`;
         });
         overlay.innerHTML = `<div class="wxConfirmBox" style="min-width:280px;text-align:left;max-height:80vh;overflow-y:auto;">
           <div style="font-weight:700;font-size:15px;color:rgba(20,24,28,.88);margin-bottom:10px;">选择导出</div>
           <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;border-bottom:1px solid rgba(0,0,0,.06);margin-bottom:8px;">
-            <input type="checkbox" data-el="selAll" checked style="width:16px;height:16px;accent-color:#07c160;"/>
+            <input type="checkbox" data-el="selAll" checked style="width:16px;height:16px;accent-color:var(--ph-accent);"/>
             <span style="font-size:13px;font-weight:600;">全选</span>
           </label>
           <div style="max-height:200px;overflow-y:auto;">${checkHtml || '<div style="padding:10px;color:rgba(20,24,28,.3);">暂无数据</div>'}</div>
           <div style="display:flex;gap:8px;margin-top:14px;">
             <button data-act="exCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:rgba(20,24,28,.6);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="exConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导出</button>
+            <button data-act="exConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导出</button>
           </div>
         </div>`;
         root.appendChild(overlay);
@@ -10394,7 +10611,7 @@ ${lines}
           <textarea data-el="imText" rows="6" placeholder="粘贴导出的 JSON 内容…" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid rgba(0,0,0,.12);border-radius:8px;font-size:11px;font-family:monospace;resize:vertical;"></textarea>
           <div style="display:flex;gap:8px;margin-top:10px;">
             <button data-act="imCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:rgba(20,24,28,.6);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="imConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导入</button>
+            <button data-act="imConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导入</button>
           </div>
         </div>`;
         root.appendChild(overlay);
@@ -10431,7 +10648,7 @@ ${lines}
             }
             overlay.remove();
             try{toast(`导入成功：${count} 条数据`);}catch(e){}
-            _state._innerStack.push(()=>renderApiSettingsPage(container)); renderMeSettingsPage(container);
+            _renderMeSettingsPage(container);
           }catch(e){
             try{toast('JSON 解析失败，请检查格式');}catch(_){}
           }
@@ -10472,7 +10689,7 @@ ${lines}
                 <div style="font-size:12px;color:rgba(20,24,28,.7);">${esc(tx.desc||'交易')}</div>
                 <div style="font-size:10px;color:rgba(20,24,28,.3);margin-top:2px;">${ts}</div>
               </div>
-              <div style="font-size:13px;font-weight:600;color:${isSpend?'#e74c3c':'#07c160'};">${isSpend?'-':'+'}${tx.amount}</div>
+              <div style="font-size:13px;font-weight:600;color:${isSpend?'#e74c3c':'var(--ph-accent)'};">${isSpend?'-':'+'}${tx.amount}</div>
             </div>`;
           }
         } else {
@@ -10485,7 +10702,7 @@ ${lines}
           btn.addEventListener('click', ()=>{
             walletReceive(500, '充值 500 金币');
             try{toast('充值成功！+500 金币');}catch(e){}
-            _state._innerStack.push(()=>renderApiSettingsPage(container)); renderWalletPage(body);
+            _renderWalletPage(body);
           });
         });
         body.querySelectorAll('[data-act="walletGiftSelf"]').forEach(btn=>{
@@ -10499,7 +10716,7 @@ ${lines}
             const bonus = 50 + Math.floor(Math.random()*50);
             walletReceive(bonus, `每日签到 +${bonus}`);
             try{toast(`签到成功！+${bonus} 金币`);}catch(e){}
-            _state._innerStack.push(()=>renderApiSettingsPage(container)); renderWalletPage(body);
+            _renderWalletPage(body);
           });
         });
       }
@@ -10515,6 +10732,7 @@ ${lines}
         var cdText=''; if(cfg.cooldownUntil>Date.now()) cdText='<div style="color:#ef4444;font-size:11px;margin-top:4px;">冷却中，'+Math.ceil((cfg.cooldownUntil-Date.now())/60000)+'分钟后可重试</div>';
 
         var h='<div class="settingSubPage">';
+        h+='<button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;margin-bottom:12px;">‹ 返回设置</button>';
 
         h+='<div class="phCard" style="margin-bottom:12px;"><div style="font-weight:700;color:var(--ph-text);margin-bottom:10px;">总控制</div>';
         h+='<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;color:var(--ph-text);">自动运行总开关</span><button class="sToggle'+(cfg.enabled?' on':'')+'" data-afcfg="enabled" style="flex-shrink:0;"></button></div></div>';
@@ -10573,10 +10791,10 @@ ${lines}
           });
         }
 
-        container.querySelectorAll('.sToggle[data-afcfg]').forEach(function(btn){ btn.addEventListener('click',function(){ btn.classList.toggle('on'); var c=getAutofeedCfg(); c[btn.getAttribute('data-afcfg')]=btn.classList.contains('on'); saveAutofeedCfg(c); state._innerStack.push(()=>renderApiSettingsPage(container)); renderAutoFeedSettingsPage(container); }); });
+        container.querySelectorAll('.sToggle[data-afcfg]').forEach(function(btn){ btn.addEventListener('click',function(){ btn.classList.toggle('on'); var c=getAutofeedCfg(); c[btn.getAttribute('data-afcfg')]=btn.classList.contains('on'); saveAutofeedCfg(c); renderAutoFeedSettingsPage(container); }); });
         container.querySelectorAll('.sToggle[data-afsrc]').forEach(function(btn){ btn.addEventListener('click',function(){ btn.classList.toggle('on'); var c=getAutofeedCfg(); if(!c.sources)c.sources={}; c.sources[btn.getAttribute('data-afsrc')]=btn.classList.contains('on'); saveAutofeedCfg(c); }); });
         container.querySelectorAll('.sToggle[data-aftgt]').forEach(function(btn){ btn.addEventListener('click',function(){ btn.classList.toggle('on'); var c=getAutofeedCfg(); if(!c.autoTargets)c.autoTargets={}; c.autoTargets[btn.getAttribute('data-aftgt')]=btn.classList.contains('on'); saveAutofeedCfg(c); }); });
-        container.querySelectorAll('select[data-afcfg],input[data-afcfg]').forEach(function(el){ el.addEventListener('change',function(){ var k=el.getAttribute('data-afcfg'); var c=getAutofeedCfg(); var v=el.value; if(k==='dailyHour'||k==='intervalMin')v=parseInt(v)||0; c[k]=v; saveAutofeedCfg(c); if(k==='mode')state._innerStack.push(()=>renderApiSettingsPage(container)); renderAutoFeedSettingsPage(container); }); });
+        container.querySelectorAll('select[data-afcfg],input[data-afcfg]').forEach(function(el){ el.addEventListener('change',function(){ var k=el.getAttribute('data-afcfg'); var c=getAutofeedCfg(); var v=el.value; if(k==='dailyHour'||k==='intervalMin')v=parseInt(v)||0; c[k]=v; saveAutofeedCfg(c); if(k==='mode')renderAutoFeedSettingsPage(container); }); });
       }
 
       function _afClearAllAIContent(){
@@ -10883,7 +11101,7 @@ ${lines}
         const cfg = loadMomentsCfg();
         const settings = phoneLoadSettings();
         const userName = (settings && settings.phoneName) || '原';
-        const coverBg = cfg.coverImage ? `background-image:url(${cfg.coverImage});background-size:cover;background-position:center;` : 'background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);';
+        const coverBg = cfg.coverImage ? `background-image:url(${cfg.coverImage});background-size:cover;background-position:center;` : 'background:linear-gradient(135deg,var(--ph-accent) 0%,var(--ph-accent2) 100%);';
         const avatarChar = cfg.avatarImage ? `<img src="${esc(cfg.avatarImage)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"/>` : `<span style="font-size:24px;">${esc(userName.charAt(0))}</span>`;
 
         // 计算新收到的点赞（上次访问后新增的）
@@ -10965,7 +11183,7 @@ ${lines}
             ${cmtsHtml}
             <div class="momentCmtInput" data-cmtbox="${esc(m.id)}" style="display:none;">
               <input type="text" placeholder="写评论…" data-cmtinput="${esc(m.id)}" data-replyto="" style="flex:1;padding:6px 10px;border-radius:14px;border:1px solid rgba(0,0,0,.1);background:#f7f7f7;color:#333;font-size:12px;outline:none;"/>
-              <button data-cmtsend="${esc(m.id)}" style="appearance:none;border:none;background:#07c160;color:#fff;padding:6px 12px;border-radius:14px;font-size:12px;cursor:pointer;font-weight:600;">发送</button>
+              <button data-cmtsend="${esc(m.id)}" style="appearance:none;border:none;background:var(--ph-accent);color:#fff;padding:6px 12px;border-radius:14px;font-size:12px;cursor:pointer;font-weight:600;">发送</button>
             </div>
           </div>`;
         });
@@ -11060,7 +11278,7 @@ ${lines}
           </div>
           <div style="display:flex;gap:8px;">
             <button data-act="mcsCancelBtn" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:rgba(20,24,28,.6);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="mcsSaveBtn" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
+            <button data-act="mcsSaveBtn" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
           </div>
         </div>`;
         root.appendChild(overlay);
@@ -11080,7 +11298,7 @@ ${lines}
         });
       }
 
-      function _bindMomentActions(container){
+function _bindMomentActions(container){
         // 点赞
         container.querySelectorAll('[data-mact="like"]').forEach(btn=>{
           btn.addEventListener('click',()=>{
@@ -11696,7 +11914,7 @@ const npc = _wxGetChatTargetMeta(npcId);
                 <div style="font-size:11px;color:rgba(20,24,28,.45);margin-bottom:6px;">自定义总结提示词：</div>
                 <textarea data-el="sumCustomPrompt" data-npcid="${esc(contactId)}" placeholder="留空则使用全局默认提示词" rows="3" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;background:rgba(255,255,255,.6);">${esc((getChatSummary(contactId)||{}).customPrompt||'')}</textarea>
                 <div style="margin-top:10px;">
-                  <button data-act="wxCSGenSummary" data-npcid="${esc(contactId)}" style="width:100%;padding:10px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">立即生成总结</button>
+                  <button data-act="wxCSGenSummary" data-npcid="${esc(contactId)}" style="width:100%;padding:10px;border-radius:10px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">立即生成总结</button>
                 </div>
                 <div style="margin-top:10px;">
                   <div style="font-size:11px;color:rgba(20,24,28,.45);margin-bottom:6px;">最近总结：</div>
@@ -11769,7 +11987,7 @@ const npc = _wxGetChatTargetMeta(npcId);
               <span style="font-size:12px;color:rgba(20,24,28,.4);" data-sl-val="${key}">${Math.round(val*100)}%</span>
             </div>
             <input type="range" min="0" max="100" value="${Math.round(val*100)}" data-sl="${key}"
-              style="width:100%;accent-color:#07c160;cursor:pointer;"/>
+              style="width:100%;accent-color:var(--ph-accent);cursor:pointer;"/>
           </div>`;
         }
         function selectRow(label, key, opts, labels, cur){
@@ -11782,9 +12000,9 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         // 状态面板
         var moodEmoji={'开心':'😄','兴奋':'🤩','平静':'😌','害羞':'😳','疲惫':'😴','委屈':'🥺','烦躁':'😤','生气':'😠'};
-        var bondColors={'疏远':'#aaa','普通':'#888','亲近':'#07c160','暧昧':'#f39c12','冷战中':'#e74c3c'};
+        var bondColors={'疏远':'#aaa','普通':'#888','亲近':'var(--ph-accent)','暧昧':'#f39c12','冷战中':'#e74c3c'};
         var energyPct = s.energy || 0;
-        var energyColor = energyPct > 60 ? '#07c160' : energyPct > 30 ? '#f39c12' : '#e74c3c';
+        var energyColor = energyPct > 60 ? 'var(--ph-accent)' : energyPct > 30 ? '#f39c12' : '#e74c3c';
 
         var html = `<div style="padding-bottom:20px;">
           <!-- 状态面板 -->
@@ -11858,7 +12076,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           </div>
 
           <button data-act="cbSaveBehavior" data-npcid="${esc(contactId)}"
-            style="display:block;width:calc(100% - 28px);margin:12px 14px 0;padding:12px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
+            style="display:block;width:calc(100% - 28px);margin:12px 14px 0;padding:12px;border-radius:10px;border:0;background:var(--ph-accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
         </div>`;
         body.innerHTML = html;
 
@@ -11956,11 +12174,11 @@ const npc = _wxGetChatTargetMeta(npcId);
             </div>
             <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px;">
               <span style="font-size:13px;color:rgba(20,24,28,.7);min-width:36px;">精力</span>
-              <input type="range" data-el="energyRange" min="0" max="100" value="${cur.energy||80}" style="flex:1;accent-color:#07c160;"/>
+              <input type="range" data-el="energyRange" min="0" max="100" value="${cur.energy||80}" style="flex:1;accent-color:var(--ph-accent);"/>
               <span data-el="energyLabel" style="font-size:12px;color:rgba(20,24,28,.4);min-width:28px;">${cur.energy||80}%</span>
             </div>
             <div style="display:flex;gap:8px;">
-              <button data-el="moodSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">确定</button>
+              <button data-el="moodSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">确定</button>
               <button data-el="moodCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button>
             </div>`;
           var ov = _cpShowOverlay(inner);
@@ -12003,7 +12221,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             <textarea data-el="csProfile" rows="6" style="width:100%;padding:10px 12px;border:1px solid rgba(0,0,0,.1);border-radius:10px;font-size:13px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;">${esc(mergedProfile)}</textarea>
           </div>
           <div style="margin-top:14px;display:flex;gap:8px;">
-            <button data-act="wxCSSaveProfile" data-npcid="${esc(contactId)}" style="flex:1;padding:12px;border-radius:12px;border:0;background:#07c160;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
+            <button data-act="wxCSSaveProfile" data-npcid="${esc(contactId)}" style="flex:1;padding:12px;border-radius:12px;border:0;background:var(--ph-accent);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
             <button data-act="wxCSBack" data-npcid="${esc(contactId)}" style="flex:1;padding:12px;border-radius:12px;border:1px solid rgba(0,0,0,.1);background:#fff;color:rgba(20,24,28,.7);font-size:14px;cursor:pointer;">取消</button>
           </div>
         </div>`;
@@ -12149,7 +12367,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             </div>
           </div>
           <div style="display:flex;gap:8px;margin-top:14px;">
-            <button data-el="rSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">添加</button>
+            <button data-el="rSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">添加</button>
             <button data-el="rCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:#fff;color:rgba(20,24,28,.7);font-size:13px;cursor:pointer;">取消</button>
           </div>`;
         const ov = _cpShowOverlay(innerHtml);
@@ -12157,7 +12375,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         ov.querySelectorAll('.rIcoPick').forEach(el=>{
           el.addEventListener('click', ()=>{
             ov.querySelectorAll('.rIcoPick').forEach(x=>x.style.borderColor='transparent');
-            el.style.borderColor = '#07c160';
+            el.style.borderColor = 'var(--ph-accent)';
             pickedIco = el.getAttribute('data-ico') || '⏰';
           });
         });
@@ -12262,7 +12480,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         } else if (mt === 'music'){
           contentHtml = `<div class="wxCBContent wxCBSpecial" style="padding:10px 14px;min-width:180px;">
             <div style="display:flex;align-items:center;gap:8px;">
-              <div style="width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;">🎵</div>
+              <div style="width:40px;height:40px;border-radius:8px;background:var(--ph-accent-grad);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;">🎵</div>
               <div>
                 <div style="font-size:12px;font-weight:600;">${esc(meta.songName||'未知歌曲')}</div>
                 <div style="font-size:10.5px;color:rgba(20,24,28,.4);">${esc(meta.artist||'未知歌手')}</div>
@@ -12290,7 +12508,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           const waveId = 'ttsWave_' + (ts || Date.now());
           contentHtml = `<div class="wxCBContent wxCBSpecial" style="padding:0;overflow:hidden;border-radius:12px;min-width:180px;max-width:240px;">
             <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(255,255,255,.9);">
-              <button data-ttsplay="${waveId}" style="width:32px;height:32px;border-radius:50%;border:0;background:#07c160;color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">▶</button>
+              <button data-ttsplay="${waveId}" style="width:32px;height:32px;border-radius:50%;border:0;background:var(--ph-accent);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">▶</button>
               <div style="flex:1;display:flex;align-items:center;gap:2px;height:22px;" id="${waveId}_bar">
                 ${Array.from({length:14},(_,i)=>`<div style="width:3px;border-radius:2px;background:rgba(7,193,96,${0.3+0.7*Math.abs(Math.sin(i*0.7))});height:${4+Math.round(14*Math.abs(Math.sin(i*0.7)))}px;"></div>`).join('')}
               </div>
@@ -13137,10 +13355,10 @@ const npc = _wxGetChatTargetMeta(npcId);
         var s = _loadCharState(npcId);
 
         var moodEmoji = {'开心':'😄','兴奋':'🤩','平静':'😌','害羞':'😳','疲惫':'😴','委屈':'🥺','烦躁':'😤','生气':'😠'};
-        var bondColor = {'疏远':'#aaa','普通':'rgba(20,24,28,.45)','亲近':'#07c160','暧昧':'#f39c12','冷战中':'#e74c3c'};
-        var bondBg    = {'疏远':'rgba(0,0,0,.05)','普通':'rgba(0,0,0,.06)','亲近':'rgba(7,193,96,.1)','暧昧':'rgba(243,156,18,.1)','冷战中':'rgba(231,76,60,.1)'};
+        var bondColor = {'疏远':'#aaa','普通':'rgba(20,24,28,.45)','亲近':'var(--ph-accent)','暧昧':'#f39c12','冷战中':'#e74c3c'};
+        var bondBg    = {'疏远':'rgba(0,0,0,.05)','普通':'rgba(0,0,0,.06)','亲近':'rgba(var(--ph-accent-rgb,124,152,168),.1)','暧昧':'rgba(243,156,18,.1)','冷战中':'rgba(231,76,60,.1)'};
         var energyPct = Math.max(0, Math.min(100, s.energy || 0));
-        var energyColor = energyPct > 60 ? '#07c160' : energyPct > 30 ? '#f39c12' : '#e74c3c';
+        var energyColor = energyPct > 60 ? 'var(--ph-accent)' : energyPct > 30 ? '#f39c12' : '#e74c3c';
 
         var bx = _loadCharBehavior(npcId);
         var wearing   = bx.wearing   || '';
@@ -15189,8 +15407,8 @@ const npc = _wxGetChatTargetMeta(npcId);
             <div style="font-size:14px;font-weight:600;margin-bottom:6px;">${esc(npc.name)}</div>
             <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:16px;">选择通话方式</div>
             <div style="display:flex;gap:10px;justify-content:center;">
-              <button data-act="cpCallStart" data-calltype="voice" style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:#07c160;color:#fff;font-size:13px;cursor:pointer;">📞 语音通话</button>
-              <button data-act="cpCallStart" data-calltype="video" style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:#07c160;color:#fff;font-size:13px;cursor:pointer;">📹 视频通话</button>
+              <button data-act="cpCallStart" data-calltype="voice" style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:var(--ph-accent);color:#fff;font-size:13px;cursor:pointer;">📞 语音通话</button>
+              <button data-act="cpCallStart" data-calltype="video" style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:var(--ph-accent);color:#fff;font-size:13px;cursor:pointer;">📹 视频通话</button>
             </div>
           </div>
         `);
@@ -15258,7 +15476,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         ];
         let optHtml = '';
         locations.forEach((loc,i)=>{
-          optHtml += `<div data-act="cpLocPick" data-idx="${i}" style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;${loc.custom?'color:#07c160;font-weight:600;':''}">
+          optHtml += `<div data-act="cpLocPick" data-idx="${i}" style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;${loc.custom?'color:var(--ph-accent);font-weight:600;':''}">
             <span>📍</span><span>${esc(loc.name)}</span>
           </div>`;
         });
@@ -15267,7 +15485,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           <div style="max-height:200px;overflow-y:auto;border-radius:10px;border:1px solid rgba(0,0,0,.06);">${optHtml}</div>
           <div data-el="customInput" style="display:none;margin-top:10px;">
             <input type="text" placeholder="输入位置名称…" data-el="locNameInput" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);font-size:13px;box-sizing:border-box;"/>
-            <button data-act="cpLocSendCustom" style="margin-top:8px;width:100%;padding:8px;border-radius:8px;background:#07c160;color:#fff;border:none;font-size:13px;cursor:pointer;">发送</button>
+            <button data-act="cpLocSendCustom" style="margin-top:8px;width:100%;padding:8px;border-radius:8px;background:var(--ph-accent);color:#fff;border:none;font-size:13px;cursor:pointer;">发送</button>
           </div>
         `);
         ov.querySelectorAll('[data-act="cpLocPick"]').forEach(el=>{
@@ -15411,7 +15629,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         let sHtml = '';
         songs.forEach((s,i)=>{
           sHtml += `<div data-act="cpMusicPick" data-idx="${i}" style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.04);cursor:pointer;display:flex;align-items:center;gap:8px;">
-            <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;flex-shrink:0;">🎵</div>
+            <div style="width:32px;height:32px;border-radius:6px;background:var(--ph-accent-grad);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;flex-shrink:0;">🎵</div>
             <div><div style="font-size:13px;font-weight:500;">${esc(s.name)}</div><div style="font-size:10.5px;color:rgba(20,24,28,.4);">${esc(s.artist)}</div></div>
           </div>`;
         });
@@ -15421,7 +15639,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           <div style="max-height:240px;overflow-y:auto;border-radius:10px;border:1px solid rgba(0,0,0,.06);">${sHtml}</div>
           <div style="margin-top:10px;">
             <input type="text" data-el="customSong" placeholder="或输入自定义歌名…" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);font-size:12px;box-sizing:border-box;"/>
-            <button data-act="cpMusicCustomSend" style="margin-top:6px;width:100%;padding:8px;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;font-size:12px;cursor:pointer;">发送自定义歌曲</button>
+            <button data-act="cpMusicCustomSend" style="margin-top:6px;width:100%;padding:8px;border-radius:8px;background:var(--ph-accent-grad);color:#fff;border:none;font-size:12px;cursor:pointer;">发送自定义歌曲</button>
           </div>
         `);
         ov.querySelectorAll('[data-act="cpMusicPick"]').forEach(el=>{
@@ -15672,9 +15890,9 @@ const npc = _wxGetChatTargetMeta(npcId);
         html+=`</div></div>`;
         // Events
         const events = [
-          {time:'10:00',title:'与好友约会',color:'#6366f1'},
+          {time:'10:00',title:'与好友约会',color:'var(--ph-accent)'},
           {time:'14:00',title:'下午茶时间',color:'#ec4899'},
-          {time:'20:00',title:'晚间聊天',color:'#8b5cf6'},
+          {time:'20:00',title:'晚间聊天',color:'var(--ph-accent)'},
         ];
         html += `<div class="phCard"><div style="font-weight:600;color:var(--ph-text);margin-bottom:10px;">📌 今日事项</div>`;
         events.forEach(ev=>{
@@ -15698,7 +15916,7 @@ const npc = _wxGetChatTargetMeta(npcId);
       function _fIco(path){ return '<svg viewBox="0 0 24 24" fill="currentColor">'+path+'</svg>'; }
 
       function renderForum(container){
-        setAppBarRight('<button class="phBarRBtn" data-act="afForumSettings" title="论坛资讯设置">' + _phFlatIcon('⚙️') + '</button>');
+        setAppBarRight('<button class="phBarRBtn" data-act="afForumSettings" title="论坛资讯设置">⚙️</button>');
         // 重置容器（避免旧内容残留）
         container.style.cssText = '';
         // 如果在详情页，直接渲染详情
@@ -15743,7 +15961,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         _forumNav.tab = tab;
         _forumDMCurrent = null; // 切 tab 时退出 DM 聊天
         // 恢复右上角设置按钮
-        setAppBarRight('<button class="phBarRBtn" data-act="afForumSettings" title="论坛资讯设置">' + _phFlatIcon('⚙️') + '</button>');
+        setAppBarRight('<button class="phBarRBtn" data-act="afForumSettings" title="论坛资讯设置">⚙️</button>');
         // 更新底栏按钮选中状态
         root.querySelectorAll('.forumInnerTabBtn[data-tab]').forEach(function(b){
           b.classList.toggle('on', b.getAttribute('data-tab')===tab);
@@ -16092,7 +16310,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--ph-text-dim);">帖子不存在</div>';
           return;
         }
-        setAppBarRight('<button class="phBarRBtn" data-act="afForumSettings" title="论坛资讯设置">' + _phFlatIcon('⚙️') + '</button>');
+        setAppBarRight('<button class="phBarRBtn" data-act="afForumSettings" title="论坛资讯设置">⚙️</button>');
         var cmts = Array.isArray(post.comments) ? post.comments : [];
         var imgArr = Array.isArray(post.images) ? post.images : [];
         var imgHtml = imgArr.length ? '<div class="forumDetailImgArea">'+renderFakeImages(imgArr)+'</div>' : '';
@@ -16107,7 +16325,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             var cAvatar = (c.name||'?').charAt(0);
             // 非"我"的评论者名字可点击发起私信
             var cmtNpcId = c.authorId || (c.name && c.name!=='我' ? 'npc_'+c.name : null);
-            var cmtNameStyle = cmtNpcId ? 'cursor:pointer;color:var(--ph-accent,#6366f1);' : '';
+            var cmtNameStyle = cmtNpcId ? 'cursor:pointer;color:var(--ph-accent,var(--ph-accent));' : '';
             var cmtNameAttr = cmtNpcId ? 'data-act="forumStartDM" data-npcid="'+esc(cmtNpcId)+'" data-npcname="'+esc(c.name||'')+'" data-npcavatar="'+esc(cAvatar)+'"' : '';
             cmtListHtml += '<div class="forumDetailCmtItem">' +
               '<div class="forumDetailCmtAvatar">'+esc(cAvatar)+'</div>' +
@@ -16181,7 +16399,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           '</div>' +
           '<div class="forumComposeImgRow">' +
             '<span style="font-size:12px;color:var(--ph-text-dim);align-self:center;margin-right:4px;">图片：</span>' +
-            [0,1,2,3,4,5,6,7].map(function(i){ return '<button class="forumComposeImgChip" data-act="fcImgToggle" data-idx="'+i+'" data-theme="'+i+'" style="background:linear-gradient(135deg,'+['#ffecd2,#fcb69f','#a1c4fd,#c2e9fb','#d4fc79,#96e6a1','#fbc2eb,#a6c1ee','#ffd89b,#19547b','#667eea,#764ba2','#f093fb,#f5576c','#4facfe,#00f2fe'][i]+'");border-radius:6px;width:24px;height:24px;padding:0;"></button>'; }).join('') +
+            [0,1,2,3,4,5,6,7].map(function(i){ return '<button class="forumComposeImgChip" data-act="fcImgToggle" data-idx="'+i+'" data-theme="'+i+'" style="background:var(--ph-accent-grad)");border-radius:6px;width:24px;height:24px;padding:0;"></button>'; }).join('') +
           '</div>' +
           '<div class="forumComposeTagRow">' +
             '<span style="font-size:12px;color:var(--ph-text-dim);align-self:center;margin-right:4px;">话题：</span>' +
@@ -16324,7 +16542,9 @@ const npc = _wxGetChatTargetMeta(npcId);
         const bio = npc?.profile || '这个人很神秘，什么都没写~';
         let html = `
           <div class="npcProfile">
-            
+            <button data-act="forumBack" style="position:absolute;left:12px;top:12px;appearance:none;border:0;
+              background:var(--ph-glass);color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;
+              cursor:pointer;font-size:12px;">‹ 返回</button>
             <div class="npcProfileAvatar">${esc(avatar)}</div>
             <div class="npcProfileName">${esc(name)}</div>
             <div class="npcProfileBio">${esc(bio)}</div>
@@ -16399,7 +16619,9 @@ const npc = _wxGetChatTargetMeta(npcId);
         const list = type === 'followers' ? (fd.followers||[]) : (fd.following||[]);
         const title = type === 'followers' ? '粉丝' : '关注';
         let html = `<div style="padding:12px 14px;">
-          
+          <button data-act="forumBack" style="appearance:none;border:0;background:var(--ph-glass);
+            color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
+            margin-bottom:10px;">‹ 返回论坛</button>
           <div style="font-weight:600;color:var(--ph-text);font-size:15px;">${title}（${list.length}）</div>
         </div>`;
         if (!list.length){
@@ -16630,32 +16852,16 @@ const npc = _wxGetChatTargetMeta(npcId);
       }
 
       /* ========== 天气 App ========== */
-      // 天气 SVG 图标（扁平线条风）
-      function _weatherSVG(type){
-        const s=(d,extra)=>`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="width:1em;height:1em;vertical-align:middle;${extra||''}">${d}</svg>`;
-        switch(type){
-          case 'sunny':    return s('<circle cx="12" cy="12" r="4.5"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>');
-          case 'cloudy':   return s('<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>');
-          case 'partcloud':return s('<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="18.36" y1="4.64" x2="17" y2="6"/><line x1="20" y1="10" x2="22" y2="10"/>');
-          case 'rainy':    return s('<path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/><line x1="8" y1="19" x2="8" y2="21"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="16" y1="19" x2="16" y2="21"/><line x1="16" y1="13" x2="16" y2="15"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="12" y1="15" x2="12" y2="17"/>');
-          case 'thunder':  return s('<path d="M19 16.9A5 5 0 0 0 18 7h-1.26a8 8 0 1 0-11.62 9"/><polyline points="13 11 9 17 15 17 11 23"/>');
-          case 'snow':     return s('<path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="8" y1="20" x2="8.01" y2="20"/><line x1="12" y1="18" x2="12.01" y2="18"/><line x1="12" y1="22" x2="12.01" y2="22"/><line x1="16" y1="16" x2="16.01" y2="16"/><line x1="16" y1="20" x2="16.01" y2="20"/>');
-          case 'calendar': return s('<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>');
-          case 'news':     return s('<path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="M2 15h10"/><path d="M2 19h6"/><path d="M2 11h12"/>');
-          default:         return s('<circle cx="12" cy="12" r="5"/>');
-        }
-      }
-
       function renderWeather(container){
         const fc=[
-          {day:'今天',type:'partcloud',high:'26°',low:'18°'},
-          {day:'明天',type:'sunny',high:'28°',low:'19°'},
-          {day:'后天',type:'sunny',high:'30°',low:'20°'},
-          {day:'周四',type:'rainy',high:'22°',low:'16°'},
-          {day:'周五',type:'thunder',high:'20°',low:'15°'}
+          {day:'今天',icon:'⛅',high:'26°',low:'18°'},
+          {day:'明天',icon:'🌤️',high:'28°',low:'19°'},
+          {day:'后天',icon:'☀️',high:'30°',low:'20°'},
+          {day:'周四',icon:'🌧️',high:'22°',low:'16°'},
+          {day:'周五',icon:'⛈️',high:'20°',low:'15°'}
         ];
         let html=`<div class="weatherMain">
-          <div class="weatherIcon">${_weatherSVG('partcloud')}</div>
+          <div class="weatherIcon">⛅</div>
           <div class="weatherTemp">24°</div>
           <div class="weatherDesc">多云转晴</div>
           <div class="weatherDetail">
@@ -16664,17 +16870,17 @@ const npc = _wxGetChatTargetMeta(npcId);
             <div class="wd"><div class="wdVal">中等</div>紫外线</div>
           </div>
         </div>
-        <div class="phCard"><div style="display:flex;align-items:center;gap:6px;font-weight:600;color:var(--ph-text);margin-bottom:10px;font-size:0;"><span style="font-size:14px;">${_weatherSVG("calendar")}</span><span style="font-size:14px;">未来几天</span></div>`;
+        <div class="phCard"><div style="font-weight:600;color:var(--ph-text);margin-bottom:10px;">📅 未来几天</div>`;
         fc.forEach(f=>{
           html += `<div class="forecastRow">
             <span class="fDay">${f.day}</span>
-            <span class="fIcon" style="color:var(--ph-text-sub);">${_weatherSVG(f.type)}</span>
+            <span class="fIcon">${f.icon}</span>
             <div class="fRange"><span class="fLow">${f.low}</span><div class="fBar"></div><span class="fHigh">${f.high}</span></div>
           </div>`;
         });
         html += '</div>';
         // News cards
-        html += `<div class="phCard"><div style="display:flex;align-items:center;gap:6px;font-weight:600;color:var(--ph-text);margin-bottom:10px;"><span style="font-size:0;color:var(--ph-text-sub);">${_weatherSVG("news")}</span><span style="font-size:14px;">天气资讯</span></div>
+        html += `<div class="phCard"><div style="font-weight:600;color:var(--ph-text);margin-bottom:10px;">📰 天气资讯</div>
           <div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);"><div style="font-size:13px;color:var(--ph-text);">冷空气即将到来</div><div style="font-size:11px;color:var(--ph-text-dim);margin-top:2px;">预计本周后半段气温明显下降，注意保暖</div></div>
           <div style="padding:8px 0;"><div style="font-size:13px;color:var(--ph-text);">周末适合户外活动</div><div style="font-size:11px;color:var(--ph-text-dim);margin-top:2px;">周六周日阳光充足，适宜出行</div></div>
         </div>`;
@@ -16683,13 +16889,13 @@ const npc = _wxGetChatTargetMeta(npcId);
 
       /* ========== 浏览器 App ========== */
       function renderBrowser(container){
-        setAppBarRight('<button class="phBarRBtn" data-act="afBrowserSettings" title="浏览器资讯设置">' + _phFlatIcon('⚙️') + '</button>');
+        setAppBarRight('<button class="phBarRBtn" data-act="afBrowserSettings" title="浏览器资讯设置">⚙️</button>');
         const bookmarks = [
-          {icon:'<svg style="width:18px;height:18px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><line x1="2" y1="15" x2="11" y2="15"/><line x1="2" y1="19" x2="11" y2="19"/><line x1="2" y1="11" x2="7" y2="11"/></svg>',title:'世界资讯',desc:'查看最新世界观资讯与八卦'},
-          {icon:'<svg style="width:18px;height:18px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',title:'收藏夹',desc:'你收藏的网页和资讯'},
-          {icon:'<svg style="width:18px;height:18px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',title:'NPC 情报站',desc:'角色背景、关系图谱'},
-          {icon:'<svg style="width:18px;height:18px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',title:'世界书百科',desc:'世界设定与知识库'},
-          {icon:'<svg style="width:18px;height:18px;fill:currentColor;vertical-align:middle;" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4"/><path d="M8 10v4"/><circle cx="16" cy="12" r="1"/><circle cx="18.5" cy="10.5" r="1"/></svg>',title:'娱乐频道',desc:'趣味内容与互动小游戏'},
+          {icon:_phFlatIcon('📰'),title:'世界资讯',desc:'查看最新世界观资讯与八卦'},
+          {icon:_phFlatIcon('⭐'),title:'收藏夹',desc:'你收藏的网页和资讯'},
+          {icon:_phFlatIcon('🔮'),title:'NPC 情报站',desc:'角色背景、关系图谱'},
+          {icon:_phFlatIcon('📖'),title:'世界书百科',desc:'世界设定与知识库'},
+          {icon:_phFlatIcon('🎮'),title:'娱乐频道',desc:'趣味内容与互动小游戏'},
         ];
         let html = `<div class="browserBar">
           <span style="font-size:14px;">${_phFlatIcon('🔒')}</span>
@@ -16833,7 +17039,6 @@ const npc = _wxGetChatTargetMeta(npcId);
 
       /* ========== 设置 App ========== */
       function renderSettings(container){
-        state._innerStack = []; // ✅ 回到设置主页时清空子页面栈
         const currentTheme = root.getAttribute('data-theme') || 'frost';
         const cfg = phoneLoadSettings();
 
@@ -16842,14 +17047,16 @@ const npc = _wxGetChatTargetMeta(npcId);
           const k = String(ico||'').replace(/\uFE0F/g,''); // 去掉 emoji 变体
           const svg = (inner)=>`<svg class="phIco" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">${inner}</svg>`;
           switch(k){
-            case '✦': return svg('<circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>');  
             case '🎨': return svg('<path d="M12 2l2.1 5.5L20 10l-5.9 2.5L12 18l-2.1-5.5L4 10l5.9-2.5L12 2z"/>');
             case '🖼️': case '🖼': return svg('<path d="M4 5h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm3 4a2 2 0 1 0 0 .001A2 2 0 0 0 7 9zm13 10-5-5-3 3-2-2-6 6h16z"/>');
             case '🫧': return svg('<circle cx="9" cy="9" r="3"/><circle cx="15.5" cy="13" r="2.5"/><circle cx="10" cy="15.5" r="2"/>');
             case '📄': return svg('<path d="M6 2h9l3 3v17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V7h3.5L14 3.5z"/><path d="M7 10h10v2H7v-2zm0 4h10v2H7v-2zm0 4h7v2H7v-2z"/>');
             case '🔤': return svg('<path d="M12 3l7 18h-3l-1.5-4H9.5L8 21H5l7-18zm1.7 11L12 9l-1.7 5h3.4z"/>');
             case '💬': return svg('<path d="M6 4h12a4 4 0 0 1 4 4v7a4 4 0 0 1-4 4H10l-6 5V8a4 4 0 0 1 4-4z"/>');
+            case '📸': case '📷': return svg('<path d="M9 4l1.5-2h3L15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3zm3 15a5 5 0 1 0 0-10 5 5 0 0 0 0 10zm0-2.2a2.8 2.8 0 1 1 0-5.6 2.8 2.8 0 0 1 0 5.6z"/>');
+            case '🗣': return svg('<path d="M7 8a3 3 0 1 1 3 3v2a5 5 0 1 0-3-5z" opacity=".92"/><path d="M15 6a5 5 0 0 1 0 10v-2a3 3 0 1 0 0-6V6z"/><path d="M8 17h8v2H8z"/>');
             case '🤖': return svg('<path d="M10 2h4v2h-4V2z"/><path d="M7 5h10a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a4 4 0 0 1 4-4zm2.5 5a1.2 1.2 0 1 0 0 2.4A1.2 1.2 0 0 0 9.5 10zm5 0a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4z"/><path d="M8 15h8v2H8v-2z"/>');
+            case '📝': return svg('<path d="M6 3h9l4 4v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm8 1.5V8h3.5L14 4.5z"/><path d="M8 12.2l6.7-6.7 2 2-6.7 6.7-2.8.8.8-2.8z"/>');
             case '⌨️': case '⌨': return svg('<path d="M4 7h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zm2 3h2v2H6v-2zm3 0h2v2H9v-2zm3 0h2v2h-2v-2zm3 0h2v2h-2v-2zM6 14h12v2H6v-2z"/>');
             case '⏰': return svg('<path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm1 5v5l4 2-.9 1.8L11 13V7h2z"/>');
             case '🔑': return svg('<path d="M7 14a5 5 0 1 1 4.9-6H22v4h-2v2h-2v2h-2.2A5 5 0 0 1 7 14zm0-3a2 2 0 1 0 .001-4.001A2 2 0 0 0 7 11z"/>');
@@ -16859,27 +17066,22 @@ const npc = _wxGetChatTargetMeta(npcId);
             case 'ℹ️': case 'ℹ': return svg('<path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm0 4a1.2 1.2 0 1 1 0 2.4A1.2 1.2 0 0 1 12 6zm-1 4h2v8h-2v-8z"/>');
             case '🎯': return svg('<path fill-rule="evenodd" d="M12 2a10 10 0 1 1 0 20a10 10 0 0 1 0-20zm0 2a8 8 0 1 0 0 16a8 8 0 0 0 0-16zm0 4a4 4 0 1 1 0 8a4 4 0 0 1 0-8zm0 2a2 2 0 1 0 0 4a2 2 0 0 0 0-4z"/>');
             case '🔮': return svg('<circle cx="12" cy="12" r="8" opacity=".28"/><circle cx="12" cy="12" r="3"/>');
-            case '📷': return svg('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>');
-            case '📢': return svg('<path d="M3 11v2c0 .55.45 1 1 1h1l3 6h2l-1.5-6H14l5 3V7l-5 3H4c-.55 0-1 .45-1 1zm14-1.5v5l3-1.8v-1.4L17 9.5z"/>');
-            case '📝': return svg('<path d="M20 14.66V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5.34"/><polygon points="18 2 22 6 12 16 8 16 8 12 18 2"/>');
+            case '🧊': return svg('<rect x="4" y="4" width="16" height="16" rx="5"/><path d="M8 8h8v8H8z" opacity=".26"/>');
+            case '✨': return svg('<path d="M12 2l1.9 5.1L19 9l-5.1 1.9L12 16l-1.9-5.1L5 9l5.1-1.9L12 2z"/><path d="M18 4l.7 2 .3.1 2 .7-2 .7-.3.1-.7 2-.7-2-.3-.1-2-.7 2-.7.3-.1.7-2z"/><path d="M6 15l.8 2.1.2.1 2.1.8-2.1.8-.2.1-.8 2.1-.8-2.1-.2-.1-2.1-.8 2.1-.8.2-.1.8-2.1z"/>');
             default: return (ico||'');
           }
         }
 
         const sections = [
-          { title:'高级', rows:[
-            {icon:'🔑',label:'API 设置',type:'nav',subpage:'apiSettings'},
-            {icon:'🎯',label:'API 自动运行设置',type:'nav',subpage:'autoFeedSettings'},
-            {icon:'💾',label:'数据管理',type:'nav',subpage:'dataManager'},
-          ]},
           { title:'外观', rows:[
-            {icon:'🎨',label:'主题风格',value:currentTheme||'modern',type:'nav',subpage:'themes'},
+            {icon:'🎨',label:'主题风格',value:currentTheme||'frost',type:'nav',subpage:'themes'},
             {icon:'🖼️',label:'壁纸',value:(cfg.wallpaperHomeName||cfg.wallpaperName||'默认')+' / '+(cfg.wallpaperAppName||'APP默认'),type:'nav',subpage:'wallpaper'},
             {icon:'🫧',label:'桌面清晰度',value:`${cfg.uiHomeOpacity}% / ${cfg.uiHomeBlur}px`,type:'nav',subpage:'uiHome'},
             {icon:'📄',label:'App清晰度',value:`底${cfg.uiAppSolidOpacity}% 玻璃${cfg.uiAppOpacity}%`,type:'nav',subpage:'uiApp'},
             {icon:'🔤',label:'字体大小',value:cfg.fontSize+'px',type:'nav',subpage:'fontsize'},
-            {icon:'✦',label:'强调色',value:cfg.accentHex?'自定义':'跟随主题',type:'nav',subpage:'accentColor'},
             {icon:'🎯',label:'图标底色',value:cfg.iconTint||'默认',type:'nav',subpage:'iconTint'},
+            {icon:'🧊',label:'桌面卡片色',value:cfg.homeCardTint||'默认',type:'nav',subpage:'homeSurface'},
+            {icon:'✨',label:'高亮主题色',value:cfg.accentTint||'默认',type:'nav',subpage:'accentTint'},
             {icon:'🔮',label:'内部图标色',value:cfg.iconInnerTint||'默认',type:'nav',subpage:'iconInner'},
           ]},
           { title:'功能', rows:[
@@ -16889,19 +17091,24 @@ const npc = _wxGetChatTargetMeta(npcId);
             {icon:'⌨️',label:'打字效果',value:({none:'无',typewriter:'打字机',fadein:'淡入',glitch:'故障风'})[cfg.typingEffect||'none']||'无',type:'nav',subpage:'typingEffect'},
             {icon:'⏰',label:'时间模式',value:cfg.timeMode==='story'?'故事时间':'现实时间',type:'nav',subpage:'timeMode'},
           ]},
-                    { title:'关于', rows:[
+          { title:'高级', rows:[
+            {icon:'🔑',label:'API 设置',type:'nav',subpage:'apiSettings'},
+            {icon:'🎯',label:'API 自动运行设置',type:'nav',subpage:'autoFeedSettings'},
+            {icon:'💾',label:'数据管理',type:'nav',subpage:'dataManager'},
+          ]},
+          { title:'关于', rows:[
             {icon:'ℹ️',label:'版本',value:'MEOW Phone v2.1',type:'info'},
           ]},
           { title:'危险区域', rows:[
             {icon:'💬',label:'清空聊天数据（联系人+记录）',type:'danger',act:'phClearAppData',appkey:'chat'},
-            {icon:'📷',label:'清空朋友圈动态',type:'danger',act:'phClearAppData',appkey:'moments'},
-            {icon:'📢',label:'清空论坛帖子',type:'danger',act:'phClearAppData',appkey:'forum'},
+            {icon:'📸',label:'清空朋友圈动态',type:'danger',act:'phClearAppData',appkey:'moments'},
+            {icon:'🗣',label:'清空论坛帖子',type:'danger',act:'phClearAppData',appkey:'forum'},
           ]},
         ];
 
         let html = '';
         sections.forEach(s=>{
-          html += `<div style="padding:0 0 0 0;"><div style="font-size:10.5px;color:var(--ph-text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.6px;padding:10px 16px 4px;">${s.title}</div><div class="settingSection">`;
+          html += `<div class="settingSection"><div class="settingSectionTitle">${s.title}</div>`;
           s.rows.forEach(r=>{
             const navAttr = (r.type==='nav' && r.subpage) ? ` data-act="settingsNav" data-subpage="${r.subpage}"` : '';
             const themeAttr = (r.subpage==='themes') ? ' data-act="openThemes"' : '';
@@ -16911,13 +17118,13 @@ const npc = _wxGetChatTargetMeta(npcId);
             if(r.type==='toggle'){
               html += `<button class="sToggle${r.val?' on':''}" data-skey="${r.key}"></button>`;
             } else if(r.type==='danger'){
-              html += `<button data-act="${r.act}" data-appkey="${r.appkey}" style="border:0;background:transparent;color:var(--ph-confirm-danger,#c0392b);font-size:12px;font-weight:600;cursor:pointer;padding:0;">清空</button>`;
+              html += `<button data-act="${r.act}" data-appkey="${r.appkey}" style="border:0;background:transparent;color:#e74c3c;font-size:12px;font-weight:600;cursor:pointer;padding:0;">清空</button>`;
             } else {
               html += `<span class="sValue">${r.value||''} ${r.type==='nav'?'›':''}</span>`;
             }
             html += '</div>';
           });
-          html += '</div></div>';
+          html += '</div>';
         });
         container.innerHTML = html;
 
@@ -16943,9 +17150,6 @@ const npc = _wxGetChatTargetMeta(npcId);
       function openSettingsSubPage(subpage){
         const body = root.querySelector('[data-ph="appBody"]');
         if (!body) return;
-        // ✅ 把"回主设置页"压栈，供 settingsBack 使用
-        state._innerStack = state._innerStack || [];
-        state._innerStack.push(() => renderSettings(body));
         switch(subpage){
           case 'wallpaper': renderSettingsWallpaper(body); break;
           case 'uiHome': renderSettingsUIHome(body); break;
@@ -16954,9 +17158,9 @@ const npc = _wxGetChatTargetMeta(npcId);
           case 'timeMode':  renderSettingsTimeMode(body); break;
           case 'typingEffect': renderSettingsTypingEffect(body); break;
           case 'chatContextN': renderSettingsChatContextN(body); break;
-          case 'accentColor': renderSettingsAccentColor(body); break;
-          case 'accentColor': renderSettingsAccentColor(body); break;
           case 'iconTint': renderSettingsIconTint(body); break;
+          case 'homeSurface': renderSettingsHomeSurface(body); break;
+          case 'accentTint': renderSettingsAccentTint(body); break;
           case 'iconInner': renderSettingsIconInner(body); break;
           case 'themes': openApp('themes'); break;
           case 'apiSettings': renderApiSettingsPage(body); break;
@@ -16999,7 +17203,10 @@ function renderSettingsWallpaper(container){
   }
 
   let html = `<div class="settingSubPage">
-    <div class="settingSubTitle">🖼️ 壁纸设置</div>
+    <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);
+      color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
+      margin-bottom:12px;">‹ 返回设置</button>
+    <div class="settingSubTitle">壁纸设置</div>
     <div class="settingSubDesc" style="margin-top:6px;">桌面和 App 内部可以设置不同壁纸，并分别调透明度。</div>
     ${previewCard('桌面壁纸（Home）', 'home', cfg.wallpaperHome, cfg.wallpaperHomeName, cfg.wallpaperHomeOpacity)}
     ${previewCard('App 壁纸（App 内部）', 'app', cfg.wallpaperApp, cfg.wallpaperAppName, cfg.wallpaperAppOpacity)}
@@ -17089,6 +17296,9 @@ function pickWallpaperFromAlbum(target){
   if (!body) return;
 
   let html = `<div class="settingSubPage">
+    <button data-act="settingsNav" data-subpage="wallpaper" style="appearance:none;border:0;background:var(--ph-glass);
+      color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
+      margin-bottom:12px;">‹ 返回</button>
     <div class="settingSubTitle">选择壁纸（${tg==='app'?'App':'桌面'}）</div>
     <div class="photosGrid">`;
   wps.forEach((img, idx)=>{
@@ -17131,7 +17341,10 @@ function renderSettingsUIHome(container){
 
   container.innerHTML = `
     <div class="settingSubPage">
-      <div class="settingSubTitle">🫧 桌面清晰度</div>
+      <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);
+        color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
+        margin-bottom:12px;">‹ 返回设置</button>
+      <div class="settingSubTitle">桌面清晰度</div>
       <div class="phCard">
         <div style="display:flex;justify-content:space-between;align-items:center;">
           <div style="font-weight:700;color:var(--ph-text);">UI 不透明度</div>
@@ -17176,7 +17389,10 @@ function renderSettingsUIApp(container){
 
   container.innerHTML = `
     <div class="settingSubPage">
-      <div class="settingSubTitle">📄 App 清晰度</div>
+      <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);
+        color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
+        margin-bottom:12px;">‹ 返回设置</button>
+      <div class="settingSubTitle">App 清晰度</div>
 
       <div class="phCard">
         <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -17231,7 +17447,10 @@ function renderSettingsUIApp(container){
         const cfg = phoneLoadSettings();
         const size = cfg.fontSize || 14;
         let html = `<div class="settingSubPage">
-          <div class="settingSubTitle">🔤 字体大小</div>
+          <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);
+            color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
+            margin-bottom:12px;">‹ 返回设置</button>
+          <div class="settingSubTitle">字体大小</div>
           <div class="settingSubDesc">拖动滑块调整手机界面字体大小</div>
           <div class="sSliderRow">
             <span style="font-size:12px;color:var(--ph-text-dim);">A</span>
@@ -17264,11 +17483,14 @@ function renderSettingsUIApp(container){
       function renderSettingsTimeMode(container){
         const cfg = phoneLoadSettings();
         let html = `<div class="settingSubPage">
-          <div class="settingSubTitle">⏰ 时间模式</div>
+          <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);
+            color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
+            margin-bottom:12px;">‹ 返回设置</button>
+          <div class="settingSubTitle">时间模式</div>
           <div class="settingSubDesc">选择手机状态栏显示的时间来源</div>
           <div class="sOptionGrid">
-            <button class="sOptionBtn${cfg.timeMode!=='story'?' active':''}" data-ph="tmReal">🕐 现实时间</button>
-            <button class="sOptionBtn${cfg.timeMode==='story'?' active':''}" data-ph="tmStory">📖 故事时间</button>
+            <button class="sOptionBtn${cfg.timeMode!=='story'?' active':''}" data-ph="tmReal">现实时间</button>
+            <button class="sOptionBtn${cfg.timeMode==='story'?' active':''}" data-ph="tmStory">故事时间</button>
           </div>
           <div data-ph="storyTimeConfig" style="margin-top:14px;${cfg.timeMode!=='story'?'display:none;':''}">
             <div style="font-size:13px;color:var(--ph-text-sub);margin-bottom:6px;">自定义故事时间：</div>
@@ -17322,7 +17544,10 @@ function renderSettingsUIApp(container){
           {id:'glitch', name:'故障风', desc:'带有故障感的特效'},
         ];
         let html = `<div class="settingSubPage">
-          <div class="settingSubTitle">⌨️ 打字效果</div>
+          <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);
+            color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
+            margin-bottom:12px;">‹ 返回设置</button>
+          <div class="settingSubTitle">打字效果</div>
           <div class="settingSubDesc">选择聊天消息的显示动画</div>
           <div class="sOptionGrid" style="flex-direction:column;">`;
         effects.forEach(ef=>{
@@ -17363,10 +17588,11 @@ function renderSettingsUIApp(container){
         if (current < 3) current = 3;
         if (current > 50) current = 50;
         var html = '<div class="settingSubPage">' +
+          '<button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;margin-bottom:12px;">‹ 返回设置</button>' +
           '<div class="settingSubTitle">📝 上下文条数</div>' +
           '<div class="settingSubDesc">AI 回复时参考最近多少条聊天记录。数值越大效果越好但消耗更多 Token。</div>' +
           '<div style="display:flex;align-items:center;gap:12px;margin-top:18px;">' +
-            '<input type="range" min="3" max="50" value="' + current + '" data-ph="ctxNSlider" style="flex:1;accent-color:#07c160;" />' +
+            '<input type="range" min="3" max="50" value="' + current + '" data-ph="ctxNSlider" style="flex:1;accent-color:var(--ph-accent);" />' +
             '<span data-ph="ctxNVal" style="font-size:15px;font-weight:600;color:var(--ph-text);min-width:36px;text-align:center;">' + current + '</span>' +
           '</div>' +
           '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ph-text-dim);margin-top:4px;padding:0 2px;"><span>3条</span><span>50条</span></div>' +
@@ -17392,173 +17618,6 @@ function renderSettingsUIApp(container){
       }
 
       // ========== 图标颜色自定义 ==========
-      // ========== 强调色自定义 ==========
-      function renderSettingsAccentColor(container){
-        const cfg = phoneLoadSettings();
-        const currentHex = cfg.accentHex || '';
-        // 莫兰迪预设色盘（去彩、低饱和、温润）
-        const presets = [
-          {id:'default',  label:'跟随主题', hex:''},
-          {id:'sage',     label:'鼠尾草绿', hex:'#7d9b8a'},
-          {id:'dustblue', label:'雾灰蓝',   hex:'#7a92a8'},
-          {id:'clay',     label:'陶土棕',   hex:'#a0826d'},
-          {id:'mauve',    label:'雾玫瑰',   hex:'#a8888e'},
-          {id:'dusk',     label:'暮色紫',   hex:'#8b84a8'},
-          {id:'sand',     label:'暖沙棕',   hex:'#a89878'},
-          {id:'slate',    label:'蓝石板',   hex:'#6b84a0'},
-          {id:'rosewood', label:'玫瑰木',   hex:'#9e6b72'},
-          {id:'eucalyptus',label:'桉树绿',  hex:'#6b9484'},
-          {id:'lavender', label:'薰衣草',   hex:'#9688b0'},
-          {id:'umber',    label:'暖棕赭',   hex:'#8e7660'},
-        ];
-        const activeId = presets.find(p=>p.hex===currentHex)?.id || (currentHex?'custom':'default');
-
-        let html = `<div class="settingSubPage">
-          <div class="settingSubTitle">强调色</div>
-          <div class="settingSubDesc" style="margin-bottom:14px;">控制按钮、选中态、发送键等高亮颜色。空=跟随主题默认。</div>
-          <div class="sAccentGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px;">`;
-
-        presets.forEach(p=>{
-          const isActive = activeId===p.id;
-          const swatchBg = p.hex ? `background:${p.hex};` : 'background:linear-gradient(135deg,#7d9b8a,#a3bab0);';
-          html += `<button class="sAccentPreset${isActive?' active':''}" data-apresetid="${p.id}" data-ahex="${p.hex}"
-            style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px;
-              border-radius:12px;border:1.5px solid ${isActive?'var(--ph-accent)':'var(--ph-sep)'};
-              background:var(--ph-glass);cursor:pointer;transition:all .15s;">
-            <div style="width:32px;height:32px;border-radius:50%;${swatchBg}
-              box-shadow:0 2px 6px rgba(0,0,0,.12);
-              ${isActive?'box-shadow:0 0 0 2px var(--ph-accent), 0 2px 6px rgba(0,0,0,.12);':''}"></div>
-            <span style="font-size:10px;color:var(--ph-text-sub);line-height:1.2;text-align:center;">${p.label}</span>
-          </button>`;
-        });
-
-        html += `</div>
-          <div style="margin-top:4px;">
-            <div style="font-size:12px;color:var(--ph-text-sub);margin-bottom:8px;font-weight:500;">自定义色值</div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <input type="color" data-ph="accentPicker"
-                value="${currentHex||'#7d9b8a'}"
-                style="width:40px;height:40px;border:none;border-radius:10px;background:none;cursor:pointer;padding:0;"/>
-              <input data-ph="accentHexInput"
-                value="${currentHex||''}"
-                placeholder="留空=跟随主题默认，如 #7d9b8a"
-                style="flex:1;padding:9px 12px;border-radius:12px;border:1px solid var(--ph-input-border);
-                  background:var(--ph-input-bg);color:var(--ph-input-text);font-size:13px;"/>
-              <button data-ph="accentApply"
-                style="padding:9px 14px;border-radius:12px;background:var(--ph-accent-grad);
-                  color:var(--ph-send-icon,#fff);border:none;font-weight:600;cursor:pointer;font-size:12px;
-                  white-space:nowrap;">应用</button>
-            </div>
-          </div>
-          <!-- 实时预览 -->
-          <div style="margin-top:16px;padding:14px;border-radius:14px;background:var(--ph-glass);
-            border:1px solid var(--ph-sep);">
-            <div style="font-size:12px;color:var(--ph-text-sub);margin-bottom:10px;">预览效果</div>
-            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-              <button data-ph="previewBtn" style="padding:8px 18px;border-radius:20px;border:none;
-                background:var(--ph-accent-grad);color:var(--ph-send-icon,#fff);
-                font-size:13px;font-weight:600;cursor:default;">发送</button>
-              <div style="display:flex;gap:6px;align-items:center;">
-                <div data-ph="previewDot" style="width:12px;height:12px;border-radius:50%;
-                  background:var(--ph-accent);"></div>
-                <span style="font-size:12px;color:var(--ph-text-sub);">当前选中</span>
-              </div>
-              <div data-ph="previewBar" style="height:3px;flex:1;min-width:60px;border-radius:2px;
-                background:var(--ph-accent-grad);opacity:.6;"></div>
-            </div>
-          </div>
-        </div>`;
-
-        container.innerHTML = html;
-
-        const picker = container.querySelector('[data-ph="accentPicker"]');
-        const hexInput = container.querySelector('[data-ph="accentHexInput"]');
-        const applyBtn = container.querySelector('[data-ph="accentApply"]');
-
-        function livePreview(hex){
-          if (!hex){ return; }
-          try{
-            root.style.setProperty('--ph-accent', hex);
-            root.style.setProperty('--ph-accent2', hex+'cc');
-            root.style.setProperty('--ph-accent-grad', `linear-gradient(135deg,${hex},${hex}cc)`);
-          }catch(e){}
-        }
-
-        if (picker && hexInput){
-          picker.addEventListener('input',()=>{
-            hexInput.value = picker.value;
-            livePreview(picker.value);
-          });
-          hexInput.addEventListener('input',()=>{
-            const v = hexInput.value.trim();
-            if (/^#[0-9a-fA-F]{6}$/.test(v)){
-              try{ picker.value = v; }catch(_){}
-              livePreview(v);
-            }
-          });
-        }
-
-        // 预设色点击
-        container.querySelectorAll('.sAccentPreset').forEach(btn=>{
-          btn.addEventListener('click',()=>{
-            const hex = btn.getAttribute('data-ahex');
-            if (hexInput) hexInput.value = hex || '';
-            if (hex && picker){ try{ picker.value = hex; }catch(_){} }
-            // 立即预览
-            if (hex) livePreview(hex);
-            else _applyAccentColor({ accentHex: '' }); // 还原主题默认
-            // 持久化
-            const cfg2 = phoneLoadSettings();
-            cfg2.accentHex = hex || '';
-            phoneSaveSettings(cfg2);
-            _applyAccentColor(cfg2);
-            // 更新选中样式
-            container.querySelectorAll('.sAccentPreset').forEach(b=>{
-              const active = b===btn;
-              b.classList.toggle('active', active);
-              b.style.borderColor = active ? 'var(--ph-accent)' : 'var(--ph-sep)';
-            });
-          });
-        });
-
-        if (applyBtn){
-          applyBtn.addEventListener('click',()=>{
-            const hex = (hexInput?.value||'').trim();
-            const cfg2 = phoneLoadSettings();
-            cfg2.accentHex = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : '';
-            phoneSaveSettings(cfg2);
-            _applyAccentColor(cfg2);
-            container.querySelectorAll('.sAccentPreset').forEach(b=>b.classList.remove('active'));
-            try{toast('强调色已应用');}catch(e){}
-          });
-        }
-      }
-
-      function _applyAccentColor(cfg){
-        if (!root) return;
-        const hex = cfg.accentHex;
-        if (hex && /^#[0-9a-fA-F]{6}$/.test(hex)){
-          // 生成略浅的 accent2（hex + 透明度）
-          const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-          const light = `rgb(${Math.min(255,r+36)},${Math.min(255,g+36)},${Math.min(255,b+36)})`;
-          root.style.setProperty('--ph-accent', hex);
-          root.style.setProperty('--ph-accent2', light);
-          root.style.setProperty('--ph-accent-grad', `linear-gradient(135deg,${hex},${light})`);
-          // 同步依赖 accent 的衍生变量
-          root.style.setProperty('--ph-send-btn', hex);
-          root.style.setProperty('--ph-tabbar-on', hex);
-          root.style.setProperty('--ph-chat-me-bubble', `linear-gradient(135deg,${hex},${light})`);
-          root.style.setProperty('--ph-wechat-me-bubble', `linear-gradient(135deg,${hex},${light})`);
-        } else {
-          // 移除覆盖，回到主题 CSS 变量默认值
-          ['--ph-accent','--ph-accent2','--ph-accent-grad',
-           '--ph-send-btn','--ph-tabbar-on',
-           '--ph-chat-me-bubble','--ph-wechat-me-bubble'].forEach(v=>{
-            root.style.removeProperty(v);
-          });
-        }
-      }
-
       function renderSettingsIconTint(container){
         const cfg = phoneLoadSettings();
         const current = cfg.iconTint || '默认';
@@ -17574,7 +17633,10 @@ function renderSettingsUIApp(container){
           {id:'深蓝', label:'深蓝', color:'#4A6FA5'},
         ];
         let html = `<div class="settingSubPage">
-          <div class="settingSubTitle">🎯 图标底色</div>
+          <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);
+            color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
+            margin-bottom:12px;">‹ 返回设置</button>
+          <div class="settingSubTitle">图标底色</div>
           <div class="settingSubDesc">自定义桌面/Dock图标的底色（选择预设或输入自定义色值）</div>
           <div class="sOptionGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;">`;
         presets.forEach(p=>{
@@ -17652,6 +17714,68 @@ function renderSettingsUIApp(container){
         }
       }
 
+      function renderSettingsHomeSurface(container){
+        const cfg = phoneLoadSettings();
+        const current = cfg.homeCardTint || '默认';
+        const presets = [
+          {id:'默认', label:'默认', color:''},
+          {id:'霜白', label:'霜白', color:'#F7F7F3'},
+          {id:'雾绿', label:'雾绿', color:'#D7DFD0'},
+          {id:'灰蓝', label:'灰蓝', color:'#D7E0E5'},
+          {id:'暖灰', label:'暖灰', color:'#E4DED7'},
+          {id:'淡粉', label:'淡粉', color:'#E9DEE3'},
+          {id:'淡杏', label:'淡杏', color:'#E8E0D1'},
+          {id:'浅雾', label:'浅雾', color:'#E7EAED'},
+        ];
+        let html = `<div class="settingSubPage">
+          <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;margin-bottom:12px;">‹ 返回设置</button>
+          <div class="settingSubTitle">桌面卡片色</div>
+          <div class="settingSubDesc">调整主界面大气泡、搜索框与 Dock 的雾面底色。</div>
+          <div class="sOptionGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;">`;
+        presets.forEach(p=>{
+          const isActive = current === p.id;
+          const bg = p.color ? `background:${p.color};` : 'background:rgba(255,255,255,.78);';
+          html += `<button class="sOptionBtn${isActive?' active':''}" data-homesurface="${p.id}" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;"><div style="width:28px;height:28px;border-radius:10px;${bg}border:1px solid rgba(255,255,255,.75);"></div><span style="font-size:11px;">${p.label}</span></button>`;
+        });
+        html += `</div><div style="margin-top:14px;"><div style="font-size:12px;color:var(--ph-text-sub);margin-bottom:6px;">自定义色值（HEX）</div><div style="display:flex;gap:8px;align-items:center;"><input type="color" data-ph="homeSurfacePicker" value="${cfg.homeCardTintHex||'#F7F7F3'}" style="width:36px;height:36px;border:none;background:none;cursor:pointer;"/><input data-ph="homeSurfaceHex" value="${cfg.homeCardTintHex||'#F7F7F3'}" placeholder="#F7F7F3" style="flex:1;padding:8px;border-radius:10px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:13px;"/><button data-ph="homeSurfaceApply" style="padding:8px 14px;border-radius:10px;background:var(--ph-accent-grad);color:#fff;border:none;font-weight:600;cursor:pointer;font-size:12px;">应用</button></div></div></div>`;
+        container.innerHTML = html;
+        container.querySelectorAll('[data-homesurface]').forEach(btn=>{ btn.addEventListener('click',()=>{ const id = btn.getAttribute('data-homesurface'); const p = presets.find(x=>x.id===id); const cfg2 = phoneLoadSettings(); cfg2.homeCardTint = id; if (p && p.color) cfg2.homeCardTintHex = p.color; else delete cfg2.homeCardTintHex; phoneSaveSettings(cfg2); phoneApplyVisualFromSettings(cfg2); container.querySelectorAll('.sOptionBtn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }); });
+        const picker = container.querySelector('[data-ph="homeSurfacePicker"]');
+        const hexInput = container.querySelector('[data-ph="homeSurfaceHex"]');
+        const applyBtn = container.querySelector('[data-ph="homeSurfaceApply"]');
+        if (picker && hexInput){ picker.addEventListener('input',()=>{ hexInput.value = picker.value; }); hexInput.addEventListener('input',()=>{ try{ picker.value = hexInput.value; }catch(_){} }); }
+        if (applyBtn){ applyBtn.addEventListener('click',()=>{ const hex=(hexInput?.value||'').trim(); if(!hex) return; const cfg2 = phoneLoadSettings(); cfg2.homeCardTint='自定义'; cfg2.homeCardTintHex=hex; phoneSaveSettings(cfg2); phoneApplyVisualFromSettings(cfg2); container.querySelectorAll('.sOptionBtn').forEach(b=>b.classList.remove('active')); }); }
+      }
+
+      function renderSettingsAccentTint(container){
+        const cfg = phoneLoadSettings();
+        const current = cfg.accentTint || '默认';
+        const presets = [
+          {id:'默认', label:'默认', color:''},
+          {id:'霜蓝', label:'霜蓝', color:'#7C98A8'},
+          {id:'雾紫', label:'雾紫', color:'#9C93B6'},
+          {id:'鼠尾草', label:'鼠尾草', color:'#8EA48E'},
+          {id:'暖金', label:'暖金', color:'#B7A07C'},
+          {id:'玫雾', label:'玫雾', color:'#B68E9B'},
+          {id:'深墨', label:'深墨', color:'#313845'},
+          {id:'冰川', label:'冰川', color:'#7DADB8'},
+        ];
+        let html = `<div class="settingSubPage">
+          <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;margin-bottom:12px;">‹ 返回设置</button>
+          <div class="settingSubTitle">高亮主题色</div>
+          <div class="settingSubDesc">统一按钮、选中态、论坛强调色、天气强调色与高饱和高亮。</div>
+          <div class="sOptionGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;">`;
+        presets.forEach(p=>{ const isActive = current === p.id; const bg = p.color ? `background:${p.color};` : 'background:var(--ph-accent-grad);'; html += `<button class="sOptionBtn${isActive?' active':''}" data-accenttint="${p.id}" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;"><div style="width:28px;height:28px;border-radius:999px;${bg}"></div><span style="font-size:11px;">${p.label}</span></button>`; });
+        html += `</div><div style="margin-top:14px;"><div style="font-size:12px;color:var(--ph-text-sub);margin-bottom:6px;">自定义色值（HEX）</div><div style="display:flex;gap:8px;align-items:center;"><input type="color" data-ph="accentPicker" value="${cfg.accentHex||'#7C98A8'}" style="width:36px;height:36px;border:none;background:none;cursor:pointer;"/><input data-ph="accentHex" value="${cfg.accentHex||'#7C98A8'}" placeholder="#7C98A8" style="flex:1;padding:8px;border-radius:10px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:13px;"/><button data-ph="accentApply" style="padding:8px 14px;border-radius:10px;background:var(--ph-accent-grad);color:#fff;border:none;font-weight:600;cursor:pointer;font-size:12px;">应用</button></div></div></div>`;
+        container.innerHTML = html;
+        container.querySelectorAll('[data-accenttint]').forEach(btn=>{ btn.addEventListener('click',()=>{ const id=btn.getAttribute('data-accenttint'); const p=presets.find(x=>x.id===id); const cfg2=phoneLoadSettings(); cfg2.accentTint=id; if (p && p.color) cfg2.accentHex=p.color; else delete cfg2.accentHex; phoneSaveSettings(cfg2); phoneApplyVisualFromSettings(cfg2); container.querySelectorAll('.sOptionBtn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }); });
+        const picker = container.querySelector('[data-ph="accentPicker"]');
+        const hexInput = container.querySelector('[data-ph="accentHex"]');
+        const applyBtn = container.querySelector('[data-ph="accentApply"]');
+        if (picker && hexInput){ picker.addEventListener('input',()=>{ hexInput.value = picker.value; }); hexInput.addEventListener('input',()=>{ try{ picker.value = hexInput.value; }catch(_){} }); }
+        if (applyBtn){ applyBtn.addEventListener('click',()=>{ const hex=(hexInput?.value||'').trim(); if(!hex) return; const cfg2 = phoneLoadSettings(); cfg2.accentTint='自定义'; cfg2.accentHex=hex; phoneSaveSettings(cfg2); phoneApplyVisualFromSettings(cfg2); container.querySelectorAll('.sOptionBtn').forEach(b=>b.classList.remove('active')); }); }
+      }
+
       // ========== 内部图标色自定义 ==========
       function renderSettingsIconInner(container){
         const cfg = phoneLoadSettings();
@@ -17667,7 +17791,10 @@ function renderSettingsUIApp(container){
           {id:'深灰', label:'深灰', color:'#6B7280'},
         ];
         let html = `<div class="settingSubPage">
-          <div class="settingSubTitle">🔮 内部图标色</div>
+          <button data-act="settingsBack" style="appearance:none;border:0;background:var(--ph-glass);
+            color:var(--ph-text-sub);padding:6px 12px;border-radius:12px;cursor:pointer;font-size:12px;
+            margin-bottom:12px;">‹ 返回设置</button>
+          <div class="settingSubTitle">内部图标色</div>
           <div class="settingSubDesc">调整 App 内部扁平图标颜色（组件编辑器、标签栏、论坛等）</div>
           <div class="sOptionGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;">`;
         presets.forEach(p=>{
@@ -17738,8 +17865,8 @@ function renderSettingsUIApp(container){
       /* ========== 主题选择 App ========== */
       function renderThemes(container){
         const themes = [
-          {id:'frost',   name:'霜雪',   preview:'linear-gradient(135deg,#f5f2ee,#e8e2d8)',previewText:'rgba(28,22,16,.6)'},
-          {id:'modern',  name:'现代',   preview:'linear-gradient(135deg,#0a0a0a,#1a1a1a)',previewText:'rgba(255,255,255,.7)'},
+          {id:'frost',   name:'霜雪',   preview:'linear-gradient(135deg,#f8f8f4,#e6ece8)',previewText:'rgba(20,20,24,.72)'},
+          {id:'modern',  name:'现代',   preview:'linear-gradient(135deg,#ffffff,#eceff2)',previewText:'rgba(20,20,24,.72)'},
           {id:'medieval',name:'中世纪', preview:'linear-gradient(135deg,#2e1a0c,#4a2c10)',previewText:'rgba(255,220,180,.75)'},
           {id:'cyber',   name:'赛博朋克',preview:'linear-gradient(135deg,#040408,#040c18)',previewText:'rgba(0,220,120,.75)'},
           {id:'sakura',  name:'樱花',   preview:'linear-gradient(135deg,#22103a,#2e1240)',previewText:'rgba(255,160,200,.75)'},
@@ -17777,6 +17904,8 @@ function renderSettingsUIApp(container){
             W.localStorage.setItem(LS_PHONE_G_THEME, JSON.stringify(themeId));
           }
         }catch(e){}
+
+        try{ phoneApplyVisualFromSettings(phoneLoadSettings()); }catch(e){}
 
         // Re-render themes page to update active state
         const body = root.querySelector('[data-ph="appBody"]');
@@ -18100,7 +18229,6 @@ function bindPageScroll(){
         try{
           const _cfg = phoneLoadSettings();
           try{ phoneApplyVisualFromSettings(_cfg); }catch(e){}
-        try{ _applyAccentColor(_cfg); }catch(e){}
           if (_cfg.fontSize && _cfg.fontSize !== 14) phoneApplyFontSize(_cfg.fontSize);
         }catch(e){}
         updateTime();
