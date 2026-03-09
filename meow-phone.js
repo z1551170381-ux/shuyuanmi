@@ -1605,7 +1605,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   backdrop-filter:blur(var(--ph-glass-blur)); -webkit-backdrop-filter:blur(var(--ph-glass-blur));
 }
 #${ID} .pwProfile .pwAvatar{
-  width:48px; height:48px; border-radius:50%;
+  width:48px; height:48px; border-radius:50%; overflow:hidden;
   background:var(--ph-glass-strong); border:2px solid var(--ph-glass-border);
   display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0;
   box-shadow:0 4px 12px var(--ph-shadow);
@@ -2271,7 +2271,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 }
 #${ID} .wxMeProfile:hover{ background:var(--ph-row-hover); }
 #${ID} .wxMeProfile .wxMeAvatar{
-  width:58px; height:58px; border-radius:12px; flex-shrink:0;
+  width:58px; height:58px; border-radius:12px; flex-shrink:0; overflow:hidden;
   background:var(--ph-glass-strong); border:1px solid var(--ph-glass-border);
   display:flex; align-items:center; justify-content:center; font-size:28px;
   box-shadow:0 2px 10px rgba(0,0,0,.1);
@@ -10905,7 +10905,8 @@ ${lines}
         const settings = phoneLoadSettings();
         const userName = (settings && settings.phoneName) || '原';
         const coverBg = cfg.coverImage ? `background-image:url(${cfg.coverImage});background-size:cover;background-position:center;` : 'background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);';
-        const avatarChar = cfg.avatarImage ? `<img src="${esc(cfg.avatarImage)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"/>` : `<span style="font-size:24px;">${esc(userName.charAt(0))}</span>`;
+        const _meAvSrc = phoneGetAvatar('me') || cfg.avatarImage || '';
+        const avatarChar = _meAvSrc ? `<img src="${esc(_meAvSrc)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"/>` : `<span style="font-size:24px;">${esc(userName.charAt(0))}</span>`;
 
         // 计算新收到的点赞（上次访问后新增的）
         const lastVisit = data._lastVisit || 0;
