@@ -783,7 +783,7 @@ function ensureTuneStyle(){
   --ph-frost-surface-a: calc(var(--phHomeA, .36) * .68 + .03);
   --ph-frost-bar-a: calc(var(--phHomeA, .36) * .74 + .04);
   --ph-frost-hi-a: calc(var(--phHomeA, .36) * .32 + .08);
-  --ph-frost-line-a: calc(var(--phHomeA, .36) * .78 + .11);
+  --ph-frost-line-a: calc(var(--phHomeA, .36) * .82 + .12);
   --ph-row-bg: rgba(255,255,255,var(--ph-frost-surface-a));
   --ph-row-hover: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .07));
   --ph-searchbox-bg: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .05));
@@ -797,7 +797,7 @@ function ensureTuneStyle(){
   --ph-frost-surface-a: calc(var(--phAppA, .52) * .64 + .03);
   --ph-frost-bar-a: calc(var(--phAppA, .52) * .72 + .04);
   --ph-frost-hi-a: calc(var(--phAppA, .52) * .28 + .09);
-  --ph-frost-line-a: calc(var(--phAppA, .52) * .74 + .12);
+  --ph-frost-line-a: calc(var(--phAppA, .52) * .78 + .13);
   --ph-row-bg: rgba(255,255,255,var(--ph-frost-surface-a));
   --ph-row-hover: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .07));
   --ph-searchbox-bg: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .05));
@@ -841,8 +841,8 @@ function ensureTuneStyle(){
   background:
     linear-gradient(180deg, rgba(255,255,255,var(--ph-frost-hi-a)), rgba(255,255,255,calc(var(--ph-frost-hi-a) * .38))),
     rgba(255,255,255,var(--ph-frost-panel-a)) !important;
-  border-color:rgba(255,255,255,var(--ph-frost-line-a)) !important;
-  box-shadow:0 8px 22px rgba(126,142,166,.06) !important;
+  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) * 1.02)) !important;
+  box-shadow:0 8px 22px rgba(126,142,166,.06), inset 0 1px 0 rgba(255,255,255,calc(var(--ph-frost-line-a) * .32)) !important;
   backdrop-filter:blur(calc(var(--ph-glass-blur) * .22)) saturate(108%) !important;
   -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .22)) saturate(108%) !important;
 }
@@ -860,8 +860,8 @@ function ensureTuneStyle(){
   background:
     linear-gradient(180deg, rgba(255,255,255,calc(var(--ph-frost-hi-a) * .88)), rgba(255,255,255,calc(var(--ph-frost-hi-a) * .26))),
     rgba(255,255,255,var(--ph-frost-surface-a)) !important;
-  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) * .96)) !important;
-  box-shadow:0 6px 16px rgba(126,142,166,.045);
+  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) * 1.03)) !important;
+  box-shadow:0 6px 16px rgba(126,142,166,.045), inset 0 1px 0 rgba(255,255,255,calc(var(--ph-frost-line-a) * .28));
   backdrop-filter:blur(calc(var(--ph-glass-blur) * .16)) saturate(106%);
   -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .16)) saturate(106%);
 }
@@ -874,8 +874,8 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .wxVoicePanel,
 #${ID}[data-theme="frost"] .wxChatPlusGrid{
   background:rgba(255,255,255,var(--ph-frost-bar-a)) !important;
-  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) * .92)) !important;
-  box-shadow:none !important;
+  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) * 1.01)) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,calc(var(--ph-frost-line-a) * .22)) !important;
   backdrop-filter:blur(calc(var(--ph-glass-blur) * .18)) saturate(107%) !important;
   -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .18)) saturate(107%) !important;
 }
