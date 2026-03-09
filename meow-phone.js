@@ -751,9 +751,14 @@ function ensureTuneStyle(){
 #${ID} .phDockBtn .di svg.phIco{ width:18px; height:18px; }
 #${ID} .phAppIcon svg.phIco,
 #${ID} .phDockBtn svg.phIco{ filter: drop-shadow(0 1px 2px var(--ph-ico-shadow)); }
-/* 发现/我 页图标底色 */
+/* 通讯录/发现/我 页 + 聊天设置 图标：白色SVG */
 #${ID} .wxDIcoThemed svg.phIco,
-#${ID} .wxCHIco svg.phIco{ fill: rgba(255,255,255,.92) !important; }
+#${ID} .wxCHIco svg.phIco,
+#${ID} .wxCSIco svg.phIco,
+#${ID} .wxCIAvatar svg.phIco{ fill: rgba(255,255,255,.92) !important; }
+/* 红色删除图标 */
+#${ID} .wxCSItem[data-act="wxDelChat"] .wxCSIco svg.phIco,
+#${ID} .wxCSItem[data-act="wxDelFriend"] .wxCSIco svg.phIco{ fill:rgba(231,76,60,.90) !important; }
     `;
     (doc.head || doc.documentElement).appendChild(st);
   }catch(e){}
@@ -1697,11 +1702,8 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .wxNewFriendToolBtn svg.phIco{
   fill: var(--ph-icon-inner-tint, currentColor) !important;
 }
-#${ID} .wxCHIco svg.phIco{
-  fill: var(--ph-text-sub) !important;
-}
-/* ✅ 通讯录图标底色：联动设置中的 iconTint */
-/* wxCHIco uses glass style not icon-tint */
+/* wxCHIco svg fill set in themed block below */
+/* wxCHIco uses accent bg with white SVG */
 /* 点赞保持红色 */
 #${ID} .feedAction.liked svg.phIco,
 #${ID} .momentAction.liked svg.phIco{
@@ -1872,9 +1874,10 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .phModalCard{
   width:min(330px, calc(100% - 28px));
   border-radius:18px;
-  background:#fff;
-  border:1px solid rgba(0,0,0,.08);
-  box-shadow:0 18px 60px rgba(0,0,0,.28);
+  background:var(--ph-glass-strong);
+  backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+  border:1px solid var(--ph-glass-border);
+  box-shadow:0 20px 64px rgba(0,0,0,.20), 0 2px 0 rgba(255,255,255,.75) inset;
   padding:14px;
 }
 #${ID} .phModalTitle{
@@ -2246,9 +2249,9 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 /* ✅ 发现/我 页：镂空线条风格，不受图标色设置控制 */
 /* ✅ 发现/我 页：固定镂空风格，不受内部图标色设置影响 */
 #${ID} .wxDIcoThemed{
-  background: var(--ph-icon-inner-tint, var(--ph-accent)) !important;
-  border: 1px solid rgba(255,255,255,.25) !important;
-  box-shadow: 0 2px 8px var(--ph-shadow) !important;
+  background: var(--ph-accent) !important;
+  border: 1px solid rgba(255,255,255,.28) !important;
+  box-shadow: 0 2px 10px var(--ph-shadow) !important;
 }
 #${ID} .wxDIcoThemed svg.phIco{
   fill: var(--ph-text-sub) !important;
@@ -2291,9 +2294,9 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   width:36px; height:36px; border-radius:9px; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
   font-size:16px; color:var(--ph-text-sub);
-  background: var(--ph-icon-inner-tint, var(--ph-accent)) !important;
-  border: 1px solid rgba(255,255,255,.25) !important;
-  box-shadow: 0 2px 8px var(--ph-shadow) !important;
+  background: var(--ph-accent) !important;
+  border: 1px solid rgba(255,255,255,.28) !important;
+  box-shadow: 0 2px 10px var(--ph-shadow) !important;
 }
 #${ID} .wxContactHeader .wxCHIco svg.phIco{ width:18px; height:18px; fill:rgba(255,255,255,.92) !important; }
 #${ID} .wxContactHeader .wxCHName{ flex:1; font-size:14.5px; color:var(--ph-text); }
@@ -2320,8 +2323,8 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .wxGroupHeader .wxCHIco{
   width:28px; height:28px; border-radius:8px; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
-  background:var(--ph-icon-inner-tint, var(--ph-accent)) !important;
-  border:1px solid rgba(255,255,255,.25) !important;
+  background:var(--ph-accent) !important;
+  border:1px solid rgba(255,255,255,.28) !important;
   box-shadow:0 2px 6px var(--ph-shadow) !important;
 }
 #${ID} .wxGroupHeader .wxCHIco svg.phIco{ width:15px; height:15px; fill:rgba(255,255,255,.92) !important; }
@@ -2357,21 +2360,23 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 }
 @keyframes phFadeIn{ from{opacity:0;} to{opacity:1;} }
 #${ID} .wxConfirmBox{
-  background:#fff; border-radius:14px; padding:24px 20px 16px;
+  background:var(--ph-glass-strong); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+  border-radius:18px; padding:24px 20px 16px;
   min-width:220px; max-width:300px; width:calc(100% - 40px);
   text-align:center; box-sizing:border-box;
-  box-shadow:0 8px 40px rgba(0,0,0,.2);
+  border:1px solid var(--ph-glass-border);
+  box-shadow:0 16px 48px rgba(0,0,0,.20), 0 2px 0 rgba(255,255,255,.75) inset;
   overflow:visible;
 }
-#${ID} .wxConfirmBox .wxCMsg{ font-size:14px; color:rgba(20,24,28,.85); margin-bottom:18px; line-height:1.5; }
-#${ID} .wxConfirmBox .wxCBtns{ display:flex; border-top:1px solid rgba(0,0,0,.08); margin:0 -20px -16px; }
+#${ID} .wxConfirmBox .wxCMsg{ font-size:14px; color:var(--ph-text); margin-bottom:18px; line-height:1.5; }
+#${ID} .wxConfirmBox .wxCBtns{ display:flex; border-top:1px solid var(--ph-sep); margin:0 -20px -16px; }
 #${ID} .wxConfirmBox .wxCBtn{
   flex:1; padding:12px; appearance:none; border:0; background:transparent;
   font-size:14px; cursor:pointer; transition:background .1s;
 }
-#${ID} .wxConfirmBox .wxCBtn:first-child{ border-right:1px solid rgba(0,0,0,.08); color:rgba(20,24,28,.55); }
+#${ID} .wxConfirmBox .wxCBtn:first-child{ border-right:1px solid var(--ph-sep); color:var(--ph-text-dim); }
 #${ID} .wxConfirmBox .wxCBtn:last-child{ color:#ef4444; font-weight:600; }
-#${ID} .wxConfirmBox .wxCBtn:hover{ background:rgba(0,0,0,.04); }
+#${ID} .wxConfirmBox .wxCBtn:hover{ background:var(--ph-row-hover); }
 
 /* === WeChat Chat Detail (版面6 微信聊天风) === */
 #${ID} .wxChatDetailWrap{
@@ -2431,7 +2436,8 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .wxChatInputBar .wxChatExBtn svg.phIco{ width:22px; height:22px; fill:currentColor; }
 #${ID} .wxChatInputBar textarea{
   flex:1; resize:none;
-  background:#fff; border:1px solid rgba(0,0,0,.1);
+  background:var(--ph-glass); border:1px solid var(--ph-glass-border);
+  color:var(--ph-text);
   border-radius:6px; padding:7px 10px;
   color:rgba(20,24,28,.88); font-size:16px;
   outline:none; min-height:34px; max-height:96px; font-family:inherit; line-height:1.4;
@@ -2458,7 +2464,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 }
 #${ID} .wxChatPlusGrid .wxCPItem .wxCPIco{
   width:48px; height:48px; border-radius:12px;
-  background:#fff; border:1px solid rgba(0,0,0,.06);
+  background:var(--ph-glass); border:1px solid var(--ph-glass-border);
   display:flex; align-items:center; justify-content:center;
   font-size:18px; color:rgba(20,24,28,.65);
   transition:background .12s;
@@ -2747,7 +2753,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .wxCharSettingsWrap .wxCSItem .wxCSIco{
   width:34px; height:34px; border-radius:10px; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
-  background:var(--ph-icon-inner-tint, var(--ph-accent));
+  background:var(--ph-accent);
   border:1px solid rgba(255,255,255,.25);
   box-shadow:0 2px 8px var(--ph-shadow);
   font-size:0;
@@ -3951,7 +3957,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
           if (!Object.keys(avatars).length){
             // 可能刚“恢复默认”了：把残留的样式清掉
             try{
-              const sel0 = '.pwAvatar,.wxMeAvatar,.cAvatar,.cbAvatar,.wxCIAvatar,.wxCBAvatar,.momentAvatar,.feedAvatar,.npcProfileAvatar';
+              const sel0 = '.pwAvatar,.wxMeAvatar,.cAvatar,.cbAvatar,.wxCIAvatar,.wxCBAvatar,.momentAvatar,.feedAvatar,.npcProfileAvatar,.wxContactAvatar,.wxChatHeaderAvatar';
               root.querySelectorAll(sel0).forEach(el=>{
                 if (el && el.style && el.style.backgroundImage){
                   el.style.backgroundImage = '';
@@ -3965,7 +3971,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
             return;
           }
 
-          const sel = '.pwAvatar,.wxMeAvatar,.cAvatar,.cbAvatar,.wxCIAvatar,.wxCBAvatar,.momentAvatar,.feedAvatar,.npcProfileAvatar';
+          const sel = '.pwAvatar,.wxMeAvatar,.cAvatar,.cbAvatar,.wxCIAvatar,.wxCBAvatar,.momentAvatar,.feedAvatar,.npcProfileAvatar,.wxContactAvatar,.wxChatHeaderAvatar';
           root.querySelectorAll(sel).forEach(el=>{
             let key = '';
 
@@ -7919,7 +7925,7 @@ ${lines}
             const srcTag = c.source === 'worldbook' ? _phFlatIcon('📖') : (c.source === 'stcard' ? _phFlatIcon('🎭') : (c.source === 'persona' ? _phFlatIcon('👤') : (c.source === 'scan' ? _phFlatIcon('🔍') : _phFlatIcon('➕'))));
             const profileSnip = (c.identity || c.profile || '').slice(0,40);
             html += '<div class="wxContactItem" style="display:flex;align-items:center;padding:10px 14px;">';
-            html += '<div class="wxCIAvatar" style="background:var(--ph-icon-inner-tint,var(--ph-accent));border:1px solid rgba(255,255,255,.25);flex-shrink:0;font-size:0;display:flex;align-items:center;justify-content:center;">' + srcTag + '</div>';
+            html += '<div class="wxCIAvatar" style="background:var(--ph-accent);border:1px solid rgba(255,255,255,.28);flex-shrink:0;font-size:0;display:flex;align-items:center;justify-content:center;">' + srcTag + '</div>';
             html += '<div style="flex:1;margin-left:10px;overflow:hidden;">';
             html += '<div class="wxCIName" style="font-size:14px;">' + esc(c.name) + '</div>';
             if (profileSnip) html += '<div style="font-size:11px;color:rgba(20,24,28,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(profileSnip) + '</div>';
@@ -8168,7 +8174,7 @@ ${lines}
             <input data-field="newGroupName" placeholder="新分组名称" style="flex:1;min-width:0;padding:6px 10px;border:1px solid rgba(0,0,0,.1);border-radius:6px;font-size:13px;box-sizing:border-box;"/>
             <button data-gact="add" style="padding:6px 12px;border:0;border-radius:6px;background:#07c160;color:#fff;font-size:12px;cursor:pointer;flex-shrink:0;white-space:nowrap;">添加</button>
           </div>
-          <button data-gact="close" style="width:100%;padding:10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;background:#fff;font-size:13px;cursor:pointer;color:rgba(20,24,28,.6);">关闭</button>
+          <button data-gact="close" style="width:100%;padding:10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;background:var(--ph-glass-strong);font-size:13px;cursor:pointer;color:var(--ph-text);">关闭</button>
         </div>`;
         root.appendChild(overlay);
         overlay.addEventListener('click',(e)=>{
@@ -8802,7 +8808,7 @@ ${lines}
             const ts = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
             const typeLabel = it.type === 'diary' ? '📝 日记' : '💬 语录';
             const tagStr = _safeArr(it.tags).map(t=>`<span style="display:inline-block;padding:2px 6px;border-radius:4px;background:rgba(7,193,96,.1);color:#07c160;font-size:10px;margin-right:4px;">${esc(t)}</span>`).join('');
-            html += `<div style="margin:0 14px 10px;padding:14px;border-radius:14px;background:#fff;border:1px solid rgba(0,0,0,.06);">
+            html += `<div style="margin:0 14px 10px;padding:14px;border-radius:14px;background:var(--ph-glass-strong);border:1px solid var(--ph-glass-border);">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
                 <span style="font-size:11px;color:rgba(20,24,28,.4);">${typeLabel} · ${ts}</span>
                 <div style="display:flex;gap:6px;">
@@ -8902,7 +8908,7 @@ ${lines}
         </div>`;
 
         // C2: chatId 联动模式开关
-        html += `<div style="margin:0 14px 10px;padding:12px 14px;border-radius:12px;background:#fff;border:1px solid ${isFollowChatId ? '#07c160' : 'rgba(0,0,0,.06)'};">
+        html += `<div style="margin:0 14px 10px;padding:12px 14px;border-radius:12px;background:var(--ph-glass-strong);border:1px solid ${isFollowChatId ? 'var(--ph-accent)' : 'var(--ph-glass-border)'};">
           <div style="display:flex;align-items:center;justify-content:space-between;">
             <div>
               <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.85);">🔗 跟随 chatId</div>
@@ -8928,7 +8934,7 @@ ${lines}
             const p = list[i];
             const isCur = active.id === p.id;
             const isOverride = cSettings.personaOverride === p.name || cSettings.personaOverride === p.id;
-            html += `<div style="margin:0 14px 8px;padding:14px;border-radius:14px;background:#fff;border:${isCur?'2px solid #07c160':'1px solid rgba(0,0,0,.06)'};">
+            html += `<div style="margin:0 14px 8px;padding:14px;border-radius:14px;background:var(--ph-glass-strong);border:${isCur?'2px solid var(--ph-accent)':'1px solid var(--ph-glass-border)'};">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
                 <span style="font-size:14px;font-weight:600;color:rgba(20,24,28,.85);">${esc(p.name)} ${isCur?'<span style="color:#07c160;font-size:11px;">✓ 当前</span>':''} ${isOverride && !isFollowChatId ? '<span style="color:#667eea;font-size:10px;">🔒 锁定</span>' : ''}</span>
                 <div style="display:flex;gap:6px;">
@@ -9373,7 +9379,7 @@ ${lines}
                 if (Array.isArray(body.data)) models = body.data.map(m=>m.id||m.name||'').filter(Boolean);
                 else if (Array.isArray(body)) models = body.map(m=>typeof m==='string'?m:(m.id||m.name||'')).filter(Boolean);
                 if (!models.length){ listEl.innerHTML = '<div style="font-size:12px;color:#ef4444;padding:6px 0;">未获取到模型列表</div>'; return; }
-                let mhtml = '<div style="max-height:200px;overflow-y:auto;border:1px solid rgba(0,0,0,.06);border-radius:10px;background:#fff;">';
+                let mhtml = '<div style="max-height:200px;overflow-y:auto;border:1px solid rgbavar(--ph-glass-border));border-radius:10px;background:var(--ph-glass-strong);">';
                 models.forEach(m=>{
                   mhtml += `<div data-act="apiPickModel" data-model="${_esc(m)}" style="padding:8px 12px;border-bottom:1px solid rgba(0,0,0,.04);font-size:12px;color:var(--ph-text);cursor:pointer;">${_esc(m)}</div>`;
                 });
