@@ -11510,30 +11510,23 @@ const npc = _wxGetChatTargetMeta(npcId);
         input.addEventListener('touchend', (e)=>{ e.stopPropagation(); try{input.focus();}catch(e){} });
         input.addEventListener('blur', ()=>{ input._lastVal = input.value; });
         setTimeout(()=>{ try{input.focus();}catch(e){} }, 150);
-        // ✅ 直接绑定发送键 - 在 pointerdown 阶段抓取值，避免 blur 时序问题
+        // ✅ 镜像值方案：input事件实时同步，发送时读镜像
+        state._chatInputMirror = '';
+        input.addEventListener('input', ()=>{ state._chatInputMirror = input.value; });
+        input.addEventListener('change', ()=>{ state._chatInputMirror = input.value; });
+        // mousedown阶段保存（blur前最后时机）
+        input.addEventListener('blur', ()=>{ state._chatInputMirror = input.value || state._chatInputMirror; });
         const sendBtn = body.querySelector('.wxChatSendBtn');
         if (sendBtn){
-          let _pendingText = '';
-          // pointerdown/touchstart: 立刻读值（textarea 尚未 blur）
-          const _grabVal = (e)=>{
-            _pendingText = String(input.value || input._lastVal || '').trim();
+          sendBtn.addEventListener('mousedown', (e)=>{ e.preventDefault(); }); // 阻止textarea失焦
+          sendBtn.addEventListener('click', (e)=>{
             e.preventDefault(); e.stopPropagation();
-          };
-          sendBtn.addEventListener('pointerdown', _grabVal, { capture:true });
-          sendBtn.addEventListener('touchstart',  _grabVal, { capture:true, passive:false });
-          sendBtn.addEventListener('mousedown',   _grabVal, { capture:true });
-          // click/touchend: 用抓到的值发送
-          const _doSend = (e)=>{
+            _wxSendChat(contactId);
+          });
+          sendBtn.addEventListener('touchend', (e)=>{
             e.preventDefault(); e.stopPropagation();
-            const txt = _pendingText || String(input.value || input._lastVal || '').trim();
-            _pendingText = '';
-            if (!txt) return;
-            // 直接传文字，跳过再次读 input
-            input.value = ''; input._lastVal = '';
-            _wxSendChatText(contactId, txt);
-          };
-          sendBtn.addEventListener('click',    _doSend, { capture:true });
-          sendBtn.addEventListener('touchend', _doSend, { capture:true });
+            _wxSendChat(contactId);
+          });
         }
       }
 
@@ -14983,11 +14976,14 @@ const npc = _wxGetChatTargetMeta(npcId);
 
 
       async function _wxSendChat(npcId){
-        const input = root._phFakeInput || root.querySelector('[data-ph="chatInput"]');
-        if (!input) return;
-        const text = String(input.value || input._lastVal || '').trim();
-        if (!root._phFakeInput){ input._lastVal = ''; input.value = ''; }
+        const input = root.querySelector('[data-ph="chatInput"]');
+        if (!input && !state._chatInputMirror) return;
+        const text = String(
+          (input && input.value) || state._chatInputMirror || (input && input._lastVal) || ''
+        ).trim();
         if (!text) return;
+        state._chatInputMirror = '';
+        if (input){ input.value = ''; input._lastVal = ''; }
 
         const db = loadContactsDB();
         const npc = findContactById(db, npcId) || { id:npcId, name:String(npcId), avatar:(String(npcId).charAt(0)), profile:'' };
@@ -15148,7 +15144,11 @@ const npc = _wxGetChatTargetMeta(npcId);
       // sendChat 路由：根据当前 chatTarget 分发
       async function sendChatMessage(){
         const npcId = state.chatTarget;
-        if (npcId) return _wxSendChat(npcId);
+        if (!npcId) return;
+        // 同步镜像值（以防 input 事件未触发）
+        const _inp = root.querySelector('[data-ph="chatInput"]');
+        if (_inp && _inp.value && !state._chatInputMirror) state._chatInputMirror = _inp.value;
+        return _wxSendChat(npcId);
       }
 
       function addChatBubble(role,text){
