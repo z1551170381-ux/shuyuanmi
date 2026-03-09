@@ -2777,9 +2777,10 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   box-shadow:0 1px 0 rgba(255,255,255,.80) inset;
 }
 #${ID} .wxCharSettingsWrap .wxCSAvatar{
-  width:56px; height:56px; border-radius:14px; background:rgba(7,193,96,.12);
+  width:56px; height:56px; border-radius:14px; overflow:hidden;
+  background:var(--ph-glass-strong);
   display:flex; align-items:center; justify-content:center; font-size:26px;
-  flex-shrink:0; border:1px solid rgba(0,0,0,.06);
+  flex-shrink:0; border:1px solid var(--ph-glass-border);
 }
 #${ID} .wxCharSettingsWrap .wxCSInfo{ flex:1; }
 #${ID} .wxCharSettingsWrap .wxCSNickname{ font-size:16px; font-weight:700; color:rgba(20,24,28,.88); }
@@ -11311,7 +11312,7 @@ ensureThread(npc.id, npc.name, npc.avatar);
       async function sendChatMessage(){
         const input = root.querySelector('[data-ph="chatInput"]');
         if (!input) return;
-        const text = String(input.value||'').trim();
+        const text = String(input.value || input._lastVal || '').trim(); input._lastVal = '';
         if (!text) return;
         input.value = '';
 
@@ -11492,13 +11493,15 @@ const npc = _wxGetChatTargetMeta(npcId);
         });
         input.addEventListener('click', ()=>{ try{input.focus();}catch(e){} });
         input.addEventListener('touchend', (e)=>{ e.stopPropagation(); try{input.focus();}catch(e){} });
+        input.addEventListener('blur', ()=>{ input._lastVal = input.value; });
         setTimeout(()=>{ try{input.focus();}catch(e){} }, 150);
-        // ✅ 直接绑定发送键，防止 event delegation 失败
+        // ✅ 直接绑定发送键
         const sendBtn = body.querySelector('.wxChatSendBtn');
         if (sendBtn){
-          sendBtn.addEventListener('mousedown', (e)=>{ e.preventDefault(); }); // 防止 textarea blur
-          sendBtn.addEventListener('click', (e)=>{ e.stopPropagation(); _wxSendChat(contactId); });
-          sendBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); e.stopPropagation(); _wxSendChat(contactId); });
+          sendBtn.addEventListener('pointerdown', (e)=>{ e.preventDefault(); e.stopPropagation(); }, { capture:true });
+          sendBtn.addEventListener('mousedown',   (e)=>{ e.preventDefault(); e.stopPropagation(); }, { capture:true });
+          sendBtn.addEventListener('click',       (e)=>{ e.preventDefault(); e.stopPropagation(); _wxSendChat(contactId); }, { capture:true });
+          sendBtn.addEventListener('touchend',    (e)=>{ e.preventDefault(); e.stopPropagation(); _wxSendChat(contactId); }, { capture:true });
         }
       }
 
@@ -11676,7 +11679,7 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         let html = `<div class="wxCharSettingsWrap">
           <div class="wxCSHeader">
-            <div class="wxCSAvatar">${esc(npc.avatar || npc.name.charAt(0))}</div>
+            <div class="wxCSAvatar" data-npcid="${esc(contactId)}">${(()=>{const _csa=phoneGetAvatar(contactId);return _csa?`<img src="${_csa}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"/>`:esc(npc.avatar||npc.name.charAt(0));})()}</div>
             <div class="wxCSInfo">
               <div class="wxCSNickname">${esc(npc.name)}</div>
               <div class="wxCSProfile">${esc((npc.profile||charEx.profile||'').slice(0,80) || '暂无简介')}</div>
@@ -14936,7 +14939,8 @@ const npc = _wxGetChatTargetMeta(npcId);
       async function _wxSendChat(npcId){
         const input = root.querySelector('[data-ph="chatInput"]');
         if (!input) return;
-        const text = String(input.value||'').trim();
+        const text = String(input.value || input._lastVal || '').trim();
+        input._lastVal = '';
         if (!text) return;
         input.value = '';
 
