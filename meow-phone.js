@@ -906,8 +906,38 @@ function ensureTuneStyle(){
 
 #${ID}[data-theme="frost"] .phAppIcon .ai,
 #${ID}[data-theme="frost"] .phDockBtn .di{
-  box-shadow:none;
-  filter:saturate(.95) brightness(1.03);
+  background:transparent !important;
+  border:0 !important;
+  border-radius:0;
+  box-shadow:none !important;
+  opacity:1;
+  filter:none !important;
+}
+
+#${ID}[data-theme="frost"] .phAppIcon .ai{
+  width:32px;
+  height:32px;
+}
+
+#${ID}[data-theme="frost"] .phDockBtn .di{
+  width:28px;
+  height:28px;
+}
+
+#${ID}[data-theme="frost"] .phAppIcon .ai svg.phIco,
+#${ID}[data-theme="frost"] .phDockBtn .di svg.phIco{
+  fill:rgba(255,255,255,.98) !important;
+  filter:drop-shadow(0 1px 1.2px rgba(68,88,120,.18));
+}
+
+#${ID}[data-theme="frost"] .phAppIcon .ai svg.phIco{
+  width:20px;
+  height:20px;
+}
+
+#${ID}[data-theme="frost"] .phDockBtn .di svg.phIco{
+  width:18px;
+  height:18px;
 }
 
 #${ID}[data-theme="frost"] .phAppIcon:hover,
