@@ -483,26 +483,26 @@ function ensureTuneStyle(){
 #${ID} .weatherIcon{ font-size:64px; color:var(--ph-text); display:flex; align-items:center; justify-content:center; line-height:1; }
 #${ID} .weatherIcon svg{ width:64px; height:64px; stroke:var(--ph-text); }
 #${ID}{
-  --phHomeA: .36;
-  --phHomeStrongA: .46;
-  --phHomeBorderA: .52;
-  --phHomeBlur: 22px;
-  --phAppA: .52;
-  --phAppStrongA: .62;
-  --phAppBorderA: .68;
-  --phAppBlur: 16px;
-  --phAppSolidA: .92;
-  --phAppBodyRGB: 10,10,10;    /* 各主题覆盖 */
+  --phHomeA: .26;
+  --phHomeStrongA: .40;
+  --phHomeBorderA: .60;
+  --phHomeBlur: 30px;
+  --phAppA: .24;
+  --phAppStrongA: .40;
+  --phAppBorderA: .58;
+  --phAppBlur: 24px;
+  --phAppSolidA: .78;
+  --phAppBodyRGB: 10,10,10;
   --phHomeWallA: 1;
   --phAppWallA: 1;
   --phHomeWallUrl: none;
   --phAppWallUrl: none;
   --ph-ico: rgba(255,255,255,.94);
   --ph-ico-dim: rgba(255,255,255,.84);
-  --ph-ico-shadow: rgba(0,0,0,.22);
+  --ph-ico-shadow: rgba(0,0,0,.18);
 }
 
-/* 桌面/APP 分离 */
+/* 桌面 / APP 分离 */
 #${ID}[data-view="home"]{
   --ph-glass:        rgba(255,255,255,var(--phHomeA));
   --ph-glass-strong: rgba(255,255,255,var(--phHomeStrongA));
@@ -510,7 +510,6 @@ function ensureTuneStyle(){
   --ph-glass-blur:   var(--phHomeBlur);
   --ph-ico: rgba(255,255,255,.96);
   --ph-ico-dim: rgba(255,255,255,.86);
-  --ph-ico-shadow: rgba(0,0,0,.24);
   --ph-wallpaper-opacity: var(--phHomeWallA);
   --ph-wallpaper-url:     var(--phHomeWallUrl);
 }
@@ -521,40 +520,45 @@ function ensureTuneStyle(){
   --ph-glass-blur:   var(--phAppBlur);
   --ph-ico: var(--ph-text);
   --ph-ico-dim: var(--ph-text-sub);
-  --ph-ico-shadow: rgba(0,0,0,.10);
   --ph-wallpaper-opacity: var(--phAppWallA);
   --ph-wallpaper-url:     var(--phAppWallUrl);
 }
 
-/* frost 桌面：纯净白半透玻璃 */
+/* Frost：玻璃升级 */
 #${ID}[data-theme="frost"][data-view="home"]{
-  --ph-glass:        rgba(255,255,254,var(--phHomeA));
-  --ph-glass-strong: rgba(255,255,254,var(--phHomeStrongA));
-  --ph-glass-border: rgba(255,255,255,var(--phHomeBorderA));
+  --ph-glass:        rgba(255,255,255,.26);
+  --ph-glass-strong: rgba(255,255,255,.42);
+  --ph-glass-border: rgba(255,255,255,.72);
 }
 #${ID}[data-theme="frost"][data-view="app"]{
-  --ph-glass:        rgba(255,255,254,var(--phAppA));
-  --ph-glass-strong: rgba(255,255,254,var(--phAppStrongA));
-  --ph-glass-border: rgba(255,255,255,var(--phAppBorderA));
+  --ph-glass:        rgba(255,255,255,.22);
+  --ph-glass-strong: rgba(255,255,255,.38);
+  --ph-glass-border: rgba(255,255,255,.66);
+}
+#${ID}[data-theme="frost"]{
+  --ph-frost-pink: rgba(255,178,193,.24);
+  --ph-frost-lilac: rgba(192,164,255,.22);
+  --ph-frost-peach: rgba(255,201,176,.18);
+  --ph-frost-blue: rgba(195,221,255,.18);
+  --ph-frost-shadow: 0 24px 64px rgba(132,145,175,.18), 0 8px 24px rgba(132,145,175,.10);
+  --ph-frost-line: rgba(255,255,255,.82);
+  --ph-frost-soft-line: rgba(255,255,255,.56);
 }
 
-/* ✅ 只有聊天行是独立浮卡；discover/contact 行住在 Group 卡内 */
-#${ID} .wxChatRow{
-  margin: 4px 10px;
-  border-radius: 20px;
+/* 桌面聊天行、发现、通讯录保持更柔和悬浮卡 */
+#${ID}[data-theme="frost"] .wxChatRow{
+  margin: 6px 12px;
+  border-radius: 22px;
+  border: 1px solid rgba(255,255,255,.72);
   border-bottom: none !important;
-  box-shadow: 0 4px 16px rgba(16,22,36,.07);
+  box-shadow: 0 10px 24px rgba(126,140,170,.10), inset 0 1px 0 rgba(255,255,255,.82);
 }
-#${ID} .wxChatList{ padding: 6px 0 14px; }
-#${ID} .wxDiscoverList,
-#${ID} .wxContactList,
-#${ID} .wxMeWrap{ padding: 6px 0 14px; }
+#${ID}[data-theme="frost"] .wxChatList{ padding: 8px 0 16px; }
+#${ID}[data-theme="frost"] .wxDiscoverList,
+#${ID}[data-theme="frost"] .wxContactList,
+#${ID}[data-theme="frost"] .wxMeWrap{ padding: 8px 0 16px; }
 
-
-
-
-
-/* modern 壁纸：纯黑 */
+/* 壁纸：更接近参考图的云雾色团 */
 #${ID} .phWallpaper{
   background-image: var(--ph-wallpaper-url, none), none;
   background-size: cover, auto;
@@ -562,208 +566,285 @@ function ensureTuneStyle(){
   background-color: var(--ph-wallpaper-base, #0a0a0a);
   opacity: var(--ph-wallpaper-opacity, 1);
 }
-/* frost 壁纸：极白+极淡暖光晕（Nube 参考） */
 #${ID}[data-theme="frost"] .phWallpaper{
-  background-color: #f7f6f4;
+  background-color: #f6f4f1;
   background-image:
     var(--ph-wallpaper-url, none),
-    radial-gradient(ellipse 1000px 800px at 25% 10%, rgba(255,255,255,.96), transparent),
-    radial-gradient(ellipse 800px 700px at 80% 55%, rgba(240,235,228,.28), transparent),
-    radial-gradient(ellipse 700px 600px at 50% 95%, rgba(228,222,215,.18), transparent);
-  background-size: cover, auto, auto, auto;
-  background-position: center, 25% 10%, 80% 55%, 50% 95%;
+    radial-gradient(circle at 20% 14%, rgba(199,170,255,.34) 0 0, rgba(199,170,255,.20) 18%, transparent 44%),
+    radial-gradient(circle at 78% 20%, rgba(255,174,150,.34) 0 0, rgba(255,174,150,.18) 12%, transparent 28%),
+    radial-gradient(circle at 76% 78%, rgba(212,172,255,.26) 0 0, rgba(212,172,255,.14) 16%, transparent 36%),
+    radial-gradient(circle at 28% 78%, rgba(255,191,171,.28) 0 0, rgba(255,191,171,.16) 20%, transparent 42%),
+    linear-gradient(180deg, rgba(255,255,255,.92), rgba(250,247,243,.82));
+  background-size: cover, auto, auto, auto, auto, auto;
+  background-position: center, 20% 14%, 78% 20%, 76% 78%, 28% 78%, center;
 }
 
-/* APP 内容底：使用 --phAppBodyRGB + --phAppSolidA 实现滑块控制 */
+/* App 内容底：更像磨砂玻璃而不是纯色蒙层 */
 #${ID}[data-view="app"] .phAppBody{
   background: rgba(var(--phAppBodyRGB,10,10,10), var(--phAppSolidA,.92));
   backdrop-filter: blur(calc(var(--phAppBlur,16px) * .35 + 4px));
   -webkit-backdrop-filter: blur(calc(var(--phAppBlur,16px) * .35 + 4px));
 }
-
-/* App 顶部横条 — 全主题化 */
-#${ID}[data-view="app"] .phAppBar{
-  background: var(--ph-appbar-bg, rgba(10,10,10,.95)) !important;
-  border-bottom: 1px solid var(--ph-sep, rgba(255,255,255,.07)) !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-/* 导航按钮颜色 */
-#${ID}[data-view="app"] .phNavBtn.isBack{ color: var(--ph-text) !important; }
-#${ID}[data-view="app"] .phNavBtn:hover{ background: var(--ph-row-hover); }
-
-/* Tabbar 全主题化 */
-#${ID} .wxTabbar{
-  background: var(--ph-tabbar-bg, rgba(10,10,10,.94));
-  border-top: 1px solid var(--ph-tabbar-border, rgba(255,255,255,.07));
-  box-shadow: 0 -1px 0 var(--ph-tabbar-border, rgba(255,255,255,.07));
-  backdrop-filter: blur(calc(var(--ph-glass-blur) + 6px));
-  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) + 6px));
-}
-#${ID} .wxTabBtn{ color: var(--ph-tabbar-off, rgba(255,255,255,.35)); }
-#${ID} .wxTabBtn.on{ color: var(--ph-tabbar-on, rgba(255,255,255,.95)); background: transparent; }
-
-/* 微信顶部 TopBar 全主题化 */
-#${ID} .wxTopBar{
-  background: var(--ph-topbar-bg, rgba(10,10,10,.95));
-  border-bottom: 1px solid var(--ph-topbar-border, rgba(255,255,255,.07));
-  backdrop-filter: blur(calc(var(--ph-glass-blur) + 6px));
-  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) + 6px));
-  min-height: 50px;
-}
-#${ID} .wxTopBar .wxTopTitle{ color: var(--ph-topbar-title, rgba(255,255,255,.92)); }
-#${ID} .wxTopBar .wxTopBtn{ color: var(--ph-topbar-btn, rgba(255,255,255,.50)); }
-
-/* 聊天列表行 全主题化 */
-#${ID} .chatItemSwipeWrap .chatItemInner,
-#${ID} .chatItemSwipeWrap .wxChatRow,
-#${ID} .wxChatRow{
-  background: var(--ph-row-bg, rgba(255,255,255,.04));
-}
-#${ID} .wxChatRow:active{ background: var(--ph-row-hover); }
-#${ID} .wxChatName{ color: var(--ph-discover-name); }
-#${ID} .wxChatTime{ color: var(--ph-text-dim); }
-#${ID} .wxChatPreview{ color: var(--ph-text-sub); }
-#${ID} .chatItemPinned .chatItemInner{ background: var(--ph-row-hover); }
-
-/* 搜索框 全主题化 */
-#${ID} .wxSearchBox{
-  background: var(--ph-searchbox-bg, rgba(255,255,255,.07));
-  color: var(--ph-searchbox-text, rgba(255,255,255,.40));
-  border: 1px solid var(--ph-sep, rgba(255,255,255,.07));
+#${ID}[data-theme="frost"][data-view="app"] .phAppBody{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,.12)),
+    rgba(var(--phAppBodyRGB,250,249,247), var(--phAppSolidA,.78));
+  backdrop-filter: blur(calc(var(--phAppBlur,24px) * .65 + 4px)) saturate(1.08);
+  -webkit-backdrop-filter: blur(calc(var(--phAppBlur,24px) * .65 + 4px)) saturate(1.08);
 }
 
-/* 发现/我 列表 全主题化 */
-#${ID} .wxDiscoverItem{
-  background: var(--ph-discover-bg);
-  border-bottom: 1px solid var(--ph-discover-border);
+/* 外壳 */
+#${ID}[data-theme="frost"] .phShell{
+  border: 1px solid var(--ph-shell-border, rgba(255,255,255,.62));
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.06)),
+    linear-gradient(160deg, rgba(255,255,255,.12), rgba(255,255,255,0)),
+    var(--ph-bg-primary);
+  box-shadow: var(--ph-shell-shadow, 0 28px 72px rgba(118,130,155,.16), 0 10px 24px rgba(118,130,155,.08));
 }
-#${ID} .wxDiscoverItem:hover{ background: var(--ph-row-hover); }
-#${ID} .wxDiscoverItem:active{ background: var(--ph-row-hover); }
-#${ID} .wxDiscoverItem .wxDName{ color: var(--ph-discover-name); }
-#${ID} .wxDiscoverItem .wxDArrow{ color: var(--ph-discover-arrow); }
-#${ID} .wxMeProfile{ background: var(--ph-discover-bg); }
-#${ID} .wxMeProfile:hover{ background: var(--ph-row-hover); }
-#${ID} .wxMeProfile .wxMeName{ color: var(--ph-discover-name); }
-#${ID} .wxMeProfile .wxMeId{ color: var(--ph-text-sub); }
+#${ID}[data-theme="frost"] .phShell::before{
+  content:"";
+  position:absolute; inset:0;
+  background:
+    radial-gradient(circle at 18% 14%, rgba(255,255,255,.92), transparent 28%),
+    radial-gradient(circle at 82% 22%, rgba(255,255,255,.44), transparent 24%);
+  pointer-events:none;
+}
+#${ID}[data-theme="frost"] .phShell::after{
+  content:"";
+  position:absolute; inset:1px;
+  border-radius: inherit;
+  border: 1px solid rgba(255,255,255,.34);
+  pointer-events:none;
+}
+#${ID}[data-theme="frost"] .phDragHint{
+  background: linear-gradient(90deg, rgba(255,255,255,.94), rgba(232,236,244,.72));
+  box-shadow: 0 3px 10px rgba(122,136,164,.12);
+}
 
-/* 聊天详情 全主题化 */
-#${ID} .wxChatDetailWrap{ background: var(--ph-wechat-bg, rgba(12,12,12,.99)); }
-#${ID} .wxChatMsgs{ background: var(--ph-wechat-bg, rgba(12,12,12,.99)); }
-#${ID} .wxChatBubble.me .wxCBContent{
-  background: var(--ph-wechat-me-bubble, rgba(255,255,255,.92));
-  color: var(--ph-wechat-me-text, #111);
-  border: none;
-  border-top-right-radius: 6px;
+/* 状态栏 */
+#${ID}[data-theme="frost"] .phStatus{ color: var(--ph-status-fg, rgba(32,40,53,.86)); }
+#${ID}[data-theme="frost"] .phTime{
+  color: var(--ph-status-fg, rgba(32,40,53,.86));
+  text-shadow: var(--ph-status-shadow, 0 1px 0 rgba(255,255,255,.46));
 }
-#${ID} .wxChatBubble.them .wxCBContent{
-  background: var(--ph-wechat-them-bubble, rgba(255,255,255,.09));
-  color: var(--ph-wechat-them-text, rgba(255,255,255,.88));
-  border: 1px solid var(--ph-sep, rgba(255,255,255,.07));
-  border-top-left-radius: 6px;
+#${ID}[data-theme="frost"] .iosSignal i,
+#${ID}[data-theme="frost"] .iosWifi::before,
+#${ID}[data-theme="frost"] .iosWifi::after,
+#${ID}[data-theme="frost"] .iosWifi span,
+#${ID}[data-theme="frost"] .iosBattery .bat,
+#${ID}[data-theme="frost"] .iosBattery .bat::after{
+  background-color: rgba(32,40,53,.88);
+  border-top-color: rgba(32,40,53,.88);
+  border-color: rgba(32,40,53,.88);
+}
+#${ID}[data-theme="frost"] .phSysBtn{
+  border:1px solid rgba(255,255,255,.56);
+  background:rgba(255,255,255,.22);
+  color:rgba(32,40,53,.74);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.65);
 }
 
-/* 聊天输入区 全主题化 */
-#${ID} .wxChatInputBar{
-  background: var(--ph-input-area-bg, rgba(10,10,10,.96));
-  border-top: 1px solid var(--ph-sep, rgba(255,255,255,.07));
+/* 桌面卡片层次 */
+#${ID}[data-theme="frost"] .pw,
+#${ID}[data-theme="frost"] .wxDiscoverGroup,
+#${ID}[data-theme="frost"] .wxGroupAccordion,
+#${ID}[data-theme="frost"] .wxCharSettingsWrap .wxCSGroup,
+#${ID}[data-theme="frost"] .phModalCard,
+#${ID}[data-theme="frost"] .wxEditMsgBox,
+#${ID}[data-theme="frost"] .wxConfirmBox{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.58), rgba(255,255,255,.28)),
+    rgba(255,255,255,.22);
+  border:1px solid rgba(255,255,255,.78);
+  box-shadow: 0 14px 34px rgba(122,136,164,.10), inset 0 1px 0 rgba(255,255,255,.88);
+  backdrop-filter: blur(28px) saturate(1.06);
+  -webkit-backdrop-filter: blur(28px) saturate(1.06);
 }
-#${ID} .wxChatInputBar textarea{
-  background: var(--ph-input-bg, rgba(255,255,255,.07));
-  border: 1px solid var(--ph-input-border, rgba(255,255,255,.12));
-  color: var(--ph-input-text, rgba(255,255,255,.88));
+#${ID}[data-theme="frost"] .pw{
+  box-shadow: 0 18px 38px rgba(122,136,164,.10), inset 0 1px 0 rgba(255,255,255,.92);
 }
-#${ID} .wxChatInputBar textarea::placeholder{ color: var(--ph-input-ph, rgba(255,255,255,.28)); }
-#${ID} .wxChatSendBtn{
-  background: var(--ph-send-btn, rgba(255,255,255,.92));
-  color: var(--ph-send-icon, #000);
+#${ID}[data-theme="frost"] .pwProfile{
+  background:
+    radial-gradient(circle at 14% 16%, rgba(255,255,255,.78), transparent 28%),
+    linear-gradient(135deg, rgba(255,196,208,.18), rgba(191,203,255,.18)),
+    rgba(255,255,255,.24);
 }
-#${ID} .wxChatExBtn{ color: var(--ph-text-sub); background: transparent; }
+#${ID}[data-theme="frost"] .pwMusic{
+  background:
+    radial-gradient(circle at 16% 18%, rgba(255,255,255,.76), transparent 24%),
+    linear-gradient(135deg, rgba(255,204,214,.20), rgba(216,184,255,.16)),
+    rgba(255,255,255,.22);
+}
 
-/* 表情 / 功能面板 全主题化 */
-#${ID} .wxStickerPanel,
-#${ID} .wxVoicePanel,
-#${ID} .wxChatPlusGrid{
-  background: var(--ph-sticker-bg, rgba(16,16,16,.97));
-  border-top: 1px solid var(--ph-sep, rgba(255,255,255,.07));
+/* 桌面图标 / Dock */
+#${ID}[data-theme="frost"] .phAppIcon{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.18)),
+    rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.74);
+  box-shadow: 0 14px 28px rgba(122,136,164,.10), inset 0 1px 0 rgba(255,255,255,.88);
+  backdrop-filter: blur(22px) saturate(1.04);
+  -webkit-backdrop-filter: blur(22px) saturate(1.04);
 }
-#${ID} .wxStickerGrid .wxStkItem{
-  background: var(--ph-row-bg);
-  border-color: var(--ph-sep);
+#${ID}[data-theme="frost"] .phAppIcon:hover{ background:linear-gradient(180deg, rgba(255,255,255,.56), rgba(255,255,255,.22)), rgba(255,255,255,.20); }
+#${ID}[data-theme="frost"] .phAppIcon .ai,
+#${ID}[data-theme="frost"] .phDockBtn .di{
+  background:
+    radial-gradient(circle at 30% 26%, rgba(255,255,255,.70), transparent 24%),
+    linear-gradient(160deg, rgba(255,255,255,.38), rgba(255,255,255,.14));
+  border:1px solid rgba(255,255,255,.70);
+  box-shadow: 0 8px 16px rgba(122,136,164,.12), inset 0 1px 0 rgba(255,255,255,.88);
+  color: rgba(56,64,80,.84);
 }
-#${ID} .wxStickerGrid .wxStkItem:hover{ background: var(--ph-row-hover); }
-#${ID} .wxStickerTabs .wxStkTab{ color: var(--ph-text-sub); border-bottom-color: transparent; }
-#${ID} .wxStickerTabs .wxStkTab.on{ color: var(--ph-tabbar-on); border-bottom-color: var(--ph-tabbar-on); }
-#${ID} .wxChatPlusGrid .wxCPItem .wxCPIco{
-  background: var(--ph-row-bg);
-  border-color: var(--ph-sep);
-  color: var(--ph-text-sub);
+#${ID}[data-theme="frost"] .phAppIcon .ai svg.phIco,
+#${ID}[data-theme="frost"] .phDockBtn .di svg.phIco{ fill: currentColor !important; }
+#${ID}[data-theme="frost"] .phAppIcon .at,
+#${ID}[data-theme="frost"] .phDockBtn .dt{ color: rgba(38,45,58,.68); }
+#${ID}[data-theme="frost"] .phDock{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.38), rgba(255,255,255,.18)),
+    rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.70);
+  box-shadow: 0 18px 32px rgba(122,136,164,.12), inset 0 1px 0 rgba(255,255,255,.88);
 }
-#${ID} .wxChatPlusGrid .wxCPItem .wxCPLabel{ color: var(--ph-text-dim); }
-
-/* + 号弹出菜单 全主题化 */
-#${ID} .wxPlusPopup{ background: var(--ph-plus-popup-bg, rgba(28,28,28,.97)); }
-
-/* 确认对话框 全主题化 */
-#${ID} .wxConfirmBox{ background: var(--ph-confirm-bg, rgba(22,22,22,.99)); box-shadow: 0 1px 0 rgba(255,255,255,.75) inset, 0 16px 48px rgba(0,0,0,.18); border-radius: 16px; }
-#${ID} .wxConfirmBox .wxCMsg{ color: var(--ph-confirm-text); }
-#${ID} .wxConfirmBox .wxCBtns{ border-top-color: var(--ph-confirm-sep); }
-#${ID} .wxConfirmBox .wxCBtn:first-child{ border-right-color: var(--ph-confirm-sep); color: var(--ph-confirm-cancel); }
-#${ID} .wxConfirmBox .wxCBtn:last-child{ color: var(--ph-confirm-danger); }
-#${ID} .wxConfirmBox .wxCBtn:hover{ background: var(--ph-row-hover); }
-
-/* 弹窗 Modal 全主题化 */
-#${ID} .phModalCard,
-#${ID} .wxEditMsgBox{ background: var(--ph-modal-bg, rgba(20,20,20,.97)); border-color: var(--ph-sep); }
-#${ID} .phModalTitle,
-#${ID} .wxEditMsgBox .wxEMTitle{ color: var(--ph-modal-text); }
-#${ID} .phModalTa,
-#${ID} .wxEditMsgBox textarea{
-  background: var(--ph-input-bg);
-  border-color: var(--ph-input-border);
-  color: var(--ph-input-text);
+#${ID}[data-theme="frost"] .phSearch{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.40), rgba(255,255,255,.18)),
+    rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.70);
+  color: rgba(56,64,80,.42);
+  box-shadow: 0 10px 22px rgba(122,136,164,.08), inset 0 1px 0 rgba(255,255,255,.84);
 }
-#${ID} .phModalTa::placeholder{ color: var(--ph-input-ph); }
+#${ID}[data-theme="frost"] .phDots .dot{ background: rgba(78,89,108,.20); }
+#${ID}[data-theme="frost"] .phDots .dot.on{ background: rgba(78,89,108,.62); }
 
-/* 通讯录 全主题化 */
-#${ID} .phContactActionBtn{ background: var(--ph-glass); border-color: var(--ph-glass-border); color: var(--ph-text); }
-#${ID} .wxContactHeader, #${ID} .wxContactItem{
-  background: var(--ph-row-bg);
-  border-bottom-color: var(--ph-sep);
+/* 顶部条、Tabbar、搜索条 */
+#${ID}[data-theme="frost"] .phAppBar,
+#${ID}[data-theme="frost"] .wxTopBar,
+#${ID}[data-theme="frost"] .wxTabbar{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.56), rgba(255,255,255,.28)),
+    rgba(255,255,255,.18) !important;
+  border-color: rgba(255,255,255,.76) !important;
+  box-shadow: 0 8px 22px rgba(122,136,164,.06);
 }
-#${ID} .wxContactHeader:hover, #${ID} .wxContactItem:hover{ background: var(--ph-row-hover); }
-#${ID} .wxContactHeader .wxCHName, #${ID} .wxContactItem .wxCIName{ color: var(--ph-discover-name); }
-#${ID} .wxGroupHeader{ background: var(--ph-appbody-bg); color: var(--ph-text-sub); border-bottom-color: var(--ph-sep); }
+#${ID}[data-theme="frost"] .wxSearchBox{
+  background: rgba(255,255,255,.54);
+  border:1px solid rgba(255,255,255,.72);
+  color: rgba(56,64,80,.42);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.78);
+}
+#${ID}[data-theme="frost"] .phNavBtn:hover,
+#${ID}[data-theme="frost"] .wxTopBar .wxTopBtn:hover,
+#${ID}[data-theme="frost"] .phDockBtn:hover,
+#${ID}[data-theme="frost"] .wxDiscoverItem:hover,
+#${ID}[data-theme="frost"] .wxContactHeader:hover,
+#${ID}[data-theme="frost"] .wxContactItem:hover,
+#${ID}[data-theme="frost"] .wxChatRow:active{
+  background: rgba(255,255,255,.36);
+}
 
-/* 桌面音乐卡片 */
-#${ID} .pwMusic .pwBd{ color: var(--ph-text-sub) !important; }
-#${ID} .pwMusicBtn{ background: var(--ph-glass-strong) !important; color: var(--ph-text) !important; }
-#${ID} .pwMusicBar{ background: var(--ph-sep) !important; }
+/* 微信 / 列表卡 */
+#${ID}[data-theme="frost"] .wxDiscoverItem,
+#${ID}[data-theme="frost"] .wxMeProfile,
+#${ID}[data-theme="frost"] .wxContactHeader,
+#${ID}[data-theme="frost"] .wxContactItem,
+#${ID}[data-theme="frost"] .chatItemSwipeWrap .chatItemInner{
+  background: rgba(255,255,255,.24);
+  border-bottom-color: rgba(255,255,255,.38);
+}
+#${ID}[data-theme="frost"] .wxGroupHeader{
+  background: rgba(255,255,255,.20);
+  border-bottom-color: rgba(255,255,255,.34);
+}
+#${ID}[data-theme="frost"] .wxDiscoverItem .wxDArrow,
+#${ID}[data-theme="frost"] .wxChatTime,
+#${ID}[data-theme="frost"] .wxGroupHeader .wxGArrow{ color: rgba(56,64,80,.26); }
 
-/* 图标 SVG */
+/* 聊天气泡 */
+#${ID}[data-theme="frost"] .wxChatDetailWrap,
+#${ID}[data-theme="frost"] .wxChatMsgs{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.04)),
+    rgba(244,241,238,.42);
+}
+#${ID}[data-theme="frost"] .wxChatBubble.me .wxCBContent{
+  background:
+    linear-gradient(135deg, rgba(163,193,180,.96), rgba(139,174,160,.92));
+  color:#fff;
+  box-shadow: 0 10px 24px rgba(116,152,136,.18);
+}
+#${ID}[data-theme="frost"] .wxChatBubble.them .wxCBContent{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.84), rgba(255,255,255,.54)),
+    rgba(255,255,255,.34);
+  color: rgba(34,40,50,.86);
+  border:1px solid rgba(255,255,255,.78);
+  box-shadow: 0 8px 20px rgba(122,136,164,.10), inset 0 1px 0 rgba(255,255,255,.86);
+}
+#${ID}[data-theme="frost"] .wxChatInputBar,
+#${ID}[data-theme="frost"] .wxStickerPanel,
+#${ID}[data-theme="frost"] .wxVoicePanel,
+#${ID}[data-theme="frost"] .wxChatPlusGrid{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.58), rgba(255,255,255,.28)),
+    rgba(255,255,255,.18);
+  border-top:1px solid rgba(255,255,255,.74);
+  backdrop-filter: blur(20px) saturate(1.04);
+  -webkit-backdrop-filter: blur(20px) saturate(1.04);
+}
+#${ID}[data-theme="frost"] .wxChatInputBar textarea,
+#${ID}[data-theme="frost"] .phModalTa,
+#${ID}[data-theme="frost"] .wxEditMsgBox textarea{
+  background: rgba(255,255,255,.58);
+  border-color: rgba(255,255,255,.72);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.80);
+}
+#${ID}[data-theme="frost"] .wxChatSendBtn{
+  background: linear-gradient(135deg, #88aa9a, #a4c0b3);
+  box-shadow: 0 8px 18px rgba(116,152,136,.18);
+}
+#${ID}[data-theme="frost"] .wxChatExBtn{ color: rgba(56,64,80,.54); }
+
+/* 弹窗与按钮 */
+#${ID}[data-theme="frost"] .wxPlusPopup{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.64), rgba(255,255,255,.34)),
+    rgba(255,255,255,.22);
+  border:1px solid rgba(255,255,255,.70);
+  box-shadow: 0 18px 42px rgba(122,136,164,.18);
+  backdrop-filter: blur(24px) saturate(1.04);
+  -webkit-backdrop-filter: blur(24px) saturate(1.04);
+}
+#${ID}[data-theme="frost"] .wxPlusPopup .wxPlusItem{ color: rgba(34,40,50,.84); }
+#${ID}[data-theme="frost"] .wxConfirmBox .wxCBtn:hover,
+#${ID}[data-theme="frost"] .phModalBtn:hover{ background: rgba(255,255,255,.34); }
+#${ID}[data-theme="frost"] .phModalBtn.primary{
+  background: linear-gradient(135deg, #88aa9a, #a4c0b3);
+  color:#fff;
+}
+
+/* SVG 图标投影更轻 */
 #${ID} svg.phIco{ width:24px; height:24px; display:block; fill:currentColor; }
 #${ID} .phAppIcon svg.phIco{ width:28px; height:28px; }
 #${ID} .phDockBtn svg.phIco{ width:24px; height:24px; }
 #${ID} .settingRow .sIcon svg.phIco{ width:18px; height:18px; }
 #${ID} .phAppIcon .ai svg.phIco,
-#${ID} .phDockBtn .di svg.phIco{ fill:#fff; width:22px; height:22px; }
+#${ID} .phDockBtn .di svg.phIco{ width:22px; height:22px; }
 #${ID} .phDockBtn .di svg.phIco{ width:18px; height:18px; }
 #${ID} .phAppIcon svg.phIco,
 #${ID} .phDockBtn svg.phIco{ filter: drop-shadow(0 1px 2px var(--ph-ico-shadow)); }
-/* 通讯录/发现/我页/聊天设置 图标：联动内部图标色 */
 #${ID} .wxDIcoThemed svg.phIco,
 #${ID} .wxCHIco svg.phIco,
 #${ID} .wxCSIco svg.phIco,
 #${ID} .wxCIAvatar svg.phIco{ fill: var(--ph-icon-inner-tint, var(--ph-text-sub)) !important; }
-/* 红色删除图标 */
 #${ID} .wxCSItem[data-act="wxDelChat"] .wxCSIco svg.phIco,
 #${ID} .wxCSItem[data-act="wxDelFriend"] .wxCSIco svg.phIco{ fill:rgba(231,76,60,.85) !important; }
     `;
     (doc.head || doc.documentElement).appendChild(st);
   }catch(e){}
 }
-
 
 // ====== 从设置应用“玻璃清晰度/壁纸/APP底色” ======
 function phoneApplyVisualFromSettings(cfg){
