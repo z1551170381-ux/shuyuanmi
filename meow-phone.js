@@ -577,8 +577,8 @@ function ensureTuneStyle(){
 /* APP 内容底：使用 --phAppBodyRGB + --phAppSolidA 实现滑块控制 */
 #${ID}[data-view="app"] .phAppBody{
   background: rgba(var(--phAppBodyRGB,10,10,10), var(--phAppSolidA,.92));
-  backdrop-filter: blur(calc(var(--phAppBlur,16px) * .35 + 4px));
-  -webkit-backdrop-filter: blur(calc(var(--phAppBlur,16px) * .35 + 4px));
+  backdrop-filter: blur(calc(var(--phAppBlur,16px) * .18));
+  -webkit-backdrop-filter: blur(calc(var(--phAppBlur,16px) * .18));
 }
 
 /* App 顶部横条 — 全主题化 */
@@ -598,8 +598,8 @@ function ensureTuneStyle(){
   background: var(--ph-tabbar-bg, rgba(10,10,10,.94));
   border-top: 1px solid var(--ph-tabbar-border, rgba(255,255,255,.07));
   box-shadow: 0 -1px 0 var(--ph-tabbar-border, rgba(255,255,255,.07));
-  backdrop-filter: blur(calc(var(--ph-glass-blur) + 6px));
-  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) + 6px));
+  backdrop-filter: blur(calc(var(--ph-glass-blur) * .42));
+  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) * .42));
 }
 #${ID} .wxTabBtn{ color: var(--ph-tabbar-off, rgba(255,255,255,.35)); }
 #${ID} .wxTabBtn.on{ color: var(--ph-tabbar-on, rgba(255,255,255,.95)); background: transparent; }
@@ -608,8 +608,8 @@ function ensureTuneStyle(){
 #${ID} .wxTopBar{
   background: var(--ph-topbar-bg, rgba(10,10,10,.95));
   border-bottom: 1px solid var(--ph-topbar-border, rgba(255,255,255,.07));
-  backdrop-filter: blur(calc(var(--ph-glass-blur) + 6px));
-  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) + 6px));
+  backdrop-filter: blur(calc(var(--ph-glass-blur) * .42));
+  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) * .42));
   min-height: 50px;
 }
 #${ID} .wxTopBar .wxTopTitle{ color: var(--ph-topbar-title, rgba(255,255,255,.92)); }
@@ -788,11 +788,11 @@ function ensureTuneStyle(){
   background-color:#f8f7f5;
   background-image:
     var(--ph-wallpaper-url, none),
-    radial-gradient(circle at 18% 18%, rgba(255,214,230,.24), transparent 34%),
-    radial-gradient(circle at 78% 18%, rgba(206,221,255,.22), transparent 30%),
-    radial-gradient(circle at 72% 76%, rgba(226,214,255,.18), transparent 34%),
-    radial-gradient(circle at 24% 78%, rgba(255,244,225,.18), transparent 30%),
-    linear-gradient(180deg, rgba(255,255,255,.88), rgba(247,245,242,.78));
+    radial-gradient(circle at 18% 18%, rgba(255,214,230,.10), transparent 34%),
+    radial-gradient(circle at 78% 18%, rgba(206,221,255,.09), transparent 30%),
+    radial-gradient(circle at 72% 76%, rgba(226,214,255,.07), transparent 34%),
+    radial-gradient(circle at 24% 78%, rgba(255,244,225,.07), transparent 30%),
+    linear-gradient(180deg, rgba(255,255,255,.28), rgba(247,245,242,.14));
   background-size: cover, auto, auto, auto, auto, auto;
   background-position: center, 18% 18%, 78% 18%, 72% 76%, 24% 78%, center;
 }
@@ -821,8 +821,8 @@ function ensureTuneStyle(){
     var(--ph-glass-strong) !important;
   border-color:rgba(255,255,255,.74) !important;
   box-shadow:0 10px 26px rgba(126,142,166,.08) !important;
-  backdrop-filter:blur(calc(var(--ph-glass-blur) + 2px)) saturate(128%) !important;
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) + 2px)) saturate(128%) !important;
+  backdrop-filter:blur(calc(var(--ph-glass-blur) * .34)) saturate(112%) !important;
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .34)) saturate(112%) !important;
 }
 
 #${ID}[data-theme="frost"] .phAppIcon,
@@ -840,8 +840,8 @@ function ensureTuneStyle(){
     var(--ph-row-bg) !important;
   border-color:rgba(255,255,255,.62) !important;
   box-shadow:0 8px 20px rgba(126,142,166,.06);
-  backdrop-filter:blur(calc(var(--ph-glass-blur) + 1px)) saturate(125%);
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) + 1px)) saturate(125%);
+  backdrop-filter:blur(calc(var(--ph-glass-blur) * .24)) saturate(108%);
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .24)) saturate(108%);
 }
 
 #${ID}[data-theme="frost"] .phAppBar,
@@ -853,16 +853,16 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .wxChatPlusGrid{
   border-color:rgba(255,255,255,.56) !important;
   box-shadow:none !important;
-  backdrop-filter:blur(calc(var(--ph-glass-blur) + 4px)) saturate(130%) !important;
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) + 4px)) saturate(130%) !important;
+  backdrop-filter:blur(calc(var(--ph-glass-blur) * .30)) saturate(110%) !important;
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .30)) saturate(110%) !important;
 }
 
 #${ID}[data-theme="frost"] .phAppBody{
   background:
     linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.02)),
     rgba(var(--phAppBodyRGB,250,249,247), var(--phAppSolidA,.92));
-  backdrop-filter:blur(calc(var(--phAppBlur,16px) * .32 + 3px)) saturate(122%);
-  -webkit-backdrop-filter:blur(calc(var(--phAppBlur,16px) * .32 + 3px)) saturate(122%);
+  backdrop-filter:blur(calc(var(--phAppBlur,16px) * .14)) saturate(106%);
+  -webkit-backdrop-filter:blur(calc(var(--phAppBlur,16px) * .14)) saturate(106%);
 }
 
 #${ID}[data-theme="frost"] .wxChatBubble.them .wxCBContent,
@@ -1938,7 +1938,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   position:absolute; left:16px; right:16px; bottom:14px;
   height:62px; border-radius:30px;
   background:var(--ph-dock-surface, var(--ph-glass));
-  backdrop-filter:blur(calc(var(--ph-glass-blur) + 4px)); -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) + 4px));
+  backdrop-filter:blur(calc(var(--ph-glass-blur) * .46)); -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .46));
   border:1px solid var(--ph-dock-line, var(--ph-glass-border));
   display:flex; align-items:center; justify-content:space-around; padding:0 10px;
   box-shadow:0 14px 34px rgba(16,22,36,.10);
