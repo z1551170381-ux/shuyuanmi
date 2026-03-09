@@ -841,10 +841,10 @@ function ensureTuneStyle(){
   background:
     linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.04)),
     var(--ph-glass) !important;
-  border-color:var(--ph-glass-border) !important;
+  border-color:rgba(255,255,255,.36) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.24),
-    inset 0 0 0 1px rgba(255,255,255,.08),
+    inset 0 1px 0 rgba(255,255,255,.28),
+    inset 0 0 0 1px rgba(255,255,255,.10),
     0 5px 14px rgba(126,142,166,.035);
   backdrop-filter:blur(calc(var(--ph-glass-blur) * .05)) saturate(104%);
   -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .05)) saturate(104%);
@@ -896,18 +896,20 @@ function ensureTuneStyle(){
 
 #${ID}[data-theme="frost"] .phAppIcon .ai,
 #${ID}[data-theme="frost"] .phDockBtn .di{
-  border:1px solid rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.50);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.16),
-    inset 0 0 0 1px rgba(255,255,255,.04);
-  opacity:.34;
-  filter:saturate(.72) brightness(1.01);
+    inset 0 1px 0 rgba(255,255,255,.34),
+    inset 0 0 0 1px rgba(255,255,255,.10),
+    0 1px 4px rgba(16,22,36,.05);
+  opacity:1;
+  filter:none;
 }
 
 #${ID}[data-theme="frost"] .phAppIcon .ai svg.phIco,
 #${ID}[data-theme="frost"] .phDockBtn .di svg.phIco{
-  opacity:.94;
-  filter:none;
+  fill:#fff !important;
+  opacity:1;
+  filter:drop-shadow(0 1px 1px rgba(10,18,32,.12));
 }
 
 #${ID}[data-theme="frost"] .phAppIcon:hover,
@@ -953,74 +955,6 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .phAppIcon .at,
 #${ID}[data-theme="frost"] .phDockBtn .dt{
   opacity:.86;
-}
-
-/* frost：图标前景保持清晰，底色退后，不再用父层 opacity 连带冲淡图标 */
-#${ID}[data-theme="frost"] .phAppIcon .ai,
-#${ID}[data-theme="frost"] .phDockBtn .di{
-  opacity:1;
-  filter:none;
-  border:1px solid rgba(255,255,255,.18);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.18),
-    inset 0 0 0 1px rgba(255,255,255,.05);
-}
-
-#${ID}[data-theme="frost"] .phAppIcon .ai svg.phIco,
-#${ID}[data-theme="frost"] .phDockBtn .di svg.phIco,
-#${ID}[data-theme="frost"] .phAppIcon .ai,
-#${ID}[data-theme="frost"] .phDockBtn .di{
-  color:rgba(66,84,102,.92) !important;
-}
-
-#${ID}[data-theme="frost"] .phAppIcon .ai svg.phIco,
-#${ID}[data-theme="frost"] .phDockBtn .di svg.phIco{
-  opacity:1;
-  fill:currentColor !important;
-  filter:drop-shadow(0 0 .01px rgba(255,255,255,.35));
-}
-
-#${ID}[data-theme="frost"] .phAppIcon[data-app="chats"] .ai{ background:linear-gradient(135deg, rgba(123,158,168,.20), rgba(154,184,194,.12)) !important; }
-#${ID}[data-theme="frost"] .phAppIcon[data-app="calendar"] .ai{ background:linear-gradient(135deg, rgba(160,136,181,.20), rgba(189,164,209,.12)) !important; }
-#${ID}[data-theme="frost"] .phAppIcon[data-app="forum"] .ai{ background:linear-gradient(135deg, rgba(139,157,175,.20), rgba(168,184,200,.12)) !important; }
-#${ID}[data-theme="frost"] .phAppIcon[data-app="weather"] .ai{ background:linear-gradient(135deg, rgba(196,168,130,.22), rgba(217,196,168,.12)) !important; }
-#${ID}[data-theme="frost"] .phAppIcon[data-app="themes"] .ai{ background:linear-gradient(135deg, rgba(184,169,201,.20), rgba(209,196,224,.12)) !important; }
-#${ID}[data-theme="frost"] .phDockBtn[data-app="sms"] .di{ background:linear-gradient(135deg, rgba(141,168,184,.20), rgba(168,192,207,.12)) !important; }
-#${ID}[data-theme="frost"] .phDockBtn[data-app="browser"] .di{ background:linear-gradient(135deg, rgba(123,158,168,.20), rgba(154,184,194,.12)) !important; }
-#${ID}[data-theme="frost"] .phDockBtn[data-app="photos"] .di{ background:linear-gradient(135deg, rgba(164,196,154,.20), rgba(188,216,180,.12)) !important; }
-#${ID}[data-theme="frost"] .phDockBtn[data-app="settings"] .di{ background:linear-gradient(135deg, rgba(158,158,175,.19), rgba(184,184,200,.11)) !important; }
-
-#${ID}[data-theme="frost"]{
-  --ph-icon-inner-tint: rgba(255,255,255,.95);
-}
-
-#${ID}[data-theme="frost"] .phAppIcon,
-#${ID}[data-theme="frost"] .phSearch,
-#${ID}[data-theme="frost"] .phDock{
-  border-color:rgba(255,255,255,.30) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.40),
-    inset 0 0 0 1px rgba(255,255,255,.12),
-    0 8px 20px rgba(126,142,166,.04) !important;
-}
-
-#${ID}[data-theme="frost"] .phAppIcon .ai,
-#${ID}[data-theme="frost"] .phDockBtn .di{
-  border:1px solid rgba(255,255,255,.26) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.42),
-    inset 0 0 0 1px rgba(255,255,255,.16),
-    0 1px 2px rgba(126,142,166,.03) !important;
-  opacity:.28;
-}
-
-#${ID}[data-theme="frost"] .phAppIcon .ai svg.phIco,
-#${ID}[data-theme="frost"] .phDockBtn .di svg.phIco{
-  opacity:1 !important;
-  fill:var(--ph-icon-inner-tint, rgba(255,255,255,.95)) !important;
-  filter:none !important;
-  shape-rendering:geometricPrecision;
-  text-rendering:geometricPrecision;
 }
 
     `;
@@ -18506,3 +18440,7 @@ function bindPageScroll(){
 
   console.log('[MEOW Phone] 小手机插件已加载 ✓');
 })();
+#${ID}[data-theme="frost"] .phAppIcon .at,
+#${ID}[data-theme="frost"] .phDockBtn .dt{
+  color:rgba(72,86,104,.86);
+}
