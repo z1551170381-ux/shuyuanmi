@@ -859,8 +859,8 @@ function ensureTuneStyle(){
   background: var(--ph-card-soft) !important;
   border: 1px solid var(--ph-card-line) !important;
   box-shadow: 0 10px 28px rgba(16,22,36,.06);
-  backdrop-filter: blur(var(--ph-glass-blur));
-  -webkit-backdrop-filter: blur(var(--ph-glass-blur));
+  backdrop-filter: blur(var(--phSurfaceBlur, var(--ph-glass-blur)));
+  -webkit-backdrop-filter: blur(var(--phSurfaceBlur, var(--ph-glass-blur)));
 }
 #${ID} .phCard,
 #${ID} .pw{
@@ -900,8 +900,8 @@ function ensureTuneStyle(){
 }
 #${ID}[data-view="app"] .phAppBody{
   background: rgba(var(--phAppSolidRGB,246,247,250), var(--phAppSolidA,0.92)) !important;
-  backdrop-filter: blur(calc(var(--phAppBlur,16px) * .35 + 6px));
-  -webkit-backdrop-filter: blur(calc(var(--phAppBlur,16px) * .35 + 6px));
+  backdrop-filter: blur(var(--phAppBodyBlur, calc(var(--phAppBlur,16px) * .95 + 4px)));
+  -webkit-backdrop-filter: blur(var(--phAppBodyBlur, calc(var(--phAppBlur,16px) * .95 + 4px)));
 }
 #${ID} .wxTopBar{
   background: color-mix(in srgb, var(--ph-topbar-bg) 86%, transparent) !important;
@@ -1054,6 +1054,12 @@ function ensureTuneStyle(){
 #${ID} .settingRow .sLabel{ font-weight: 600; }
 #${ID} .settingRow .sValue{ color: var(--ph-text-sub); }
 
+#${ID}[data-app="settings"] .settingSubPage > button[data-act="settingsBack"],
+#${ID}[data-app="settings"] .settingSubPage > button[data-act="settingsNav"],
+#${ID}[data-app="settings"] .settingSubPage > button[data-act="apiEditorBack"]{
+  display:none !important;
+}
+
 #${ID}.mini{
   box-shadow: var(--ph-shell-shadow);
 }
@@ -1136,6 +1142,41 @@ function phoneApplyVisualFromSettings(cfg){
 
     if (cfg.iconInnerHex) root.style.setProperty('--ph-icon-inner-tint', cfg.iconInnerHex);
     else root.style.removeProperty('--ph-icon-inner-tint');
+
+    const currentView = root.getAttribute('data-view') || 'home';
+    const isHomeView = currentView !== 'app';
+    const curRgb = isHomeView ? ((_meowHexToRgbString(cfg.homeCardTintHex || '', homeRgb) || homeRgb)) : appRgb;
+    const curA = isHomeView ? homeA : appA;
+    const curStrongA = isHomeView ? homeStrong : appStrong;
+    const curBorderA = isHomeView ? homeBorder : appBorder;
+    const curBlurPx = isHomeView ? homeBlurPx : appBlurPx;
+    const _fmtA = (n)=> Math.max(0, Math.min(1, Number(n||0)));
+    const _rgbaVar = (rgb, a)=> `rgba(${rgb},${_fmtA(a).toFixed(3).replace(/0+$/,'').replace(/\.$/,'')})`;
+
+    root.style.setProperty('--phSurfaceBlur', `${Math.max(0, Math.min(48, Math.round(curBlurPx * 1.18 + 2)))}px`);
+    root.style.setProperty('--phAppBodyBlur', `${Math.max(0, Math.min(48, Math.round(appBlurPx * 1.0 + 4)))}px`);
+
+    if (themeId === 'frost'){
+      root.style.setProperty('--ph-card-soft', _rgbaVar(curRgb, curA + 0.08));
+      root.style.setProperty('--ph-card-strong', _rgbaVar(curRgb, curStrongA + 0.08));
+      root.style.setProperty('--ph-card-line', _rgbaVar('255,255,255', curBorderA + 0.06));
+      root.style.setProperty('--ph-dock-surface', _rgbaVar(curRgb, curA + 0.02));
+      root.style.setProperty('--ph-dock-line', _rgbaVar('255,255,255', curBorderA));
+      root.style.setProperty('--ph-app-icon-bg', `linear-gradient(180deg, ${_rgbaVar(curRgb, curStrongA + 0.12)}, ${_rgbaVar(curRgb, curA + 0.12)})`);
+      root.style.setProperty('--ph-app-icon-border', _rgbaVar('255,255,255', curBorderA + 0.08));
+      root.style.setProperty('--ph-app-icon-fg', isHomeView ? 'rgba(255,255,255,.92)' : 'rgba(44,52,66,.82)');
+      root.style.setProperty('--ph-app-icon-shadow', isHomeView ? '0 10px 24px rgba(118,130,155,.12)' : '0 8px 18px rgba(118,130,155,.10)');
+    } else if (themeId === 'modern'){
+      root.style.setProperty('--ph-card-soft', _rgbaVar('255,255,255', curA * 0.16 + 0.03));
+      root.style.setProperty('--ph-card-strong', _rgbaVar('255,255,255', curStrongA * 0.18 + 0.04));
+      root.style.setProperty('--ph-card-line', _rgbaVar('255,255,255', curBorderA * 0.12 + 0.04));
+      root.style.setProperty('--ph-dock-surface', _rgbaVar('255,255,255', curA * 0.10 + 0.02));
+      root.style.setProperty('--ph-dock-line', _rgbaVar('255,255,255', curBorderA * 0.12 + 0.05));
+      root.style.setProperty('--ph-app-icon-bg', `linear-gradient(180deg, ${_rgbaVar('255,255,255', curStrongA * 0.18 + 0.05)}, ${_rgbaVar('255,255,255', curA * 0.14 + 0.03)})`);
+      root.style.setProperty('--ph-app-icon-border', _rgbaVar('255,255,255', curBorderA * 0.14 + 0.04));
+      root.style.setProperty('--ph-app-icon-fg', 'rgba(255,255,255,.94)');
+      root.style.setProperty('--ph-app-icon-shadow', '0 12px 26px rgba(0,0,0,.20)');
+    }
 
     const accentHex = _meowHexNormalize(cfg.accentHex || '');
     if (accentHex){
@@ -1981,17 +2022,18 @@ default: return emoji||'';
   background:var(--ph-glass);
   backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
   border:1px solid var(--ph-glass-border);
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:6px; padding:8px 0 10px; transition:transform .12s, background .12s;
+  display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+  gap:8px; padding:12px 0 10px; transition:transform .12s, background .12s;
   box-shadow:0 4px 16px var(--ph-shadow);
   position:relative; overflow:hidden;
 }
 #${ID} .phAppIcon:hover{ background:var(--ph-glass-strong); }
 #${ID} .phAppIcon:active{ transform:scale(.9); }
 #${ID} .phAppIcon .ai{
-  width:40px; height:40px; border-radius:14px;
+  width:38px; height:38px; border-radius:14px;
+  margin-top:4px;
   display:flex; align-items:center; justify-content:center;
-  font-size:18px; line-height:1; color:#fff; flex-shrink:0;
+  font-size:18px; line-height:1; color:var(--ph-app-icon-fg); flex-shrink:0;
   background:var(--ph-accent-grad);
 }
 #${ID} .phAppIcon[data-app="chats"] .ai{ background:var(--ph-icon-tint, linear-gradient(135deg,#7B9EA8,#9AB8C2)); }
@@ -2001,8 +2043,8 @@ default: return emoji||'';
 #${ID} .phAppIcon[data-app="themes"] .ai{ background:var(--ph-icon-tint, linear-gradient(135deg,#B8A9C9,#D1C4E0)); }
 #${ID} .phAppIcon .at{
   font-size:10.5px; line-height:1.18; color:var(--ph-text-sub); font-weight:600;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:92%;
-  min-height:12px; text-align:center; padding:0 2px; flex-shrink:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:86%;
+  min-height:14px; text-align:center; padding:0 4px; flex-shrink:0;
 }
 
 /* ---------- Search bar ---------- */
@@ -6308,6 +6350,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
         try{ PhoneAI.abort(); _hideTypingIndicator(); _hideBubbleMenu(); _hideQuoteBar(); root.querySelectorAll('.wxEditMsgOverlay').forEach(function(o){o.remove();}); }catch(e){}
         try{ const sp = root.querySelector('.phAppBarSpacer'); if(sp) sp.innerHTML=''; }catch(e){}
         setView('home');
+        try{ phoneApplyVisualFromSettings(phoneLoadSettings()); }catch(e){}
       }
 
       function goBack(){
@@ -6344,6 +6387,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
         try{ PhoneAI.abort(); _hideTypingIndicator(); _hideBubbleMenu(); _hideQuoteBar(); root.querySelectorAll('.wxEditMsgOverlay').forEach(function(o){o.remove();}); }catch(e){}
         if (id === 'chats') state._wxTab = 'msgs'; // ✅ 进入聊天 app 默认 msgs tab
         setView('app');
+        try{ phoneApplyVisualFromSettings(phoneLoadSettings()); }catch(e){}
         // ✅ 清空 app bar 右侧注入按钮（离开聊天 app 时不残留 +号）
         try{ const sp = root.querySelector('.phAppBarSpacer'); if(sp) sp.innerHTML=''; }catch(e){}
         try{
@@ -9442,6 +9486,7 @@ ${lines}
         function _openPresetEditor(ct, idx){
           const p = data.presets[idx];
           if (!p) return;
+          try{ state._innerStack.push(()=>_renderList()); }catch(e){}
           let showKey = false;
           function _render(){
             const maskedKey = p.apiKey ? ('•'.repeat(Math.min(12,p.apiKey.length)) + p.apiKey.slice(-4)) : '';
@@ -17106,6 +17151,9 @@ const npc = _wxGetChatTargetMeta(npcId);
           ]},
         ];
 
+        const _secOrder = { '外观':0, '高级':1, '功能':2, '关于':3, '危险区域':4 };
+        sections.sort((a,b)=>(_secOrder[a.title] ?? 99) - (_secOrder[b.title] ?? 99));
+
         let html = '';
         sections.forEach(s=>{
           html += `<div class="settingSection"><div class="settingSectionTitle">${s.title}</div>`;
@@ -17150,6 +17198,7 @@ const npc = _wxGetChatTargetMeta(npcId);
       function openSettingsSubPage(subpage){
         const body = root.querySelector('[data-ph="appBody"]');
         if (!body) return;
+        try{ state._innerStack.push(()=>renderSettings(body)); }catch(e){}
         switch(subpage){
           case 'wallpaper': renderSettingsWallpaper(body); break;
           case 'uiHome': renderSettingsUIHome(body); break;
@@ -17294,6 +17343,7 @@ function pickWallpaperFromAlbum(target){
 
   const body = root.querySelector('[data-ph="appBody"]');
   if (!body) return;
+  try{ state._innerStack.push(()=>renderSettingsWallpaper(body)); }catch(e){}
 
   let html = `<div class="settingSubPage">
     <button data-act="settingsNav" data-subpage="wallpaper" style="appearance:none;border:0;background:var(--ph-glass);
