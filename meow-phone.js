@@ -2448,7 +2448,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .wxChatSendBtn{
   appearance:none; border:0; cursor:pointer;
   padding:7px 16px; border-radius:18px; flex-shrink:0;
-  background:var(--ph-accent, #07c160); color:#fff; font-size:13px; font-weight:600;
+  background:var(--ph-accent, var(--ph-accent, #07c160)); color:#fff; font-size:13px; font-weight:600;
   transition:opacity .1s; box-shadow:0 2px 6px rgba(0,0,0,.10);
 }
 #${ID} .wxChatSendBtn:active{ opacity:.75; }
@@ -2568,7 +2568,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .wxBubbleMenu.arrowDown::after{ bottom:-4px; left:calc(50% - 5px); }
 #${ID} .wxBubbleMenu.arrowUp::after{ top:-4px; left:calc(50% - 5px); }
 #${ID} .wxChatBubble.wxBubbleSelected .wxCBContent{
-  box-shadow:0 0 0 2px var(--ph-accent,#07c160); border-radius:8px;
+  box-shadow:0 0 0 2px var(--ph-accent,var(--ph-accent, #07c160)); border-radius:8px;
 }
 #${ID} .wxQuoteBar{
   display:flex; align-items:center; gap:8px;
@@ -2602,7 +2602,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   background:#fff; outline:none; font-family:inherit;
   -webkit-appearance:none;
 }
-#${ID} .wxEditMsgBox textarea:focus{ border-color:var(--ph-accent, #07c160); }
+#${ID} .wxEditMsgBox textarea:focus{ border-color:var(--ph-accent, var(--ph-accent, #07c160)); }
 #${ID} .wxEditMsgBox .wxEMBtns{
   display:flex; gap:8px; margin-top:12px; justify-content:flex-end;
 }
@@ -2614,7 +2614,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   background:rgba(0,0,0,.06); color:rgba(20,24,28,.6);
 }
 #${ID} .wxEditMsgBox .wxEMBtn.ok{
-  background:var(--ph-accent, #07c160); color:#fff; font-weight:600;
+  background:var(--ph-accent, var(--ph-accent, #07c160)); color:#fff; font-weight:600;
 }
 #${ID} .wxEditMsgBox .wxEMBtn:active{ opacity:.75; }
 /* === 已编辑标记 + 撤回样式 === */
@@ -2650,7 +2650,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   cursor:pointer; padding:2px 0; margin-top:3px;
   -webkit-tap-highlight-color:transparent;
 }
-#${ID} .wxTranslateBtn:hover{ color:#07c160; }
+#${ID} .wxTranslateBtn:hover{ color:var(--ph-accent, #07c160); }
 /* === 阶段B：戳一戳系统消息 === */
 #${ID} .wxPokeMsg{
   text-align:center; font-size:11px; color:rgba(20,24,28,.35);
@@ -2689,7 +2689,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 /* === overlay 弹窗 === */
 #${ID} .wxCPOverlay{ animation:wxCPFadeIn .18s ease; }
 @keyframes wxCPFadeIn{ from{opacity:0;} to{opacity:1;} }
-#${ID} .wxCPModal input:focus{ outline:none; border-color:#07c160!important; }
+#${ID} .wxCPModal input:focus{ outline:none; border-color:var(--ph-accent, #07c160)!important; }
 
 /* === 表情面板 === */
 #${ID} .wxStickerPanel{
@@ -2716,7 +2716,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   cursor:pointer; border:0; background:transparent; border-bottom:2px solid transparent;
   transition:color .12s;
 }
-#${ID} .wxStickerTabs .wxStkTab.on{ color:#07c160; border-bottom-color:#07c160; font-weight:600; }
+#${ID} .wxStickerTabs .wxStkTab.on{ color:var(--ph-accent, #07c160); border-bottom-color:var(--ph-accent, #07c160); font-weight:600; }
 
 /* === 语音面板 === */
 #${ID} .wxVoicePanel{
@@ -2804,7 +2804,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   position:relative; width:44px; height:24px; border-radius:12px; cursor:pointer;
   border:0; transition:background .2s; flex-shrink:0;
 }
-#${ID} .wxReminderToggle.on{ background:var(--ph-accent, #07c160); }
+#${ID} .wxReminderToggle.on{ background:var(--ph-accent, var(--ph-accent, #07c160)); }
 #${ID} .wxReminderToggle.off{ background:#ccc; }
 #${ID} .wxReminderToggle::after{
   content:''; position:absolute; top:2px; width:20px; height:20px; border-radius:50%;
@@ -3953,85 +3953,50 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
           },{passive:true});
         })();
 
-        // ✅ 应用所有自定义头像到当前 DOM
+        // ✅ 应用所有自定义头像到当前 DOM (img注入，无闪动)
         function _phApplyCustomAvatars(){
           const avatars = phoneLoadAvatars();
-          if (!Object.keys(avatars).length){
-            // 可能刚“恢复默认”了：把残留的样式清掉
-            try{
-              const sel0 = '.pwAvatar,.wxMeAvatar,.cAvatar,.cbAvatar,.wxCIAvatar,.wxCBAvatar,.momentAvatar,.feedAvatar,.npcProfileAvatar,.wxContactAvatar,.wxChatHeaderAvatar';
-              root.querySelectorAll(sel0).forEach(el=>{
-                if (el && el.style && el.style.backgroundImage){
-                  el.style.backgroundImage = '';
-                  el.style.backgroundSize = '';
-                  el.style.backgroundPosition = '';
-                  el.style.color = '';
-                  el.style.fontSize = '';
-                }
-              });
-            }catch(e){}
-            return;
-          }
-
-          const sel = '.pwAvatar,.wxMeAvatar,.cAvatar,.cbAvatar,.wxCIAvatar,.wxCBAvatar,.momentAvatar,.feedAvatar,.npcProfileAvatar,.wxContactAvatar,.wxChatHeaderAvatar';
+          const sel = '.pwAvatar,.wxMeAvatar,.cAvatar,.cbAvatar,.wxCIAvatar,.wxCBAvatar,.momentAvatar,.feedAvatar,.npcProfileAvatar';
           root.querySelectorAll(sel).forEach(el=>{
             let key = '';
-
-            // 我的头像：桌面/我的页
             if (el.classList.contains('pwAvatar') || el.classList.contains('wxMeAvatar')) key = 'me';
-
-            // 微信聊天气泡头像：me/them
             else if (el.classList.contains('wxCBAvatar')){
               const bubble = el.closest('.wxChatBubble');
-              if (bubble && bubble.classList.contains('me')) key = 'me';
-              else key = (state && state.chatTarget) ? String(state.chatTarget).trim() : '';
-            }
-
-            else {
-              // Direct npcid attr
-              key = el.getAttribute('data-npcid') || '';
-              if (!key){
-                const nameEl = el.parentElement?.querySelector('.momentName,.feedName,.npcProfileName');
-                if (nameEl) key = (nameEl.textContent||'').trim();
-              }
-              if (!key){
-                const row = el.closest('[data-chatid],[data-npcid]');
-                key = row?.getAttribute('data-chatid') || row?.getAttribute('data-npcid') || '';
-              }
-              if (!key) key = (el.textContent||'').trim();
-            }
-
-            const img = key ? avatars[key] : '';
-            if (key && img){
-              // If already has inline img (pre-rendered), just ensure it's current
-              const existingImg = el.querySelector('img[src]');
-              if (existingImg && existingImg.src === img) return; // already up to date
-              el.style.backgroundImage = `url("${img}")`;
-              el.style.backgroundSize = 'cover';
-              el.style.backgroundPosition = 'center';
-              el.style.color = 'transparent';
-              el.style.fontSize = '0';
+              key = (bubble && bubble.classList.contains('me')) ? 'me'
+                : (el.getAttribute('data-npcid') || (state && state.chatTarget ? String(state.chatTarget).trim() : ''));
             } else {
-              // 没有自定义头像：清掉残留
-              if (el && el.style && el.style.backgroundImage){
-                el.style.backgroundImage = '';
-                el.style.backgroundSize = '';
-                el.style.backgroundPosition = '';
-                el.style.color = '';
-                el.style.fontSize = '';
-              }
+              key = el.getAttribute('data-npcid') || el.getAttribute('data-chatid') || '';
+              if (!key){ const row = el.closest('[data-chatid],[data-npcid]'); key = row?.getAttribute('data-chatid') || row?.getAttribute('data-npcid') || ''; }
+              if (!key){ const nm = el.parentElement?.querySelector('.momentName,.feedName,.npcProfileName'); if (nm) key = (nm.textContent||'').trim(); }
             }
+            const imgSrc = key ? (avatars[key]||'') : '';
+            const existingImg = el.querySelector('img.phAvImg');
+            if (imgSrc){
+              if (existingImg){
+                if (existingImg.getAttribute('data-avkey') !== key){ existingImg.src = imgSrc; existingImg.setAttribute('data-avkey', key); }
+              } else {
+                el.style.backgroundImage = ''; el.style.backgroundSize = ''; el.style.backgroundPosition = ''; el.style.color = ''; el.style.fontSize = '';
+                const img = document.createElement('img');
+                img.className = 'phAvImg';
+                img.setAttribute('data-avkey', key);
+                img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;pointer-events:none;display:block;';
+                img.src = imgSrc;
+                el.style.position = 'relative'; el.style.overflow = 'hidden';
+                el.insertBefore(img, el.firstChild);
+              }
+            } else if (existingImg){ existingImg.remove(); }
           });
         }
-        // 用 MutationObserver 自动应用自定义头像
+        // MutationObserver: 仅新增节点时触发
         {
           let _avDebounce = null;
-          const obs = new MutationObserver(()=>{
+          const obs = new MutationObserver((mutations)=>{
+            if (!mutations.some(m=>m.addedNodes.length>0)) return;
             if (_avDebounce) clearTimeout(_avDebounce);
-            _avDebounce = setTimeout(()=>_phApplyCustomAvatars(), 200);
+            _avDebounce = setTimeout(()=>_phApplyCustomAvatars(), 60);
           });
           obs.observe(root, { childList:true, subtree:true });
-          requestAnimationFrame(()=> _phApplyCustomAvatars());
+          _phApplyCustomAvatars();
         }
 
         // 拖拽（mini + pill）
@@ -4085,7 +4050,7 @@ function buildHTML(){
               <div class="pw pwProfile" style="grid-column:1/span 4;grid-row:1/span 2;" data-item="profile">
                 <span class="editDelBtn" data-edit="del">✕</span>
                 <div class="pwProfileRow">
-                  <div class="pwAvatar">👤</div>
+                  <div class="pwAvatar">${phoneGetAvatar('me')?`<img src="${phoneGetAvatar('me')}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"/>`:'👤'}</div>
                   <div>
                     <div class="pwName" data-ph="profileName">我的手机</div>
                     <div class="pwTag">${dateStr()}</div>
@@ -4595,7 +4560,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
               <div class="wxCMsg">重新生成将覆盖当前总结，确定吗？</div>
               <div class="wxCBtns">
                 <button class="wxCBtn" data-act="wxCHRegenCancel">取消</button>
-                <button class="wxCBtn" data-act="wxCHRegenOk" data-chnpcid="${esc(nid)}" style="color:#07c160;font-weight:600;">确定</button>
+                <button class="wxCBtn" data-act="wxCHRegenOk" data-chnpcid="${esc(nid)}" style="color:var(--ph-accent, #07c160);font-weight:600;">确定</button>
               </div>
             </div>`;
             root.appendChild(overlay);
@@ -7477,7 +7442,7 @@ ${lines}
 
           <div style="display:flex;gap:8px;">
             <button data-act="wxAddFriendCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.10);background:#fff;color:rgba(20,24,28,.60);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="wxAddFriendConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">添加</button>
+            <button data-act="wxAddFriendConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent, var(--ph-accent, #07c160));color:#fff;font-size:13px;font-weight:600;cursor:pointer;">添加</button>
           </div>
         </div>`;
 
@@ -7610,7 +7575,7 @@ ${lines}
 
           <div style="display:flex;gap:8px;">
             <button data-act="wxCreateGroupCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.10);background:#fff;color:rgba(20,24,28,.60);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="wxCreateGroupConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">创建</button>
+            <button data-act="wxCreateGroupConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent, var(--ph-accent, #07c160));color:#fff;font-size:13px;font-weight:600;cursor:pointer;">创建</button>
           </div>
         </div>`;
 
@@ -7839,7 +7804,7 @@ ${lines}
             </div><div class="wxGroupBody" data-gbody="${esc(g.id)}">`;
             for (const c of members){
               html += `<div class="wxContactItem" data-chatid="${esc(c.id)}">
-                <div class="wxCIAvatar">${esc((c.avatar||c.name||'?').charAt(0))}</div>
+                <div class="wxCIAvatar">${(()=>{const _ci=phoneGetAvatar(c.id||'');return _ci?`<img src="${_ci}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"/>`:esc((c.avatar||c.name||'?').charAt(0));})()}</div>
                 <div class="wxCIName">${esc(c.name)}</div>
               </div>`;
             }
@@ -7855,7 +7820,7 @@ ${lines}
             </div><div class="wxGroupBody" data-gbody="_ungrouped">`;
             for (const c of ungrouped){
               html += `<div class="wxContactItem" data-chatid="${esc(c.id)}">
-                <div class="wxCIAvatar">${esc((c.avatar||c.name||'?').charAt(0))}</div>
+                <div class="wxCIAvatar">${(()=>{const _ci=phoneGetAvatar(c.id||'');return _ci?`<img src="${_ci}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"/>`:esc((c.avatar||c.name||'?').charAt(0));})()}</div>
                 <div class="wxCIName">${esc(c.name)}</div>
               </div>`;
             }
@@ -7942,7 +7907,7 @@ ${lines}
             html += '<div class="wxCIName" style="font-size:14px;">' + esc(c.name) + '</div>';
             if (profileSnip) html += '<div style="font-size:11px;color:rgba(20,24,28,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(profileSnip) + '</div>';
             html += '</div>';
-            html += '<button data-act="phAcceptCand" data-name="' + esc(c.name) + '" style="appearance:none;border:0;background:var(--ph-accent,#07c160);color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px var(--ph-shadow);">+</button>';
+            html += '<button data-act="phAcceptCand" data-name="' + esc(c.name) + '" style="appearance:none;border:0;background:var(--ph-accent,var(--ph-accent, #07c160));color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px var(--ph-shadow);">+</button>';
             html += '</div>';
           }
         } else {
@@ -8043,7 +8008,7 @@ ${lines}
           html += '<div class="phPlaceholder" style="padding-top:40px;"><div class="phPlIcon">' + _phFlatIcon('📖') + '</div><div class="phPlText">未从世界书中读取到角色<br><span style="font-size:11px;color:rgba(20,24,28,.35);">请确保酒馆世界书中有包含角色表格的条目<br>（含 | 角色名 | 身份 | 外貌 | 等列）</span></div></div>';
         } else {
           html += '<div style="padding:12px 14px 6px;font-size:12px;color:rgba(20,24,28,.4);font-weight:500;">找到 ' + chars.length + ' 个角色</div>';
-          html += '<div style="padding:0 14px;"><button data-act="c1WBImportAll" style="width:100%;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.82);color:#07c160;font-size:13px;font-weight:500;cursor:pointer;margin-bottom:8px;">全部导入为候选</button></div>';
+          html += '<div style="padding:0 14px;"><button data-act="c1WBImportAll" style="width:100%;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.82);color:var(--ph-accent, #07c160);font-size:13px;font-weight:500;cursor:pointer;margin-bottom:8px;">全部导入为候选</button></div>';
           for (var i = 0; i < chars.length; i++){
             var c = chars[i];
             var alreadyContact = !!findContactByName(loadContactsDB(), c.name);
@@ -8052,7 +8017,7 @@ ${lines}
             html += '<div style="margin:0 14px 8px;padding:14px;border-radius:14px;background:rgba(255,255,255,.82);border:1px solid rgba(0,0,0,.06);">';
             html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
             html += '<span style="font-size:14px;font-weight:600;color:rgba(20,24,28,.85);">' + esc(c.name) + '</span>';
-            html += statusText ? '<span style="font-size:11px;color:rgba(20,24,28,.4);">' + statusText + '</span>' : '<button data-act="c1WBImportOne" data-cidx="' + i + '" style="border:0;background:#07c160;color:#fff;font-size:11px;padding:4px 10px;border-radius:8px;cursor:pointer;">导入</button>';
+            html += statusText ? '<span style="font-size:11px;color:rgba(20,24,28,.4);">' + statusText + '</span>' : '<button data-act="c1WBImportOne" data-cidx="' + i + '" style="border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:11px;padding:4px 10px;border-radius:8px;cursor:pointer;">导入</button>';
             html += '</div>';
             if (c.identity) html += '<div style="font-size:12px;color:rgba(20,24,28,.55);margin-top:2px;">身份：' + esc(c.identity.slice(0,100)) + '</div>';
             if (c.appearance) html += '<div style="font-size:12px;color:rgba(20,24,28,.55);margin-top:2px;">外貌：' + esc(c.appearance.slice(0,100)) + '</div>';
@@ -8112,7 +8077,7 @@ ${lines}
             html += '<div style="margin:0 14px 8px;padding:14px;border-radius:14px;background:rgba(255,255,255,.82);border:1px solid rgba(0,0,0,.06);">';
             html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">';
             html += '<span style="font-size:14px;font-weight:600;color:rgba(20,24,28,.85);">🎭 ' + esc(c.name) + '</span>';
-            html += statusText ? '<span style="font-size:11px;color:rgba(20,24,28,.4);">' + statusText + '</span>' : '<button data-act="c1STImportOne" data-cidx="' + i + '" style="border:0;background:#07c160;color:#fff;font-size:11px;padding:4px 10px;border-radius:8px;cursor:pointer;">导入</button>';
+            html += statusText ? '<span style="font-size:11px;color:rgba(20,24,28,.4);">' + statusText + '</span>' : '<button data-act="c1STImportOne" data-cidx="' + i + '" style="border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:11px;padding:4px 10px;border-radius:8px;cursor:pointer;">导入</button>';
             html += '</div>';
             if (desc) html += '<div style="font-size:12px;color:rgba(20,24,28,.5);margin-top:4px;max-height:60px;overflow:hidden;white-space:pre-wrap;">' + esc(desc) + '</div>';
             html += '</div>';
@@ -8184,7 +8149,7 @@ ${lines}
           <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:nowrap;min-width:0;">
             <input data-field="newGroupIcon" placeholder="图标" style="width:42px;min-width:42px;padding:6px;border:1px solid rgba(0,0,0,.1);border-radius:6px;text-align:center;font-size:16px;box-sizing:border-box;"/>
             <input data-field="newGroupName" placeholder="新分组名称" style="flex:1;min-width:0;padding:6px 10px;border:1px solid rgba(0,0,0,.1);border-radius:6px;font-size:13px;box-sizing:border-box;"/>
-            <button data-gact="add" style="padding:6px 12px;border:0;border-radius:6px;background:#07c160;color:#fff;font-size:12px;cursor:pointer;flex-shrink:0;white-space:nowrap;">添加</button>
+            <button data-gact="add" style="padding:6px 12px;border:0;border-radius:6px;background:var(--ph-accent, #07c160);color:#fff;font-size:12px;cursor:pointer;flex-shrink:0;white-space:nowrap;">添加</button>
           </div>
           <button data-gact="close" style="width:100%;padding:10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;background:var(--ph-glass-strong);font-size:13px;cursor:pointer;color:var(--ph-text);">关闭</button>
         </div>`;
@@ -8287,8 +8252,8 @@ ${lines}
 
         let html = `<div style="padding:0;">
           <div style="display:flex;border-bottom:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.5);">
-            <button data-act="wxCHTabSwitch" data-chtab="summary" style="flex:1;padding:10px;border:0;background:transparent;font-size:13px;font-weight:${activeTab==='summary'?'600':'400'};color:${activeTab==='summary'?'#07c160':'rgba(20,24,28,.5)'};cursor:pointer;border-bottom:2px solid ${activeTab==='summary'?'#07c160':'transparent'};">聊天总结</button>
-            <button data-act="wxCHTabSwitch" data-chtab="moments" style="flex:1;padding:10px;border:0;background:transparent;font-size:13px;font-weight:${activeTab==='moments'?'600':'400'};color:${activeTab==='moments'?'#07c160':'rgba(20,24,28,.5)'};cursor:pointer;border-bottom:2px solid ${activeTab==='moments'?'#07c160':'transparent'};">朋友圈评论</button>
+            <button data-act="wxCHTabSwitch" data-chtab="summary" style="flex:1;padding:10px;border:0;background:transparent;font-size:13px;font-weight:${activeTab==='summary'?'600':'400'};color:${activeTab==='summary'?'var(--ph-accent, #07c160)':'rgba(20,24,28,.5)'};cursor:pointer;border-bottom:2px solid ${activeTab==='summary'?'var(--ph-accent, #07c160)':'transparent'};">聊天总结</button>
+            <button data-act="wxCHTabSwitch" data-chtab="moments" style="flex:1;padding:10px;border:0;background:transparent;font-size:13px;font-weight:${activeTab==='moments'?'600':'400'};color:${activeTab==='moments'?'var(--ph-accent, #07c160)':'rgba(20,24,28,.5)'};cursor:pointer;border-bottom:2px solid ${activeTab==='moments'?'var(--ph-accent, #07c160)':'transparent'};">朋友圈评论</button>
           </div>`;
 
         if (activeTab === 'moments'){
@@ -8314,7 +8279,7 @@ ${lines}
               const sumData = getChatSummary(thread.id);
               const hasSummary = !!(sumData && sumData.summaryText);
               const statusHtml = hasSummary
-                ? `<span style="color:#07c160;">✅ 已总结 · ${_timeAgo(sumData.updatedAt)}</span>`
+                ? `<span style="color:var(--ph-accent, #07c160);">✅ 已总结 · ${_timeAgo(sumData.updatedAt)}</span>`
                 : `<span style="color:rgba(20,24,28,.3);">⬜ 未总结</span>`;
               const lastMsg = thread.lastMsg ? String(thread.lastMsg).slice(0,20) : '暂无消息';
               const avatar = npc.avatar || (npc.name||'?').charAt(0);
@@ -8408,7 +8373,7 @@ ${lines}
             <div style="font-size:13px;color:rgba(20,24,28,.75);margin-bottom:6px;">默认模型</div>
             <input data-el="gsModel" value="${esc(gs.defaultModel||'')}" placeholder="留空跟随API预设" style="width:100%;padding:10px 12px;border:1px solid rgba(0,0,0,.1);border-radius:10px;font-size:14px;outline:none;box-sizing:border-box;" />
           </div>
-          <button data-act="wxSumSettingsSave" style="width:100%;padding:12px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">💾 保存设置</button>
+          <button data-act="wxSumSettingsSave" style="width:100%;padding:12px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">💾 保存设置</button>
         </div>`;
         body.innerHTML = html;
       }
@@ -8428,7 +8393,7 @@ ${lines}
               <div style="font-size:13px;color:rgba(20,24,28,.85);">聊天时附加</div>
               <div style="font-size:11px;color:rgba(20,24,28,.4);">开启后在聊天时自动附加此世界书</div>
             </div>
-            <button data-act="gwbToggle" class="wxToggleBtn ${data.enabled?'on':'off'}" style="width:44px;height:26px;border-radius:13px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${data.enabled?'#07c160':'rgba(0,0,0,.15)'};">
+            <button data-act="gwbToggle" class="wxToggleBtn ${data.enabled?'on':'off'}" style="width:44px;height:26px;border-radius:13px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${data.enabled?'var(--ph-accent, #07c160)':'rgba(0,0,0,.15)'};">
               <span style="position:absolute;top:3px;${data.enabled?'left:21px':'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
             </button>
           </div>
@@ -8441,7 +8406,7 @@ ${lines}
                 <div style="font-size:13px;color:rgba(20,24,28,.85);">附加酒馆聊天上下文</div>
                 <div style="font-size:11px;color:rgba(20,24,28,.4);">开启后自动读取最近 N 条主线消息</div>
               </div>
-              <button data-act="gwbTavernCtxToggle" style="width:44px;height:26px;border-radius:13px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${data.tavernCtxEnabled?'#07c160':'rgba(0,0,0,.15)'};">
+              <button data-act="gwbTavernCtxToggle" style="width:44px;height:26px;border-radius:13px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${data.tavernCtxEnabled?'var(--ph-accent, #07c160)':'rgba(0,0,0,.15)'};">
                 <span style="position:absolute;top:3px;${data.tavernCtxEnabled?'left:21px':'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
               </button>
             </div>
@@ -8452,7 +8417,7 @@ ${lines}
             </div>
           </div>
 
-          <button data-act="gwbSave" style="width:100%;margin-top:12px;padding:12px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
+          <button data-act="gwbSave" style="width:100%;margin-top:12px;padding:12px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
           <div style="font-size:11px;color:rgba(20,24,28,.3);margin-top:8px;text-align:center;">此世界书仅由小手机管理，不影响 ST 现有世界书</div>
         </div>`;
         container.innerHTML = html;
@@ -8460,7 +8425,7 @@ ${lines}
         // 绑定事件
         container.querySelector('[data-act="gwbToggle"]')?.addEventListener('click', function(){
           data.enabled = !data.enabled;
-          this.style.background = data.enabled ? '#07c160' : 'rgba(0,0,0,.15)';
+          this.style.background = data.enabled ? 'var(--ph-accent, #07c160)' : 'rgba(0,0,0,.15)';
           const dot = this.querySelector('span');
           if (dot) dot.style.left = data.enabled ? '21px' : '3px';
           this.classList.toggle('on', data.enabled);
@@ -8468,7 +8433,7 @@ ${lines}
         });
         container.querySelector('[data-act="gwbTavernCtxToggle"]')?.addEventListener('click', function(){
           data.tavernCtxEnabled = !data.tavernCtxEnabled;
-          this.style.background = data.tavernCtxEnabled ? '#07c160' : 'rgba(0,0,0,.15)';
+          this.style.background = data.tavernCtxEnabled ? 'var(--ph-accent, #07c160)' : 'rgba(0,0,0,.15)';
           const dot = this.querySelector('span');
           if (dot) dot.style.left = data.tavernCtxEnabled ? '21px' : '3px';
         });
@@ -8513,7 +8478,7 @@ ${lines}
             <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">默认 Voice ID / 模型名</div>
             <input data-el="vaVoice" value="${esc(data.defaultVoiceId||'')}" placeholder="默认声音标识" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;"/>
           </div>
-          <button data-act="vaSaveConfig" style="width:100%;padding:10px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px;">保存配置</button>
+          <button data-act="vaSaveConfig" style="width:100%;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px;">保存配置</button>
 
           <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.85);margin-bottom:8px;">角色绑定列表</div>
           <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:8px;">为好友/角色绑定专属 voiceId</div>
@@ -8523,7 +8488,7 @@ ${lines}
               <option value="">选择好友…</option>
               ${contacts.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}
             </select>
-            <button data-act="vaAddBind" style="padding:8px 14px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:12px;cursor:pointer;">添加</button>
+            <button data-act="vaAddBind" style="padding:8px 14px;border-radius:8px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:12px;cursor:pointer;">添加</button>
           </div>
           <div style="font-size:11px;color:rgba(20,24,28,.3);margin-top:12px;text-align:center;">当前仅保存配置，不执行真实播放</div>
 
@@ -8532,7 +8497,7 @@ ${lines}
             <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:10px;">开启后，AI 回复将自动调用语音 API 生成语音气泡，气泡内含播放器并自动展示文字转写</div>
             <div style="display:flex;align-items:center;justify-content:space-between;">
               <div style="font-size:13px;color:rgba(20,24,28,.85);">AI 回复时自动发送语音</div>
-              <button data-act="vaAutoVoiceToggle" style="width:44px;height:26px;border-radius:13px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${data.autoVoice?'#07c160':'rgba(0,0,0,.15)'};">
+              <button data-act="vaAutoVoiceToggle" style="width:44px;height:26px;border-radius:13px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${data.autoVoice?'var(--ph-accent, #07c160)':'rgba(0,0,0,.15)'};">
                 <span style="position:absolute;top:3px;${data.autoVoice?'left:21px':'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);"></span>
               </button>
             </div>
@@ -8557,7 +8522,7 @@ ${lines}
         });
         container.querySelector('[data-act="vaAutoVoiceToggle"]')?.addEventListener('click', function(){
           data.autoVoice = !data.autoVoice;
-          this.style.background = data.autoVoice ? '#07c160' : 'rgba(0,0,0,.15)';
+          this.style.background = data.autoVoice ? 'var(--ph-accent, #07c160)' : 'rgba(0,0,0,.15)';
           const dot = this.querySelector('span');
           if (dot) dot.style.left = data.autoVoice ? '21px' : '3px';
           saveVoiceApi(data);
@@ -8607,7 +8572,7 @@ ${lines}
 
         html += `<div style="display:flex;gap:8px;margin-top:12px;">
             <button data-act="relAdd" style="flex:1;padding:10px;border-radius:10px;border:1px dashed rgba(0,0,0,.15);background:rgba(255,255,255,.5);font-size:13px;color:rgba(20,24,28,.6);cursor:pointer;">+ 新增关系</button>
-            <button data-act="relSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
+            <button data-act="relSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
           </div>
         </div>`;
         container.innerHTML = html;
@@ -8655,7 +8620,7 @@ ${lines}
             html += `<div style="display:flex;align-items:center;padding:10px 12px;margin-bottom:6px;background:rgba(255,255,255,.7);border-radius:10px;border:1px solid rgba(0,0,0,.06);">
               <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center;font-size:14px;color:rgba(20,24,28,.5);flex-shrink:0;">${esc((b.name||'?').charAt(0))}</div>
               <div style="flex:1;margin-left:10px;font-size:13px;color:rgba(20,24,28,.85);">${esc(b.name)}</div>
-              <button data-act="blRemove" data-blidx="${idx}" style="padding:4px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.08);background:#fff;font-size:11px;color:#07c160;cursor:pointer;">移除</button>
+              <button data-act="blRemove" data-blidx="${idx}" style="padding:4px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.08);background:#fff;font-size:11px;color:var(--ph-accent, #07c160);cursor:pointer;">移除</button>
             </div>`;
           });
         } else {
@@ -8709,7 +8674,7 @@ ${lines}
         const userId = 'y' + Math.abs(String(userName).split('').reduce((h,c)=>(h<<5)-h+c.charCodeAt(0),0)).toString().slice(0,7);
         let html = '';
         html += `<div class="wxMeProfile" data-act="wxMeProfile">
-          <div class="wxMeAvatar">😊</div>
+          <div class="wxMeAvatar">${phoneGetAvatar('me')?`<img src="${phoneGetAvatar('me')}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"/>`:'😊'}</div>
           <div class="wxMeInfo">
             <div class="wxMeName">${esc(userName)}</div>
             <div class="wxMeId">微信号：${esc(userId)} &nbsp;<span style="color:rgba(20,24,28,.25);">设置</span></div>
@@ -8819,7 +8784,7 @@ ${lines}
             const d = new Date(it.time || 0);
             const ts = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
             const typeLabel = it.type === 'diary' ? '📝 日记' : '💬 语录';
-            const tagStr = _safeArr(it.tags).map(t=>`<span style="display:inline-block;padding:2px 6px;border-radius:4px;background:rgba(7,193,96,.1);color:#07c160;font-size:10px;margin-right:4px;">${esc(t)}</span>`).join('');
+            const tagStr = _safeArr(it.tags).map(t=>`<span style="display:inline-block;padding:2px 6px;border-radius:4px;background:rgba(7,193,96,.1);color:var(--ph-accent, #07c160);font-size:10px;margin-right:4px;">${esc(t)}</span>`).join('');
             html += `<div style="margin:0 14px 10px;padding:14px;border-radius:14px;background:var(--ph-glass-strong);border:1px solid var(--ph-glass-border);">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
                 <span style="font-size:11px;color:rgba(20,24,28,.4);">${typeLabel} · ${ts}</span>
@@ -8872,7 +8837,7 @@ ${lines}
           </div>
           <div style="display:flex;gap:8px;">
             <button data-act="favEditorCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:rgba(20,24,28,.6);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="favEditorSave" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
+            <button data-act="favEditorSave" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
           </div>
         </div>`;
         root.appendChild(overlay);
@@ -8927,7 +8892,7 @@ ${lines}
               <div style="font-size:11px;color:rgba(20,24,28,.45);margin-top:2px;">${isFollowChatId ? '自动使用当前酒馆 chatId 关联的 persona' : '已手动锁定为: ' + esc(cSettings.personaOverride || '(无)')}</div>
             </div>
             <button data-act="${isFollowChatId ? 'personaUnlinkChat' : 'personaFollowChat'}"
-              style="border:0;background:${isFollowChatId ? 'rgba(0,0,0,.06)' : '#07c160'};color:${isFollowChatId ? 'rgba(20,24,28,.5)' : '#fff'};font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;">
+              style="border:0;background:${isFollowChatId ? 'rgba(0,0,0,.06)' : 'var(--ph-accent, #07c160)'};color:${isFollowChatId ? 'rgba(20,24,28,.5)' : '#fff'};font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;">
               ${isFollowChatId ? '取消自动' : '恢复自动'}
             </button>
           </div>
@@ -8948,9 +8913,9 @@ ${lines}
             const isOverride = cSettings.personaOverride === p.name || cSettings.personaOverride === p.id;
             html += `<div style="margin:0 14px 8px;padding:14px;border-radius:14px;background:var(--ph-glass-strong);border:${isCur?'2px solid var(--ph-accent)':'1px solid var(--ph-glass-border)'};">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <span style="font-size:14px;font-weight:600;color:rgba(20,24,28,.85);">${esc(p.name)} ${isCur?'<span style="color:#07c160;font-size:11px;">✓ 当前</span>':''} ${isOverride && !isFollowChatId ? '<span style="color:#667eea;font-size:10px;">🔒 锁定</span>' : ''}</span>
+                <span style="font-size:14px;font-weight:600;color:rgba(20,24,28,.85);">${esc(p.name)} ${isCur?'<span style="color:var(--ph-accent, #07c160);font-size:11px;">✓ 当前</span>':''} ${isOverride && !isFollowChatId ? '<span style="color:#667eea;font-size:10px;">🔒 锁定</span>' : ''}</span>
                 <div style="display:flex;gap:6px;">
-                  ${!isCur ? `<button data-act="personaUse" data-pidx="${i}" style="border:0;background:#07c160;color:#fff;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;">启用</button>` : ''}
+                  ${!isCur ? `<button data-act="personaUse" data-pidx="${i}" style="border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;">启用</button>` : ''}
                   <button data-act="personaEdit" data-pidx="${i}" style="border:0;background:transparent;color:#3b82f6;font-size:11px;cursor:pointer;">编辑</button>
                   <button data-act="personaDel" data-pidx="${i}" style="border:0;background:transparent;color:#ef4444;font-size:11px;cursor:pointer;">删除</button>
                 </div>
@@ -9060,7 +9025,7 @@ ${lines}
           </div>
           <div style="display:flex;gap:8px;">
             <button data-act="pCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:rgba(20,24,28,.6);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="pSave" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
+            <button data-act="pSave" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
           </div>
         </div>`;
         root.appendChild(overlay);
@@ -9109,7 +9074,7 @@ ${lines}
         html += `<div style="display:flex;border-bottom:1px solid rgba(0,0,0,.06);margin:0 14px;">`;
         for (const g of groups){
           const isOn = g.key === curGroup;
-          html += `<button data-act="stkGroup" data-gkey="${g.key}" style="flex:1;padding:10px;border:0;border-bottom:2px solid ${isOn?'#07c160':'transparent'};background:transparent;color:${isOn?'#07c160':'rgba(20,24,28,.5)'};font-size:13px;cursor:pointer;font-weight:${isOn?'600':'400'};">${g.icon} ${g.label} (${_safeArr(packs[g.key]).length})</button>`;
+          html += `<button data-act="stkGroup" data-gkey="${g.key}" style="flex:1;padding:10px;border:0;border-bottom:2px solid ${isOn?'var(--ph-accent, #07c160)':'transparent'};background:transparent;color:${isOn?'var(--ph-accent, #07c160)':'rgba(20,24,28,.5)'};font-size:13px;cursor:pointer;font-weight:${isOn?'600':'400'};">${g.icon} ${g.label} (${_safeArr(packs[g.key]).length})</button>`;
         }
         html += `</div>`;
 
@@ -9239,8 +9204,8 @@ ${lines}
               const isActive = p.id === activeId;
               html += `<div style="margin-bottom:10px;padding:14px;border-radius:14px;background:${isActive?'rgba(7,193,96,.08)':'rgba(255,255,255,.7)'};border:1px solid ${isActive?'rgba(7,193,96,.3)':'rgba(0,0,0,.06)'};cursor:pointer;" data-act="apiEditPreset" data-pidx="${idx}">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                  <span style="font-size:14px;font-weight:600;color:var(--ph-text);flex:1;">${_esc(p.name)}${isActive?' <span style="font-size:10px;color:#07c160;">● 使用中</span>':''}</span>
-                  <button data-act="apiActivate" data-pid="${_esc(p.id)}" style="padding:4px 10px;border-radius:8px;border:1px solid ${isActive?'#07c160':'rgba(0,0,0,.1)'};background:${isActive?'#07c160':'#fff'};color:${isActive?'#fff':'var(--ph-text-sub)'};font-size:11px;cursor:pointer;">${isActive?'已启用':'启用'}</button>
+                  <span style="font-size:14px;font-weight:600;color:var(--ph-text);flex:1;">${_esc(p.name)}${isActive?' <span style="font-size:10px;color:var(--ph-accent, #07c160);">● 使用中</span>':''}</span>
+                  <button data-act="apiActivate" data-pid="${_esc(p.id)}" style="padding:4px 10px;border-radius:8px;border:1px solid ${isActive?'var(--ph-accent, #07c160)':'rgba(0,0,0,.1)'};background:${isActive?'var(--ph-accent, #07c160)':'#fff'};color:${isActive?'#fff':'var(--ph-text-sub)'};font-size:11px;cursor:pointer;">${isActive?'已启用':'启用'}</button>
                 </div>
                 <div style="font-size:11px;color:var(--ph-text-dim);word-break:break-all;">URL: ${_esc((p.baseUrl||'').slice(0,60)||'未设置')}</div>
                 <div style="font-size:11px;color:var(--ph-text-dim);">Model: ${_esc(p.model||'未设置')}</div>
@@ -9307,7 +9272,7 @@ ${lines}
               </div>
               <div style="display:flex;gap:8px;margin-top:16px;">
                 <button data-act="apiTestConn" style="flex:1;padding:12px;border-radius:12px;border:1px solid rgba(59,130,246,.3);background:rgba(59,130,246,.08);color:#3b82f6;font-size:13px;font-weight:600;cursor:pointer;">测试连接</button>
-                <button data-act="apiSavePreset" style="flex:1;padding:12px;border-radius:12px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
+                <button data-act="apiSavePreset" style="flex:1;padding:12px;border-radius:12px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
               </div>
               <div data-el="apiTestResult" style="margin-top:10px;"></div>
               <div style="display:flex;gap:8px;margin-top:14px;">
@@ -9359,7 +9324,7 @@ ${lines}
                 clearTimeout(timer);
                 const ms = Date.now()-t0;
                 if (resp.ok){
-                  resultEl.innerHTML = `<div style="font-size:12px;color:#07c160;font-weight:600;">✅ 连接成功（${ms}ms）</div>`;
+                  resultEl.innerHTML = `<div style="font-size:12px;color:var(--ph-accent, #07c160);font-weight:600;">✅ 连接成功（${ms}ms）</div>`;
                 } else {
                   resultEl.innerHTML = `<div style="font-size:12px;color:#ef4444;">❌ HTTP ${resp.status}（${ms}ms）</div>`;
                 }
@@ -9441,12 +9406,12 @@ ${lines}
           overlay.innerHTML = `<div class="wxConfirmBox" style="min-width:280px;text-align:left;">
             <div style="font-weight:700;font-size:14px;color:var(--ph-text);margin-bottom:10px;">导出${singleMode?'当前预设':'全部预设'}</div>
             <label style="display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;">
-              <input type="checkbox" data-el="incKey" style="width:16px;height:16px;accent-color:#07c160;" />
+              <input type="checkbox" data-el="incKey" style="width:16px;height:16px;accent-color:var(--ph-accent, #07c160);" />
               <span style="font-size:13px;color:var(--ph-text);">包含 API Key（敏感）</span>
             </label>
             <div style="display:flex;gap:8px;margin-top:10px;">
               <button data-act="exCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:var(--ph-text-sub);font-size:13px;cursor:pointer;">取消</button>
-              <button data-act="exConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导出</button>
+              <button data-act="exConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导出</button>
             </div>
           </div>`;
           root.appendChild(overlay);
@@ -10084,7 +10049,7 @@ ${lines}
           const count = _getKeysForModule(mod).length;
           if (count === 0 && mod.isCatchAll) return;
           checkHtml += `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;">
-            <input type="checkbox" value="${mod.key}" checked style="width:16px;height:16px;accent-color:#07c160;" />
+            <input type="checkbox" value="${mod.key}" checked style="width:16px;height:16px;accent-color:var(--ph-accent, #07c160);" />
             <span style="flex:1;font-size:13px;color:var(--ph-text);">${esc(mod.label)}</span>
             <span style="font-size:10px;color:var(--ph-text-dim);">${count} keys</span>
           </label>`;
@@ -10092,13 +10057,13 @@ ${lines}
         overlay.innerHTML = `<div class="wxConfirmBox" style="min-width:280px;text-align:left;max-height:80vh;overflow-y:auto;">
           <div style="font-weight:700;font-size:15px;color:var(--ph-text);margin-bottom:10px;">选择导出模块</div>
           <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;border-bottom:1px solid rgba(0,0,0,.06);margin-bottom:8px;">
-            <input type="checkbox" data-el="selAll" checked style="width:16px;height:16px;accent-color:#07c160;"/>
+            <input type="checkbox" data-el="selAll" checked style="width:16px;height:16px;accent-color:var(--ph-accent, #07c160);"/>
             <span style="font-size:13px;font-weight:600;">全选</span>
           </label>
           <div style="max-height:260px;overflow-y:auto;">${checkHtml}</div>
           <div style="display:flex;gap:8px;margin-top:14px;">
             <button data-act="exCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:var(--ph-text-sub);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="exConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导出</button>
+            <button data-act="exConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导出</button>
           </div>
         </div>`;
         root.appendChild(overlay);
@@ -10142,17 +10107,17 @@ ${lines}
           <textarea data-el="imText" rows="6" placeholder="粘贴导出的 JSON 内容…" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid rgba(0,0,0,.12);border-radius:8px;font-size:11px;font-family:monospace;resize:vertical;color:var(--ph-text);background:#fff;"></textarea>
           <div style="margin-top:10px;">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-              <input type="radio" name="imMode" value="overwrite" checked style="accent-color:#07c160;"/>
+              <input type="radio" name="imMode" value="overwrite" checked style="accent-color:var(--ph-accent, #07c160);"/>
               <span style="font-size:12px;color:var(--ph-text);">覆盖同 key（默认）</span>
             </label>
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:4px;">
-              <input type="radio" name="imMode" value="merge" style="accent-color:#07c160;"/>
+              <input type="radio" name="imMode" value="merge" style="accent-color:var(--ph-accent, #07c160);"/>
               <span style="font-size:12px;color:var(--ph-text);">合并列表类数据（通讯录/表情/收藏）</span>
             </label>
           </div>
           <div style="display:flex;gap:8px;margin-top:12px;">
             <button data-act="imCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:var(--ph-text-sub);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="imConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导入</button>
+            <button data-act="imConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导入</button>
           </div>
         </div>`;
         root.appendChild(overlay);
@@ -10358,7 +10323,7 @@ ${lines}
           <textarea data-el="copyBox" rows="10" readonly style="width:100%;box-sizing:border-box;padding:8px;border:1px solid rgba(0,0,0,.12);border-radius:8px;font-size:11px;font-family:monospace;resize:vertical;">${esc(text)}</textarea>
           <div style="display:flex;gap:8px;margin-top:10px;">
             <button data-act="cbClose" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:rgba(20,24,28,.6);font-size:13px;cursor:pointer;">关闭</button>
-            <button data-act="cbCopy" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">全选复制</button>
+            <button data-act="cbCopy" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">全选复制</button>
           </div>
         </div>`;
         root.appendChild(overlay);
@@ -10383,27 +10348,27 @@ ${lines}
         let checkHtml = '';
         contacts.forEach(c=>{
           checkHtml += `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;">
-            <input type="checkbox" value="${esc(c.id)}" data-type="contact" checked style="width:16px;height:16px;accent-color:#07c160;"/>
+            <input type="checkbox" value="${esc(c.id)}" data-type="contact" checked style="width:16px;height:16px;accent-color:var(--ph-accent, #07c160);"/>
             <span style="font-size:13px;color:rgba(20,24,28,.8);">👤 ${esc(c.name)}</span>
           </label>`;
         });
         Object.keys(groups||{}).forEach(gid=>{
           const g = groups[gid];
           checkHtml += `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;">
-            <input type="checkbox" value="${esc(gid)}" data-type="group" checked style="width:16px;height:16px;accent-color:#07c160;"/>
+            <input type="checkbox" value="${esc(gid)}" data-type="group" checked style="width:16px;height:16px;accent-color:var(--ph-accent, #07c160);"/>
             <span style="font-size:13px;color:rgba(20,24,28,.8);">👥 ${esc(g.name||gid)}</span>
           </label>`;
         });
         overlay.innerHTML = `<div class="wxConfirmBox" style="min-width:280px;text-align:left;max-height:80vh;overflow-y:auto;">
           <div style="font-weight:700;font-size:15px;color:rgba(20,24,28,.88);margin-bottom:10px;">选择导出</div>
           <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;border-bottom:1px solid rgba(0,0,0,.06);margin-bottom:8px;">
-            <input type="checkbox" data-el="selAll" checked style="width:16px;height:16px;accent-color:#07c160;"/>
+            <input type="checkbox" data-el="selAll" checked style="width:16px;height:16px;accent-color:var(--ph-accent, #07c160);"/>
             <span style="font-size:13px;font-weight:600;">全选</span>
           </label>
           <div style="max-height:200px;overflow-y:auto;">${checkHtml || '<div style="padding:10px;color:rgba(20,24,28,.3);">暂无数据</div>'}</div>
           <div style="display:flex;gap:8px;margin-top:14px;">
             <button data-act="exCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:rgba(20,24,28,.6);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="exConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导出</button>
+            <button data-act="exConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导出</button>
           </div>
         </div>`;
         root.appendChild(overlay);
@@ -10450,7 +10415,7 @@ ${lines}
           <textarea data-el="imText" rows="6" placeholder="粘贴导出的 JSON 内容…" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid rgba(0,0,0,.12);border-radius:8px;font-size:11px;font-family:monospace;resize:vertical;"></textarea>
           <div style="display:flex;gap:8px;margin-top:10px;">
             <button data-act="imCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:rgba(20,24,28,.6);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="imConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导入</button>
+            <button data-act="imConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">导入</button>
           </div>
         </div>`;
         root.appendChild(overlay);
@@ -10528,7 +10493,7 @@ ${lines}
                 <div style="font-size:12px;color:var(--ph-text);">${esc(tx.desc||'交易')}</div>
                 <div style="font-size:10px;color:var(--ph-text-dim);margin-top:2px;">${ts}</div>
               </div>
-              <div style="font-size:13px;font-weight:600;color:${isSpend?'#e74c3c':'#07c160'};">${isSpend?'-':'+'}${tx.amount}</div>
+              <div style="font-size:13px;font-weight:600;color:${isSpend?'#e74c3c':'var(--ph-accent, #07c160)'};">${isSpend?'-':'+'}${tx.amount}</div>
             </div>`;
           }
         } else {
@@ -11005,7 +10970,7 @@ ${lines}
 
           html += `<div class="momentItem" data-mid="${esc(m.id)}">
             <div class="momentHead">
-              <div class="momentAvatar">${esc(m.avatar||'👤')}</div>
+              <div class="momentAvatar" data-npcid="${esc(m.authorId||m.author||'')}">${(()=>{const _mi=phoneGetAvatar(m.authorId||m.author||'');return _mi?`<img src="${_mi}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"/>`:esc(m.avatar||'👤');})()}</div>
               <div style="flex:1;"><div class="momentName">${esc(m.name)}</div></div>
             </div>
             <div class="momentContent">${esc(m.content)}</div>`;
@@ -11021,7 +10986,7 @@ ${lines}
             ${cmtsHtml}
             <div class="momentCmtInput" data-cmtbox="${esc(m.id)}" style="display:none;">
               <input type="text" placeholder="写评论…" data-cmtinput="${esc(m.id)}" data-replyto="" style="flex:1;padding:6px 10px;border-radius:14px;border:1px solid rgba(0,0,0,.1);background:#f7f7f7;color:#333;font-size:12px;outline:none;"/>
-              <button data-cmtsend="${esc(m.id)}" style="appearance:none;border:none;background:#07c160;color:#fff;padding:6px 12px;border-radius:14px;font-size:12px;cursor:pointer;font-weight:600;">发送</button>
+              <button data-cmtsend="${esc(m.id)}" style="appearance:none;border:none;background:var(--ph-accent, #07c160);color:#fff;padding:6px 12px;border-radius:14px;font-size:12px;cursor:pointer;font-weight:600;">发送</button>
             </div>
           </div>`;
         });
@@ -11116,7 +11081,7 @@ ${lines}
           </div>
           <div style="display:flex;gap:8px;">
             <button data-act="mcsCancelBtn" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;color:rgba(20,24,28,.6);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="mcsSaveBtn" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
+            <button data-act="mcsSaveBtn" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
           </div>
         </div>`;
         root.appendChild(overlay);
@@ -11763,7 +11728,7 @@ const npc = _wxGetChatTargetMeta(npcId);
                 <div style="font-size:11px;color:rgba(20,24,28,.45);margin-bottom:6px;">自定义总结提示词：</div>
                 <textarea data-el="sumCustomPrompt" data-npcid="${esc(contactId)}" placeholder="留空则使用全局默认提示词" rows="3" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;background:rgba(255,255,255,.6);">${esc((getChatSummary(contactId)||{}).customPrompt||'')}</textarea>
                 <div style="margin-top:10px;">
-                  <button data-act="wxCSGenSummary" data-npcid="${esc(contactId)}" style="width:100%;padding:10px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">立即生成总结</button>
+                  <button data-act="wxCSGenSummary" data-npcid="${esc(contactId)}" style="width:100%;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">立即生成总结</button>
                 </div>
                 <div style="margin-top:10px;">
                   <div style="font-size:11px;color:rgba(20,24,28,.45);margin-bottom:6px;">最近总结：</div>
@@ -11836,7 +11801,7 @@ const npc = _wxGetChatTargetMeta(npcId);
               <span style="font-size:12px;color:rgba(20,24,28,.4);" data-sl-val="${key}">${Math.round(val*100)}%</span>
             </div>
             <input type="range" min="0" max="100" value="${Math.round(val*100)}" data-sl="${key}"
-              style="width:100%;accent-color:#07c160;cursor:pointer;"/>
+              style="width:100%;accent-color:var(--ph-accent, #07c160);cursor:pointer;"/>
           </div>`;
         }
         function selectRow(label, key, opts, labels, cur){
@@ -11849,9 +11814,9 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         // 状态面板
         var moodEmoji={'开心':'😄','兴奋':'🤩','平静':'😌','害羞':'😳','疲惫':'😴','委屈':'🥺','烦躁':'😤','生气':'😠'};
-        var bondColors={'疏远':'#aaa','普通':'#888','亲近':'#07c160','暧昧':'#f39c12','冷战中':'#e74c3c'};
+        var bondColors={'疏远':'#aaa','普通':'#888','亲近':'var(--ph-accent, #07c160)','暧昧':'#f39c12','冷战中':'#e74c3c'};
         var energyPct = s.energy || 0;
-        var energyColor = energyPct > 60 ? '#07c160' : energyPct > 30 ? '#f39c12' : '#e74c3c';
+        var energyColor = energyPct > 60 ? 'var(--ph-accent, #07c160)' : energyPct > 30 ? '#f39c12' : '#e74c3c';
 
         var html = `<div style="padding-bottom:20px;">
           <!-- 状态面板 -->
@@ -11925,7 +11890,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           </div>
 
           <button data-act="cbSaveBehavior" data-npcid="${esc(contactId)}"
-            style="display:block;width:calc(100% - 28px);margin:12px 14px 0;padding:12px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
+            style="display:block;width:calc(100% - 28px);margin:12px 14px 0;padding:12px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
         </div>`;
         body.innerHTML = html;
 
@@ -12023,11 +11988,11 @@ const npc = _wxGetChatTargetMeta(npcId);
             </div>
             <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px;">
               <span style="font-size:13px;color:rgba(20,24,28,.7);min-width:36px;">精力</span>
-              <input type="range" data-el="energyRange" min="0" max="100" value="${cur.energy||80}" style="flex:1;accent-color:#07c160;"/>
+              <input type="range" data-el="energyRange" min="0" max="100" value="${cur.energy||80}" style="flex:1;accent-color:var(--ph-accent, #07c160);"/>
               <span data-el="energyLabel" style="font-size:12px;color:rgba(20,24,28,.4);min-width:28px;">${cur.energy||80}%</span>
             </div>
             <div style="display:flex;gap:8px;">
-              <button data-el="moodSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">确定</button>
+              <button data-el="moodSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">确定</button>
               <button data-el="moodCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button>
             </div>`;
           var ov = _cpShowOverlay(inner);
@@ -12070,7 +12035,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             <textarea data-el="csProfile" rows="6" style="width:100%;padding:10px 12px;border:1px solid rgba(0,0,0,.1);border-radius:10px;font-size:13px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;">${esc(mergedProfile)}</textarea>
           </div>
           <div style="margin-top:14px;display:flex;gap:8px;">
-            <button data-act="wxCSSaveProfile" data-npcid="${esc(contactId)}" style="flex:1;padding:12px;border-radius:12px;border:0;background:#07c160;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
+            <button data-act="wxCSSaveProfile" data-npcid="${esc(contactId)}" style="flex:1;padding:12px;border-radius:12px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
             <button data-act="wxCSBack" data-npcid="${esc(contactId)}" style="flex:1;padding:12px;border-radius:12px;border:1px solid rgba(0,0,0,.1);background:#fff;color:rgba(20,24,28,.7);font-size:14px;cursor:pointer;">取消</button>
           </div>
         </div>`;
@@ -12216,7 +12181,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             </div>
           </div>
           <div style="display:flex;gap:8px;margin-top:14px;">
-            <button data-el="rSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">添加</button>
+            <button data-el="rSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">添加</button>
             <button data-el="rCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:#fff;color:rgba(20,24,28,.7);font-size:13px;cursor:pointer;">取消</button>
           </div>`;
         const ov = _cpShowOverlay(innerHtml);
@@ -12224,7 +12189,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         ov.querySelectorAll('.rIcoPick').forEach(el=>{
           el.addEventListener('click', ()=>{
             ov.querySelectorAll('.rIcoPick').forEach(x=>x.style.borderColor='transparent');
-            el.style.borderColor = '#07c160';
+            el.style.borderColor = 'var(--ph-accent, #07c160)';
             pickedIco = el.getAttribute('data-ico') || '⏰';
           });
         });
@@ -12357,7 +12322,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           const waveId = 'ttsWave_' + (ts || Date.now());
           contentHtml = `<div class="wxCBContent wxCBSpecial" style="padding:0;overflow:hidden;border-radius:12px;min-width:180px;max-width:240px;">
             <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(255,255,255,.9);">
-              <button data-ttsplay="${waveId}" style="width:32px;height:32px;border-radius:50%;border:0;background:#07c160;color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">▶</button>
+              <button data-ttsplay="${waveId}" style="width:32px;height:32px;border-radius:50%;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">▶</button>
               <div style="flex:1;display:flex;align-items:center;gap:2px;height:22px;" id="${waveId}_bar">
                 ${Array.from({length:14},(_,i)=>`<div style="width:3px;border-radius:2px;background:rgba(7,193,96,${0.3+0.7*Math.abs(Math.sin(i*0.7))});height:${4+Math.round(14*Math.abs(Math.sin(i*0.7)))}px;"></div>`).join('')}
               </div>
@@ -13204,10 +13169,10 @@ const npc = _wxGetChatTargetMeta(npcId);
         var s = _loadCharState(npcId);
 
         var moodEmoji = {'开心':'😄','兴奋':'🤩','平静':'😌','害羞':'😳','疲惫':'😴','委屈':'🥺','烦躁':'😤','生气':'😠'};
-        var bondColor = {'疏远':'#aaa','普通':'rgba(20,24,28,.45)','亲近':'#07c160','暧昧':'#f39c12','冷战中':'#e74c3c'};
+        var bondColor = {'疏远':'#aaa','普通':'rgba(20,24,28,.45)','亲近':'var(--ph-accent, #07c160)','暧昧':'#f39c12','冷战中':'#e74c3c'};
         var bondBg    = {'疏远':'rgba(0,0,0,.05)','普通':'rgba(0,0,0,.06)','亲近':'rgba(7,193,96,.1)','暧昧':'rgba(243,156,18,.1)','冷战中':'rgba(231,76,60,.1)'};
         var energyPct = Math.max(0, Math.min(100, s.energy || 0));
-        var energyColor = energyPct > 60 ? '#07c160' : energyPct > 30 ? '#f39c12' : '#e74c3c';
+        var energyColor = energyPct > 60 ? 'var(--ph-accent, #07c160)' : energyPct > 30 ? '#f39c12' : '#e74c3c';
 
         var bx = _loadCharBehavior(npcId);
         var wearing   = bx.wearing   || '';
@@ -15256,8 +15221,8 @@ const npc = _wxGetChatTargetMeta(npcId);
             <div style="font-size:14px;font-weight:600;margin-bottom:6px;">${esc(npc.name)}</div>
             <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:16px;">选择通话方式</div>
             <div style="display:flex;gap:10px;justify-content:center;">
-              <button data-act="cpCallStart" data-calltype="voice" style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:#07c160;color:#fff;font-size:13px;cursor:pointer;">📞 语音通话</button>
-              <button data-act="cpCallStart" data-calltype="video" style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:#07c160;color:#fff;font-size:13px;cursor:pointer;">📹 视频通话</button>
+              <button data-act="cpCallStart" data-calltype="voice" style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:var(--ph-accent, #07c160);color:#fff;font-size:13px;cursor:pointer;">📞 语音通话</button>
+              <button data-act="cpCallStart" data-calltype="video" style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:var(--ph-accent, #07c160);color:#fff;font-size:13px;cursor:pointer;">📹 视频通话</button>
             </div>
           </div>
         `);
@@ -15325,7 +15290,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         ];
         let optHtml = '';
         locations.forEach((loc,i)=>{
-          optHtml += `<div data-act="cpLocPick" data-idx="${i}" style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;${loc.custom?'color:#07c160;font-weight:600;':''}">
+          optHtml += `<div data-act="cpLocPick" data-idx="${i}" style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;${loc.custom?'color:var(--ph-accent, #07c160);font-weight:600;':''}">
             <span>📍</span><span>${esc(loc.name)}</span>
           </div>`;
         });
@@ -15334,7 +15299,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           <div style="max-height:200px;overflow-y:auto;border-radius:10px;border:1px solid rgba(0,0,0,.06);">${optHtml}</div>
           <div data-el="customInput" style="display:none;margin-top:10px;">
             <input type="text" placeholder="输入位置名称…" data-el="locNameInput" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);font-size:13px;box-sizing:border-box;"/>
-            <button data-act="cpLocSendCustom" style="margin-top:8px;width:100%;padding:8px;border-radius:8px;background:#07c160;color:#fff;border:none;font-size:13px;cursor:pointer;">发送</button>
+            <button data-act="cpLocSendCustom" style="margin-top:8px;width:100%;padding:8px;border-radius:8px;background:var(--ph-accent, #07c160);color:#fff;border:none;font-size:13px;cursor:pointer;">发送</button>
           </div>
         `);
         ov.querySelectorAll('[data-act="cpLocPick"]').forEach(el=>{
@@ -16091,7 +16056,7 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         var html = '<div class="forumMePage">' +
           '<div class="forumMeBanner">' +
-            '<div class="forumMeAvatar">'+esc(myAvatar)+'</div>' +
+            '<div class="forumMeAvatar">'+(phoneGetAvatar('me')?'<img src="'+phoneGetAvatar('me')+'" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"/>':esc(myAvatar))+'</div>' +
             '<div class="forumMeName">'+esc(myName)+'</div>' +
             '<div class="forumMeStats">' +
               '<div class="forumMeStat" data-act="forumShowFollowing" style="cursor:pointer;"><div class="forumMeStatNum">'+followCount+'</div><div class="forumMeStatLabel">关注</div></div>' +
@@ -16392,7 +16357,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         let html = `
           <div class="npcProfile">
             
-            <div class="npcProfileAvatar">${esc(avatar)}</div>
+            <div class="npcProfileAvatar">${(()=>{const _ni=phoneGetAvatar(npc?.id||'');return _ni?`<img src="${_ni}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"/>`:esc(avatar);})()}</div>
             <div class="npcProfileName">${esc(name)}</div>
             <div class="npcProfileBio">${esc(bio)}</div>
             <div class="npcProfileStats">
@@ -17449,7 +17414,7 @@ function renderSettingsUIApp(container){
           '<div class="settingSubTitle">📝 上下文条数</div>' +
           '<div class="settingSubDesc">AI 回复时参考最近多少条聊天记录。数值越大效果越好但消耗更多 Token。</div>' +
           '<div style="display:flex;align-items:center;gap:12px;margin-top:18px;">' +
-            '<input type="range" min="3" max="50" value="' + current + '" data-ph="ctxNSlider" style="flex:1;accent-color:#07c160;" />' +
+            '<input type="range" min="3" max="50" value="' + current + '" data-ph="ctxNSlider" style="flex:1;accent-color:var(--ph-accent, #07c160);" />' +
             '<span data-ph="ctxNVal" style="font-size:15px;font-weight:600;color:var(--ph-text);min-width:36px;text-align:center;">' + current + '</span>' +
           '</div>' +
           '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ph-text-dim);margin-top:4px;padding:0 2px;"><span>3条</span><span>50条</span></div>' +
