@@ -1994,7 +1994,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .chatItem:hover{ background:var(--ph-glass); }
 #${ID} .chatItem:active{ background:var(--ph-glass-strong); }
 #${ID} .chatItem .cAvatar{
-  width:44px; height:44px; border-radius:50%; flex-shrink:0;
+  width:44px; height:44px; border-radius:50%; flex-shrink:0; overflow:hidden;
   background:var(--ph-glass-strong); border:1px solid var(--ph-glass-border);
   display:flex; align-items:center; justify-content:center; font-size:18px;
   box-shadow:0 2px 8px var(--ph-shadow);
@@ -2394,7 +2394,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 #${ID} .wxChatBubble.me{ flex-direction:row-reverse; align-self:flex-end; }
 #${ID} .wxChatBubble.them{ align-self:flex-start; }
 #${ID} .wxChatBubble .wxCBAvatar{
-  width:36px; height:36px; border-radius:6px; flex-shrink:0;
+  width:36px; height:36px; border-radius:6px; flex-shrink:0; overflow:hidden;
   background:var(--ph-glass-strong); border:1px solid rgba(0,0,0,.06);
   display:flex; align-items:center; justify-content:center; font-size:15px;
   box-shadow:0 1px 4px rgba(0,0,0,.08);
@@ -2602,7 +2602,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   background:#fff; outline:none; font-family:inherit;
   -webkit-appearance:none;
 }
-#${ID} .wxEditMsgBox textarea:focus{ border-color:#07c160; }
+#${ID} .wxEditMsgBox textarea:focus{ border-color:var(--ph-accent, #07c160); }
 #${ID} .wxEditMsgBox .wxEMBtns{
   display:flex; gap:8px; margin-top:12px; justify-content:flex-end;
 }
@@ -2614,7 +2614,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   background:rgba(0,0,0,.06); color:rgba(20,24,28,.6);
 }
 #${ID} .wxEditMsgBox .wxEMBtn.ok{
-  background:#07c160; color:#fff; font-weight:600;
+  background:var(--ph-accent, #07c160); color:#fff; font-weight:600;
 }
 #${ID} .wxEditMsgBox .wxEMBtn:active{ opacity:.75; }
 /* === 已编辑标记 + 撤回样式 === */
@@ -2804,7 +2804,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   position:relative; width:44px; height:24px; border-radius:12px; cursor:pointer;
   border:0; transition:background .2s; flex-shrink:0;
 }
-#${ID} .wxReminderToggle.on{ background:#07c160; }
+#${ID} .wxReminderToggle.on{ background:var(--ph-accent, #07c160); }
 #${ID} .wxReminderToggle.off{ background:#ccc; }
 #${ID} .wxReminderToggle::after{
   content:''; position:absolute; top:2px; width:20px; height:20px; border-radius:50%;
@@ -4003,6 +4003,9 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 
             const img = key ? avatars[key] : '';
             if (key && img){
+              // If already has inline img (pre-rendered), just ensure it's current
+              const existingImg = el.querySelector('img[src]');
+              if (existingImg && existingImg.src === img) return; // already up to date
               el.style.backgroundImage = `url("${img}")`;
               el.style.backgroundSize = 'cover';
               el.style.backgroundPosition = 'center';
@@ -7221,7 +7224,10 @@ ${lines}
           list.forEach(it=>{
             const t = it.lastTime ? _hm(it.lastTime) : '';
             const unread = Math.max(0, Number(it.unread||0));
-            const av = esc((it.avatar||it.name||'?').charAt(0));
+            const _avImg = phoneGetAvatar(it.id);
+            const av = _avImg 
+              ? `<img src="${_avImg}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />`
+              : esc((it.avatar||it.name||'?').charAt(0));
             const isPinned = pinned.includes(it.id);
             html += `<div class="chatItemSwipeWrap${isPinned?' chatItemPinned':''}" data-swipeid="${esc(it.id)}">
               <div class="swipeActions">
@@ -7471,7 +7477,7 @@ ${lines}
 
           <div style="display:flex;gap:8px;">
             <button data-act="wxAddFriendCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.10);background:#fff;color:rgba(20,24,28,.60);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="wxAddFriendConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">添加</button>
+            <button data-act="wxAddFriendConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">添加</button>
           </div>
         </div>`;
 
@@ -7604,7 +7610,7 @@ ${lines}
 
           <div style="display:flex;gap:8px;">
             <button data-act="wxCreateGroupCancel" style="flex:1;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,.10);background:#fff;color:rgba(20,24,28,.60);font-size:13px;cursor:pointer;">取消</button>
-            <button data-act="wxCreateGroupConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:#07c160;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">创建</button>
+            <button data-act="wxCreateGroupConfirm" style="flex:1;padding:10px;border-radius:8px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">创建</button>
           </div>
         </div>`;
 
@@ -11327,7 +11333,11 @@ ensureThread(npc.id, npc.name, npc.avatar);
       function _appendBubble(msgs, npc, role, text, ts){
         const b = doc.createElement('div');
         b.className = `chatBubble ${role}`;
-        const avatar = (role==='me') ? '👤' : (npc.avatar || (npc.name||'?').charAt(0));
+        const _cbAvKey = (role==='me') ? 'me' : (npc.id||npc.name||'');
+        const _cbAvImg = _cbAvKey ? phoneGetAvatar(_cbAvKey) : '';
+        const avatar = _cbAvImg
+          ? `<img src="${_cbAvImg}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" />`
+          : ((role==='me') ? '👤' : (npc.avatar || (npc.name||'?').charAt(0)));
         b.innerHTML = `<div class="cbAvatar">${esc(avatar)}</div><div><div class="cbContent">${esc(text)}</div><div class="cbTime">${esc(_fmtTime(ts))}</div></div>`;
         msgs.appendChild(b);
       }
@@ -12364,9 +12374,9 @@ const npc = _wxGetChatTargetMeta(npcId);
         // ✅ NPC 头像点击 → 显示状态面板
         var avatarHtml;
         if (role === 'them') {
-          avatarHtml = `<div class="wxCBAvatar" data-act="wxAvatarTap" data-npcid="${esc(npc.id||'')}" style="cursor:pointer;">${esc(avatar)}</div>`;
+          avatarHtml = `<div class="wxCBAvatar" data-act="wxAvatarTap" data-npcid="${esc(npc.id||'')}" style="cursor:pointer;">${typeof avatar==='string'&&avatar.startsWith('<img') ? avatar : esc(avatar)}</div>`;
         } else {
-          avatarHtml = `<div class="wxCBAvatar">${esc(avatar)}</div>`;
+          avatarHtml = `<div class="wxCBAvatar">${typeof avatar==='string'&&avatar.startsWith('<img') ? avatar : esc(avatar)}</div>`;
         }
         b.innerHTML = avatarHtml + contentHtml;
         msgs.appendChild(b);
