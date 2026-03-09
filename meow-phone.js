@@ -2863,13 +2863,14 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 /* 头像自定义弹窗 */
 #${ID} .phAvatarPopup{
   position:absolute; inset:0; z-index:90;
-  background:rgba(0,0,0,.4); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  background:rgba(20,30,50,.18); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
   display:flex; flex-direction:column; justify-content:center; align-items:center;
 }
 #${ID} .phAvatarPopupInner{
-  background:rgba(30,30,50,.92); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  background:rgba(255,255,255,.92); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
   border-radius:18px; padding:20px; width:min(260px, 80%);
-  border:1px solid rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.9);
+  box-shadow:0 12px 40px rgba(80,100,140,.18);
 }
 
 /* ---------- Forum (Weibo-like) ---------- */
@@ -3083,7 +3084,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   display:grid; grid-template-columns:repeat(3,1fr); gap:3px; padding:3px;
 }
 #${ID} .photoThumb{
-  aspect-ratio:1; background:var(--ph-glass);
+  aspect-ratio:1; background:rgba(255,255,255,.22);
   display:flex; align-items:center; justify-content:center;
   font-size:24px; color:var(--ph-text-dim); cursor:pointer;
   transition:opacity .12s; border-radius:2px; overflow:hidden;
@@ -3823,7 +3824,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
             overlay.className = 'phAvatarOverlay';
             overlay.setAttribute('data-ph-avatar-overlay','1');
             // ✅ 遮罩样式：仅在 phone root 内生效，不动 document.body
-            overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;';
+            overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(30,40,60,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;';
 
             const popup = doc.createElement('div');
             popup.className = 'phAvatarPopup';
@@ -5244,7 +5245,13 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
                 if (content2) renderChatMsgsList(content2);
               }
               // 关闭设置弹窗
-              root.querySelectorAll('.afModalOverlay,.wxConfirmOverlay').forEach(function(o){o.remove();});
+              root.querySelectorAll('.afSettingsModal,.afModalOverlay,.wxConfirmOverlay,.phModalMask').forEach(function(o){o.remove();});
+              // Re-render current view after clear
+              try{
+                if(appkey==='forum' && state.app==='forum'){ renderApp('forum'); }
+                else if(appkey==='moments'){ var _mc=root.querySelector('[data-ph="chatTabContent"]'); if(_mc) renderMoments(_mc); }
+                else if(appkey==='browser' && state.app==='browser'){ renderApp('browser'); }
+              }catch(re2){}
             }catch(err){ try{toast('清空失败: '+err.message);}catch(e){} }
             return;
           }
@@ -11503,13 +11510,30 @@ const npc = _wxGetChatTargetMeta(npcId);
         input.addEventListener('touchend', (e)=>{ e.stopPropagation(); try{input.focus();}catch(e){} });
         input.addEventListener('blur', ()=>{ input._lastVal = input.value; });
         setTimeout(()=>{ try{input.focus();}catch(e){} }, 150);
-        // ✅ 直接绑定发送键
+        // ✅ 直接绑定发送键 - 在 pointerdown 阶段抓取值，避免 blur 时序问题
         const sendBtn = body.querySelector('.wxChatSendBtn');
         if (sendBtn){
-          sendBtn.addEventListener('pointerdown', (e)=>{ e.preventDefault(); e.stopPropagation(); }, { capture:true });
-          sendBtn.addEventListener('mousedown',   (e)=>{ e.preventDefault(); e.stopPropagation(); }, { capture:true });
-          sendBtn.addEventListener('click',       (e)=>{ e.preventDefault(); e.stopPropagation(); _wxSendChat(contactId); }, { capture:true });
-          sendBtn.addEventListener('touchend',    (e)=>{ e.preventDefault(); e.stopPropagation(); _wxSendChat(contactId); }, { capture:true });
+          let _pendingText = '';
+          // pointerdown/touchstart: 立刻读值（textarea 尚未 blur）
+          const _grabVal = (e)=>{
+            _pendingText = String(input.value || input._lastVal || '').trim();
+            e.preventDefault(); e.stopPropagation();
+          };
+          sendBtn.addEventListener('pointerdown', _grabVal, { capture:true });
+          sendBtn.addEventListener('touchstart',  _grabVal, { capture:true, passive:false });
+          sendBtn.addEventListener('mousedown',   _grabVal, { capture:true });
+          // click/touchend: 用抓到的值发送
+          const _doSend = (e)=>{
+            e.preventDefault(); e.stopPropagation();
+            const txt = _pendingText || String(input.value || input._lastVal || '').trim();
+            _pendingText = '';
+            if (!txt) return;
+            // 直接传文字，跳过再次读 input
+            input.value = ''; input._lastVal = '';
+            _wxSendChatText(contactId, txt);
+          };
+          sendBtn.addEventListener('click',    _doSend, { capture:true });
+          sendBtn.addEventListener('touchend', _doSend, { capture:true });
         }
       }
 
@@ -14944,13 +14968,26 @@ const npc = _wxGetChatTargetMeta(npcId);
         }
       }
 
+      // ✅ 直接用文本发送，绕过 input.value 读取（解决 blur 时序问题）
+      async function _wxSendChatText(npcId, text){
+        // 清空输入框（如果还能访问到）
+        try{ const _inp = root.querySelector('[data-ph="chatInput"]'); if(_inp){ _inp.value=''; _inp._lastVal=''; } }catch(e){}
+        // 构造假 input 注入到 _wxSendChat 流程
+        const _fakeInput = { value: text, _lastVal: text };
+        const _origQuery = root.querySelector.bind(root);
+        // 临时 patch querySelector 让 _wxSendChat 读到 fakeInput
+        root._phFakeInput = _fakeInput;
+        await _wxSendChat(npcId);
+        root._phFakeInput = null;
+      }
+
+
       async function _wxSendChat(npcId){
-        const input = root.querySelector('[data-ph="chatInput"]');
+        const input = root._phFakeInput || root.querySelector('[data-ph="chatInput"]');
         if (!input) return;
         const text = String(input.value || input._lastVal || '').trim();
-        input._lastVal = '';
+        if (!root._phFakeInput){ input._lastVal = ''; input.value = ''; }
         if (!text) return;
-        input.value = '';
 
         const db = loadContactsDB();
         const npc = findContactById(db, npcId) || { id:npcId, name:String(npcId), avatar:(String(npcId).charAt(0)), profile:'' };
@@ -16800,25 +16837,25 @@ const npc = _wxGetChatTargetMeta(npcId);
         const photos = phoneLoadPhotos();
         const cat = tab || 'all';
         const items = photos[cat] || [];
-        const _svgPh = (ico) => `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--ph-glass-strong);">${_phFlatIcon(ico)}</div>`;
+        const _svgPh = (ico) => { const sv=_phFlatIcon(ico); return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.18);">${sv.replace('fill:var(--ph-icon-inner-tint, var(--ph-text-sub))','fill:var(--ph-icon-inner-tint,rgba(140,160,180,.55))')}</div>`; };
         const defaultPlaceholders = {
           all: [
-            _svgPh('🖼'), _svgPh('🌸'), _svgPh('🌙'),
-            _svgPh('🎨'), _svgPh('📷'), _svgPh('🌈'),
-            _svgPh('🏔'), _svgPh('🌊'), _svgPh('⭐'),
-            _svgPh('🎭'), _svgPh('🦋'), _svgPh('🍃'),
+            _svgPh('🖼'), _svgPh('⭐'), _svgPh('🖼'),
+            _svgPh('✏'), _svgPh('📷'), _svgPh('🎭'),
+            _svgPh('🖼'), _svgPh('🖼'), _svgPh('⭐'),
+            _svgPh('🎭'), _svgPh('⭐'), _svgPh('⭐'),
           ],
           avatar: [
-            _svgPh('👤'), _svgPh('🐱'), _svgPh('🐶'),
+            _svgPh('👤'), _svgPh('😊'), _svgPh('😊'),
             _svgPh('🔥'), _svgPh('⭐'), _svgPh('🎭'),
           ],
           wallpaper: [
-            _svgPh('🖼'), _svgPh('🌊'), _svgPh('🏔'),
-            _svgPh('⭐'), _svgPh('🌸'), _svgPh('❄️'),
+            _svgPh('🖼'), _svgPh('🖼'), _svgPh('🖼'),
+            _svgPh('⭐'), _svgPh('⭐'), _svgPh('⭐'),
           ],
           sticker: [
             _svgPh('😊'), _svgPh('💬'), _svgPh('⭐'),
-            _svgPh('🎉'), _svgPh('🔥'), _svgPh('💕'),
+            _svgPh('🔥'), _svgPh('🔥'), _svgPh('⭐'),
             _svgPh('✉️'), _svgPh('🎯'), _svgPh('🎭'),
           ],
         };
