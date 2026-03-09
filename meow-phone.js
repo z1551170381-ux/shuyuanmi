@@ -18440,7 +18440,3 @@ function bindPageScroll(){
 
   console.log('[MEOW Phone] 小手机插件已加载 ✓');
 })();
-#${ID}[data-theme="frost"] .phAppIcon .at,
-#${ID}[data-theme="frost"] .phDockBtn .dt{
-  color:rgba(72,86,104,.86);
-}
