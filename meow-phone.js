@@ -931,13 +931,13 @@ function ensureTuneStyle(){
 }
 
 #${ID}[data-theme="frost"] .phAppIcon .ai svg.phIco{
-  width:20px;
-  height:20px;
+  width:30px;
+  height:30px;
 }
 
 #${ID}[data-theme="frost"] .phDockBtn .di svg.phIco{
-  width:18px;
-  height:18px;
+  width:27px;
+  height:27px;
 }
 
 #${ID}[data-theme="frost"] .phAppIcon:hover,
