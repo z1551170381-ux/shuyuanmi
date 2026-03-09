@@ -937,7 +937,7 @@ function phoneApplyWallpaper(base64OrEmpty, target){
 
       // ✅ 通用 emoji→SVG 映射（App 内部图标扁平化）
       function _phFlatIcon(emoji){
-        const s = (d)=>`<svg class="phIco" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em;vertical-align:middle;">${d}</svg>`;
+        const s = (d)=>`<svg class="phIco" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;vertical-align:middle;flex-shrink:0;">${d}</svg>`;
         const k = String(emoji||'').replace(/\uFE0F/g,'');
         switch(k){
           case '📰': return s('<path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 2v2h16V6H4zm0 4v8h16v-8H4zm2 2h5v4H6v-4z"/>');
@@ -3117,7 +3117,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   display:flex; align-items:center; justify-content:center;
   font-size:16px; color:var(--ph-text-sub);
 }
-#${ID} .browserBmIcon svg{ width:18px; height:18px; fill:currentColor; }
+#${ID} .browserBmIcon svg{ width:18px; height:18px; }
 #${ID} .browserBmTitle{ color:var(--ph-text); font-size:13px; font-weight:500; }
 #${ID} .browserBmDesc{ color:var(--ph-text-dim); font-size:11.5px; margin-top:2px; }
 
