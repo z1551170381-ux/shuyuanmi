@@ -955,6 +955,41 @@ function ensureTuneStyle(){
   opacity:.86;
 }
 
+/* frost：图标前景保持清晰，底色退后，不再用父层 opacity 连带冲淡图标 */
+#${ID}[data-theme="frost"] .phAppIcon .ai,
+#${ID}[data-theme="frost"] .phDockBtn .di{
+  opacity:1;
+  filter:none;
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.18),
+    inset 0 0 0 1px rgba(255,255,255,.05);
+}
+
+#${ID}[data-theme="frost"] .phAppIcon .ai svg.phIco,
+#${ID}[data-theme="frost"] .phDockBtn .di svg.phIco,
+#${ID}[data-theme="frost"] .phAppIcon .ai,
+#${ID}[data-theme="frost"] .phDockBtn .di{
+  color:rgba(66,84,102,.92) !important;
+}
+
+#${ID}[data-theme="frost"] .phAppIcon .ai svg.phIco,
+#${ID}[data-theme="frost"] .phDockBtn .di svg.phIco{
+  opacity:1;
+  fill:currentColor !important;
+  filter:drop-shadow(0 0 .01px rgba(255,255,255,.35));
+}
+
+#${ID}[data-theme="frost"] .phAppIcon[data-app="chats"] .ai{ background:linear-gradient(135deg, rgba(123,158,168,.20), rgba(154,184,194,.12)) !important; }
+#${ID}[data-theme="frost"] .phAppIcon[data-app="calendar"] .ai{ background:linear-gradient(135deg, rgba(160,136,181,.20), rgba(189,164,209,.12)) !important; }
+#${ID}[data-theme="frost"] .phAppIcon[data-app="forum"] .ai{ background:linear-gradient(135deg, rgba(139,157,175,.20), rgba(168,184,200,.12)) !important; }
+#${ID}[data-theme="frost"] .phAppIcon[data-app="weather"] .ai{ background:linear-gradient(135deg, rgba(196,168,130,.22), rgba(217,196,168,.12)) !important; }
+#${ID}[data-theme="frost"] .phAppIcon[data-app="themes"] .ai{ background:linear-gradient(135deg, rgba(184,169,201,.20), rgba(209,196,224,.12)) !important; }
+#${ID}[data-theme="frost"] .phDockBtn[data-app="sms"] .di{ background:linear-gradient(135deg, rgba(141,168,184,.20), rgba(168,192,207,.12)) !important; }
+#${ID}[data-theme="frost"] .phDockBtn[data-app="browser"] .di{ background:linear-gradient(135deg, rgba(123,158,168,.20), rgba(154,184,194,.12)) !important; }
+#${ID}[data-theme="frost"] .phDockBtn[data-app="photos"] .di{ background:linear-gradient(135deg, rgba(164,196,154,.20), rgba(188,216,180,.12)) !important; }
+#${ID}[data-theme="frost"] .phDockBtn[data-app="settings"] .di{ background:linear-gradient(135deg, rgba(158,158,175,.19), rgba(184,184,200,.11)) !important; }
+
     `;
     (doc.head || doc.documentElement).appendChild(st);
   }catch(e){}
