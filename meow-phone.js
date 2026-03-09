@@ -2254,7 +2254,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   box-shadow: 0 1px 4px var(--ph-shadow) !important;
 }
 #${ID} .wxDIcoThemed svg.phIco{
-  fill: var(--ph-text-sub) !important;
+  fill: var(--ph-icon-inner-tint, var(--ph-text-sub)) !important;
   opacity: 1;
 }
 
@@ -3079,7 +3079,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   font-size:24px; color:var(--ph-text-dim); cursor:pointer;
   transition:opacity .12s; border-radius:2px; overflow:hidden;
 }
-#${ID} .photoThumb svg.phIco{ width:32px; height:32px; fill:rgba(180,200,220,.70); }
+#${ID} .photoThumb svg.phIco{ width:32px; height:32px; fill:var(--ph-icon-inner-tint, var(--ph-text-sub)); }
 #${ID} .photoThumb:active{ opacity:.7; }
 #${ID} .photoThumb img{ width:100%; height:100%; object-fit:cover; }
 #${ID} .photoTabs{ display:flex; border-bottom:1px solid rgba(255,255,255,.06); }
@@ -3986,8 +3986,12 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
             }
 
             else {
-              const nameEl = el.parentElement?.querySelector('.momentName,.feedName,.npcProfileName');
-              if (nameEl) key = (nameEl.textContent||'').trim();
+              // Direct npcid attr
+              key = el.getAttribute('data-npcid') || '';
+              if (!key){
+                const nameEl = el.parentElement?.querySelector('.momentName,.feedName,.npcProfileName');
+                if (nameEl) key = (nameEl.textContent||'').trim();
+              }
               if (!key){
                 const row = el.closest('[data-chatid],[data-npcid]');
                 key = row?.getAttribute('data-chatid') || row?.getAttribute('data-npcid') || '';
@@ -7223,7 +7227,7 @@ ${lines}
                 <button class="swipeBtn del" data-act="wxDelChat" data-npcid="${esc(it.id)}">删除</button>
               </div>
               <div class="chatItemInner wxChatRow" data-chatid="${esc(it.id)}">
-                <div class="cAvatar wxChatAvatar" style="position:relative;">${av}${unread>0?`<span class="wxBadge">${unread>99?'99+':unread}</span>`:''}</div>
+                <div class="cAvatar wxChatAvatar" data-npcid="${esc(it.id)}" style="position:relative;">${av}${unread>0?`<span class="wxBadge">${unread>99?'99+':unread}</span>`:''}</div>
                 <div class="cInfo wxChatInfo">
                   <div class="wxChatInfoTop">
                     <div class="cName wxChatName">${esc(it.name||it.id)}</div>
@@ -10497,14 +10501,14 @@ ${lines}
           </div>
         </div>`;
         // 快捷功能
+        const _wico = (ico, label) => `<div style="text-align:center;padding:10px 0;">
+          <div style="width:44px;height:44px;border-radius:12px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;background:var(--ph-glass-strong);border:1px solid var(--ph-glass-border);font-size:0;">${_phFlatIcon(ico)}</div>
+          <div style="font-size:11px;color:var(--ph-text-dim);">${label}</div></div>`;
         html += `<div style="margin:0 14px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
-          <div style="text-align:center;padding:10px 0;"><div style="font-size:22px;">🧧</div><div style="font-size:11px;color:rgba(20,24,28,.5);margin-top:4px;">红包</div></div>
-          <div style="text-align:center;padding:10px 0;"><div style="font-size:22px;">💰</div><div style="font-size:11px;color:rgba(20,24,28,.5);margin-top:4px;">转账</div></div>
-          <div style="text-align:center;padding:10px 0;"><div style="font-size:22px;">🎁</div><div style="font-size:11px;color:rgba(20,24,28,.5);margin-top:4px;">礼物</div></div>
-          <div style="text-align:center;padding:10px 0;"><div style="font-size:22px;">📊</div><div style="font-size:11px;color:rgba(20,24,28,.5);margin-top:4px;">账单</div></div>
+          ${_wico('✉️','红包')}${_wico('📤','转账')}${_wico('⭐','礼物')}${_wico('📋','账单')}
         </div>`;
         // 交易记录
-        html += `<div style="margin:14px;font-size:13px;font-weight:600;color:rgba(20,24,28,.7);">最近交易</div>`;
+        html += `<div style="margin:14px;font-size:13px;font-weight:600;color:var(--ph-text);">最近交易</div>`;
         const txns = _safeArr(w.transactions).slice(0, 20);
         if (txns.length){
           for (const tx of txns){
@@ -10513,14 +10517,14 @@ ${lines}
             const ts = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
             html += `<div style="padding:8px 14px;display:flex;align-items:center;border-bottom:1px solid rgba(0,0,0,.04);">
               <div style="flex:1;">
-                <div style="font-size:12px;color:rgba(20,24,28,.7);">${esc(tx.desc||'交易')}</div>
-                <div style="font-size:10px;color:rgba(20,24,28,.3);margin-top:2px;">${ts}</div>
+                <div style="font-size:12px;color:var(--ph-text);">${esc(tx.desc||'交易')}</div>
+                <div style="font-size:10px;color:var(--ph-text-dim);margin-top:2px;">${ts}</div>
               </div>
               <div style="font-size:13px;font-weight:600;color:${isSpend?'#e74c3c':'#07c160'};">${isSpend?'-':'+'}${tx.amount}</div>
             </div>`;
           }
         } else {
-          html += `<div style="padding:20px 14px;text-align:center;font-size:12px;color:rgba(20,24,28,.3);">暂无交易记录</div>`;
+          html += `<div style="padding:20px 14px;text-align:center;font-size:12px;color:var(--ph-text-dim);">暂无交易记录</div>`;
         }
         body.innerHTML = html;
 
@@ -12110,7 +12114,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             <div style="font-size:12px;color:rgba(20,24,28,.4);margin-bottom:8px;">快捷添加</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">`;
         presets.forEach(p=>{
-          html += `<button data-act="wxReminderQuickAdd" data-npcid="${esc(contactId)}" data-rname="${esc(p.name)}" data-rtime="${esc(p.time)}" data-rico="${esc(p.ico)}" style="padding:8px 14px;border-radius:20px;border:1px solid rgba(0,0,0,.08);background:#fff;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px;">${p.ico} ${p.name}</button>`;
+          html += `<button data-act="wxReminderQuickAdd" data-npcid="${esc(contactId)}" data-rname="${esc(p.name)}" data-rtime="${esc(p.time)}" data-rico="${esc(p.ico)}" style="padding:7px 12px;border-radius:20px;border:1px solid var(--ph-glass-border);background:var(--ph-glass-strong);font-size:12px;color:var(--ph-text);cursor:pointer;display:flex;align-items:center;gap:5px;">${p.ico} ${p.name}</button>`;
         });
         html += `</div></div>
           <div class="wxReminderList">`;
@@ -12119,7 +12123,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         } else {
           reminders.forEach((r, i)=>{
             html += `<div class="wxReminderItem">
-              <div class="wxRIco">${esc(r.ico||'⏰')}</div>
+              <div class="wxRIco" style="font-size:18px;">${r.ico||'⏰'}</div>
               <div class="wxRInfo">
                 <div class="wxRName">${esc(r.name||'提醒')}</div>
                 <div class="wxRTime">${esc(r.time||'--')}</div>
@@ -16806,26 +16810,26 @@ const npc = _wxGetChatTargetMeta(npcId);
         const photos = phoneLoadPhotos();
         const cat = tab || 'all';
         const items = photos[cat] || [];
-        const _svgPh = (ico, bg) => `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${bg||'transparent'}">${_phFlatIcon(ico)}</div>`;
+        const _svgPh = (ico) => `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--ph-glass-strong);">${_phFlatIcon(ico)}</div>`;
         const defaultPlaceholders = {
           all: [
-            _svgPh('🖼','rgba(180,200,210,.18)'), _svgPh('🌸','rgba(255,180,200,.14)'), _svgPh('🌙','rgba(180,180,255,.12)'),
-            _svgPh('🎨','rgba(255,200,150,.14)'), _svgPh('📷','rgba(160,190,180,.16)'), _svgPh('🌈','rgba(200,220,255,.14)'),
-            _svgPh('🏔','rgba(160,180,170,.16)'), _svgPh('🌊','rgba(160,210,230,.16)'), _svgPh('⭐','rgba(255,220,120,.14)'),
-            _svgPh('🎭','rgba(180,160,210,.16)'), _svgPh('🦋','rgba(210,180,240,.14)'), _svgPh('🍃','rgba(160,210,170,.16)'),
+            _svgPh('🖼'), _svgPh('🌸'), _svgPh('🌙'),
+            _svgPh('🎨'), _svgPh('📷'), _svgPh('🌈'),
+            _svgPh('🏔'), _svgPh('🌊'), _svgPh('⭐'),
+            _svgPh('🎭'), _svgPh('🦋'), _svgPh('🍃'),
           ],
           avatar: [
-            _svgPh('👤','rgba(160,190,220,.16)'), _svgPh('🐱','rgba(255,210,170,.16)'), _svgPh('🐶','rgba(210,190,160,.16)'),
-            _svgPh('🔥','rgba(255,160,120,.16)'), _svgPh('⭐','rgba(255,220,120,.16)'), _svgPh('🎭','rgba(180,160,210,.16)'),
+            _svgPh('👤'), _svgPh('🐱'), _svgPh('🐶'),
+            _svgPh('🔥'), _svgPh('⭐'), _svgPh('🎭'),
           ],
           wallpaper: [
-            _svgPh('🖼','rgba(180,200,210,.18)'), _svgPh('🌊','rgba(160,210,230,.18)'), _svgPh('🏔','rgba(160,180,170,.18)'),
-            _svgPh('⭐','rgba(255,220,120,.16)'), _svgPh('🌸','rgba(255,180,200,.16)'), _svgPh('❄️','rgba(200,220,255,.18)'),
+            _svgPh('🖼'), _svgPh('🌊'), _svgPh('🏔'),
+            _svgPh('⭐'), _svgPh('🌸'), _svgPh('❄️'),
           ],
           sticker: [
-            _svgPh('😊','rgba(255,220,120,.16)'), _svgPh('💬','rgba(160,210,230,.16)'), _svgPh('⭐','rgba(255,220,120,.16)'),
-            _svgPh('🎉','rgba(210,180,240,.16)'), _svgPh('🔥','rgba(255,160,120,.16)'), _svgPh('💕','rgba(255,170,190,.16)'),
-            _svgPh('✉️','rgba(180,200,240,.16)'), _svgPh('🎯','rgba(255,180,160,.16)'), _svgPh('🎭','rgba(180,160,210,.16)'),
+            _svgPh('😊'), _svgPh('💬'), _svgPh('⭐'),
+            _svgPh('🎉'), _svgPh('🔥'), _svgPh('💕'),
+            _svgPh('✉️'), _svgPh('🎯'), _svgPh('🎭'),
           ],
         };
         const catLabel = {all:'全部',avatar:'头像',wallpaper:'壁纸',sticker:'表情包'}[cat]||cat;
