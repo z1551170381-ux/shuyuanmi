@@ -760,49 +760,71 @@ function ensureTuneStyle(){
 #${ID} .wxCSItem[data-act="wxDelChat"] .wxCSIco svg.phIco,
 #${ID} .wxCSItem[data-act="wxDelFriend"] .wxCSIco svg.phIco{ fill:rgba(231,76,60,.85) !important; }
 
-/* ===== Frost theme uplift: airy glass, clearer rim, wired back to opacity sliders ===== */
+/* ===== Frost theme uplift: airy glass, lower depth, keep accent/color settings intact ===== */
 #${ID}[data-theme="frost"]{
-  --ph-shadow: rgba(126,142,166,.05);
+  --ph-shadow: rgba(126,142,166,.08);
   --ph-sep: rgba(132,148,172,.11);
-  --ph-row-bg: var(--ph-glass);
-  --ph-row-hover: rgba(255,255,255,.18);
-  --ph-searchbox-bg: rgba(255,255,255,.14);
-  --ph-searchbox-text: rgba(40,48,62,.38);
-  --ph-discover-bg: var(--ph-glass);
-  --ph-discover-border: rgba(255,255,255,.14);
-  --ph-appbar-bg: rgba(251,250,247,.13);
-  --ph-topbar-bg: rgba(251,250,247,.13);
-  --ph-tabbar-bg: rgba(251,250,247,.13);
-  --ph-input-area-bg: rgba(249,247,243,.13);
-  --ph-sticker-bg: rgba(249,247,243,.13);
-  --ph-wechat-bg: rgba(247,245,241,.10);
-  --ph-modal-bg: rgba(255,255,255,.20);
-  --ph-confirm-bg: rgba(255,255,255,.22);
-  --ph-dock-surface: rgba(255,255,255,.10);
-  --ph-dock-line: rgba(255,255,255,.18);
-  --ph-shell-border: rgba(255,255,255,.24);
-  --ph-shell-shadow: 0 14px 32px rgba(138,152,176,.09), 0 4px 10px rgba(138,152,176,.04);
+  --ph-appbar-bg: rgba(251,250,247,.46);
+  --ph-topbar-bg: rgba(251,250,247,.48);
+  --ph-tabbar-bg: rgba(251,250,247,.44);
+  --ph-input-area-bg: rgba(249,247,243,.46);
+  --ph-sticker-bg: rgba(249,247,243,.44);
+  --ph-wechat-bg: rgba(247,245,241,.32);
+  --ph-modal-bg: rgba(255,255,255,.70);
+  --ph-confirm-bg: rgba(255,255,255,.78);
+  --ph-dock-surface: rgba(255,255,255,.18);
+  --ph-dock-line: rgba(255,255,255,.58);
+  --ph-shell-border: rgba(255,255,255,.76);
+  --ph-shell-shadow: 0 24px 64px rgba(138,152,176,.12), 0 10px 24px rgba(138,152,176,.06);
+}
+
+#${ID}[data-theme="frost"][data-view="home"]{
+  --ph-frost-panel-a: calc(var(--phHomeA, .36) * .82 + .03);
+  --ph-frost-surface-a: calc(var(--phHomeA, .36) * .68 + .03);
+  --ph-frost-bar-a: calc(var(--phHomeA, .36) * .74 + .04);
+  --ph-frost-hi-a: calc(var(--phHomeA, .36) * .32 + .08);
+  --ph-frost-line-a: calc(var(--phHomeA, .36) * .78 + .11);
+  --ph-row-bg: rgba(255,255,255,var(--ph-frost-surface-a));
+  --ph-row-hover: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .07));
+  --ph-searchbox-bg: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .05));
+  --ph-searchbox-text: rgba(40,48,62,.40);
+  --ph-discover-bg: rgba(255,255,255,var(--ph-frost-panel-a));
+  --ph-discover-border: rgba(255,255,255,var(--ph-frost-line-a));
+}
+
+#${ID}[data-theme="frost"][data-view="app"]{
+  --ph-frost-panel-a: calc(var(--phAppA, .52) * .78 + .03);
+  --ph-frost-surface-a: calc(var(--phAppA, .52) * .64 + .03);
+  --ph-frost-bar-a: calc(var(--phAppA, .52) * .72 + .04);
+  --ph-frost-hi-a: calc(var(--phAppA, .52) * .28 + .09);
+  --ph-frost-line-a: calc(var(--phAppA, .52) * .74 + .12);
+  --ph-row-bg: rgba(255,255,255,var(--ph-frost-surface-a));
+  --ph-row-hover: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .07));
+  --ph-searchbox-bg: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .05));
+  --ph-searchbox-text: rgba(40,48,62,.40);
+  --ph-discover-bg: rgba(255,255,255,var(--ph-frost-panel-a));
+  --ph-discover-border: rgba(255,255,255,var(--ph-frost-line-a));
 }
 
 #${ID}[data-theme="frost"] .phWallpaper{
   background-color:#f8f7f5;
   background-image:
     var(--ph-wallpaper-url, none),
-    radial-gradient(circle at 18% 18%, rgba(255,214,230,.08), transparent 34%),
-    radial-gradient(circle at 78% 18%, rgba(206,221,255,.07), transparent 30%),
-    radial-gradient(circle at 72% 76%, rgba(226,214,255,.06), transparent 34%),
-    radial-gradient(circle at 24% 78%, rgba(255,244,225,.06), transparent 30%),
-    linear-gradient(180deg, rgba(255,255,255,.10), rgba(247,245,242,.05));
+    radial-gradient(circle at 18% 18%, rgba(255,214,230,.10), transparent 34%),
+    radial-gradient(circle at 78% 18%, rgba(206,221,255,.09), transparent 30%),
+    radial-gradient(circle at 72% 76%, rgba(226,214,255,.07), transparent 34%),
+    radial-gradient(circle at 24% 78%, rgba(255,244,225,.07), transparent 30%),
+    linear-gradient(180deg, rgba(255,255,255,.24), rgba(247,245,242,.12));
   background-size: cover, auto, auto, auto, auto, auto;
   background-position: center, 18% 18%, 78% 18%, 72% 76%, 24% 78%, center;
 }
 
 #${ID}[data-theme="frost"] .phShell{
-  border-color:var(--ph-shell-border, rgba(255,255,255,.24));
-  box-shadow:var(--ph-shell-shadow, 0 14px 32px rgba(138,152,176,.09), 0 4px 10px rgba(138,152,176,.04));
+  border-color:var(--ph-shell-border, rgba(255,255,255,.76));
+  box-shadow:var(--ph-shell-shadow, 0 24px 64px rgba(138,152,176,.12), 0 10px 24px rgba(138,152,176,.06));
   background:
-    linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.03)),
-    linear-gradient(135deg, rgba(255,255,255,.06), rgba(255,255,255,0) 42%),
+    linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.05)),
+    linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,0) 38%),
     var(--ph-bg-primary);
 }
 
@@ -817,15 +839,12 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .wxConfirmBox,
 #${ID}[data-theme="frost"] .wxStatePanelCard{
   background:
-    linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.05)),
-    var(--ph-glass) !important;
-  border-color:var(--ph-glass-border) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.28),
-    inset 0 0 0 1px rgba(255,255,255,.10),
-    0 8px 20px rgba(126,142,166,.04) !important;
-  backdrop-filter:blur(calc(var(--ph-glass-blur) * .06)) saturate(106%) !important;
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .06)) saturate(106%) !important;
+    linear-gradient(180deg, rgba(255,255,255,var(--ph-frost-hi-a)), rgba(255,255,255,calc(var(--ph-frost-hi-a) * .38))),
+    rgba(255,255,255,var(--ph-frost-panel-a)) !important;
+  border-color:rgba(255,255,255,var(--ph-frost-line-a)) !important;
+  box-shadow:0 8px 22px rgba(126,142,166,.06) !important;
+  backdrop-filter:blur(calc(var(--ph-glass-blur) * .22)) saturate(108%) !important;
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .22)) saturate(108%) !important;
 }
 
 #${ID}[data-theme="frost"] .phAppIcon,
@@ -839,15 +858,12 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .wxContactItem,
 #${ID}[data-theme="frost"] .wxGroupHeader{
   background:
-    linear-gradient(180deg, rgba(255,255,255,.13), rgba(255,255,255,.04)),
-    var(--ph-glass) !important;
-  border-color:rgba(255,255,255,.36) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.28),
-    inset 0 0 0 1px rgba(255,255,255,.10),
-    0 5px 14px rgba(126,142,166,.035);
-  backdrop-filter:blur(calc(var(--ph-glass-blur) * .05)) saturate(104%);
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .05)) saturate(104%);
+    linear-gradient(180deg, rgba(255,255,255,calc(var(--ph-frost-hi-a) * .88)), rgba(255,255,255,calc(var(--ph-frost-hi-a) * .26))),
+    rgba(255,255,255,var(--ph-frost-surface-a)) !important;
+  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) * .96)) !important;
+  box-shadow:0 6px 16px rgba(126,142,166,.045);
+  backdrop-filter:blur(calc(var(--ph-glass-blur) * .16)) saturate(106%);
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .16)) saturate(106%);
 }
 
 #${ID}[data-theme="frost"] .phAppBar,
@@ -857,59 +873,41 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .wxStickerPanel,
 #${ID}[data-theme="frost"] .wxVoicePanel,
 #${ID}[data-theme="frost"] .wxChatPlusGrid{
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.03)),
-    var(--ph-glass) !important;
-  border-color:var(--ph-glass-border) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.20),
-    inset 0 0 0 1px rgba(255,255,255,.06) !important;
-  backdrop-filter:blur(calc(var(--ph-glass-blur) * .05)) saturate(104%) !important;
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .05)) saturate(104%) !important;
+  background:rgba(255,255,255,var(--ph-frost-bar-a)) !important;
+  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) * .92)) !important;
+  box-shadow:none !important;
+  backdrop-filter:blur(calc(var(--ph-glass-blur) * .18)) saturate(107%) !important;
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .18)) saturate(107%) !important;
 }
 
 #${ID}[data-theme="frost"] .phAppBody{
   background:
-    linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02)),
+    linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.02)),
     rgba(var(--phAppBodyRGB,250,249,247), var(--phAppSolidA,.92));
-  backdrop-filter:blur(calc(var(--phAppBlur,16px) * .05)) saturate(104%);
-  -webkit-backdrop-filter:blur(calc(var(--phAppBlur,16px) * .05)) saturate(104%);
+  backdrop-filter:blur(calc(var(--phAppBlur,16px) * .10)) saturate(104%);
+  -webkit-backdrop-filter:blur(calc(var(--phAppBlur,16px) * .10)) saturate(104%);
 }
 
 #${ID}[data-theme="frost"] .wxChatBubble.them .wxCBContent,
 #${ID}[data-theme="frost"] .chatBubble.them .cbContent{
   background:
-    linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.05)),
-    var(--ph-glass) !important;
-  border-color:var(--ph-glass-border) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.18),
-    0 5px 14px rgba(126,142,166,.035);
+    linear-gradient(180deg, rgba(255,255,255,calc(var(--ph-frost-hi-a) + .08)), rgba(255,255,255,calc(var(--ph-frost-hi-a) * .42))),
+    rgba(255,255,255,calc(var(--ph-frost-panel-a) + .10)) !important;
+  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) + .04)) !important;
+  box-shadow:0 6px 16px rgba(126,142,166,.05);
 }
 
 #${ID}[data-theme="frost"] .wxChatBubble.me .wxCBContent,
 #${ID}[data-theme="frost"] .chatBubble.me .cbContent,
 #${ID}[data-theme="frost"] .wxChatSendBtn,
 #${ID}[data-theme="frost"] .chatSendBtn{
-  box-shadow:0 5px 12px rgba(126,142,166,.035);
+  box-shadow:0 8px 18px rgba(126,142,166,.07);
 }
 
 #${ID}[data-theme="frost"] .phAppIcon .ai,
 #${ID}[data-theme="frost"] .phDockBtn .di{
-  border:1px solid rgba(255,255,255,.50);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.34),
-    inset 0 0 0 1px rgba(255,255,255,.10),
-    0 1px 4px rgba(16,22,36,.05);
-  opacity:1;
-  filter:none;
-}
-
-#${ID}[data-theme="frost"] .phAppIcon .ai svg.phIco,
-#${ID}[data-theme="frost"] .phDockBtn .di svg.phIco{
-  fill:#fff !important;
-  opacity:1;
-  filter:drop-shadow(0 1px 1px rgba(10,18,32,.12));
+  box-shadow:none;
+  filter:saturate(.95) brightness(1.03);
 }
 
 #${ID}[data-theme="frost"] .phAppIcon:hover,
@@ -920,7 +918,7 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .wxMeProfile:hover,
 #${ID}[data-theme="frost"] .wxChatRow:hover{
   background:
-    linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,.05)),
+    linear-gradient(180deg, rgba(255,255,255,calc(var(--ph-frost-hi-a) + .05)), rgba(255,255,255,calc(var(--ph-frost-hi-a) * .36))),
     var(--ph-row-hover) !important;
 }
 
@@ -929,34 +927,25 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .chatInputBar textarea,
 #${ID}[data-theme="frost"] .phModalTa,
 #${ID}[data-theme="frost"] .wxEditMsgBox textarea{
-  background:rgba(255,255,255,.12) !important;
-  border-color:rgba(255,255,255,.18) !important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.16),
-    inset 0 0 0 1px rgba(255,255,255,.04) !important;
+  background:rgba(255,255,255,calc(var(--ph-frost-surface-a) + .08)) !important;
+  border-color:rgba(255,255,255,var(--ph-frost-line-a)) !important;
+  box-shadow:none !important;
 }
 
 #${ID}[data-theme="frost"] .wxTopBar .wxTopBtn,
 #${ID}[data-theme="frost"] .phNavBtn,
 #${ID}[data-theme="frost"] .chatInputBar .chatExtraBtn,
 #${ID}[data-theme="frost"] .wxChatInputBar .wxChatExBtn{
-  background:rgba(255,255,255,.09);
-  border:1px solid rgba(255,255,255,.16);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+  background:rgba(255,255,255,calc(var(--ph-frost-surface-a) * .72));
+  border:1px solid rgba(255,255,255,calc(var(--ph-frost-line-a) * .88));
 }
 
 #${ID}[data-theme="frost"] .wxTopBar .wxTopBtn:hover,
 #${ID}[data-theme="frost"] .phNavBtn:hover,
 #${ID}[data-theme="frost"] .chatInputBar .chatExtraBtn:hover,
 #${ID}[data-theme="frost"] .wxChatInputBar .wxChatExBtn:hover{
-  background:rgba(255,255,255,.14);
+  background:rgba(255,255,255,calc(var(--ph-frost-surface-a) + .08));
 }
-
-#${ID}[data-theme="frost"] .phAppIcon .at,
-#${ID}[data-theme="frost"] .phDockBtn .dt{
-  opacity:.86;
-}
-
     `;
     (doc.head || doc.documentElement).appendChild(st);
   }catch(e){}
