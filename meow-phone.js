@@ -3112,12 +3112,14 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 }
 #${ID} .browserBmItem:hover{ background:var(--ph-glass); }
 #${ID} .browserBmIcon{
-  width:36px; height:36px; border-radius:10px;
+  width:40px; height:40px; border-radius:12px;
   background:var(--ph-glass-strong);
+  border:1px solid var(--ph-glass-border);
+  box-shadow:0 1px 4px var(--ph-shadow);
   display:flex; align-items:center; justify-content:center;
   font-size:16px; color:var(--ph-text-sub);
 }
-#${ID} .browserBmIcon svg{ width:18px; height:18px; }
+#${ID} .browserBmIcon svg{ width:18px; height:18px; fill:var(--ph-icon-inner-tint, var(--ph-text-sub)) !important; }
 #${ID} .browserBmTitle{ color:var(--ph-text); font-size:13px; font-weight:500; }
 #${ID} .browserBmDesc{ color:var(--ph-text-dim); font-size:11.5px; margin-top:2px; }
 
