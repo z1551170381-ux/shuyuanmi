@@ -14150,6 +14150,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           <span class="wxSPCValue">${esc(s.moodText||'平静')}</span>
         </div>`;
         if (scheduleNow) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">🗓</span><span class="wxSPCLabel">正在</span><span class="wxSPCValue">${esc(scheduleNow)}</span></div>`;
+        else if (bx.doing) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">🎯</span><span class="wxSPCLabel">正在</span><span class="wxSPCValue">${esc(bx.doing)}</span></div>`;
         if (bx.wearing) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">👗</span><span class="wxSPCLabel">穿着</span><span class="wxSPCValue">${esc(bx.wearing)}</span></div>`;
         if (bx.heartLine) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">💬</span><span class="wxSPCLabel">心声</span><span class="wxSPCValue" style="font-style:italic;color:rgba(20,24,28,.5);">"${esc(bx.heartLine)}"</span></div>`;
         var silentLeft = s.silentUntil > Date.now() ? Math.ceil((s.silentUntil - Date.now())/60000) : 0;
@@ -14191,9 +14192,18 @@ const npc = _wxGetChatTargetMeta(npcId);
             e.stopPropagation();
             card.remove();
             var nid = _spcFooter.getAttribute('data-npcid') || npcId;
+            // 先完整渲染 charSettings（清理 chatDetail 遗留样式），再跳状态详情
+            state.chatTarget = nid;
+            state._innerStack = [];
             state._innerStack.push(function(){ state.app='chatDetail'; renderChatDetail(nid); });
+            state._innerStack.push(function(){ _renderCharSettingsPage(nid); });
             state.app = 'charSettings';
-            _renderStateDetailPage(nid);
+            _renderCharSettingsPage(nid);
+            // 延迟一帧再跳状态详情，确保 charSettings 已完成渲染
+            setTimeout(function(){
+              state._innerStack.push(function(){ _renderCharSettingsPage(nid); });
+              _renderStateDetailPage(nid);
+            }, 30);
           });
         }
 
