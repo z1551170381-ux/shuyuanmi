@@ -2127,7 +2127,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   justify-self:start;
 }
 #${ID} .phNavBtn:hover{ background:rgba(255,255,255,.08); }
-#${ID} .phAppBarSpacer{ width:32px; height:32px; justify-self:end; display:flex; align-items:center; justify-content:center; }
+#${ID} .phAppBarSpacer{ min-width:32px; height:32px; justify-self:end; display:flex; align-items:center; justify-content:center; gap:2px; }
 #${ID} .phAppBarSpacer .phBarRBtn{ appearance:none; border:0; background:transparent; color:var(--ph-text-sub); width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; opacity:.7; transition:opacity .2s; }
 #${ID} .phAppBarSpacer .phBarRBtn:hover{ opacity:1; background:rgba(255,255,255,.1); }
 #${ID} .phAppBody{
@@ -4836,14 +4836,25 @@ function buildHTML(){
           if (act === 'wxSPCClose'){
             var spc = t.closest('.wxStatePanelCard'); if(spc) spc.remove(); return;
           }
+          // 速览卡"查看完整状态"→ 状态详情（从聊天页进，返回聊天页）
+          if (act === 'wxSPCToDetail'){
+            var _spdNid = t.getAttribute('data-npcid') || state.chatTarget;
+            if (!_spdNid) return;
+            var _spc3 = root.querySelector('.wxStatePanelCard'); if(_spc3) _spc3.remove();
+            state._innerStack.push(function(){ renderChatDetail(_spdNid); });
+            _renderStateDetailPage(_spdNid);
+            return;
+          }
           if (act === 'wxOpenStateDetail'){
             var _sdNid = t.getAttribute('data-npcid') || state.chatTarget;
             if (!_sdNid) return;
-            // 关闭速览卡片
             var _spc2 = root.querySelector('.wxStatePanelCard'); if(_spc2) _spc2.remove();
-            // 压栈，返回时回到聊天详情
             state._innerStack.push(function(){ renderChatDetail(_sdNid); });
             _renderStateDetailPage(_sdNid);
+            return;
+          }
+          if (act === 'wxOfflineMode'){
+            try{ toast('线下模式 · 敬请期待'); }catch(e){}
             return;
           }
           if (act === 'search'){ openApp('search'); return; }
@@ -11841,16 +11852,14 @@ const npc = _wxGetChatTargetMeta(npcId);
           if (titleEl) titleEl.textContent = npc.name;
         }catch(e){}
 
-        // ✅ 注入右上角按钮：✦ → 状态详情页，➕ → 角色设置页
+        // ✅ 注入右上角按钮：✦ → 线下模式（占位），➕ → 角色设置页
         try{
           const spacer = root.querySelector('.phAppBarSpacer');
           if (spacer) spacer.innerHTML =
-            `<div style="display:flex;align-items:center;gap:2px;">
-              <button class="wxTopBtn" data-act="wxOpenStateDetail" data-npcid="${esc(contactId)}"
-                style="appearance:none;border:0;background:transparent;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;font-size:17px;opacity:.75;">✦</button>
-              <button class="wxTopBtn" data-act="wxCharSettings" data-npcid="${esc(contactId)}"
-                style="appearance:none;border:0;background:transparent;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;">${_phFlatIcon('➕')}</button>
-            </div>`;
+            `<button class="wxTopBtn" data-act="wxOfflineMode" data-npcid="${esc(contactId)}"
+              style="appearance:none;border:0;background:transparent;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;font-size:17px;opacity:.75;">✦</button>
+            <button class="wxTopBtn" data-act="wxCharSettings" data-npcid="${esc(contactId)}"
+              style="appearance:none;border:0;background:transparent;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;">${_phFlatIcon('➕')}</button>`;
         }catch(e){}
 
         // 读取自定义聊天背景
@@ -14088,8 +14097,13 @@ const npc = _wxGetChatTargetMeta(npcId);
           ? `<img src="${avatarImg}"/>`
           : esc(npc.avatar || (npc.name||'?').charAt(0));
 
-        // 可选信息行
+        // 可选信息行：心情文字 + 当前在做 + 心声 + 冷静中
         var rows = '';
+        rows += `<div class="wxSPCRow">
+          <span class="wxSPCIcon">${moodEmoji[s.moodText||'平静']||'😌'}</span>
+          <span class="wxSPCLabel">心情</span>
+          <span class="wxSPCValue">${esc(s.moodText||'平静')}</span>
+        </div>`;
         if (scheduleNow) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">🗓</span><span class="wxSPCLabel">正在</span><span class="wxSPCValue">${esc(scheduleNow)}</span></div>`;
         if (bx.heartLine) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">💬</span><span class="wxSPCLabel">心声</span><span class="wxSPCValue" style="font-style:italic;color:rgba(20,24,28,.5);">"${esc(bx.heartLine)}"</span></div>`;
         var silentLeft = s.silentUntil > Date.now() ? Math.ceil((s.silentUntil - Date.now())/60000) : 0;
@@ -14104,7 +14118,6 @@ const npc = _wxGetChatTargetMeta(npcId);
               <div class="wxSPCName">${esc(npc.name)}</div>
               <div class="wxSPCMeta">
                 <span class="wxSPCBond" style="color:${bondColor[s.bond]||'#888'};background:${bondBg[s.bond]||'rgba(0,0,0,.05)'};">${esc(s.bond||'普通')}</span>
-                <span class="wxSPCMoodChip">${moodEmoji[s.moodText||'平静']||'😌'} ${esc(s.moodText||'平静')}</span>
               </div>
             </div>
           </div>
@@ -14117,7 +14130,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             <span style="font-size:10px;color:rgba(20,24,28,.35);min-width:22px;text-align:right;">${energyPct}</span>
           </div>
           ${rows}
-          <div class="wxSPCFooter" data-act="wxOpenStateDetail" data-npcid="${esc(npcId)}">
+          <div class="wxSPCFooter" data-act="wxSPCToDetail" data-npcid="${esc(npcId)}">
             查看完整状态 ›
           </div>
         `;
