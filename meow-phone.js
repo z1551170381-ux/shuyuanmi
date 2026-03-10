@@ -5165,6 +5165,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             state._innerStack.push(() => _renderCharSettingsPage(nid));
             if (cspage === 'charProfile') _renderCharProfileEdit(nid);
             else if (cspage === 'charBehavior') _renderCharBehaviorPage(nid);
+            else if (cspage === 'charSchedule') _renderSchedulePage(nid);
             else if (cspage === 'chatBg') _renderChatBgSettings(nid);
             else if (cspage === 'reminders') _renderRemindersPage(nid);
             else if (cspage === 'pokeSettings') _renderPokeSettingsPage(nid);
@@ -12148,6 +12149,14 @@ const npc = _wxGetChatTargetMeta(npcId);
               <div class="wxCSName">行为参数</div>
               <div class="wxCSArrow">›</div>
             </div>
+            <div class="wxCSItem" data-act="wxCSNav" data-cspage="charSchedule" data-npcid="${esc(contactId)}">
+              <div class="wxCSIco">${_phFlatIcon('📅')}</div>
+              <div class="wxCSName">
+                作息表
+                <div style="font-size:11px;color:rgba(20,24,28,.4);margin-top:1px;">${s.isKeyNPC && s.schedule && s.schedule.length ? '已启用 · ' + s.schedule.length + ' 个时段' : '未启用'}</div>
+              </div>
+              <div class="wxCSArrow">›</div>
+            </div>
             <div class="wxCSItem" data-act="wxCSNav" data-cspage="chatBg" data-npcid="${esc(contactId)}">
               <div class="wxCSIco">${_phFlatIcon('🖼')}</div>
               <div class="wxCSName">聊天背景</div>
@@ -12251,6 +12260,174 @@ const npc = _wxGetChatTargetMeta(npcId);
 
       /* --- 子渲染：角色设定编辑页 --- */
       // ========== 角色行为参数页 ==========
+      // ===== 作息表页面 =====
+      function _renderSchedulePage(npcId){
+        var body = root.querySelector('[data-ph="appBody"]');
+        if (!body) return;
+        var s   = _loadCharState(npcId);
+        var db  = loadContactsDB();
+        var npc = findContactById(db, npcId) || { name:String(npcId) };
+
+        try{ var t = root.querySelector('[data-ph="appTitle"]'); if(t) t.textContent='作息表'; }catch(e){}
+        try{ var sp = root.querySelector('.phAppBarSpacer'); if(sp) sp.innerHTML=''; }catch(e){}
+
+        var schedule = (s.isKeyNPC && s.schedule && s.schedule.length) ? s.schedule : [];
+
+        // 当前时段计算
+        var nowHour = new Date().getHours();
+        var currentSlotIdx = -1;
+        if (schedule.length){
+          for (var ci = 0; ci < schedule.length; ci++){
+            var sl = schedule[ci];
+            var inSlot = sl.endHour <= sl.hour
+              ? (nowHour >= sl.hour || nowHour < sl.endHour)
+              : (nowHour >= sl.hour && nowHour < sl.endHour);
+            if (inSlot){ currentSlotIdx = ci; break; }
+          }
+        }
+
+        // 时段列表 HTML
+        var slotListHtml = schedule.length
+          ? schedule.map(function(sl, i){
+              var tInfo = SCHEDULE_TAGS.find(function(t){ return t.tag === sl.tag; });
+              var icon = (tInfo && tInfo.icon) || '📋';
+              var isCurrent = (i === currentSlotIdx);
+              return `<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid rgba(0,0,0,.04);${isCurrent?'background:rgba(7,193,96,.06);':''}">
+                <span style="font-size:18px;width:24px;text-align:center;">${icon}</span>
+                <span style="font-size:12px;color:rgba(20,24,28,.45);min-width:52px;flex-shrink:0;">${sl.hour<10?'0':''}${sl.hour}:00 - ${sl.endHour<10?'0':''}${sl.endHour}:00</span>
+                <span style="font-size:13px;color:rgba(20,24,28,.85);flex:1;">${esc(sl.activity)}</span>
+                ${isCurrent ? '<span style="font-size:10px;color:#07c160;font-weight:600;background:rgba(7,193,96,.12);padding:2px 7px;border-radius:8px;">现在</span>' : ''}
+              </div>`;
+            }).join('')
+          : `<div style="padding:24px 14px;text-align:center;font-size:13px;color:rgba(20,24,28,.35);">尚未设置作息表<br>点击"AI 生成"或"手动编辑"开始</div>`;
+
+        body.innerHTML = `<div style="padding-bottom:28px;">
+
+          <!-- 重要角色开关 -->
+          <div style="margin:14px 14px 0;background:var(--ph-glass,rgba(255,255,255,.75));border-radius:14px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.07));overflow:hidden;backdrop-filter:blur(12px);">
+            <div style="display:flex;align-items:center;padding:12px 14px;gap:10px;">
+              <span style="font-size:18px;">⭐</span>
+              <div style="flex:1;">
+                <div style="font-size:13px;color:rgba(20,24,28,.85);font-weight:500;">作息驱动</div>
+                <div style="font-size:11px;color:rgba(20,24,28,.4);margin-top:1px;">开启后角色按作息表自主生活，影响状态和主动消息</div>
+              </div>
+              <button class="wxReminderToggle ${s.isKeyNPC?'on':'off'}" data-act="schToggleKeyNPC" data-npcid="${esc(npcId)}" style="flex-shrink:0;"></button>
+            </div>
+          </div>
+
+          <!-- 操作按钮 -->
+          <div style="display:flex;gap:8px;margin:10px 14px 0;">
+            <button data-act="schAIGen" data-npcid="${esc(npcId)}"
+              style="flex:1;padding:10px;border-radius:11px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;">
+              ✦ AI 生成
+            </button>
+            <button data-act="schManualEdit" data-npcid="${esc(npcId)}"
+              style="flex:1;padding:10px;border-radius:11px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.1));background:var(--ph-glass,rgba(255,255,255,.8));color:rgba(20,24,28,.7);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;">
+              ✏ 手动编辑
+            </button>
+          </div>
+
+          <!-- AI生成中提示 -->
+          <div data-el="schGenLoading" style="display:none;margin:10px 14px 0;padding:10px 14px;background:rgba(7,193,96,.06);border:1px solid rgba(7,193,96,.15);border-radius:11px;font-size:12px;color:#07c160;text-align:center;">
+            ✦ AI 正在分析角色，生成专属作息表…
+          </div>
+
+          <!-- 时段列表 -->
+          <div style="margin:12px 14px 0;font-size:10.5px;color:rgba(20,24,28,.4);letter-spacing:.4px;padding:0 2px;">
+            ${schedule.length ? '时段安排' + (currentSlotIdx >= 0 ? ' · 当前：' + esc(schedule[currentSlotIdx].activity) : '') : '时段安排'}
+          </div>
+          <div style="margin:6px 14px 0;background:var(--ph-glass,rgba(255,255,255,.75));border-radius:14px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.07));overflow:hidden;backdrop-filter:blur(12px);" data-el="schSlotList">
+            ${slotListHtml}
+          </div>
+
+        </div>`;
+
+        // 作息驱动开关
+        body.querySelector('[data-act="schToggleKeyNPC"]')?.addEventListener('click', function(){
+          var nid = this.getAttribute('data-npcid') || npcId;
+          var cur = _loadCharState(nid);
+          cur.isKeyNPC = !cur.isKeyNPC;
+          if (cur.isKeyNPC && (!cur.schedule || !cur.schedule.length))
+            cur.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+          cur.lastCalcAt = Date.now();
+          _saveCharState(nid, cur);
+          this.classList.toggle('on', cur.isKeyNPC);
+          this.classList.toggle('off', !cur.isKeyNPC);
+          try{ toast(cur.isKeyNPC ? '作息驱动已开启' : '作息驱动已关闭'); }catch(e){}
+          _renderSchedulePage(nid);
+        });
+
+        // AI 生成作息表
+        body.querySelector('[data-act="schAIGen"]')?.addEventListener('click', async function(){
+          var nid = this.getAttribute('data-npcid') || npcId;
+          var loadingEl = body.querySelector('[data-el="schGenLoading"]');
+          var btn = this;
+          btn.disabled = true; btn.style.opacity = '.5';
+          if (loadingEl) loadingEl.style.display = 'block';
+
+          try{
+            var npc2 = findContactById(loadContactsDB(), nid) || { name:String(nid) };
+            var charEx2 = _loadCharExtra(nid);
+            var profile = (npc2.profile || npc2.description || charEx2.profile || '').slice(0, 400);
+            var tagList = SCHEDULE_TAGS.map(function(t){ return t.tag + '(' + t.label + ')'; }).join(', ');
+
+            var sysPrompt =
+              '你是角色作息表生成器。根据角色信息，生成一份符合角色身份的24小时作息表。\n' +
+              '【可用 tag】: ' + tagList + '\n' +
+              '【要求】\n' +
+              '1. 返回纯 JSON 数组，每项格式：{"hour":起始小时(0-23),"endHour":结束小时(1-24),"activity":"活动描述","tag":"对应tag"}\n' +
+              '2. 覆盖完整24小时（hour=0到endHour=24），时段不重叠\n' +
+              '3. 8-12个时段，活动描述简短（4-8字）\n' +
+              '4. 贴合角色身份，不要套通用模板\n' +
+              '5. 只输出 JSON，不加任何说明或 markdown 代码块';
+
+            var userMsg = '角色名：' + (npc2.name || nid) + '\n角色介绍：' + (profile || '无特别描述，请生成通用现代都市角色作息');
+
+            var result = await PhoneAI.chat({
+              system: sysPrompt,
+              messages: [{ role:'user', content:userMsg }],
+              temperature: 0.7,
+              maxTokens: 600,
+              timeout: 40
+            });
+
+            if (!result || !result.ok) throw new Error(result ? result.error : 'AI 请求失败');
+
+            var raw = String(result.data || '').trim().replace(/```json|```/gi, '').trim();
+            var parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed) || !parsed.length) throw new Error('格式无效');
+
+            // 校验每项
+            var validSchedule = parsed.filter(function(item){
+              return typeof item.hour === 'number' && typeof item.endHour === 'number'
+                && item.activity && item.tag
+                && SCHEDULE_TAGS.some(function(t){ return t.tag === item.tag; });
+            });
+            if (!validSchedule.length) throw new Error('没有合法时段');
+
+            var cur2 = _loadCharState(nid);
+            cur2.schedule = validSchedule;
+            cur2.isKeyNPC = true;
+            cur2.lastCalcAt = Date.now();
+            _saveCharState(nid, cur2);
+            try{ toast('作息表生成成功！已自动开启作息驱动'); }catch(e){}
+            _renderSchedulePage(nid);
+
+          }catch(e){
+            try{ toast('生成失败：' + String(e.message || e).slice(0, 40)); }catch(e2){}
+          }finally{
+            btn.disabled = false; btn.style.opacity = '';
+            if (loadingEl) loadingEl.style.display = 'none';
+          }
+        });
+
+        // 手动编辑
+        body.querySelector('[data-act="schManualEdit"]')?.addEventListener('click', function(){
+          var nid = this.getAttribute('data-npcid') || npcId;
+          _openScheduleEditor(nid);
+        });
+      }
+
       function _renderCharBehaviorPage(contactId){
         var body = root.querySelector('[data-ph="appBody"]');
         if (!body) return;
@@ -12325,25 +12502,6 @@ const npc = _wxGetChatTargetMeta(npcId);
         }
 
         var html = `<div style="padding-bottom:20px;">
-          <!-- ★ 多维状态面板 -->
-          <div style="margin:14px 14px 0;padding:12px 14px;background:var(--ph-glass, rgba(255,255,255,.75));border-radius:14px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.07));backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-              <div style="font-size:11px;color:rgba(20,24,28,.4);letter-spacing:.3px;">多维状态</div>
-              <label style="font-size:11px;color:rgba(20,24,28,.5);cursor:pointer;display:flex;align-items:center;gap:3px;">
-                <input type="checkbox" data-act="cbToggleKeyNPC" data-npcid="${esc(contactId)}" ${s.isKeyNPC?'checked':''} style="width:14px;height:14px;accent-color:var(--ph-accent, #07c160);"/>
-                重要角色
-              </label>
-            </div>
-            ${attrBarsHtml}
-            ${scheduleStatusHtml}
-            <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
-              <button data-act="cbResetState" data-npcid="${esc(contactId)}" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));background:var(--ph-glass, rgba(255,255,255,.8));color:rgba(20,24,28,.6);cursor:pointer;display:flex;align-items:center;gap:3px;">${_phFlatIcon('🔄')} 重置状态</button>
-              <button data-act="cbSetMood" data-npcid="${esc(contactId)}" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));background:var(--ph-glass, rgba(255,255,255,.8));color:rgba(20,24,28,.6);cursor:pointer;display:flex;align-items:center;gap:3px;">${_phFlatIcon('✏')} 手动设置</button>
-              <button data-act="cbEditSchedule" data-npcid="${esc(contactId)}" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));background:var(--ph-glass, rgba(255,255,255,.8));color:rgba(20,24,28,.6);cursor:pointer;display:flex;align-items:center;gap:3px;${s.isKeyNPC?'':'display:none;'}">${_phFlatIcon('📋')} 编辑作息表</button>
-              <button data-act="cbEditAttrRules" data-npcid="${esc(contactId)}" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));background:var(--ph-glass, rgba(255,255,255,.8));color:rgba(20,24,28,.6);cursor:pointer;display:flex;align-items:center;gap:3px;">${_phFlatIcon('⚙️')} 变化规则</button>
-              <button data-act="cbManageCustomAttrs" data-npcid="${esc(contactId)}" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));background:var(--ph-glass, rgba(255,255,255,.8));color:rgba(20,24,28,.6);cursor:pointer;display:flex;align-items:center;gap:3px;">${_phFlatIcon('➕')} 自定义属性</button>
-            </div>
-          </div>
 
           <!-- 行为参数 -->
           <div style="margin:12px 14px 0;font-size:11px;color:rgba(20,24,28,.4);letter-spacing:.3px;padding:0 0 4px;">行为参数</div>
@@ -14089,8 +14247,10 @@ const npc = _wxGetChatTargetMeta(npcId);
 
           <!-- 操作按钮 -->
           <div class="wxSDActions">
-            <button class="wxSDActBtn" data-act="cbResetState" data-npcid="${esc(npcId)}">${_phFlatIcon('🔄')} 重置</button>
-            <button class="wxSDActBtn" data-act="cbSetMood"   data-npcid="${esc(npcId)}">${_phFlatIcon('✏')} 手动调整</button>
+            <button class="wxSDActBtn" data-act="cbResetState"      data-npcid="${esc(npcId)}">${_phFlatIcon('🔄')} 重置</button>
+            <button class="wxSDActBtn" data-act="cbSetMood"         data-npcid="${esc(npcId)}">${_phFlatIcon('✏')} 手动调整</button>
+            <button class="wxSDActBtn" data-act="cbEditAttrRules"   data-npcid="${esc(npcId)}">${_phFlatIcon('⚙️')} 变化规则</button>
+            <button class="wxSDActBtn" data-act="cbManageCustomAttrs" data-npcid="${esc(npcId)}">${_phFlatIcon('➕')} 自定义属性</button>
           </div>
 
           <!-- 最近动态 -->
@@ -14114,6 +14274,12 @@ const npc = _wxGetChatTargetMeta(npcId);
         body.querySelector('[data-act="cbSetMood"]')?.addEventListener('click', function(){
           var nid = this.getAttribute('data-npcid') || npcId;
           _openManualStateEditor(nid, function(){ _renderStateDetailPage(nid); });
+        });
+        body.querySelector('[data-act="cbEditAttrRules"]')?.addEventListener('click', function(){
+          _openAttrRulesEditor(this.getAttribute('data-npcid') || npcId);
+        });
+        body.querySelector('[data-act="cbManageCustomAttrs"]')?.addEventListener('click', function(){
+          _openCustomAttrsEditor(this.getAttribute('data-npcid') || npcId);
         });
       }
 
