@@ -13318,6 +13318,17 @@ const npc = _wxGetChatTargetMeta(npcId);
         var parsed = _parseAISpecialTags(rawText);
         var cleanText = parsed.cleanText || rawText;
 
+        // ★ 自动更新穿着/正在/心声（如果AI输出了[状态:...]标记）
+        if (parsed.stateUpdate && Object.keys(parsed.stateUpdate).length > 0){
+          try{
+            var bxUpdate = _loadCharBehavior(npcId);
+            if (parsed.stateUpdate.wearing   != null) bxUpdate.wearing   = parsed.stateUpdate.wearing;
+            if (parsed.stateUpdate.doing     != null) bxUpdate.doing     = parsed.stateUpdate.doing;
+            if (parsed.stateUpdate.heartLine != null) bxUpdate.heartLine = parsed.stateUpdate.heartLine;
+            _saveCharBehavior(npcId, bxUpdate);
+          }catch(e){}
+        }
+
         // 写消息日志
         pushLog(npcId, 'them', cleanText);
         bumpThread(npcId, { lastMsg: cleanText, lastTime: _now(), unread: 0 });
@@ -13734,7 +13745,22 @@ const npc = _wxGetChatTargetMeta(npcId);
           s = s.replace(stkMatch[0], '').trim();
         }
 
-        return { cleanText: s, sendVoice: sendVoice, stickerGroup: stickerGroup, stickerIdx: stickerIdx };
+        // 检测 [状态:穿着=xxx,正在=yyy,心声=zzz]（任意组合，顺序不限）
+        var stateUpdate = null;
+        var stateTagMatch = s.match(/\[状态[:：]([^\]]+)\]/i);
+        if (stateTagMatch){
+          var stateStr = stateTagMatch[1];
+          stateUpdate = {};
+          var wearing2 = stateStr.match(/穿着[:=]([^,，\]]+)/i);
+          var doing2   = stateStr.match(/正在[:=]([^,，\]]+)/i);
+          var heart2   = stateStr.match(/心声[:=]([^,，\]]+)/i);
+          if (wearing2) stateUpdate.wearing   = wearing2[1].trim();
+          if (doing2)   stateUpdate.doing     = doing2[1].trim();
+          if (heart2)   stateUpdate.heartLine = heart2[1].trim();
+          s = s.replace(stateTagMatch[0], '').trim();
+        }
+
+        return { cleanText: s, sendVoice: sendVoice, stickerGroup: stickerGroup, stickerIdx: stickerIdx, stateUpdate: stateUpdate };
       }
 
       function _convertSpecialTags(text){
@@ -14070,7 +14096,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           }
         }catch(e){}
 
-        parts.push('---\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息的长度随机变化：有的很短（1-5字，如"嗯""好的""？"），有的中等（一两句话），偶尔有一条较长的。\n模拟真实手机聊天的节奏感——不要把所有内容压缩成一段话。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长\n\n示例格式：\n嗯|||怎么了？|||你今天怎么这么安静' + voiceInstructions + stkForAI);
+        parts.push('---\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息的长度随机变化：有的很短（1-5字，如"嗯""好的""？"），有的中等（一两句话），偶尔有一条较长的。\n模拟真实手机聊天的节奏感——不要把所有内容压缩成一段话。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长\n\n示例格式：\n嗯|||怎么了？|||你今天怎么这么安静\n\n【状态同步（可选）】\n如果对话过程中你的穿着、当前在做的事或内心独白发生了变化，可以在任意一条消息的末尾附加状态标记（不会显示给用户）：\n[状态:穿着=白色睡衣,正在=准备洗澡,心声=有点期待明天]\n字段可只写变化的部分，如 [状态:心声=其实有点舍不得挂电话]' + voiceInstructions + stkForAI);
 
         return parts.join('\n\n');
       }
@@ -14124,6 +14150,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           <span class="wxSPCValue">${esc(s.moodText||'平静')}</span>
         </div>`;
         if (scheduleNow) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">🗓</span><span class="wxSPCLabel">正在</span><span class="wxSPCValue">${esc(scheduleNow)}</span></div>`;
+        if (bx.wearing) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">👗</span><span class="wxSPCLabel">穿着</span><span class="wxSPCValue">${esc(bx.wearing)}</span></div>`;
         if (bx.heartLine) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">💬</span><span class="wxSPCLabel">心声</span><span class="wxSPCValue" style="font-style:italic;color:rgba(20,24,28,.5);">"${esc(bx.heartLine)}"</span></div>`;
         var silentLeft = s.silentUntil > Date.now() ? Math.ceil((s.silentUntil - Date.now())/60000) : 0;
         if (silentLeft > 0) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">🤐</span><span class="wxSPCLabel">状态</span><span class="wxSPCValue" style="color:#e74c3c;">冷静中，约 ${silentLeft} 分钟后回来</span></div>`;
@@ -14217,7 +14244,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         // 属性条（带动画：从 prevAttrs 滚到新值）
         var prevAttrs = s._prevAttrs || {};
         var doAnim = !!s._animNeeded;
-        var attrRowsHtml = defs.filter(function(d){ return !d.hideBar; }).map(function(d){
+        var attrRowsHtml = defs.filter(function(d){ return !d.hideBar || d.key === 'loneliness'; }).map(function(d){
           var val  = Math.max(0, Math.min(100, attrs[d.key]||0));
           var from = doAnim ? Math.max(0, Math.min(100, prevAttrs[d.key]||0)) : val;
           var color = val > 60 ? 'var(--ph-accent, #07c160)' : val > 30 ? '#f39c12' : '#e74c3c';
@@ -14395,14 +14422,15 @@ const npc = _wxGetChatTargetMeta(npcId);
       ];
 
       // ---- 默认属性变化规则（每小时变化量，按作息 tag） ----
+      // ★ 每分钟变化量（原版为每小时，现改为每分钟，更精细）
       var DEFAULT_ATTR_RULES = {
-        rest:     { energy:+5, mood: 0, health:+1, hunger:-2, bladder:+1, fun: 0 },
-        wake:     { energy:+2, mood:+1, health: 0, hunger:-1, bladder:+2, fun: 0 },
-        eat:      { energy:+1, mood:+2, health:+1, hunger:+40,bladder:+5, fun: 0 },
-        work:     { energy:-3, mood:-1, health: 0, hunger:-5, bladder:+3, fun:-2 },
-        free:     { energy:-1, mood:+1, health: 0, hunger:-3, bladder:+2, fun:+3 },
-        social:   { energy:-2, mood:+2, health: 0, hunger:-2, bladder:+2, fun:+4 },
-        exercise: { energy:-4, mood:+2, health:+2, hunger:-4, bladder:+1, fun:+1 }
+        rest:     { energy:+0.08, mood: 0,    health:+0.02, hunger:-0.03, bladder:+0.02, fun: 0    },
+        wake:     { energy:+0.03, mood:+0.02, health: 0,    hunger:-0.02, bladder:+0.03, fun: 0    },
+        eat:      { energy:+0.02, mood:+0.03, health:+0.02, hunger:+0.67, bladder:+0.08, fun: 0    },
+        work:     { energy:-0.05, mood:-0.02, health: 0,    hunger:-0.08, bladder:+0.05, fun:-0.03 },
+        free:     { energy:-0.02, mood:+0.02, health: 0,    hunger:-0.05, bladder:+0.03, fun:+0.05 },
+        social:   { energy:-0.03, mood:+0.03, health: 0,    hunger:-0.03, bladder:+0.03, fun:+0.07 },
+        exercise: { energy:-0.07, mood:+0.03, health:+0.03, hunger:-0.07, bladder:+0.02, fun:+0.02 }
       };
 
       // ---- 默认每条消息消耗 ----
@@ -14570,10 +14598,10 @@ const npc = _wxGetChatTargetMeta(npcId);
           var nextSlotMin = _minutesToNextSlot(schedule, curHour, curMin);
           if (nextSlotMin <= 0) nextSlotMin = 60;
           var segMin = Math.min(remaining, nextSlotMin);
-          var segH = segMin / 60;
+          // ★ 按分钟累积（规则值为每分钟变化量）
           for (var ak in s.attrs){
             if (s.attrs.hasOwnProperty(ak) && tagRule[ak] != null)
-              s.attrs[ak] = _clampAttr(ak, s.attrs[ak] + tagRule[ak] * segH, defs);
+              s.attrs[ak] = _clampAttr(ak, s.attrs[ak] + tagRule[ak] * segMin, defs);
           }
           if (s.attrs.bladder >= 90) s.attrs.bladder = _clampAttr('bladder', 5, defs);
           cursor = new Date(cursor.getTime() + segMin * 60000);
@@ -14589,15 +14617,15 @@ const npc = _wxGetChatTargetMeta(npcId);
       }
 
       function _catchUpSimple(s, elapsedMin, defs){
-        var h = elapsedMin / 60;
-        s.attrs.energy = _clampAttr('energy', s.attrs.energy + h * 2, defs);
+        var m = elapsedMin; // 直接按分钟
+        s.attrs.energy = _clampAttr('energy', s.attrs.energy + m * 0.03, defs);
         var md = 50 - s.attrs.mood;
-        s.attrs.mood = _clampAttr('mood', s.attrs.mood + md * Math.min(1, h * 0.1), defs);
-        s.attrs.health = _clampAttr('health', s.attrs.health + h * 0.5, defs);
-        s.attrs.hunger = _clampAttr('hunger', s.attrs.hunger - h * 3, defs);
-        s.attrs.bladder = _clampAttr('bladder', s.attrs.bladder + h * 2, defs);
+        s.attrs.mood = _clampAttr('mood', s.attrs.mood + md * Math.min(1, m * 0.002), defs);
+        s.attrs.health = _clampAttr('health', s.attrs.health + m * 0.008, defs);
+        s.attrs.hunger = _clampAttr('hunger', s.attrs.hunger - m * 0.05, defs);
+        s.attrs.bladder = _clampAttr('bladder', s.attrs.bladder + m * 0.03, defs);
         if (s.attrs.bladder >= 90) s.attrs.bladder = _clampAttr('bladder', 5, defs);
-        s.attrs.fun = _clampAttr('fun', s.attrs.fun - h * 2, defs);
+        s.attrs.fun = _clampAttr('fun', s.attrs.fun - m * 0.03, defs);
         s.moodText = _attrToMoodText(s.attrs);
       }
 
@@ -14960,8 +14988,13 @@ const npc = _wxGetChatTargetMeta(npcId);
               '所有数字为0-100之间的整数。\n' +
               '角色描述：' + String(bioText).slice(0, 800);
 
-            var resp = await PhoneAI.call({ userMsg:prompt, sysPrompt:'你是角色性格分析助手，只返回JSON。', maxTokens:120, npcId:'_sys' });
-            var txt = (resp && resp.text) ? String(resp.text).trim() : '';
+            var resp = await PhoneAI._request({
+              system: '你是角色性格分析助手，只返回JSON，不要任何其他文字。',
+              messages: [{ role:'user', content: prompt }],
+              temperature: 0.3,
+              maxTokens: 150
+            });
+            var txt = (resp && resp.data) ? String(resp.data).trim() : '';
             txt = txt.replace(/```json|```/g, '').trim();
             var parsed = JSON.parse(txt);
             // 验证字段合法性
