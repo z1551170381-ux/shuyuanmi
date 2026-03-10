@@ -13318,13 +13318,24 @@ const npc = _wxGetChatTargetMeta(npcId);
         var parsed = _parseAISpecialTags(rawText);
         var cleanText = parsed.cleanText || rawText;
 
-        // ★ 自动更新穿着/正在/心声（如果AI输出了[状态:...]标记）
+        // ★ 自动更新穿着/正在/心声/自定义条目（如果AI输出了[状态:...]标记）
         if (parsed.stateUpdate && Object.keys(parsed.stateUpdate).length > 0){
           try{
             var bxUpdate = _loadCharBehavior(npcId);
             if (parsed.stateUpdate.wearing   != null) bxUpdate.wearing   = parsed.stateUpdate.wearing;
             if (parsed.stateUpdate.doing     != null) bxUpdate.doing     = parsed.stateUpdate.doing;
             if (parsed.stateUpdate.heartLine != null) bxUpdate.heartLine = parsed.stateUpdate.heartLine;
+            // ★ 更新自定义条目的 value
+            if (parsed.stateUpdate.customUpdates){
+              var _cu = parsed.stateUpdate.customUpdates;
+              var _entries = _safeArr(bxUpdate.customStatusEntries);
+              for (var _ci = 0; _ci < _entries.length; _ci++){
+                var _entryLabel = _entries[_ci].label || '';
+                if (_entryLabel && _cu[_entryLabel] != null){
+                  _entries[_ci].value = String(_cu[_entryLabel]).slice(0, 50);
+                }
+              }
+            }
             _saveCharBehavior(npcId, bxUpdate);
           }catch(e){}
         }
@@ -13745,7 +13756,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           s = s.replace(stkMatch[0], '').trim();
         }
 
-        // 检测 [状态:穿着=xxx,正在=yyy,心声=zzz]（任意组合，顺序不限）
+        // 检测 [状态:穿着=xxx,正在=yyy,心声=zzz,自定义标签=值]（任意组合，顺序不限）
         var stateUpdate = null;
         var stateTagMatch = s.match(/\[状态[:：]([^\]]+)\]/i);
         if (stateTagMatch){
@@ -13757,6 +13768,22 @@ const npc = _wxGetChatTargetMeta(npcId);
           if (wearing2) stateUpdate.wearing   = wearing2[1].trim();
           if (doing2)   stateUpdate.doing     = doing2[1].trim();
           if (heart2)   stateUpdate.heartLine = heart2[1].trim();
+          // ★ 解析自定义条目：提取所有 key=value 对，排除已知的三个默认字段
+          var _allPairs = stateStr.split(/[,，]/);
+          var _customUpdates = {};
+          for (var _pi = 0; _pi < _allPairs.length; _pi++){
+            var _pair = _allPairs[_pi].trim();
+            var _eqIdx = _pair.indexOf('=');
+            if (_eqIdx < 0) _eqIdx = _pair.indexOf(':');
+            if (_eqIdx > 0){
+              var _pk = _pair.substring(0, _eqIdx).trim();
+              var _pv = _pair.substring(_eqIdx + 1).trim();
+              if (_pk && _pv && _pk !== '穿着' && _pk !== '正在' && _pk !== '心声'){
+                _customUpdates[_pk] = _pv;
+              }
+            }
+          }
+          if (Object.keys(_customUpdates).length > 0) stateUpdate.customUpdates = _customUpdates;
           s = s.replace(stateTagMatch[0], '').trim();
         }
 
@@ -14096,7 +14123,19 @@ const npc = _wxGetChatTargetMeta(npcId);
           }
         }catch(e){}
 
-        parts.push('---\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息的长度随机变化：有的很短（1-5字，如"嗯""好的""？"），有的中等（一两句话），偶尔有一条较长的。\n模拟真实手机聊天的节奏感——不要把所有内容压缩成一段话。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长\n\n示例格式：\n嗯|||怎么了？|||你今天怎么这么安静\n\n【状态同步（可选）】\n如果对话过程中你的穿着、当前在做的事或内心独白发生了变化，可以在任意一条消息的末尾附加状态标记（不会显示给用户）：\n[状态:穿着=白色睡衣,正在=准备洗澡,心声=有点期待明天]\n字段可只写变化的部分，如 [状态:心声=其实有点舍不得挂电话]' + voiceInstructions + stkForAI);
+        // ★ 构建自定义条目提示（如果用户添加了自定义条目，告诉 AI 有哪些可以更新）
+        var _bxForStatus = _loadCharBehavior(npcId);
+        var _customEntryHint = '';
+        var _customEntries = _safeArr(_bxForStatus.customStatusEntries);
+        if (_customEntries.length > 0){
+          var _ceLabels = _customEntries.map(function(e){ return e.label||''; }).filter(Boolean);
+          if (_ceLabels.length > 0){
+            _customEntryHint = '\n你还可以更新以下自定义状态条目（可选）：' + _ceLabels.join('、') +
+              '\n格式：在 [状态:] 标记里加 自定义条目名=值，如 [状态:穿着=白衬衫,' + _ceLabels[0] + '=某个值]';
+          }
+        }
+
+        parts.push('---\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息的长度随机变化：有的很短（1-5字，如"嗯""好的""？"），有的中等（一两句话），偶尔有一条较长的。\n模拟真实手机聊天的节奏感——不要把所有内容压缩成一段话。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长\n\n示例格式：\n嗯|||怎么了？|||你今天怎么这么安静\n\n【状态同步（必须执行）】\n每次回复时，你必须在最后一条消息的末尾附加状态标记（标记不会显示给用户）。\n根据当前对话内容和场景，更新你的穿着、正在做什么、以及内心独白：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。示例：\n好啊，那我们出发吧 [状态:穿着=白色连衣裙,正在=准备出门,心声=好期待今天的约会]' + _customEntryHint + voiceInstructions + stkForAI);
 
         return parts.join('\n\n');
       }
@@ -14153,6 +14192,12 @@ const npc = _wxGetChatTargetMeta(npcId);
         else if (bx.doing) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">🎯</span><span class="wxSPCLabel">正在</span><span class="wxSPCValue">${esc(bx.doing)}</span></div>`;
         if (bx.wearing) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">👗</span><span class="wxSPCLabel">穿着</span><span class="wxSPCValue">${esc(bx.wearing)}</span></div>`;
         if (bx.heartLine) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">💬</span><span class="wxSPCLabel">心声</span><span class="wxSPCValue" style="font-style:italic;color:rgba(20,24,28,.5);">"${esc(bx.heartLine)}"</span></div>`;
+        // ★ 显示自定义条目
+        var _ceForCard = _safeArr(bx.customStatusEntries);
+        for (var _ceI = 0; _ceI < _ceForCard.length; _ceI++){
+          var _ce = _ceForCard[_ceI];
+          if (_ce.label && _ce.value) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">${esc(_ce.icon||'📌')}</span><span class="wxSPCLabel">${esc(_ce.label)}</span><span class="wxSPCValue">${esc(_ce.value)}</span></div>`;
+        }
         var silentLeft = s.silentUntil > Date.now() ? Math.ceil((s.silentUntil - Date.now())/60000) : 0;
         if (silentLeft > 0) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">🤐</span><span class="wxSPCLabel">状态</span><span class="wxSPCValue" style="color:#e74c3c;">冷静中，约 ${silentLeft} 分钟后回来</span></div>`;
 
@@ -14364,7 +14409,8 @@ const npc = _wxGetChatTargetMeta(npcId);
           _openCustomAttrsEditor(this.getAttribute('data-npcid') || npcId);
         });
 
-        // ★ 实时刷新：每30秒重算属性，直接更新 DOM 条形图（不重渲染整页）
+        // ★ 实时刷新：每3秒重算属性，直接更新 DOM 条形图（不重渲染整页）
+        // 读取时永远用推算值（catchUpStats 只推算不写回），写入只在 tick（每5分钟）时
         var _sdRefreshTimer = setInterval(function(){
           if (!body.isConnected || !body.querySelector('.wxStateDetailWrap')){ clearInterval(_sdRefreshTimer); return; }
           try{
@@ -14376,16 +14422,41 @@ const npc = _wxGetChatTargetMeta(npcId);
               var barEl = body.querySelector('#sdf_' + d.key);
               var numEl = body.querySelector('#sdf_' + d.key + '_n');
               if (barEl){ barEl.style.width = newVal + '%'; barEl.style.background = colorNew; }
-              if (numEl){ numEl.textContent = Math.round(newVal); }
+              if (numEl){
+                var curNum = parseFloat(numEl.textContent) || 0;
+                var target = Math.round(newVal);
+                // 平滑数字过渡
+                if (curNum !== target){
+                  var step = target > curNum ? Math.ceil((target - curNum) / 3) : Math.floor((target - curNum) / 3);
+                  if (step === 0) step = target > curNum ? 1 : -1;
+                  numEl.textContent = Math.round(curNum + step);
+                }
+              }
             });
+            // 更新心情
             var metaEl = body.querySelector('.wxSDMeta');
             if (metaEl && sNew.moodText){
               var moodEmoji2 = {'开心':'😄','兴奋':'🤩','平静':'😌','害羞':'😳','疲惫':'😴','委屈':'🥺','烦躁':'😤','生气':'😠'};
               var moodSpan = metaEl.querySelector('span:last-child');
               if (moodSpan) moodSpan.textContent = (moodEmoji2[sNew.moodText]||'😌') + ' ' + sNew.moodText;
             }
+            // 更新当前作息时段
+            var schedEl = body.querySelector('.wxSDSchedule');
+            if (schedEl && sNew.schedule && sNew.schedule.length){
+              var _curH = new Date().getHours();
+              for (var _idx = 0; _idx < sNew.schedule.length; _idx++){
+                var _slr = sNew.schedule[_idx];
+                var _inr = _slr.endHour <= _slr.hour ? (_curH >= _slr.hour || _curH < _slr.endHour) : (_curH >= _slr.hour && _curH < _slr.endHour);
+                if (_inr){
+                  var _tInfoR = SCHEDULE_TAGS.find(function(tt){ return tt.tag === _slr.tag; });
+                  var _schedSpan = schedEl.querySelector('span:last-child');
+                  if (_schedSpan) _schedSpan.textContent = '当前：' + _slr.activity + '（' + _slr.hour + ':00–' + _slr.endHour + ':00）';
+                  break;
+                }
+              }
+            }
           }catch(e){}
-        }, 30000);
+        }, 3000);
       }
 
       function _showTypingInAppBar(npcName){
@@ -14615,7 +14686,8 @@ const npc = _wxGetChatTargetMeta(npcId);
         s._prevAttrs = JSON.parse(JSON.stringify(s.attrs));
         s._animNeeded = elapsedMs > 30000;
 
-        if (elapsedMs < 10000) return s;
+        // ★ 降低阈值：500ms 即推算，确保实时显示能看到变化
+        if (elapsedMs < 500) return s;
         var elapsedMin = elapsedMs / 60000; // 保留小数更精确
         var defs = _getAttrDefs(s);
 
@@ -15013,9 +15085,31 @@ const npc = _wxGetChatTargetMeta(npcId);
           }catch(e){ console.warn('[LifeEngine] tick error:', e); }
         }
 
-        // ---- 性格提取（角色创建/设置时调用一次AI） ----
+        // ---- 本地降级：基于文本关键词启发式生成性格参数 ----
+        function _localFallbackPersonality(bioText){
+          var text = String(bioText||'');
+          var r = { socialDrive:50, emotionDisplay:50, discipline:50, dependency:50, resilience:50 };
+          if (/外向|活泼|热情|话多|社交|健谈|开朗/.test(text)) r.socialDrive = 70 + Math.floor(Math.random()*15);
+          else if (/内向|沉默|寡言|孤僻|冷漠|高冷/.test(text)) r.socialDrive = 20 + Math.floor(Math.random()*15);
+          if (/暴躁|情绪化|敏感|爱哭|容易激动|直率/.test(text)) r.emotionDisplay = 70 + Math.floor(Math.random()*15);
+          else if (/冷静|内敛|克制|稳重|面瘫|淡定/.test(text)) r.emotionDisplay = 20 + Math.floor(Math.random()*15);
+          if (/自律|规律|勤奋|严格|认真|努力|学霸/.test(text)) r.discipline = 70 + Math.floor(Math.random()*15);
+          else if (/懒|散漫|随性|自由|摸鱼|拖延/.test(text)) r.discipline = 20 + Math.floor(Math.random()*15);
+          if (/依赖|粘人|缠人|恋人|想你|离不开|撒娇/.test(text)) r.dependency = 70 + Math.floor(Math.random()*15);
+          else if (/独立|独处|自给|不需要|一个人/.test(text)) r.dependency = 20 + Math.floor(Math.random()*15);
+          if (/乐观|开朗|豁达|坚强|积极|阳光/.test(text)) r.resilience = 70 + Math.floor(Math.random()*15);
+          else if (/悲观|脆弱|玻璃心|多愁|忧郁/.test(text)) r.resilience = 20 + Math.floor(Math.random()*15);
+          return r;
+        }
+
+        // ---- 性格提取（角色创建/设置时调用一次AI，失败时本地降级） ----
         async function extractPersonality(npcId, bioText){
-          if (!bioText || String(bioText).trim().length < 5) return null;
+          // ★ 即使描述极短也用本地降级，不再返回 null
+          if (!bioText || String(bioText).trim().length < 5){
+            var fb0 = _localFallbackPersonality(bioText);
+            var s0 = _loadCharState(npcId); s0.personality = fb0; _saveCharState(npcId, s0);
+            return fb0;
+          }
           try{
             var apiKey = '';
             try{ apiKey = (MEOW.core.lsGet('meow_api_key') || MEOW.core.lsGet('meow_phone_api_presets') && JSON.parse(MEOW.core.lsGet('meow_phone_api_presets') || '{}').key || ''); }catch(_e){}
@@ -15042,7 +15136,16 @@ const npc = _wxGetChatTargetMeta(npcId);
               temperature: 0.3,
               maxTokens: 150
             });
-            var txt = (resp && resp.data) ? String(resp.data).trim() : '';
+
+            // ★ API 返回无效时降级
+            if (!resp || !resp.ok || !resp.data){
+              console.warn('[LifeEngine] extractPersonality API failed, fallback to local');
+              var fb1 = _localFallbackPersonality(bioText);
+              var s1 = _loadCharState(npcId); s1.personality = fb1; _saveCharState(npcId, s1);
+              return fb1;
+            }
+
+            var txt = String(resp.data).trim();
             txt = txt.replace(/```json|```/g, '').trim();
             var parsed = JSON.parse(txt);
             // 验证字段合法性
@@ -15053,7 +15156,12 @@ const npc = _wxGetChatTargetMeta(npcId);
               if (typeof v !== 'number' || v < 0 || v > 100){ valid = false; break; }
               parsed[keys[ki]] = Math.round(v);
             }
-            if (!valid) return null;
+            if (!valid){
+              // ★ 字段不合法，降级
+              var fb2 = _localFallbackPersonality(bioText);
+              var s2 = _loadCharState(npcId); s2.personality = fb2; _saveCharState(npcId, s2);
+              return fb2;
+            }
 
             // 存入 charstate
             var s = _loadCharState(npcId);
@@ -15062,7 +15170,10 @@ const npc = _wxGetChatTargetMeta(npcId);
             return parsed;
           }catch(e){
             console.warn('[LifeEngine] extractPersonality error:', e);
-            return null;
+            // ★ 任何异常都降级到本地分析
+            var fb3 = _localFallbackPersonality(bioText);
+            var s3 = _loadCharState(npcId); s3.personality = fb3; _saveCharState(npcId, s3);
+            return fb3;
           }
         }
 
