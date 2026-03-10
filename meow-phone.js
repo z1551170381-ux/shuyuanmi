@@ -978,6 +978,37 @@ function ensureTuneStyle(){
 }
     `;
     (doc.head || doc.documentElement).appendChild(st);
+
+    // ★ LifePush 弹窗 CSS
+    var lpSt = doc.createElement('style');
+    lpSt.id = 'meow-lifepush-style-v1';
+    lpSt.textContent = `
+.meowLifePushToast{
+  position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(20px);
+  min-width:240px; max-width:320px;
+  background:rgba(20,20,28,.92); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.12); border-radius:16px;
+  padding:12px 14px; display:flex; align-items:flex-start; gap:10px;
+  box-shadow:0 8px 32px rgba(0,0,0,.45);
+  opacity:0; transition:opacity .3s,transform .3s; pointer-events:none; z-index:99999;
+  cursor:pointer;
+}
+.meowLifePushToast.show{ opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
+.meowLifePushToast .lpAvatar{
+  width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,.15);
+  display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700;
+  color:#fff; flex-shrink:0; overflow:hidden;
+}
+.meowLifePushToast .lpAvatar img{ width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.meowLifePushToast .lpBody{ flex:1; min-width:0; }
+.meowLifePushToast .lpName{ font-size:12px; font-weight:600; color:rgba(255,255,255,.7); margin-bottom:2px; }
+.meowLifePushToast .lpText{ font-size:13px; color:#fff; line-height:1.4; word-break:break-all; }
+.meowLifePushToast .lpClose{
+  font-size:14px; color:rgba(255,255,255,.4); background:transparent; border:0; cursor:pointer;
+  padding:0; flex-shrink:0; line-height:1; align-self:flex-start;
+}
+    `;
+    (doc.head || doc.documentElement).appendChild(lpSt);
   }catch(e){}
 }
 
@@ -5078,6 +5109,15 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             try{toast(ce.autoSummary?'聊天自动总结已开启':'聊天自动总结已关闭');}catch(e){}
             return;
           }
+          if (act === 'wxCSToggleLifePush'){
+            const nid = t.getAttribute('data-npcid') || state.chatTarget;
+            const ce = _loadCharExtra(nid);
+            ce.enableLifePush = !(ce.enableLifePush !== false); // 默认 true
+            _saveCharExtra(nid, ce);
+            t.classList.toggle('on', ce.enableLifePush); t.classList.toggle('off', !ce.enableLifePush);
+            try{ toast(ce.enableLifePush ? '主动消息弹窗已开启' : '主动消息弹窗已关闭'); }catch(e){}
+            return;
+          }
           if (act === 'wxCSSumExpand'){
             const area = root.querySelector('[data-el="sumExpandArea"]');
             const arrow = root.querySelector('[data-el="sumExpandArrow"]');
@@ -6410,11 +6450,40 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
       }
 
       function openChat(contactId){
-        state._innerStack = []; // ✅ 清空子页面栈（进入聊天详情走 navStack）
-        // ✅ 切换会话时 abort 之前的 AI 请求
+        state._innerStack = [];
         try{ PhoneAI.abort(); _hideTypingIndicator(); _hideBubbleMenu(); _hideQuoteBar(); root.querySelectorAll('.wxEditMsgOverlay').forEach(function(o){o.remove();}); }catch(e){}
-        // ★ Phase 1：打开聊天时触发 catchUp 补算
-        try{ catchUpStats(contactId); }catch(e){}
+
+        // ★ catchUp + 离线补发主动消息（async，不阻塞 UI）
+        var _openChatNow = Date.now();
+        try{
+          var _sBefore = _loadCharState(contactId);
+          var _elapsed = _sBefore.lastCalcAt ? Math.floor((_openChatNow - _sBefore.lastCalcAt) / 60000) : 0;
+          catchUpStats(contactId);
+          // 异步：离线补发（写入历史消息）
+          LifeEngine.catchUpProactiveMsgs(contactId, _elapsed).catch(function(){});
+        }catch(e){}
+
+        // ★ flush 前台队列（async，AI 生成完再注入聊天）
+        var _flushDone = false;
+        LifeEngine.flushMsgQueue(contactId).then(function(ready){
+          _flushDone = true;
+          if (!ready || !ready.length) return;
+          ready.forEach(function(qm){
+            try{
+              var logs3 = loadLogs();
+              logs3.map ||= {};
+              var id3 = String(contactId);
+              logs3.map[id3] ||= [];
+              logs3.map[id3].push({ role:'them', text:qm.text, t:qm.ts || Date.now(), fromLife:true });
+              saveLogs(logs3);
+              // 如果当前还在看这个聊天，刷新一下消息列表
+              if (state.chatTarget === contactId && state.app === 'chatDetail'){
+                try{ renderChatDetail(contactId); }catch(e){}
+              }
+            }catch(e){}
+          });
+        }).catch(function(){});
+
         state.navStack.push(state.app);
         state.chatTarget = contactId;
         state.app = 'chatDetail';
@@ -11647,7 +11716,7 @@ const npc = _wxGetChatTargetMeta(npcId);
 
       /* --- 数据层：角色设定(扩展profile) --- */
       function _loadCharExtra(npcId){
-        return _phLoad('char_extra_'+npcId, { profile:'', chatBg:'', autoSummary:false, autoSumEvery:20 });
+        return _phLoad('char_extra_'+npcId, { profile:'', chatBg:'', autoSummary:false, autoSumEvery:20, enableLifePush:true });
       }
       function _saveCharExtra(npcId, data){
         _phSave('char_extra_'+npcId, data);
@@ -12023,6 +12092,18 @@ const npc = _wxGetChatTargetMeta(npcId);
           </div>
 
           <div class="wxCSGroup" style="margin-top:12px;">
+            <!-- ★ 主动消息弹窗开关 -->
+            <div class="wxCSItem" style="cursor:default;">
+              <div class="wxCSIco">${_phFlatIcon('🔔')}</div>
+              <div class="wxCSName">
+                主动找你
+                <div style="font-size:11px;color:rgba(20,24,28,.4);margin-top:1px;">角色根据状态主动发消息+弹窗</div>
+              </div>
+              <button class="wxReminderToggle ${charEx.enableLifePush!==false?'on':'off'}" data-act="wxCSToggleLifePush" data-npcid="${esc(contactId)}" style="margin-left:auto;flex-shrink:0;"></button>
+            </div>
+          </div>
+
+          <div class="wxCSGroup" style="margin-top:12px;">
             <div class="wxCSItem" data-act="wxDelChat" data-npcid="${esc(contactId)}"
               style="color:rgba(231,76,60,.85);">
               <div class="wxCSIco" style="background:rgba(231,76,60,.10);border-color:rgba(231,76,60,.15);">${_phFlatIcon('🗑')}</div>
@@ -12098,20 +12179,28 @@ const npc = _wxGetChatTargetMeta(npcId);
         }
 
         // ---- 属性条 HTML（使用 SVG 图标） ----
-        function _attrBarHtml(def, val){
+        function _attrBarHtml(def, val, prevVal, doAnim){
+          if (def.hideBar) return ''; // loneliness 等隐藏属性不显示条
           var pct = Math.max(0, Math.min(100, val||0));
+          var fromPct = (doAnim && prevVal != null) ? Math.max(0, Math.min(100, prevVal||0)) : pct;
           var color = pct > 60 ? 'var(--ph-accent, #07c160)' : pct > 30 ? '#f39c12' : '#e74c3c';
+          var barId = 'attrbar_' + def.key + '_' + String(Math.random()).slice(2,7);
+          var animStyle = doAnim
+            ? 'transition:width 1.2s cubic-bezier(.4,0,.2,1);'
+            : 'transition:width .3s;';
           return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;">
             <span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;color:rgba(20,24,28,.5);">${_phFlatIcon(def.icon||'🔵')}</span>
             <span style="font-size:12px;color:rgba(20,24,28,.6);min-width:28px;">${def.label}</span>
             <div style="flex:1;height:6px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden;">
-              <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:width .3s;"></div>
+              <div id="${barId}" style="height:100%;width:${fromPct}%;background:${color};border-radius:3px;${animStyle}"></div>
             </div>
-            <span style="font-size:11px;color:rgba(20,24,28,.4);min-width:24px;text-align:right;">${pct}</span>
-          </div>`;
+            <span id="${barId}_num" style="font-size:11px;color:rgba(20,24,28,.4);min-width:24px;text-align:right;">${Math.round(fromPct)}</span>
+          </div>${doAnim && fromPct !== pct ? `<script>(function(){var el=document.getElementById('${barId}'),nm=document.getElementById('${barId}_num');if(!el)return;setTimeout(function(){el.style.width='${pct}%';if(nm)nm.textContent='${Math.round(pct)}';},60);})()</script>` : ''}`;
         }
 
-        var attrBarsHtml = defs.map(function(d){ return _attrBarHtml(d, attrs[d.key]); }).join('');
+        var prevAttrs = s._prevAttrs || {};
+        var doAnim = !!s._animNeeded;
+        var attrBarsHtml = defs.map(function(d){ return _attrBarHtml(d, attrs[d.key], prevAttrs[d.key], doAnim); }).join('');
 
         // ---- 当前作息时段 ----
         var scheduleStatusHtml = '';
@@ -12197,6 +12286,41 @@ const npc = _wxGetChatTargetMeta(npcId);
 
           <button data-act="cbSaveBehavior" data-npcid="${esc(contactId)}"
             style="display:block;width:calc(100% - 28px);margin:12px 14px 0;padding:12px;border-radius:12px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
+
+          <!-- ★ 性格分析卡片 -->
+          <div style="margin:12px 14px 0;font-size:11px;color:rgba(20,24,28,.4);letter-spacing:.3px;padding:0 0 4px;">🧠 性格分析</div>
+          <div style="background:var(--ph-glass, rgba(255,255,255,.75));border-radius:14px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.07));margin:0 14px;padding:12px 14px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">
+            ${(function(){
+              var p = s.personality;
+              if (!p) return '<div style="font-size:12px;color:rgba(20,24,28,.4);margin-bottom:10px;">尚未分析，点击按钮让 AI 提取角色性格五维参数，驱动自主行为差异。</div>';
+              function pBar(label, val){ var c = val > 66 ? '#07c160' : val > 33 ? '#f39c12' : '#e74c3c';
+                return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="font-size:11px;color:rgba(20,24,28,.55);min-width:52px;">${label}</span><div style="flex:1;height:5px;background:rgba(0,0,0,.07);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${val}%;background:${c};border-radius:3px;"></div></div><span style="font-size:10px;color:rgba(20,24,28,.35);min-width:20px;text-align:right;">${val}</span></div>`; }
+              return pBar('社交主动',p.socialDrive) + pBar('情绪外显',p.emotionDisplay) + pBar('自律程度',p.discipline) + pBar('依赖倾向',p.dependency) + pBar('情绪弹性',p.resilience);
+            })()}
+            <button data-act="cbExtractPersonality" data-npcid="${esc(contactId)}"
+              style="margin-top:6px;width:100%;padding:8px;border-radius:10px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));background:rgba(255,255,255,.8);font-size:12px;color:rgba(20,24,28,.7);cursor:pointer;">
+              ${s.personality ? '🔄 重新分析性格' : '✨ AI 提取性格参数'}
+            </button>
+          </div>
+
+          <!-- ★ 生活日志卡片 -->
+          <div style="margin:12px 14px 0;font-size:11px;color:rgba(20,24,28,.4);letter-spacing:.3px;padding:0 0 4px;">📋 最近动态</div>
+          <div style="background:var(--ph-glass, rgba(255,255,255,.75));border-radius:14px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.07));margin:0 14px 20px;padding:4px 0;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">
+            ${(function(){
+              var logs = [];
+              try{ logs = LifeEngine.getLifeLog(contactId, 15); }catch(e){}
+              if (!logs || !logs.length) return '<div style="padding:14px;font-size:12px;color:rgba(20,24,28,.3);text-align:center;">暂无动态记录</div>';
+              return logs.slice().reverse().map(function(entry){
+                var t = entry.time ? new Date(entry.time) : null;
+                var timeStr = t ? (t.getHours()<10?'0':'')+t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes() : '';
+                return `<div style="display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid rgba(0,0,0,.04);">
+                  <span style="font-size:16px;">${entry.icon||'📋'}</span>
+                  <span style="font-size:12px;color:rgba(20,24,28,.75);flex:1;">${esc(entry.label||'')}</span>
+                  <span style="font-size:10px;color:rgba(20,24,28,.3);">${timeStr}</span>
+                </div>`;
+              }).join('');
+            })()}
+          </div>
         </div>`;
         body.innerHTML = html;
 
@@ -12250,6 +12374,26 @@ const npc = _wxGetChatTargetMeta(npcId);
           fresh.isKeyNPC = old.isKeyNPC; fresh.schedule = old.schedule;
           fresh.attrRules = old.attrRules; fresh.perMsgCost = old.perMsgCost;
           fresh.customAttrs = old.customAttrs; fresh.lastCalcAt = Date.now();
+
+        // ★ 性格提取按钮
+        body.querySelector('[data-act="cbExtractPersonality"]')?.addEventListener('click', async function(){
+          var nid = this.getAttribute('data-npcid') || contactId;
+          var btn = this;
+          btn.disabled = true; btn.textContent = '分析中…';
+          try{
+            var db2 = loadContactsDB();
+            var npc2 = findContactById(db2, nid) || {};
+            var charEx2 = _loadCharExtra(nid);
+            var bio = [npc2.profile || '', charEx2.profile || '', npc2.personality || '', npc2.description || ''].filter(Boolean).join('\n').slice(0, 800);
+            var result = await LifeEngine.extractPersonality(nid, bio);
+            if (result){
+              try{ toast('性格分析完成 ✓'); }catch(e){}
+              _renderCharBehaviorPage(nid);
+            } else {
+              btn.disabled = false; btn.textContent = '分析失败，请重试';
+            }
+          }catch(e){ btn.disabled = false; btn.textContent = '分析出错，请重试'; console.warn(e); }
+        });
           // 恢复自定义属性初始值
           (old.customAttrs||[]).forEach(function(c){ if(c.key) fresh.attrs[c.key] = c.init||50; });
           _saveCharState(nid, fresh); try{ toast('状态已重置'); }catch(e){} _renderCharBehaviorPage(nid);
@@ -13764,12 +13908,14 @@ const npc = _wxGetChatTargetMeta(npcId);
 
       // ---- 默认 6 维属性定义（icon 用于 _phFlatIcon 查找） ----
       var ATTR_DEFS_DEFAULT = [
-        { key:'energy',  label:'精力', icon:'⚡', min:0, max:100, init:80 },
-        { key:'mood',    label:'心情', icon:'😊', min:0, max:100, init:60 },
-        { key:'health',  label:'健康', icon:'❤️', min:0, max:100, init:90 },
-        { key:'hunger',  label:'饱腹', icon:'🍚', min:0, max:100, init:70 },
-        { key:'bladder', label:'如厕', icon:'🚻', min:0, max:100, init:20 },
-        { key:'fun',     label:'娱乐', icon:'🎮', min:0, max:100, init:50 }
+        { key:'energy',    label:'精力', icon:'⚡', min:0, max:100, init:80 },
+        { key:'mood',      label:'心情', icon:'😊', min:0, max:100, init:60 },
+        { key:'health',    label:'健康', icon:'❤️', min:0, max:100, init:90 },
+        { key:'hunger',    label:'饱腹', icon:'🍚', min:0, max:100, init:70 },
+        { key:'bladder',   label:'如厕', icon:'🚻', min:0, max:100, init:20 },
+        { key:'fun',       label:'娱乐', icon:'🎮', min:0, max:100, init:50 },
+        { key:'loneliness',label:'孤独', icon:'🫂', min:0, max:100, init:10, hideBar:true }
+        // hideBar:true → 不显示在状态面板，只影响行为触发
       ];
 
       // ---- 自定义属性可选图标列表 ----
@@ -13798,7 +13944,9 @@ const npc = _wxGetChatTargetMeta(npcId);
       };
 
       // ---- 默认每条消息消耗 ----
-      var DEFAULT_PER_MSG_COST = { energy:-2, mood:0, health:0, hunger:-1, bladder:+1, fun:+1 };
+      // ★ 改造：生理属性不再由聊天驱动，改由 LifeEngine 时间驱动
+      // 聊天只影响社交属性：孤独感下降、娱乐微升
+      var DEFAULT_PER_MSG_COST = { energy:0, mood:0, health:0, hunger:0, bladder:0, fun:+1, loneliness:-12 };
 
       // ---- 默认作息表模板 ----
       var DEFAULT_SCHEDULE = [
@@ -13848,7 +13996,11 @@ const npc = _wxGetChatTargetMeta(npcId);
           bond: '普通',
           silentUntil: 0,
           silentReason: '',
-          lastActiveAt: 0
+          lastActiveAt: 0,
+          // ★ 新增：性格五维（AI 提取一次后存储，驱动 LifeEngine 行为差异）
+          personality: null,    // { socialDrive, emotionDisplay, discipline, dependency, resilience } 各 0-100
+          // ★ 新增：当前行为状态（LifeEngine 填写）
+          currentBehavior: null // { key, label, startAt, endAt }
         };
       }
 
@@ -13922,6 +14074,11 @@ const npc = _wxGetChatTargetMeta(npcId);
         var now = Date.now();
         var lastCalc = s.lastCalcAt || now;
         var elapsedMs = now - lastCalc;
+
+        // ★ 动画支持：存下变化前的快照，UI 读取后做滚动动画
+        s._prevAttrs = JSON.parse(JSON.stringify(s.attrs));
+        s._animNeeded = elapsedMs > 300000; // 离开超 5 分钟才触发动画
+
         if (elapsedMs < 60000) return s;
         var elapsedMin = Math.floor(elapsedMs / 60000);
         var defs = _getAttrDefs(s);
@@ -13981,6 +14138,395 @@ const npc = _wxGetChatTargetMeta(npcId);
         s.moodText = _attrToMoodText(s.attrs);
       }
 
+      // ========== 【模块 B4】LifeEngine — 自主生活行为引擎 ==========
+      // 核心理念：角色先"活着"，有时因此来找你；不是为了发消息而做行为
+      // 驱动：时间 + 作息 + 属性阈值 + 性格权重
+      // 输出：行为日志（可见动态）+ 偶发消息（实时推送）
+      var LifeEngine = (function(){
+
+        // ---- 行为定义表 ----
+        var BEHAVIORS = {
+          eat:     { label:'吃饭',   icon:'🍽️', durationMin:30,  silent:false, msgChance:0.3,
+                     effect:{ hunger:+60, mood:+5, energy:-2, bladder:+8 },
+                     msgs:['刚吃完饭～','吃饱了，舒服','吃完了'] },
+          snack:   { label:'吃零食', icon:'🍪', durationMin:10,  silent:false, msgChance:0.25,
+                     effect:{ hunger:+20, mood:+4, fun:+5 },
+                     msgs:['吃了点零食','嗑了点东西'] },
+          nap:     { label:'午休',   icon:'😴', durationMin:45,  silent:true,  msgChance:0.2,
+                     effect:{ energy:+25, mood:+3 },
+                     msgs:['刚睡醒','睡了一觉精神多了'] },
+          sleep:   { label:'睡觉',   icon:'🌙', durationMin:420, silent:true,  msgChance:0,
+                     effect:{ energy:+70, health:+5, mood:+5, hunger:-10 } },
+          bathroom:{ label:'去洗手间',icon:'🚻', durationMin:5,   silent:true,  msgChance:0,
+                     effect:{ bladder:-80 } },
+          relax:   { label:'放松一下',icon:'🪟', durationMin:20,  silent:false, msgChance:0.15,
+                     effect:{ fun:+15, mood:+3, energy:-1 },
+                     msgs:['在发呆','没干什么','就是歇着'] },
+          browse:  { label:'刷手机', icon:'📱', durationMin:15,  silent:false, msgChance:0.1,
+                     effect:{ fun:+10, energy:-2 },
+                     msgs:['刷着手机呢','看了点东西'] },
+          social:  { label:'想找你聊', icon:'💬', durationMin:0, silent:false, msgChance:0.85,
+                     effect:{ loneliness:-25, mood:+5 },
+                     msgs:['想到你了','你在吗','有件事想跟你说','怎么突然想起你了'] },
+          walk:    { label:'出门走走', icon:'🚶', durationMin:25, silent:false, msgChance:0.15,
+                     effect:{ fun:+12, health:+3, energy:-5, hunger:-5 },
+                     msgs:['出去走了走','透了个气'] }
+        };
+
+        // ---- 主导需求计算（每次 tick 只处理最紧迫的一个） ----
+        function _getDominantNeed(attrs, personality, schedule){
+          var needs = [];
+          var p = personality || {};
+
+          // 如厕：最高优先，无视性格
+          if ((attrs.bladder||0) > 85) needs.push({ key:'bathroom', urgency:300 });
+
+          // 饥饿：生理层，性格影响不大
+          if ((attrs.hunger||0) < 20)  needs.push({ key:'eat',  urgency:(20 - attrs.hunger) * 3.5 });
+          else if ((attrs.hunger||0) < 40) needs.push({ key:'snack', urgency:(40 - attrs.hunger) * 1.2 });
+
+          // 睡觉：看时间是否合适
+          var h = new Date().getHours();
+          if ((attrs.energy||0) < 12 && (h >= 22 || h < 7)) needs.push({ key:'sleep', urgency:(12 - attrs.energy) * 5 });
+
+          // 午休：看时间
+          if ((attrs.energy||0) < 35 && h >= 12 && h <= 15) needs.push({ key:'nap', urgency:(35 - attrs.energy) * 2 });
+
+          // 娱乐：无聊了
+          if ((attrs.fun||0) < 20)     needs.push({ key:'relax', urgency:(20 - attrs.fun) * 1.5 });
+          else if ((attrs.fun||0) < 30) needs.push({ key:'browse', urgency:(30 - attrs.fun) });
+
+          // 社交/孤独：依赖性格权重
+          var dep = (p.dependency != null) ? p.dependency : 50;
+          var socialDrive = (p.socialDrive != null) ? p.socialDrive : 50;
+          // 依赖倾向高 → 孤独阈值低（更容易触发找你）
+          var lonelyThreshold = 100 - dep * 0.35 - socialDrive * 0.2;
+          if ((attrs.loneliness||0) > lonelyThreshold && (attrs.energy||0) > 35){
+            needs.push({ key:'social', urgency:((attrs.loneliness||0) - lonelyThreshold) * 2.5 });
+          } else if ((attrs.fun||0) < 40 && (attrs.energy||0) > 50 && h >= 18){
+            // 傍晚后，精力还行但有点无聊，随机出门走走
+            needs.push({ key:'walk', urgency:15 });
+          }
+
+          if (!needs.length) return null;
+          needs.sort(function(a,b){ return b.urgency - a.urgency; });
+          return needs[0].key;
+        }
+
+        // ---- 执行行为 ----
+        function _triggerBehavior(npcId, behaviorKey, s, defs){
+          var beh = BEHAVIORS[behaviorKey];
+          if (!beh) return;
+
+          // 应用效果
+          for (var k in beh.effect){
+            if (beh.effect.hasOwnProperty(k)){
+              if (s.attrs[k] == null) s.attrs[k] = 0; // 兼容旧数据没有 loneliness
+              s.attrs[k] = _clampAttr(k, s.attrs[k] + beh.effect[k], defs);
+            }
+          }
+
+          // 记录当前行为状态（下次打开可以看到"正在..."）
+          if (beh.durationMin > 0){
+            s.currentBehavior = { key:behaviorKey, label:beh.label, icon:beh.icon,
+              startAt:Date.now(), endAt:Date.now() + beh.durationMin * 60000 };
+          }
+
+          // 写生活日志（如厕完全静默）
+          if (behaviorKey !== 'bathroom'){
+            _writeLifeLog(npcId, { time:Date.now(), icon:beh.icon, label:beh.label, key:behaviorKey });
+          }
+
+          // 决定是否发消息
+          var p = s.personality || {};
+          // 性格：社交主动性高 → 发消息概率 × 1.3；克制型 → × 0.6
+          var socialDrive = (p.socialDrive != null) ? p.socialDrive : 50;
+          var moodMult = s.attrs.mood > 60 ? 1.2 : s.attrs.mood < 30 ? 0.5 : 1.0;
+          var finalChance = beh.msgChance * (0.4 + socialDrive / 100 * 1.2) * moodMult;
+          if (beh.msgs && beh.msgs.length && Math.random() < finalChance){
+            var msg = beh.msgs[Math.floor(Math.random() * beh.msgs.length)];
+            _queueProactiveMsg(npcId, msg, beh.durationMin);
+          }
+        }
+
+        // ---- 生活日志：写入 ----
+        function _writeLifeLog(npcId, entry){
+          var key = 'lifelog_' + String(npcId);
+          var log = _phLoad(key, []);
+          if (!Array.isArray(log)) log = [];
+          log.push(entry);
+          if (log.length > 60) log = log.slice(log.length - 60); // 最多保留60条
+          _phSave(key, log);
+        }
+
+        // ---- 生活日志：读取 ----
+        function getLifeLog(npcId, limit){
+          var key = 'lifelog_' + String(npcId);
+          var log = _phLoad(key, []);
+          if (!Array.isArray(log)) return [];
+          return log.slice(-(limit || 20));
+        }
+
+        // ---- 主动消息队列（延迟发送，行为做完才告诉你） ----
+        // ---- AI 生成主动消息内容 ----
+        async function _generateAIMsg(npcId, behaviorKey, behaviorLabel, s){
+          try{
+            var db = loadContactsDB();
+            var npc = findContactById(db, npcId) || { name: String(npcId) };
+            var charEx = _loadCharExtra(npcId);
+
+            // 读最近10条聊天记录作为上下文
+            var recentLogs = [];
+            try{
+              var logs = loadLogs();
+              var raw = (logs.map && logs.map[String(npcId)]) || [];
+              recentLogs = raw.slice(-10).map(function(m){
+                return (m.role==='me'?'用户':'角色') + '：' + String(m.text||'').slice(0,80);
+              });
+            }catch(e){}
+
+            var p = s.personality || {};
+            var socialDrive = p.socialDrive != null ? p.socialDrive : 50;
+            var emotionDisplay = p.emotionDisplay != null ? p.emotionDisplay : 50;
+
+            var stateDesc = '';
+            if (s.attrs.energy < 30) stateDesc += '有点累，';
+            if (s.attrs.hunger < 30) stateDesc += '刚吃完饭，';
+            if ((s.attrs.loneliness||0) > 65) stateDesc += '有点想你，';
+            stateDesc += '心情' + (s.moodText||'平静');
+
+            var sysPrompt = '你正在扮演「' + (npc.name||npcId) + '」。\n' +
+              (npc.profile || npc.description || charEx.profile || '').slice(0,300) + '\n\n' +
+              '【行为背景】你刚刚' + behaviorLabel + '，' + stateDesc + '，想主动联系用户。\n' +
+              '【性格】' +
+              (socialDrive > 65 ? '比较主动爱聊天。' : socialDrive < 35 ? '平时话不多，这次难得主动。' : '') +
+              (emotionDisplay > 65 ? '情绪外放。' : emotionDisplay < 35 ? '情绪内敛。' : '') + '\n' +
+              '【要求】发一条简短自然的消息，1-2句，像真实聊天，不要正式，不要引号，直接输出内容。' +
+              (recentLogs.length ? '\n【最近对话】\n' + recentLogs.join('\n') : '');
+
+            var result = await PhoneAI.chat({
+              system: sysPrompt,
+              messages: [{ role:'user', content:'（请直接输出那条消息）' }],
+              temperature: 0.9,
+              maxTokens: 80,
+              timeout: 20
+            });
+            if (result && result.ok && result.data){
+              return String(result.data).trim().replace(/^["「『【]|["」』】]$/g, '').slice(0, 120);
+            }
+            return null;
+          }catch(e){ console.warn('[LifeEngine] _generateAIMsg error:', e); return null; }
+        }
+
+        // ---- 主动消息队列（存元信息，flush 时再调 AI） ----
+        function _queueProactiveMsg(npcId, fallbackText, delayMin, behaviorKey, behaviorLabel){
+          var delay = Math.max(0, delayMin || 0) * 60000 + _randomBetween(30, 180) * 1000;
+          var key = 'msgqueue_' + String(npcId);
+          var q = _phLoad(key, []);
+          if (!Array.isArray(q)) q = [];
+          q.push({ npcId:npcId, sendAt:Date.now()+delay, fallbackText:fallbackText,
+                   behaviorKey:behaviorKey, behaviorLabel:behaviorLabel, needAI:true });
+          if (q.length > 20) q = q.slice(q.length - 20);
+          _phSave(key, q);
+        }
+
+        // ---- flush：取出到时间的队列，返回给 openChat 调 AI ----
+        async function flushMsgQueue(npcId){
+          var key = 'msgqueue_' + String(npcId);
+          var q = _phLoad(key, []);
+          if (!Array.isArray(q) || !q.length) return [];
+          var now = Date.now();
+          var ready = [], remaining = [];
+          for (var i = 0; i < q.length; i++){
+            (q[i].sendAt <= now ? ready : remaining).push(q[i]);
+          }
+          _phSave(key, remaining);
+          // 对每条 ready 调 AI 生成内容
+          var results = [];
+          for (var ri = 0; ri < ready.length; ri++){
+            var item = ready[ri];
+            var s2 = _loadCharState(npcId);
+            var text = null;
+            if (item.needAI) text = await _generateAIMsg(npcId, item.behaviorKey, item.behaviorLabel||'做了些事', s2);
+            if (!text) text = item.fallbackText || '...';
+            results.push({ text:text, ts:item.sendAt });
+          }
+          return results;
+        }
+
+        // ---- 离线补发：打开时分析离线期间是否应补主动消息 ----
+        async function catchUpProactiveMsgs(npcId, elapsedMin){
+          try{
+            var ce = _loadCharExtra(npcId);
+            if (ce.enableLifePush === false) return;
+            if (elapsedMin < 60) return; // 离线不够久不补
+
+            var s = _loadCharState(npcId);
+            if (!s || !s.attrs) return;
+
+            var p = s.personality || {};
+            var dep = (p.dependency != null) ? p.dependency : 50;
+            var socialDrive = (p.socialDrive != null) ? p.socialDrive : 50;
+            var maxMsgs = (dep > 65 || socialDrive > 65) ? 2 : 1;
+
+            // 找离线期间的 social/free 时段（9:00-22:00）
+            var schedule = _getSchedule(s);
+            var lastCalc = s.lastCalcAt || Date.now();
+            var socialWindows = [];
+            var cur2 = new Date(lastCalc);
+            var rem2 = Math.min(elapsedMin, 720);
+            while (rem2 > 30){
+              var h3 = cur2.getHours();
+              var tag3 = schedule.length ? _getScheduleTagAtHour(schedule, h3) : 'free';
+              if ((tag3 === 'free' || tag3 === 'social') && h3 >= 9 && h3 <= 22){
+                socialWindows.push(new Date(cur2.getTime()));
+              }
+              cur2 = new Date(cur2.getTime() + 30 * 60000);
+              rem2 -= 30;
+            }
+            if (!socialWindows.length) return;
+
+            // 随机挑窗口
+            var chosen = [];
+            var copy2 = socialWindows.slice();
+            for (var ci2 = 0; ci2 < maxMsgs && copy2.length; ci2++){
+              var ix = Math.floor(Math.random() * copy2.length);
+              chosen.push(copy2.splice(ix, 1)[0]);
+            }
+            chosen.sort(function(a,b){ return a.getTime()-b.getTime(); });
+
+            for (var gi = 0; gi < chosen.length; gi++){
+              var msgTs = chosen[gi].getTime() + _randomBetween(0, 25) * 60000;
+              var aiText = await _generateAIMsg(npcId, 'social', '想着你', s);
+              if (!aiText) continue;
+
+              var logs2 = loadLogs();
+              logs2.map ||= {};
+              var id2 = String(npcId);
+              logs2.map[id2] ||= [];
+              logs2.map[id2].push({ role:'them', text:aiText, t:msgTs, fromLife:true });
+              logs2.map[id2].sort(function(a,b){ return (a.t||0)-(b.t||0); });
+              if (logs2.map[id2].length > 200) logs2.map[id2] = logs2.map[id2].slice(-200);
+              saveLogs(logs2);
+
+              // 更新 thread 未读
+              var th4 = loadThreads();
+              var thr4 = th4.list.find(function(x){ return String(x.id)===String(npcId); });
+              if (thr4){
+                thr4.unread = (thr4.unread||0) + 1;
+                thr4.lastMsg = aiText.slice(0,30) + (aiText.length>30?'…':'');
+                thr4.lastTime = msgTs;
+                saveThreads(th4);
+              }
+              _writeLifeLog(npcId, { time:msgTs, icon:'💬', label:'想找你聊聊', key:'social' });
+            }
+          }catch(e){ console.warn('[LifeEngine] catchUpProactiveMsgs error:', e); }
+        }
+
+
+        // ---- 孤独感自然累积（时间驱动）----
+        function _accumulateLoneliness(s, defs){
+          var p = s.personality || {};
+          var dep = (p.dependency != null) ? p.dependency : 50;
+          // 依赖倾向高 → 孤独感累积更快（每小时最多+20，最少+5）
+          var ratePerHour = 5 + dep * 0.15;
+          var idleHours = Math.min(12, (Date.now() - (s.lastActiveAt || Date.now())) / 3600000);
+          var gain = idleHours * ratePerHour;
+          if (s.attrs.loneliness == null) s.attrs.loneliness = 10;
+          s.attrs.loneliness = _clampAttr('loneliness', s.attrs.loneliness + gain, defs);
+        }
+
+        // ---- tick：定时调用的主函数（每 5 分钟） ----
+        function tick(npcId){
+          try{
+            var s = _loadCharState(npcId);
+            var defs = _getAttrDefs(s);
+
+            // 1. 孤独感累积
+            _accumulateLoneliness(s, defs);
+
+            // 2. 如果角色正处于某个行为中，检查是否已结束
+            if (s.currentBehavior && s.currentBehavior.endAt && Date.now() > s.currentBehavior.endAt){
+              s.currentBehavior = null;
+            }
+
+            // 3. 行为中不再触发新行为（除如厕）
+            if (s.currentBehavior && s.currentBehavior.key !== 'bathroom'){
+              s.lastCalcAt = Date.now();
+              _saveCharState(npcId, s);
+              return;
+            }
+
+            // 4. 计算主导需求并触发行为
+            var need = _getDominantNeed(s.attrs, s.personality, s.schedule);
+            if (need){
+              // 性格随机波动：自律型严格触发，混乱型有几率忽略
+              var p = s.personality || {};
+              var disc = (p.discipline != null) ? p.discipline : 50;
+              var triggerChance = 0.5 + disc * 0.005; // 自律100→触发率100%，混乱0→50%
+              if (Math.random() < triggerChance){
+                _triggerBehavior(npcId, need, s, defs);
+              }
+            }
+
+            s.lastCalcAt = Date.now();
+            _saveCharState(npcId, s);
+          }catch(e){ console.warn('[LifeEngine] tick error:', e); }
+        }
+
+        // ---- 性格提取（角色创建/设置时调用一次AI） ----
+        async function extractPersonality(npcId, bioText){
+          if (!bioText || String(bioText).trim().length < 5) return null;
+          try{
+            var apiKey = '';
+            try{ apiKey = (MEOW.core.lsGet('meow_api_key') || MEOW.core.lsGet('meow_phone_api_presets') && JSON.parse(MEOW.core.lsGet('meow_phone_api_presets') || '{}').key || ''); }catch(_e){}
+            // 从 PhoneAI 配置读取 API key
+            try{
+              var presets = _phLoad('meow_phone_api_presets_v1', null) || _phLoad(LS_PHONE_API_PRESETS, null);
+              if (presets && presets.key) apiKey = presets.key;
+            }catch(_e){}
+
+            var prompt = '请分析以下角色描述，判断这个角色的性格特征，返回纯JSON对象（不要任何其他文字、不要markdown代码块）：\n' +
+              '字段说明：\n' +
+              '- socialDrive（社交主动性）：越高越主动找人聊天，越低越喜欢等别人\n' +
+              '- emotionDisplay（情绪外显度）：越高越喜怒形于色，越低越内敛克制\n' +
+              '- discipline（自律程度）：越高作息越规律，越低越容易懒散\n' +
+              '- dependency（依赖倾向）：越高越依赖他人/容易孤独，越低独处越自在\n' +
+              '- resilience（情绪弹性）：越高情绪回正越快，越低低落状态越持久\n' +
+              '返回格式：{"socialDrive":数字,"emotionDisplay":数字,"discipline":数字,"dependency":数字,"resilience":数字}\n' +
+              '所有数字为0-100之间的整数。\n' +
+              '角色描述：' + String(bioText).slice(0, 800);
+
+            var resp = await PhoneAI.call({ userMsg:prompt, sysPrompt:'你是角色性格分析助手，只返回JSON。', maxTokens:120, npcId:'_sys' });
+            var txt = (resp && resp.text) ? String(resp.text).trim() : '';
+            txt = txt.replace(/```json|```/g, '').trim();
+            var parsed = JSON.parse(txt);
+            // 验证字段合法性
+            var keys = ['socialDrive','emotionDisplay','discipline','dependency','resilience'];
+            var valid = true;
+            for (var ki = 0; ki < keys.length; ki++){
+              var v = parsed[keys[ki]];
+              if (typeof v !== 'number' || v < 0 || v > 100){ valid = false; break; }
+              parsed[keys[ki]] = Math.round(v);
+            }
+            if (!valid) return null;
+
+            // 存入 charstate
+            var s = _loadCharState(npcId);
+            s.personality = parsed;
+            _saveCharState(npcId, s);
+            return parsed;
+          }catch(e){
+            console.warn('[LifeEngine] extractPersonality error:', e);
+            return null;
+          }
+        }
+
+        return { tick, getLifeLog, flushMsgQueue, catchUpProactiveMsgs, extractPersonality, BEHAVIORS };
+      })();
+
+
+
       function _minutesToNextSlot(schedule, curHour, curMin){
         if (!schedule.length) return 60;
         for (var i = 0; i < schedule.length; i++){
@@ -14010,26 +14556,36 @@ const npc = _wxGetChatTargetMeta(npcId);
         var txt = String(userText || '').toLowerCase();
         var defs = _getAttrDefs(s);
         var cost = _getPerMsgCost(s);
+
+        // 应用消息消耗（新版：主要影响社交属性，生理属性基本不动）
         for (var ck in cost){
-          if (cost.hasOwnProperty(ck) && s.attrs[ck] != null) s.attrs[ck] = _clampAttr(ck, s.attrs[ck] + cost[ck], defs);
+          if (cost.hasOwnProperty(ck) && s.attrs[ck] != null){
+            s.attrs[ck] = _clampAttr(ck, s.attrs[ck] + cost[ck], defs);
+          }
         }
+
+        // ★ 聊天重置孤独感计时：记录最后互动时间
+        s.lastActiveAt = now;
+
+        // 情绪关键词检测（保持原有逻辑，但幅度减半 — 情绪有惯性，不能一句话跳变）
         if (/谢谢|感谢|好棒|厉害|喜欢|爱你|开心|太好了|哈哈|😊|❤|💕|好可爱|好帅|夸|赞/.test(txt)){
-          s.attrs.mood = _clampAttr('mood', s.attrs.mood + 8, defs);
-          s.attrs.energy = _clampAttr('energy', s.attrs.energy + 3, defs);
+          s.attrs.mood = _clampAttr('mood', s.attrs.mood + 4, defs);   // 原来+8，改为+4（情绪惯性）
+          s.attrs.energy = _clampAttr('energy', s.attrs.energy + 1, defs);
           var bondOrd = ['疏远','普通','亲近','暧昧','冷战中'];
           var bi = bondOrd.indexOf(s.bond); if (bi >= 0 && bi < 3) s.bond = bondOrd[Math.min(3, bi + 1)];
         }
         if (/烦|讨厌|滚|闭嘴|傻|笨|没用|骗|失望|难受|哭泣|气死|你去死|废物|垃圾/.test(txt)){
-          s.attrs.mood = _clampAttr('mood', s.attrs.mood - 15, defs);
-          s.attrs.energy = _clampAttr('energy', s.attrs.energy - 8, defs);
+          s.attrs.mood = _clampAttr('mood', s.attrs.mood - 8, defs);   // 原来-15，改为-8
+          s.attrs.energy = _clampAttr('energy', s.attrs.energy - 3, defs);
         }
         if (/还好吗|你怎么了|辛苦了|多休息|照顾好自己|没事吧|加油/.test(txt)){
-          s.attrs.mood = _clampAttr('mood', s.attrs.mood + 5, defs);
-          s.attrs.energy = _clampAttr('energy', s.attrs.energy + 3, defs);
+          s.attrs.mood = _clampAttr('mood', s.attrs.mood + 3, defs);
+          s.attrs.energy = _clampAttr('energy', s.attrs.energy + 2, defs);
         }
         if (/哦|嗯|ok|随便|无所谓|算了|不知道/.test(txt) && txt.length <= 4){
-          s.attrs.mood = _clampAttr('mood', s.attrs.mood - 4, defs);
+          s.attrs.mood = _clampAttr('mood', s.attrs.mood - 2, defs);
         }
+
         s.moodText = _attrToMoodText(s.attrs);
         if (s.silentUntil < now){
           if (s.attrs.energy < 18 || s.moodText === '生气'){
@@ -14038,7 +14594,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             s.silentReason = s.moodText === '生气' ? '生气' : '疲惫';
           }
         }
-        s.lastCalcAt = now; s.lastActiveAt = now;
+        s.lastCalcAt = now;
         _saveCharState(npcId, s); return s;
       }
 
@@ -18870,6 +19426,174 @@ function bindPageScroll(){
         }catch(e){ console.warn('[MeowDB] init error:', e); }
         // AutoFeed 初始化
         try{ AutoFeedEngine.init(); }catch(e){ console.warn('[AutoFeed] init error:', e); }
+
+        // ★ LifeEngine：每5分钟 tick 所有有状态的角色
+        try{
+          var _lifeTickFn = function(){
+            try{
+              var prefix = _phUID() + '_charstate_';
+              Object.keys(localStorage).forEach(function(k){
+                if (k.indexOf(prefix) === 0){
+                  var npcId = k.slice(prefix.length);
+                  if (npcId) LifeEngine.tick(npcId);
+                }
+              });
+            }catch(e){ console.warn('[LifeEngine] global tick error:', e); }
+          };
+          _lifeTickFn();
+          var _lifeTimer = setInterval(_lifeTickFn, 5 * 60 * 1000);
+          if (MEOW.core?.timers) MEOW.core.timers.addInterval(_lifeTimer);
+        }catch(e){ console.warn('[LifeEngine] init error:', e); }
+
+        // ★ 前台实时推送：每2.5分钟检查，触发条件满足时 AI 生成消息 + 弹窗
+        try{
+          // 弹窗显示函数
+          function _showLifePushToast(npcId, npcName, avatarHint, text, onTap){
+            try{
+              var existing = doc.querySelector('.meowLifePushToast');
+              if (existing) existing.remove();
+              var el = doc.createElement('div');
+              el.className = 'meowLifePushToast';
+              var avatarImg = phoneGetAvatar ? phoneGetAvatar(npcId) : null;
+              var avatarHtml = avatarImg
+                ? '<img src="' + avatarImg + '" />'
+                : (avatarHint || (npcName||'?').charAt(0));
+              el.innerHTML =
+                '<div class="lpAvatar">' + avatarHtml + '</div>' +
+                '<div class="lpBody">' +
+                  '<div class="lpName">' + (npcName||npcId) + '</div>' +
+                  '<div class="lpText">' + String(text||'').slice(0,80) + '</div>' +
+                '</div>' +
+                '<button class="lpClose">✕</button>';
+              doc.body.appendChild(el);
+              requestAnimationFrame(function(){ el.classList.add('show'); });
+              el.querySelector('.lpClose').addEventListener('click', function(e){
+                e.stopPropagation(); el.classList.remove('show');
+                setTimeout(function(){ el.remove(); }, 350);
+              });
+              el.addEventListener('click', function(){
+                el.classList.remove('show');
+                setTimeout(function(){ el.remove(); }, 350);
+                try{ if (onTap) onTap(); }catch(e2){}
+              });
+              // 8秒后自动消失
+              setTimeout(function(){ if(el.isConnected){ el.classList.remove('show'); setTimeout(function(){ el.remove(); },350); } }, 8000);
+            }catch(e){ console.warn('[LifePush] toast error:', e); }
+          }
+
+          var _lastFgPushCheck = {}; // npcId → timestamp，防止同一角色连续推
+
+          var _fgPushTimer = setInterval(function(){
+            try{
+              var prefix2 = _phUID() + '_charstate_';
+              Object.keys(localStorage).forEach(function(k){
+                if (k.indexOf(prefix2) !== 0) return;
+                var npcId = k.slice(prefix2.length);
+                if (!npcId) return;
+
+                // 检查开关
+                try{
+                  var ce2 = _loadCharExtra(npcId);
+                  if (ce2.enableLifePush === false) return;
+                }catch(e){ return; }
+
+                // 冷却：同一角色 30 分钟内不重复推
+                var lastPush = _lastFgPushCheck[npcId] || 0;
+                if (Date.now() - lastPush < 30 * 60 * 1000) return;
+
+                var s3 = _loadCharState(npcId);
+                if (!s3 || !s3.attrs) return;
+                var p3 = s3.personality || {};
+
+                // 触发条件：孤独感高 + 精力充足 + 合理时间
+                var h4 = new Date().getHours();
+                var dep3 = (p3.dependency != null) ? p3.dependency : 50;
+                var socialDrive3 = (p3.socialDrive != null) ? p3.socialDrive : 50;
+                var lonelyThresh3 = 100 - dep3 * 0.35 - socialDrive3 * 0.2;
+                var lonely3 = s3.attrs.loneliness || 0;
+                var energy3 = s3.attrs.energy || 0;
+                if (lonely3 <= lonelyThresh3) return;
+                if (energy3 < 30) return;
+                if (h4 < 8 || h4 > 23) return; // 深夜/清晨不推
+
+                _lastFgPushCheck[npcId] = Date.now();
+
+                // 异步生成消息 + 写入 + 弹窗
+                (async function(nId, sSnap){
+                  try{
+                    var aiText2 = await LifeEngine._generateAIMsg ? null : null;
+                    // _generateAIMsg 是内部函数，通过 tick 触发 _queueProactiveMsg 间接走
+                    // 前台路径：直接调 PhoneAI 生成
+                    var db4 = loadContactsDB();
+                    var npc4 = findContactById(db4, nId) || { name: String(nId) };
+                    var charEx4 = _loadCharExtra(nId);
+                    var recentLogs4 = [];
+                    try{
+                      var lg4 = loadLogs();
+                      var raw4 = (lg4.map && lg4.map[String(nId)]) || [];
+                      recentLogs4 = raw4.slice(-8).map(function(m){ return (m.role==='me'?'用户':'角色') + '：' + String(m.text||'').slice(0,60); });
+                    }catch(e){}
+
+                    var sysPr = '你正在扮演「' + (npc4.name||nId) + '」。\n' +
+                      (npc4.profile || npc4.description || charEx4.profile || '').slice(0,300) + '\n' +
+                      '【当前状态】有点想用户，决定主动找他/她说几句。心情：' + (sSnap.moodText||'平静') + '。\n' +
+                      '【要求】发一条简短自然的消息，1-2句，像真实发消息，不要加引号，直接输出。' +
+                      (recentLogs4.length ? '\n【最近对话】\n' + recentLogs4.join('\n') : '');
+
+                    var r4 = await PhoneAI.chat({
+                      system: sysPr,
+                      messages: [{ role:'user', content:'（请直接输出那条消息）' }],
+                      temperature: 0.9, maxTokens: 80, timeout: 20
+                    });
+                    if (!r4 || !r4.ok || !r4.data) return;
+                    var fgText = String(r4.data).trim().replace(/^["「『【]|["」』】]$/g,'').slice(0,120);
+                    if (!fgText) return;
+
+                    // 写入聊天记录
+                    var ts5 = Date.now();
+                    var lg5 = loadLogs();
+                    lg5.map ||= {};
+                    var id5 = String(nId);
+                    lg5.map[id5] ||= [];
+                    lg5.map[id5].push({ role:'them', text:fgText, t:ts5, fromLife:true });
+                    if (lg5.map[id5].length > 200) lg5.map[id5] = lg5.map[id5].slice(-200);
+                    saveLogs(lg5);
+
+                    // 更新 thread 未读
+                    bumpThread(nId, { lastMsg:fgText.slice(0,30)+(fgText.length>30?'…':''), lastTime:ts5, unread:(function(){
+                      var th5=loadThreads(); var t5=th5.list.find(function(x){return String(x.id)===String(nId);}); return t5?(t5.unread||0)+1:1;
+                    })() });
+
+                    // 如果当前在看这个聊天，刷新
+                    if (state.chatTarget === nId && state.app === 'chatDetail'){
+                      try{ renderChatDetail(nId); }catch(e){}
+                    }
+
+                    // 弹窗
+                    _showLifePushToast(nId, npc4.name||nId, (npc4.avatar||String(npc4.name||nId).charAt(0)), fgText, function(){
+                      try{ openChat(nId); }catch(e){}
+                    });
+
+                    // 减少孤独感
+                    var s4 = _loadCharState(nId);
+                    if (s4 && s4.attrs){
+                      var defs4 = _getAttrDefs(s4);
+                      s4.attrs.loneliness = _clampAttr('loneliness', (s4.attrs.loneliness||0) - 30, defs4);
+                      _saveCharState(nId, s4);
+                    }
+
+                    LifeEngine.getLifeLog && _phSave && (function(){
+                      try{ var lk='lifelog_'+String(nId); var ll=_phLoad(lk,[]); if(!Array.isArray(ll))ll=[]; ll.push({time:ts5,icon:'💬',label:'主动找你说话',key:'social'}); if(ll.length>60)ll=ll.slice(ll.length-60); _phSave(lk,ll); }catch(e){}
+                    })();
+
+                  }catch(e){ console.warn('[LifePush] fg generate error:', e); }
+                })(npcId, s3);
+              });
+            }catch(e){ console.warn('[LifePush] interval error:', e); }
+          }, 2.5 * 60 * 1000); // 每2.5分钟检查
+
+          if (MEOW.core?.timers) MEOW.core.timers.addInterval(_fgPushTimer);
+        }catch(e){ console.warn('[LifePush] init error:', e); }
       }
 
       return { initOnce, showFull, showMini, showPill, hide, openApp, openHome, openChat, state };
