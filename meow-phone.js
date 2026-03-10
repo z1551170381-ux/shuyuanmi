@@ -14259,16 +14259,22 @@ const npc = _wxGetChatTargetMeta(npcId);
         var energyPct = Math.max(0, Math.min(100, (s.attrs && s.attrs.energy) || 0));
         var energyColor = energyPct > 60 ? '#07c160' : energyPct > 30 ? '#f39c12' : '#e74c3c';
 
-        // 当前作息时段
+        // 当前作息时段 — ★ 直接从存储读，避免 catchUpStats 丢失 isKeyNPC/schedule
         var scheduleNow = '';
-        if (s.isKeyNPC && s.schedule && s.schedule.length){
+        var _rawState = _loadCharState(npcId);
+        var _scheduleForCard = (_rawState.isKeyNPC && _rawState.schedule && _rawState.schedule.length) ? _rawState.schedule : (s.schedule && s.schedule.length ? s.schedule : []);
+        if (_scheduleForCard.length > 0){
           var _ch = new Date().getHours();
-          for (var _si = 0; _si < s.schedule.length; _si++){
-            var _sl = s.schedule[_si];
+          for (var _si = 0; _si < _scheduleForCard.length; _si++){
+            var _sl = _scheduleForCard[_si];
             var _in = _sl.endHour <= _sl.hour
               ? (_ch >= _sl.hour || _ch < _sl.endHour)
               : (_ch >= _sl.hour && _ch < _sl.endHour);
-            if (_in){ scheduleNow = _sl.activity + '（' + _sl.hour + ':00–' + _sl.endHour + ':00）'; break; }
+            if (_in){
+              var _tIcon = SCHEDULE_TAGS.find(function(tt){ return tt.tag === _sl.tag; });
+              scheduleNow = (_tIcon ? _tIcon.icon + ' ' : '') + _sl.activity + '（' + _sl.hour + ':00–' + _sl.endHour + ':00）';
+              break;
+            }
           }
         }
         // ★ LifeEngine 当前行为单独存放，不覆盖作息
@@ -14336,7 +14342,22 @@ const npc = _wxGetChatTargetMeta(npcId);
         var _cardParent = root.querySelector('.phApp') || root.querySelector('.phShell') || root;
         _cardParent.appendChild(card);
 
-        // ★ 不再用直接绑定（stopPropagation 会阻止全局代理），统一由全局 act delegate 的 wxSPCToDetail 处理
+        // ★ 直接绑定"查看完整状态"—— 用 stopPropagation 防止 closeOnce 和 handleClick 干扰
+        var _spcFooter = card.querySelector('.wxSPCFooter');
+        if (_spcFooter){
+          _spcFooter.addEventListener('click', function(e){
+            e.stopPropagation();
+            e.preventDefault();
+            console.warn('[MeowPhone] 查看完整状态 clicked, npcId:', _spcFooter.getAttribute('data-npcid') || npcId);
+            card.remove();
+            var nid = _spcFooter.getAttribute('data-npcid') || npcId;
+            // ★ 直接跳状态详情，不经过 charSettings
+            state.chatTarget = nid;
+            state._innerStack = [function(){ state.app='chatDetail'; renderChatDetail(nid); }];
+            state.app = 'stateDetail';
+            _renderStateDetailPage(nid);
+          }, true); // ★ 用 capture 确保在 closeOnce 之前执行
+        }
 
         setTimeout(function(){
           var closeOnce = function(ev){
