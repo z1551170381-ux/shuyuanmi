@@ -12681,13 +12681,24 @@ const npc = _wxGetChatTargetMeta(npcId);
             var charEx2 = _loadCharExtra(nid);
             var bio = [npc2.profile || '', charEx2.profile || '', npc2.personality || '', npc2.description || ''].filter(Boolean).join('\n').slice(0, 800);
             var result = await LifeEngine.extractPersonality(nid, bio);
-            if (result){
+            if (result && result.error){
+              // ★ AI 调用失败，显示具体原因
+              btn.disabled = false; btn.textContent = '❌ 分析失败，请重试';
+              try{ toast('性格分析失败：' + result.error); }catch(e){}
+              console.warn('[性格分析] 失败原因：', result.error);
+            } else if (result && result.socialDrive != null){
+              // ★ 成功
               try{ toast('性格分析完成 ✓'); }catch(e){}
               _renderCharBehaviorPage(nid);
             } else {
-              btn.disabled = false; btn.textContent = '分析失败，请重试';
+              btn.disabled = false; btn.textContent = '❌ 返回数据异常';
+              console.warn('[性格分析] 未知返回值：', result);
             }
-          }catch(e){ btn.disabled = false; btn.textContent = '分析出错，请重试'; console.warn(e); }
+          }catch(e){
+            btn.disabled = false; btn.textContent = '❌ ' + (e.message || '分析出错');
+            try{ toast('性格分析异常：' + (e.message || String(e))); }catch(e2){}
+            console.warn('[性格分析] catch:', e);
+          }
         });
 
         // ★ isKeyNPC 开关
@@ -15085,39 +15096,16 @@ const npc = _wxGetChatTargetMeta(npcId);
           }catch(e){ console.warn('[LifeEngine] tick error:', e); }
         }
 
-        // ---- 本地降级：基于文本关键词启发式生成性格参数 ----
-        function _localFallbackPersonality(bioText){
-          var text = String(bioText||'');
-          var r = { socialDrive:50, emotionDisplay:50, discipline:50, dependency:50, resilience:50 };
-          if (/外向|活泼|热情|话多|社交|健谈|开朗/.test(text)) r.socialDrive = 70 + Math.floor(Math.random()*15);
-          else if (/内向|沉默|寡言|孤僻|冷漠|高冷/.test(text)) r.socialDrive = 20 + Math.floor(Math.random()*15);
-          if (/暴躁|情绪化|敏感|爱哭|容易激动|直率/.test(text)) r.emotionDisplay = 70 + Math.floor(Math.random()*15);
-          else if (/冷静|内敛|克制|稳重|面瘫|淡定/.test(text)) r.emotionDisplay = 20 + Math.floor(Math.random()*15);
-          if (/自律|规律|勤奋|严格|认真|努力|学霸/.test(text)) r.discipline = 70 + Math.floor(Math.random()*15);
-          else if (/懒|散漫|随性|自由|摸鱼|拖延/.test(text)) r.discipline = 20 + Math.floor(Math.random()*15);
-          if (/依赖|粘人|缠人|恋人|想你|离不开|撒娇/.test(text)) r.dependency = 70 + Math.floor(Math.random()*15);
-          else if (/独立|独处|自给|不需要|一个人/.test(text)) r.dependency = 20 + Math.floor(Math.random()*15);
-          if (/乐观|开朗|豁达|坚强|积极|阳光/.test(text)) r.resilience = 70 + Math.floor(Math.random()*15);
-          else if (/悲观|脆弱|玻璃心|多愁|忧郁/.test(text)) r.resilience = 20 + Math.floor(Math.random()*15);
-          return r;
-        }
-
-        // ---- 性格提取（角色创建/设置时调用一次AI，失败时本地降级） ----
+        // ---- 性格提取（必须调 AI，失败返回 { error: "原因" }） ----
         async function extractPersonality(npcId, bioText){
-          // ★ 即使描述极短也用本地降级，不再返回 null
           if (!bioText || String(bioText).trim().length < 5){
-            var fb0 = _localFallbackPersonality(bioText);
-            var s0 = _loadCharState(npcId); s0.personality = fb0; _saveCharState(npcId, s0);
-            return fb0;
+            return { error: '角色描述太短（不足5字），请先在角色设置里补充描述' };
           }
           try{
-            var apiKey = '';
-            try{ apiKey = (MEOW.core.lsGet('meow_api_key') || MEOW.core.lsGet('meow_phone_api_presets') && JSON.parse(MEOW.core.lsGet('meow_phone_api_presets') || '{}').key || ''); }catch(_e){}
-            // 从 PhoneAI 配置读取 API key
-            try{
-              var presets = _phLoad('meow_phone_api_presets_v1', null) || _phLoad(LS_PHONE_API_PRESETS, null);
-              if (presets && presets.key) apiKey = presets.key;
-            }catch(_e){}
+            // 检查 API 配置
+            var cfg = PhoneAI._getConfig();
+            if (!cfg.endpoint) return { error: 'API 未配置：请在小手机设置 → API 预设中填写接口地址' };
+            if (!cfg.key) return { error: 'API 密钥未配置：请在小手机设置 → API 预设中填写密钥' };
 
             var prompt = '请分析以下角色描述，判断这个角色的性格特征，返回纯JSON对象（不要任何其他文字、不要markdown代码块）：\n' +
               '字段说明：\n' +
@@ -15137,43 +15125,45 @@ const npc = _wxGetChatTargetMeta(npcId);
               maxTokens: 150
             });
 
-            // ★ API 返回无效时降级
-            if (!resp || !resp.ok || !resp.data){
-              console.warn('[LifeEngine] extractPersonality API failed, fallback to local');
-              var fb1 = _localFallbackPersonality(bioText);
-              var s1 = _loadCharState(npcId); s1.personality = fb1; _saveCharState(npcId, s1);
-              return fb1;
-            }
+            // API 层面失败
+            if (!resp) return { error: 'API 无响应（可能超时），请重试' };
+            if (!resp.ok) return { error: 'API 请求失败：' + (resp.error || '未知错误') };
+            if (!resp.data) return { error: 'API 返回空内容，请检查模型是否正常' };
 
             var txt = String(resp.data).trim();
             txt = txt.replace(/```json|```/g, '').trim();
-            var parsed = JSON.parse(txt);
-            // 验证字段合法性
-            var keys = ['socialDrive','emotionDisplay','discipline','dependency','resilience'];
-            var valid = true;
-            for (var ki = 0; ki < keys.length; ki++){
-              var v = parsed[keys[ki]];
-              if (typeof v !== 'number' || v < 0 || v > 100){ valid = false; break; }
-              parsed[keys[ki]] = Math.round(v);
-            }
-            if (!valid){
-              // ★ 字段不合法，降级
-              var fb2 = _localFallbackPersonality(bioText);
-              var s2 = _loadCharState(npcId); s2.personality = fb2; _saveCharState(npcId, s2);
-              return fb2;
+
+            // JSON 解析
+            var parsed;
+            try{
+              parsed = JSON.parse(txt);
+            }catch(jsonErr){
+              return { error: 'AI 返回非 JSON 格式：' + txt.slice(0, 100) };
             }
 
-            // 存入 charstate
+            // 验证字段合法性
+            var keys = ['socialDrive','emotionDisplay','discipline','dependency','resilience'];
+            var missing = [];
+            for (var ki = 0; ki < keys.length; ki++){
+              var v = parsed[keys[ki]];
+              if (typeof v !== 'number' || v < 0 || v > 100){
+                missing.push(keys[ki] + '=' + String(v));
+              } else {
+                parsed[keys[ki]] = Math.round(v);
+              }
+            }
+            if (missing.length > 0){
+              return { error: '字段不合法：' + missing.join(', ') + '（需要 0-100 的整数）\nAI 原始返回：' + txt.slice(0, 120) };
+            }
+
+            // 成功！存入 charstate
             var s = _loadCharState(npcId);
             s.personality = parsed;
             _saveCharState(npcId, s);
             return parsed;
           }catch(e){
             console.warn('[LifeEngine] extractPersonality error:', e);
-            // ★ 任何异常都降级到本地分析
-            var fb3 = _localFallbackPersonality(bioText);
-            var s3 = _loadCharState(npcId); s3.personality = fb3; _saveCharState(npcId, s3);
-            return fb3;
+            return { error: '异常：' + (e.message || String(e)) };
           }
         }
 
