@@ -12490,10 +12490,10 @@ const npc = _wxGetChatTargetMeta(npcId);
               messages: [{ role:'user', content:userMsg }],
               temperature: 0.8,
               maxTokens: 1000,
-              timeout: 45
+              timeout: 60
             });
 
-            if (!result || !result.ok) throw new Error(result ? result.error : 'AI 请求失败');
+            if (!result || !result.ok) throw new Error(result ? (result.error || '请求超时或被取消，请重试') : 'AI 请求失败');
 
             var raw = String(result.data || '').trim().replace(/```json|```/gi, '').trim();
             var parsed = JSON.parse(raw);
@@ -13691,9 +13691,9 @@ const npc = _wxGetChatTargetMeta(npcId);
           return this._request({
             messages: (opts && opts.messages) || [],
             system: (opts && opts.system) || '',
-            temperature: 0.85,
-            maxTokens: 1024,
-            timeout: 30
+            temperature: (opts && opts.temperature != null) ? opts.temperature : 0.85,
+            maxTokens: (opts && opts.maxTokens) ? opts.maxTokens : 1024,
+            timeout: (opts && opts.timeout) ? opts.timeout : 30
           });
         },
 
