@@ -14353,6 +14353,29 @@ const npc = _wxGetChatTargetMeta(npcId);
         body.querySelector('[data-act="cbManageCustomAttrs"]')?.addEventListener('click', function(){
           _openCustomAttrsEditor(this.getAttribute('data-npcid') || npcId);
         });
+
+        // ★ 实时刷新：每30秒重算属性，直接更新 DOM 条形图（不重渲染整页）
+        var _sdRefreshTimer = setInterval(function(){
+          if (!body.isConnected || !body.querySelector('.wxStateDetailWrap')){ clearInterval(_sdRefreshTimer); return; }
+          try{
+            var sNew = catchUpStats(npcId);
+            var defsNew = _getAttrDefs(sNew);
+            defsNew.filter(function(d){ return !d.hideBar || d.key === 'loneliness'; }).forEach(function(d){
+              var newVal = Math.max(0, Math.min(100, (sNew.attrs && sNew.attrs[d.key]) || 0));
+              var colorNew = newVal > 60 ? 'var(--ph-accent, #07c160)' : newVal > 30 ? '#f39c12' : '#e74c3c';
+              var barEl = body.querySelector('#sdf_' + d.key);
+              var numEl = body.querySelector('#sdf_' + d.key + '_n');
+              if (barEl){ barEl.style.width = newVal + '%'; barEl.style.background = colorNew; }
+              if (numEl){ numEl.textContent = Math.round(newVal); }
+            });
+            var metaEl = body.querySelector('.wxSDMeta');
+            if (metaEl && sNew.moodText){
+              var moodEmoji2 = {'开心':'😄','兴奋':'🤩','平静':'😌','害羞':'😳','疲惫':'😴','委屈':'🥺','烦躁':'😤','生气':'😠'};
+              var moodSpan = metaEl.querySelector('span:last-child');
+              if (moodSpan) moodSpan.textContent = (moodEmoji2[sNew.moodText]||'😌') + ' ' + sNew.moodText;
+            }
+          }catch(e){}
+        }, 30000);
       }
 
       function _showTypingInAppBar(npcName){
@@ -14571,26 +14594,25 @@ const npc = _wxGetChatTargetMeta(npcId);
         return Math.max(0, Math.min(100, Math.round(val)));
       }
 
-      // ★ catchUpStats
+      // ★ catchUpStats：只推算，不写回存储
+      // 写回由 LifeEngine.tick（每5分钟）负责，保证基于真实时钟持续计算
       function catchUpStats(npcId, options){
         var s = _loadCharState(npcId);
         var now = Date.now();
-        // lastCalcAt=0 表示从未计算过，视为 24 小时前开始计时
         var lastCalc = (s.lastCalcAt && s.lastCalcAt > 0) ? s.lastCalcAt : (now - 24 * 60 * 60000);
         var elapsedMs = now - lastCalc;
 
-        // ★ 动画支持：存下变化前的快照，UI 读取后做滚动动画
         s._prevAttrs = JSON.parse(JSON.stringify(s.attrs));
-        s._animNeeded = elapsedMs > 300000; // 离开超 5 分钟才触发动画
+        s._animNeeded = elapsedMs > 30000;
 
-        if (elapsedMs < 60000) return s;
-        var elapsedMin = Math.floor(elapsedMs / 60000);
+        if (elapsedMs < 10000) return s;
+        var elapsedMin = elapsedMs / 60000; // 保留小数更精确
         var defs = _getAttrDefs(s);
 
         if (elapsedMin > CATCHUP_MAX_MINUTES){
           for (var i = 0; i < defs.length; i++) s.attrs[defs[i].key] = defs[i].init;
           s.moodText = '平静'; s.silentUntil = 0; s.silentReason = '';
-          s.lastCalcAt = now; _saveCharState(npcId, s); return s;
+          return s;
         }
 
         var schedule = _getSchedule(s);
@@ -14598,8 +14620,7 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         if (schedule.length === 0){
           _catchUpSimple(s, elapsedMin, defs);
-          s.lastCalcAt = now; s.lastActiveAt = now;
-          _saveCharState(npcId, s); return s;
+          return s;
         }
 
         var cursor = new Date(lastCalc);
@@ -14611,7 +14632,6 @@ const npc = _wxGetChatTargetMeta(npcId);
           var nextSlotMin = _minutesToNextSlot(schedule, curHour, curMin);
           if (nextSlotMin <= 0) nextSlotMin = 60;
           var segMin = Math.min(remaining, nextSlotMin);
-          // ★ 按分钟累积（规则值为每分钟变化量）
           for (var ak in s.attrs){
             if (s.attrs.hasOwnProperty(ak) && tagRule[ak] != null)
               s.attrs[ak] = _clampAttr(ak, s.attrs[ak] + tagRule[ak] * segMin, defs);
@@ -14625,8 +14645,14 @@ const npc = _wxGetChatTargetMeta(npcId);
           s.attrs.energy = _clampAttr('energy', s.attrs.energy + 15, defs);
           if (s.silentUntil < now) s.silentReason = '';
         }
-        s.lastCalcAt = now; s.lastActiveAt = now;
-        _saveCharState(npcId, s); return s;
+        return s;
+      }
+
+      // ★ commitStats：把推算值真正写回存储（由 tick 调用，每5分钟一次）
+      function commitStats(npcId, s){
+        s.lastCalcAt = Date.now();
+        s.lastActiveAt = Date.now();
+        _saveCharState(npcId, s);
       }
 
       function _catchUpSimple(s, elapsedMin, defs){
@@ -14943,7 +14969,8 @@ const npc = _wxGetChatTargetMeta(npcId);
         // ---- tick：定时调用的主函数（每 5 分钟） ----
         function tick(npcId){
           try{
-            var s = _loadCharState(npcId);
+            // ★ 先推算当前属性（基于真实时钟），再写回存储（定时锚点）
+            var s = catchUpStats(npcId);
             var defs = _getAttrDefs(s);
 
             // 1. 孤独感累积
@@ -14956,25 +14983,23 @@ const npc = _wxGetChatTargetMeta(npcId);
 
             // 3. 行为中不再触发新行为（除如厕）
             if (s.currentBehavior && s.currentBehavior.key !== 'bathroom'){
-              s.lastCalcAt = Date.now();
-              _saveCharState(npcId, s);
+              commitStats(npcId, s);
               return;
             }
 
             // 4. 计算主导需求并触发行为
             var need = _getDominantNeed(s.attrs, s.personality, s.schedule);
             if (need){
-              // 性格随机波动：自律型严格触发，混乱型有几率忽略
               var p = s.personality || {};
               var disc = (p.discipline != null) ? p.discipline : 50;
-              var triggerChance = 0.5 + disc * 0.005; // 自律100→触发率100%，混乱0→50%
+              var triggerChance = 0.5 + disc * 0.005;
               if (Math.random() < triggerChance){
                 _triggerBehavior(npcId, need, s, defs);
               }
             }
 
-            s.lastCalcAt = Date.now();
-            _saveCharState(npcId, s);
+            // ★ 写回存储，更新时间锚点
+            commitStats(npcId, s);
           }catch(e){ console.warn('[LifeEngine] tick error:', e); }
         }
 
