@@ -4841,7 +4841,8 @@ function buildHTML(){
             var _spdNid = t.getAttribute('data-npcid') || state.chatTarget;
             if (!_spdNid) return;
             var _spc3 = root.querySelector('.wxStatePanelCard'); if(_spc3) _spc3.remove();
-            state._innerStack.push(function(){ renderChatDetail(_spdNid); });
+            state._innerStack.push(function(){ state.app='chatDetail'; renderChatDetail(_spdNid); });
+            state.app = 'charSettings';
             _renderStateDetailPage(_spdNid);
             return;
           }
@@ -5166,14 +5167,16 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           // === 角色设置入口 ===
           if (act === 'wxCharSettings'){
             const _csNid = t.getAttribute('data-npcid')||state.chatTarget;
-            state._innerStack.push(() => { state.chatTarget = _csNid; renderChatDetail(_csNid); });
+            state._innerStack.push(() => { state.chatTarget = _csNid; state.app = 'chatDetail'; renderChatDetail(_csNid); });
+            state.app = 'charSettings'; // ← 防止 async 回调重新渲染聊天页
             _renderCharSettingsPage(_csNid); return;
           }
           if (act === 'wxCSNav'){
             const cspage = t.getAttribute('data-cspage');
             const nid = t.getAttribute('data-npcid') || state.chatTarget;
-            if (cspage === 'autoSummary') { return; } // toggle only, no separate page
+            if (cspage === 'autoSummary') { return; }
             state._innerStack.push(() => _renderCharSettingsPage(nid));
+            state.app = 'charSettings';
             if (cspage === 'charProfile') _renderCharProfileEdit(nid);
             else if (cspage === 'charBehavior') _renderCharBehaviorPage(nid);
             else if (cspage === 'charSchedule') _renderSchedulePage(nid);
@@ -5190,6 +5193,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             var spNid = t.getAttribute('data-npcid') || state.chatTarget;
             if (!spNid) return;
             state._innerStack.push(function(){ _renderCharSettingsPage(spNid); });
+            state.app = 'charSettings';
             _renderStateDetailPage(spNid);
             return;
           }
@@ -12123,6 +12127,11 @@ const npc = _wxGetChatTargetMeta(npcId);
       function _renderCharSettingsPage(contactId){
         const body = root.querySelector('[data-ph="appBody"]');
         if (!body) return;
+        // 重置 body 背景（聊天页可能设置了背景图）
+        body.style.backgroundImage = '';
+        body.style.backgroundSize = '';
+        body.style.backgroundPosition = '';
+        body.style.background = '';
         const db = loadContactsDB();
         const npc = findContactById(db, contactId) || { id:contactId, name:String(contactId), avatar:String(contactId).charAt(0), profile:'' };
         const charEx = _loadCharExtra(contactId);
