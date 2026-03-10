@@ -14342,21 +14342,27 @@ const npc = _wxGetChatTargetMeta(npcId);
         var _cardParent = root.querySelector('.phApp') || root.querySelector('.phShell') || root;
         _cardParent.appendChild(card);
 
-        // ★ 直接绑定"查看完整状态"—— 用 stopPropagation 防止 closeOnce 和 handleClick 干扰
+        // ★ 用 pointerup 而非 click 绑定"查看完整状态"
+        // 原因：拖拽系统在 capture 阶段吞掉了触摸后 260ms 内的所有 click 事件
         var _spcFooter = card.querySelector('.wxSPCFooter');
         if (_spcFooter){
-          _spcFooter.addEventListener('click', function(e){
+          var _footerFired = false;
+          var _onFooterTap = function(e){
+            if (_footerFired) return;
+            _footerFired = true;
             e.stopPropagation();
             e.preventDefault();
-            console.warn('[MeowPhone] 查看完整状态 clicked, npcId:', _spcFooter.getAttribute('data-npcid') || npcId);
             card.remove();
             var nid = _spcFooter.getAttribute('data-npcid') || npcId;
-            // ★ 直接跳状态详情，不经过 charSettings
             state.chatTarget = nid;
             state._innerStack = [function(){ state.app='chatDetail'; renderChatDetail(nid); }];
             state.app = 'stateDetail';
             _renderStateDetailPage(nid);
-          }, true); // ★ 用 capture 确保在 closeOnce 之前执行
+          };
+          _spcFooter.addEventListener('pointerup', _onFooterTap);
+          _spcFooter.addEventListener('touchend', _onFooterTap);
+          _spcFooter.addEventListener('click', _onFooterTap); // PC 兜底
+          _spcFooter.style.cursor = 'pointer';
         }
 
         setTimeout(function(){
