@@ -2082,7 +2082,7 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
 /* ---------- App Page ---------- */
 #${ID} .phAppBar{
   position:absolute; left:0; right:0; top:0; height:52px;
-  display:grid; grid-template-columns:44px 1fr 44px; align-items:center;
+  display:grid; grid-template-columns:44px 1fr auto; align-items:center;
   gap:0; padding:0 8px;
   background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
   border-bottom:1px solid rgba(255,255,255,.06);
