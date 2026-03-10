@@ -290,7 +290,6 @@ function phoneLoadSettings(){
     // 其他
     fontSize: 14,
     timeMode: 'real', storyTime: '12:00', storyDate: '',
-    timeRatio: 24, ratioStartTime: '08:00', ratioAnchorRealMs: 0,
     typingEffect: 'none',
     syncToMain: false,
     autoReply: true,
@@ -1189,6 +1188,30 @@ function phoneApplyWallpaper(base64OrEmpty, target){
         case '👆': return s('<path d="M9 11.24V7.5C9 6.12 10.12 5 11.5 5S14 6.12 14 7.5v3.74c1.21-.81 2-2.18 2-3.74C16 5.01 13.99 3 11.5 3S7 5.01 7 7.5c0 1.56.79 2.93 2 3.74zm9.84 4.63l-4.54-2.26c-.17-.07-.35-.11-.54-.11H13v-6c0-.83-.67-1.5-1.5-1.5S10 6.67 10 7.5v10.74l-3.43-.72c-.08-.01-.15-.03-.24-.03-.31 0-.59.13-.79.33l-.79.8 4.94 4.94c.27.27.65.44 1.06.44h6.79c.75 0 1.33-.55 1.44-1.28l.75-5.27c.01-.07.02-.14.02-.2 0-.62-.38-1.16-.91-1.38z"/>');
         case '💔': return s('<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>');
         case '⚡': return s('<path d="M7 2v11h3v9l7-12h-4l4-8z"/>');
+        // ★ Phase 1: 属性图标 SVG（统一扁平风格）
+        case '❤️': case '❤': return s('<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>');
+        case '🍚': case '🍽️': case '🍽': return s('<path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/>');
+        case '🚻': return s('<path d="M5.5 22v-7.5H4V9c0-1.1.9-2 2-2h3c1.1 0 2 .9 2 2v5.5H9.5V22h-4zM18 22v-6h3l-2.54-7.63A2.01 2.01 0 0 0 16.56 7h-.12c-.84 0-1.59.52-1.9 1.29L12 16h3v6h3zM7.5 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm9 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>');
+        case '🛡️': case '🛡': return s('<path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm-1.06 13.54L7.4 12l1.41-1.41 2.12 2.12 4.24-4.24 1.41 1.41-5.64 5.66z"/>');
+        case '💪': return s('<path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29z"/>');
+        case '✨': return s('<path d="M12 2l2.4 7.2H22l-6 4.8 2.4 7.2L12 16.8 5.6 21.2 8 14 2 9.2h7.6L12 2z"/>');
+        case '📊': return s('<path d="M5 9.2h3V19H5V9.2zM10.6 5h2.8v14h-2.8V5zm5.6 8H19v6h-2.8v-6z"/>');
+        case '🧠': return s('<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>');
+        case '💎': return s('<path d="M19 3H5L2 9l10 12L22 9l-3-6zm-7 11.17L5.16 9h13.68L12 14.17z"/>');
+        case '⚔️': case '⚔': return s('<path d="M6.92 5H5l4 4H7L3 5v2l3.54 3.54L3 14h2l3-3V9l4 4 1.41-1.41L6.92 5zM14 5l5 5h2V8l-3.54-3.54L21 1h-2l-3 3h-2v2l-4 4 1.41 1.41L14 8.41V5z"/>');
+        case '🏃': return s('<path d="M13.49 5.48c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm-3.6 13.9l1-4.4 2.1 2v6h2v-7.5l-2.1-2 .6-3c1.3 1.5 3.3 2.5 5.5 2.5v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.28v5h2v-3.7l1.8-.7-1.6 8.1-4.7-1-.4 2 6.29 1.39z"/>');
+        case '🔵': return s('<circle cx="12" cy="12" r="8"/>');
+        case '📈': return s('<path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>');
+        case '💰': return s('<path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1H6.3c.13 2.01 1.62 3.14 3.5 3.53V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>');
+        case '⚙️': case '⚙': return s('<path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94L14.4 2.81c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.44.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.47.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>');
+        case '😴': return s('<circle cx="12" cy="12" r="10"/><path d="M15.5 9H12.3L15.5 5.5V5H11v1h3.2L11 9.5V10h4.5V9zM10 14H8.3L10 12V11.5H7v1h2.2L7 14.8V15.5h3V14z"/>');
+        case '🌅': return s('<path d="M20 15.31L21.19 12.71 18 14.49V11h-2v5l4 4.31zM12 7l-4 8h8l-4-8zM2 15.31L4.6 17.91 6 16.5 2.81 11.3 2 12.71v2.6zM22 21H2v2h20v-2z"/>');
+        case '💼': return s('<path d="M20 6h-4V4c0-1.1-.89-2-2-2h-4c-1.1 0-2 .89-2 2v2H4c-1.1 0-2 .89-2 2v11c0 1.1.89 2 2 2h16c1.1 0 2-.89 2-2V8c0-1.1-.89-2-2-2zm-6 0h-4V4h4v2z"/>');
+        case '🎵': return s('<path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55C7.79 13 6 14.79 6 17s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>');
+        case '📌': return s('<path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>');
+        case '🔄': return s('<path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>');
+        case '👗': return s('<path d="M12 2L9 9h6l-3-7zm0 0L8.5 14.5c0 0 1.5 2 3.5 2s3.5-2 3.5-2L12 2zM9 18.5c-2 1-4 1.5-4 1.5l.5 2h13l.5-2s-2-.5-4-1.5c-1-.5-2-1-3-1s-2 .5-3 1z"/>');
+        case '⏳': return s('<path d="M6 2v6l4 4-4 4v6h12v-6l-4-4 4-4V2H6zm10 14.5V20H8v-3.5l4-4 4 4zm-4-5l-4-4V4h8v3.5l-4 4z"/>');
         case '📋': return s('<path d="M17 2h-3.18C13.4.84 12.3 0 11 0c-1.3 0-2.4.84-2.82 2H5C3.9 2 3 2.9 3 4v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-6 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h6v2zm3-4H7v-2h9v2zm0-4H7V6h9v2z"/>');
         case '🗑': return s('<path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/>');
         case '🖼': return s('<path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>');
@@ -5021,6 +5044,12 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           }
           if (act === 'wxCSBack'){
             goBack(); return;
+          }
+          // ★ 状态面板按钮（聊天设置页头像旁）
+          if (act === 'wxCSOpenStatePanel'){
+            var spNid = t.getAttribute('data-npcid') || state.chatTarget;
+            try{ _showStatePanelCard(spNid); }catch(e){}
+            return;
           }
           // === 阶段B：戳一戳设置动作 ===
           if (act === 'wxPSToggle'){
@@ -11929,6 +11958,10 @@ const npc = _wxGetChatTargetMeta(npcId);
               <div class="wxCSNickname">${esc(npc.name)}</div>
               <div class="wxCSProfile">${esc((npc.profile||charEx.profile||'').slice(0,80) || '暂无简介')}</div>
             </div>
+            <button data-act="wxCSOpenStatePanel" data-npcid="${esc(contactId)}" style="margin-left:auto;appearance:none;border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));background:var(--ph-glass, rgba(255,255,255,.6));border-radius:10px;padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:4px;color:var(--ph-text-sub, rgba(20,24,28,.5));flex-shrink:0;">
+              ${_phFlatIcon('📊')}
+              <span style="font-size:11px;">状态</span>
+            </button>
           </div>
           <div class="wxCSGroup">
             <div class="wxCSItem" data-act="wxCSNav" data-cspage="charProfile" data-npcid="${esc(contactId)}">
@@ -12037,8 +12070,11 @@ const npc = _wxGetChatTargetMeta(npcId);
         if (!body) return;
         var b = _loadCharBehavior(contactId);
         var s = _loadCharState(contactId);
+        try{ s = catchUpStats(contactId); }catch(e){}
         var db = loadContactsDB();
         var npc = findContactById(db, contactId) || { name: String(contactId) };
+        var defs = _getAttrDefs(s);
+        var attrs = s.attrs || {};
 
         try{ var t = root.querySelector('[data-ph="appTitle"]'); if(t) t.textContent='行为参数'; }catch(e){}
         try{ var sp = root.querySelector('.phAppBarSpacer'); if(sp) sp.innerHTML=''; }catch(e){}
@@ -12061,83 +12097,63 @@ const npc = _wxGetChatTargetMeta(npcId);
           </div>`;
         }
 
-        // ★ Phase 1：多维属性状态面板
-        // 先做一次 catchUp 补算
-        try{ s = catchUpStats(contactId); }catch(e){}
-        var attrs = s.attrs || {};
-        var moodEmoji={'开心':'😄','兴奋':'🤩','平静':'😌','害羞':'😳','疲惫':'😴','委屈':'🥺','烦躁':'😤','生气':'😠'};
-        var bondColors={'疏远':'#aaa','普通':'#888','亲近':'var(--ph-accent, #07c160)','暧昧':'#f39c12','冷战中':'#e74c3c'};
-
+        // ---- 属性条 HTML（使用 SVG 图标） ----
         function _attrBarHtml(def, val){
           var pct = Math.max(0, Math.min(100, val||0));
           var color = pct > 60 ? 'var(--ph-accent, #07c160)' : pct > 30 ? '#f39c12' : '#e74c3c';
-          return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
-            <span style="font-size:14px;width:20px;text-align:center;">${def.emoji}</span>
+          return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;">
+            <span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;color:rgba(20,24,28,.5);">${_phFlatIcon(def.icon||'🔵')}</span>
             <span style="font-size:12px;color:rgba(20,24,28,.6);min-width:28px;">${def.label}</span>
             <div style="flex:1;height:6px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden;">
               <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:width .3s;"></div>
             </div>
-            <span style="font-size:11px;color:rgba(20,24,28,.4);min-width:28px;text-align:right;">${pct}</span>
+            <span style="font-size:11px;color:rgba(20,24,28,.4);min-width:24px;text-align:right;">${pct}</span>
           </div>`;
         }
 
-        var attrBarsHtml = ATTR_DEFS.map(function(d){ return _attrBarHtml(d, attrs[d.key]); }).join('');
+        var attrBarsHtml = defs.map(function(d){ return _attrBarHtml(d, attrs[d.key]); }).join('');
 
-        // 作息表当前时段显示
+        // ---- 当前作息时段 ----
         var scheduleStatusHtml = '';
         if (s.isKeyNPC && s.schedule && s.schedule.length > 0){
           var _ch = new Date().getHours();
-          var _ct = _getScheduleTagAtHour(s.schedule, _ch);
-          var _cs = null;
           for (var _si = 0; _si < s.schedule.length; _si++){
             var _sl = s.schedule[_si];
-            var _inS = false;
-            if (_sl.endHour <= _sl.hour){ _inS = (_ch >= _sl.hour || _ch < _sl.endHour); }
-            else { _inS = (_ch >= _sl.hour && _ch < _sl.endHour); }
-            if (_inS){ _cs = _sl; break; }
-          }
-          if (_cs){
-            var tagInfo = SCHEDULE_TAGS.find(function(t){ return t.tag === _cs.tag; });
-            scheduleStatusHtml = `<div style="margin-top:6px;padding:6px 10px;background:rgba(0,0,0,.03);border-radius:8px;font-size:11.5px;color:rgba(20,24,28,.55);">
-              ${tagInfo ? tagInfo.emoji : '📋'} 当前时段：${esc(_cs.activity)}（${_cs.hour}:00~${_cs.endHour}:00）
-            </div>`;
+            var _inS = _sl.endHour<=_sl.hour ? (_ch>=_sl.hour||_ch<_sl.endHour) : (_ch>=_sl.hour&&_ch<_sl.endHour);
+            if (_inS){
+              var _tInfo = SCHEDULE_TAGS.find(function(tt){return tt.tag===_sl.tag;});
+              scheduleStatusHtml = `<div style="margin-top:4px;padding:5px 10px;background:rgba(0,0,0,.03);border-radius:8px;font-size:11.5px;color:rgba(20,24,28,.55);display:flex;align-items:center;gap:4px;">
+                ${_phFlatIcon((_tInfo&&_tInfo.icon)||'📋')} 当前：${esc(_sl.activity)}（${_sl.hour}:00~${_sl.endHour}:00）
+              </div>`;
+              break;
+            }
           }
         }
 
         var html = `<div style="padding-bottom:20px;">
-          <!-- 多维属性面板 -->
-          <div style="margin:14px 14px 0;padding:12px 14px;background:rgba(255,255,255,.88);border-radius:12px;border:1px solid rgba(0,0,0,.07);">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <!-- ★ 多维状态面板 -->
+          <div style="margin:14px 14px 0;padding:12px 14px;background:var(--ph-glass, rgba(255,255,255,.75));border-radius:14px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.07));backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
               <div style="font-size:11px;color:rgba(20,24,28,.4);letter-spacing:.3px;">多维状态</div>
-              <div style="display:flex;align-items:center;gap:4px;">
-                <label style="font-size:11px;color:rgba(20,24,28,.5);cursor:pointer;display:flex;align-items:center;gap:3px;">
-                  <input type="checkbox" data-act="cbToggleKeyNPC" data-npcid="${esc(contactId)}" ${s.isKeyNPC?'checked':''} style="width:14px;height:14px;accent-color:var(--ph-accent, #07c160);"/>
-                  重要角色
-                </label>
-              </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-              <span style="font-size:22px;">${moodEmoji[s.moodText||'平静']||'😌'}</span>
-              <div>
-                <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.85);">${esc(npc.name)}</div>
-                <div style="font-size:11.5px;color:rgba(20,24,28,.5);margin-top:1px;">
-                  情绪：${esc(s.moodText||'平静')} &nbsp;·&nbsp;
-                  <span style="color:${bondColors[s.bond]||'#888'};">关系：${esc(s.bond)}</span>
-                </div>
-              </div>
+              <label style="font-size:11px;color:rgba(20,24,28,.5);cursor:pointer;display:flex;align-items:center;gap:3px;">
+                <input type="checkbox" data-act="cbToggleKeyNPC" data-npcid="${esc(contactId)}" ${s.isKeyNPC?'checked':''} style="width:14px;height:14px;accent-color:var(--ph-accent, #07c160);"/>
+                重要角色
+              </label>
             </div>
             ${attrBarsHtml}
             ${scheduleStatusHtml}
             <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
-              <button data-act="cbResetState" data-npcid="${esc(contactId)}" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);color:rgba(20,24,28,.6);cursor:pointer;">重置状态</button>
-              <button data-act="cbSetMood" data-npcid="${esc(contactId)}" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);color:rgba(20,24,28,.6);cursor:pointer;">手动设置</button>
-              <button data-act="cbEditSchedule" data-npcid="${esc(contactId)}" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);color:rgba(20,24,28,.6);cursor:pointer;${s.isKeyNPC?'':'display:none;'}">编辑作息表</button>
+              <button data-act="cbResetState" data-npcid="${esc(contactId)}" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));background:var(--ph-glass, rgba(255,255,255,.8));color:rgba(20,24,28,.6);cursor:pointer;display:flex;align-items:center;gap:3px;">${_phFlatIcon('🔄')} 重置状态</button>
+              <button data-act="cbSetMood" data-npcid="${esc(contactId)}" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));background:var(--ph-glass, rgba(255,255,255,.8));color:rgba(20,24,28,.6);cursor:pointer;display:flex;align-items:center;gap:3px;">${_phFlatIcon('✏')} 手动设置</button>
+              <button data-act="cbEditSchedule" data-npcid="${esc(contactId)}" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));background:var(--ph-glass, rgba(255,255,255,.8));color:rgba(20,24,28,.6);cursor:pointer;display:flex;align-items:center;gap:3px;${s.isKeyNPC?'':'display:none;'}">${_phFlatIcon('📋')} 编辑作息表</button>
+              <button data-act="cbEditAttrRules" data-npcid="${esc(contactId)}" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));background:var(--ph-glass, rgba(255,255,255,.8));color:rgba(20,24,28,.6);cursor:pointer;display:flex;align-items:center;gap:3px;">${_phFlatIcon('⚙️')} 变化规则</button>
+              <button data-act="cbManageCustomAttrs" data-npcid="${esc(contactId)}" style="font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));background:var(--ph-glass, rgba(255,255,255,.8));color:rgba(20,24,28,.6);cursor:pointer;display:flex;align-items:center;gap:3px;">${_phFlatIcon('➕')} 自定义属性</button>
             </div>
           </div>
 
           <!-- 行为参数 -->
           <div style="margin:12px 14px 0;font-size:11px;color:rgba(20,24,28,.4);letter-spacing:.3px;padding:0 0 4px;">行为参数</div>
-          <div style="background:rgba(255,255,255,.88);border-radius:12px;border:1px solid rgba(0,0,0,.07);overflow:hidden;margin:0 14px;">
+          <div style="background:var(--ph-glass, rgba(255,255,255,.75));border-radius:14px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.07));overflow:hidden;margin:0 14px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">
             ${sliderRow('短句比例', 'shortSentenceRatio', b.shortSentenceRatio||0.5)}
             ${sliderRow('连发概率', 'burstProbability', b.burstProbability||0.35)}
             ${sliderRow('情绪外放', 'emotionExpressive', b.emotionExpressive||0.5)}
@@ -12148,27 +12164,24 @@ const npc = _wxGetChatTargetMeta(npcId);
             ${selectRow('引用习惯', 'quoteHabit', QUOTE_OPTS, QUOTE_LABELS, b.quoteHabit||'sometimes')}
           </div>
 
-          <div style="margin:12px 14px 0;font-size:11px;color:rgba(20,24,28,.4);letter-spacing:.3px;padding:0 0 4px;">状态面板信息（点名字可查看）</div>
-          <div style="background:rgba(255,255,255,.88);border-radius:12px;border:1px solid rgba(0,0,0,.07);overflow:hidden;margin:0 14px;">
+          <div style="margin:12px 14px 0;font-size:11px;color:rgba(20,24,28,.4);letter-spacing:.3px;padding:0 0 4px;">状态面板信息</div>
+          <div style="background:var(--ph-glass, rgba(255,255,255,.75));border-radius:14px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.07));overflow:hidden;margin:0 14px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">
             <div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.05);display:flex;align-items:center;gap:8px;">
-              <span style="font-size:15px;">👗</span>
-              <input data-txt="wearing" value="${esc(b.wearing||'')}" placeholder="当前穿着，如：白色连衣裙"
-                style="flex:1;font-size:13px;border:0;outline:none;background:transparent;color:rgba(20,24,28,.8);"/>
+              <span style="width:22px;display:flex;justify-content:center;color:rgba(20,24,28,.45);">${_phFlatIcon('👤')}</span>
+              <input data-txt="wearing" value="${esc(b.wearing||'')}" placeholder="当前穿着" style="flex:1;font-size:13px;border:0;outline:none;background:transparent;color:rgba(20,24,28,.8);"/>
             </div>
             <div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.05);display:flex;align-items:center;gap:8px;">
-              <span style="font-size:15px;">🎯</span>
-              <input data-txt="doing" value="${esc(b.doing||'')}" placeholder="正在做什么，如：在家看剧"
-                style="flex:1;font-size:13px;border:0;outline:none;background:transparent;color:rgba(20,24,28,.8);"/>
+              <span style="width:22px;display:flex;justify-content:center;color:rgba(20,24,28,.45);">${_phFlatIcon('🎯')}</span>
+              <input data-txt="doing" value="${esc(b.doing||'')}" placeholder="正在做什么" style="flex:1;font-size:13px;border:0;outline:none;background:transparent;color:rgba(20,24,28,.8);"/>
             </div>
             <div style="padding:10px 14px;display:flex;align-items:center;gap:8px;">
-              <span style="font-size:15px;">💬</span>
-              <input data-txt="heartLine" value="${esc(b.heartLine||'')}" placeholder="一句心声，如：今天好累…"
-                style="flex:1;font-size:13px;border:0;outline:none;background:transparent;color:rgba(20,24,28,.8);"/>
+              <span style="width:22px;display:flex;justify-content:center;color:rgba(20,24,28,.45);">${_phFlatIcon('💬')}</span>
+              <input data-txt="heartLine" value="${esc(b.heartLine||'')}" placeholder="一句心声" style="flex:1;font-size:13px;border:0;outline:none;background:transparent;color:rgba(20,24,28,.8);"/>
             </div>
           </div>
 
           <div style="margin:10px 14px 0;font-size:11px;color:rgba(20,24,28,.4);letter-spacing:.3px;padding:0 0 4px;">自定义状态条目</div>
-          <div data-el="customEntryList" style="margin:0 14px;background:rgba(255,255,255,.88);border-radius:12px;border:1px solid rgba(0,0,0,.07);overflow:hidden;">
+          <div data-el="customEntryList" style="margin:0 14px;background:var(--ph-glass, rgba(255,255,255,.75));border-radius:14px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.07));overflow:hidden;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">
             ${(b.customStatusEntries||[]).map(function(e,i){
               return `<div style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-bottom:1px solid rgba(0,0,0,.05);" data-entry-idx="${i}">
                 <input data-ei="${i}" data-ef="icon" value="${esc(e.icon||'📌')}" placeholder="图标" style="width:32px;font-size:15px;border:0;outline:none;background:transparent;text-align:center;"/>
@@ -12183,36 +12196,26 @@ const npc = _wxGetChatTargetMeta(npcId);
           </div>
 
           <button data-act="cbSaveBehavior" data-npcid="${esc(contactId)}"
-            style="display:block;width:calc(100% - 28px);margin:12px 14px 0;padding:12px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
+            style="display:block;width:calc(100% - 28px);margin:12px 14px 0;padding:12px;border-radius:12px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">保存</button>
         </div>`;
         body.innerHTML = html;
 
-        // 滑块实时更新数值显示
+        // ---- 事件绑定 ----
         body.querySelectorAll('input[data-sl]').forEach(function(inp){
           inp.addEventListener('input', function(){
             var k = inp.getAttribute('data-sl');
-            var display = body.querySelector('[data-sl-val="'+k+'"]');
-            if (display) display.textContent = inp.value + '%';
+            var d = body.querySelector('[data-sl-val="'+k+'"]');
+            if (d) d.textContent = inp.value + '%';
           });
         });
 
-        // 保存按钮
+        // 保存
         body.querySelector('[data-act="cbSaveBehavior"]')?.addEventListener('click', function(){
           var nid = this.getAttribute('data-npcid') || contactId;
           var bNew = _loadCharBehavior(nid);
-          body.querySelectorAll('input[data-sl]').forEach(function(inp){
-            var k = inp.getAttribute('data-sl');
-            bNew[k] = Number(inp.value) / 100;
-          });
-          body.querySelectorAll('select[data-sel]').forEach(function(sel){
-            var k = sel.getAttribute('data-sel');
-            bNew[k] = sel.value;
-          });
-          body.querySelectorAll('input[data-txt]').forEach(function(inp){
-            var k = inp.getAttribute('data-txt');
-            bNew[k] = String(inp.value||'').trim();
-          });
-          // 读取自定义状态条目
+          body.querySelectorAll('input[data-sl]').forEach(function(inp){ bNew[inp.getAttribute('data-sl')] = Number(inp.value) / 100; });
+          body.querySelectorAll('select[data-sel]').forEach(function(sel){ bNew[sel.getAttribute('data-sel')] = sel.value; });
+          body.querySelectorAll('input[data-txt]').forEach(function(inp){ bNew[inp.getAttribute('data-txt')] = String(inp.value||'').trim(); });
           var entries = [];
           body.querySelectorAll('[data-entry-idx]').forEach(function(row){
             var icon  = (row.querySelector('[data-ef="icon"]')  || {value:''}).value;
@@ -12229,218 +12232,261 @@ const npc = _wxGetChatTargetMeta(npcId);
         // 添加自定义条目
         body.querySelector('[data-act="cbAddEntry"]')?.addEventListener('click', function(){
           var nid = this.getAttribute('data-npcid') || contactId;
-          var bTmp = _loadCharBehavior(nid);
-          var entriesTmp = _safeArr(bTmp.customStatusEntries);
-          entriesTmp.push({ icon:'📌', label:'', value:'' });
-          bTmp.customStatusEntries = entriesTmp;
-          _saveCharBehavior(nid, bTmp);
-          _renderCharBehaviorPage(nid);
+          var bTmp = _loadCharBehavior(nid); _safeArr(bTmp.customStatusEntries).push({ icon:'📌', label:'', value:'' });
+          _saveCharBehavior(nid, bTmp); _renderCharBehaviorPage(nid);
         });
-
-        // 删除自定义条目（先保存当前输入再删）
         body.querySelectorAll('[data-act="cbDelEntry"]').forEach(function(btn){
           btn.addEventListener('click', function(){
-            var nid = contactId;
             var idx = parseInt(this.getAttribute('data-ei'));
-            var bTmp = _loadCharBehavior(nid);
-            var entriesTmp = _safeArr(bTmp.customStatusEntries);
-            entriesTmp.splice(idx, 1);
-            bTmp.customStatusEntries = entriesTmp;
-            _saveCharBehavior(nid, bTmp);
-            _renderCharBehaviorPage(nid);
+            var bTmp = _loadCharBehavior(contactId); _safeArr(bTmp.customStatusEntries).splice(idx, 1);
+            _saveCharBehavior(contactId, bTmp); _renderCharBehaviorPage(contactId);
           });
         });
 
         // 重置状态 (V2)
         body.querySelector('[data-act="cbResetState"]')?.addEventListener('click', function(){
           var nid = this.getAttribute('data-npcid') || contactId;
-          var oldState = _loadCharState(nid);
-          var fresh = _makeDefaultStateV2();
-          // 保留 isKeyNPC、schedule、attrRules 等配置
-          fresh.isKeyNPC = oldState.isKeyNPC;
-          fresh.schedule = oldState.schedule;
-          fresh.attrRules = oldState.attrRules;
-          fresh.perMsgCost = oldState.perMsgCost;
-          fresh.lastCalcAt = Date.now();
-          _saveCharState(nid, fresh);
-          try{ toast('状态已重置'); }catch(e){}
-          _renderCharBehaviorPage(nid);
+          var old = _loadCharState(nid), fresh = _makeDefaultStateV2();
+          fresh.isKeyNPC = old.isKeyNPC; fresh.schedule = old.schedule;
+          fresh.attrRules = old.attrRules; fresh.perMsgCost = old.perMsgCost;
+          fresh.customAttrs = old.customAttrs; fresh.lastCalcAt = Date.now();
+          // 恢复自定义属性初始值
+          (old.customAttrs||[]).forEach(function(c){ if(c.key) fresh.attrs[c.key] = c.init||50; });
+          _saveCharState(nid, fresh); try{ toast('状态已重置'); }catch(e){} _renderCharBehaviorPage(nid);
         });
 
-        // 手动设状态 (V2 多维)
+        // ★ isKeyNPC 开关
+        body.querySelector('[data-act="cbToggleKeyNPC"]')?.addEventListener('change', function(){
+          var nid = this.getAttribute('data-npcid') || contactId;
+          var cur = _loadCharState(nid);
+          cur.isKeyNPC = this.checked;
+          if (cur.isKeyNPC && (!cur.schedule || cur.schedule.length === 0))
+            cur.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+          cur.lastCalcAt = Date.now(); _saveCharState(nid, cur); _renderCharBehaviorPage(nid);
+        });
+
+        // ★ 编辑作息表
+        body.querySelector('[data-act="cbEditSchedule"]')?.addEventListener('click', function(){
+          _openScheduleEditor(this.getAttribute('data-npcid') || contactId);
+        });
+
+        // ★ 变化规则编辑器
+        body.querySelector('[data-act="cbEditAttrRules"]')?.addEventListener('click', function(){
+          _openAttrRulesEditor(this.getAttribute('data-npcid') || contactId);
+        });
+
+        // ★ 自定义属性管理
+        body.querySelector('[data-act="cbManageCustomAttrs"]')?.addEventListener('click', function(){
+          _openCustomAttrsEditor(this.getAttribute('data-npcid') || contactId);
+        });
+
+        // 手动设置（V2 多维）
         body.querySelector('[data-act="cbSetMood"]')?.addEventListener('click', function(){
           var nid = this.getAttribute('data-npcid') || contactId;
           var cur = _loadCharState(nid);
-          var moodOptHtml = MOOD_ORDER.map(function(m){
-            return `<option value="${m}"${m===(cur.moodText||'平静')?' selected':''}>${m}</option>`;
-          }).join('');
-          var bondOptHtml = ['疏远','普通','亲近','暧昧','冷战中'].map(function(bd){
-            return `<option value="${bd}"${bd===cur.bond?' selected':''}>${bd}</option>`;
-          }).join('');
-
-          // 为每个属性生成滑块
-          var attrSlidersHtml = ATTR_DEFS.map(function(d){
+          var curDefs = _getAttrDefs(cur);
+          var moodOptHtml = MOOD_ORDER.map(function(m){ return `<option value="${m}"${m===(cur.moodText||'平静')?' selected':''}>${m}</option>`; }).join('');
+          var bondOptHtml = ['疏远','普通','亲近','暧昧','冷战中'].map(function(bd){ return `<option value="${bd}"${bd===cur.bond?' selected':''}>${bd}</option>`; }).join('');
+          var attrSliders = curDefs.map(function(d){
             var v = (cur.attrs && cur.attrs[d.key] != null) ? cur.attrs[d.key] : d.init;
-            return `<div style="margin-bottom:6px;display:flex;align-items:center;gap:8px;">
-              <span style="font-size:14px;width:20px;text-align:center;">${d.emoji}</span>
+            return `<div style="margin-bottom:5px;display:flex;align-items:center;gap:6px;">
+              <span style="width:22px;color:rgba(20,24,28,.45);display:flex;justify-content:center;">${_phFlatIcon(d.icon||'🔵')}</span>
               <span style="font-size:12px;color:rgba(20,24,28,.6);min-width:28px;">${d.label}</span>
               <input type="range" data-el="attr_${d.key}" min="0" max="100" value="${v}" style="flex:1;accent-color:var(--ph-accent, #07c160);"/>
-              <span data-el="attrLbl_${d.key}" style="font-size:11px;color:rgba(20,24,28,.4);min-width:28px;text-align:right;">${v}</span>
+              <span data-el="attrLbl_${d.key}" style="font-size:11px;color:rgba(20,24,28,.4);min-width:24px;text-align:right;">${v}</span>
             </div>`;
           }).join('');
-
           var inner = `
-            <div style="font-size:14px;font-weight:600;margin-bottom:12px;">手动设置状态</div>
-            <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">
-              <span style="font-size:13px;color:rgba(20,24,28,.7);min-width:36px;">情绪</span>
-              <select data-el="moodSel" style="flex:1;font-size:13px;border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:6px 8px;outline:none;">${moodOptHtml}</select>
-            </div>
-            <div style="margin-bottom:10px;display:flex;align-items:center;gap:8px;">
-              <span style="font-size:13px;color:rgba(20,24,28,.7);min-width:36px;">关系</span>
-              <select data-el="bondSel" style="flex:1;font-size:13px;border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:6px 8px;outline:none;">${bondOptHtml}</select>
-            </div>
-            <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:6px;">属性值</div>
-            ${attrSlidersHtml}
+            <div style="font-size:14px;font-weight:600;margin-bottom:10px;">手动设置状态</div>
+            <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;"><span style="font-size:12px;color:rgba(20,24,28,.6);min-width:36px;">情绪</span>
+              <select data-el="moodSel" style="flex:1;font-size:13px;border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:6px 8px;outline:none;">${moodOptHtml}</select></div>
+            <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;"><span style="font-size:12px;color:rgba(20,24,28,.6);min-width:36px;">关系</span>
+              <select data-el="bondSel" style="flex:1;font-size:13px;border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:6px 8px;outline:none;">${bondOptHtml}</select></div>
+            <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:4px;">属性值</div>
+            ${attrSliders}
             <div style="display:flex;gap:8px;margin-top:8px;">
               <button data-el="moodSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">确定</button>
               <button data-el="moodCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button>
             </div>`;
           var ov = _cpShowOverlay(inner);
-          // 滑块实时数字
-          ATTR_DEFS.forEach(function(d){
-            var inp = ov.querySelector('[data-el="attr_'+d.key+'"]');
-            var lbl = ov.querySelector('[data-el="attrLbl_'+d.key+'"]');
+          curDefs.forEach(function(d){
+            var inp = ov.querySelector('[data-el="attr_'+d.key+'"]'), lbl = ov.querySelector('[data-el="attrLbl_'+d.key+'"]');
             if (inp && lbl) inp.addEventListener('input', function(){ lbl.textContent = this.value; });
           });
           ov.querySelector('[data-el="moodCancel"]').addEventListener('click', function(){ ov.remove(); });
           ov.querySelector('[data-el="moodSave"]').addEventListener('click', function(){
             var sNew = _loadCharState(nid);
             sNew.moodText = ov.querySelector('[data-el="moodSel"]').value;
-            sNew.bond     = ov.querySelector('[data-el="bondSel"]').value;
-            // 写入各属性
-            ATTR_DEFS.forEach(function(d){
-              var inp = ov.querySelector('[data-el="attr_'+d.key+'"]');
-              if (inp) sNew.attrs[d.key] = Number(inp.value);
-            });
-            sNew.silentUntil = 0; sNew.silentReason = '';
-            sNew.lastCalcAt = Date.now();
-            _saveCharState(nid, sNew);
-            ov.remove();
-            try{ toast('状态已更新'); }catch(e){}
-            _renderCharBehaviorPage(nid);
+            sNew.bond = ov.querySelector('[data-el="bondSel"]').value;
+            var nd = _getAttrDefs(sNew);
+            nd.forEach(function(d){ var inp = ov.querySelector('[data-el="attr_'+d.key+'"]'); if(inp) sNew.attrs[d.key] = Number(inp.value); });
+            sNew.silentUntil = 0; sNew.silentReason = ''; sNew.lastCalcAt = Date.now();
+            _saveCharState(nid, sNew); ov.remove(); try{toast('状态已更新');}catch(e){} _renderCharBehaviorPage(nid);
           });
-        });
-
-        // ★ 重要角色开关 (isKeyNPC)
-        body.querySelector('[data-act="cbToggleKeyNPC"]')?.addEventListener('change', function(){
-          var nid = this.getAttribute('data-npcid') || contactId;
-          var cur = _loadCharState(nid);
-          cur.isKeyNPC = this.checked;
-          // 如果刚开启且没有作息表，填入默认模板
-          if (cur.isKeyNPC && (!cur.schedule || cur.schedule.length === 0)){
-            cur.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
-          }
-          cur.lastCalcAt = Date.now();
-          _saveCharState(nid, cur);
-          _renderCharBehaviorPage(nid);
-        });
-
-        // ★ 编辑作息表
-        body.querySelector('[data-act="cbEditSchedule"]')?.addEventListener('click', function(){
-          var nid = this.getAttribute('data-npcid') || contactId;
-          _openScheduleEditor(nid);
         });
       }
 
-      // ★ Phase 1：作息表编辑器（弹窗式，可增删改作息段）
+      // ★ 作息表编辑器
       function _openScheduleEditor(npcId){
         var cur = _loadCharState(npcId);
-        var schedule = (cur.schedule && cur.schedule.length > 0) ? cur.schedule : JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
-
-        // 生成 tag 选项 HTML
-        function tagOptions(selected){
-          return SCHEDULE_TAGS.map(function(t){
-            return '<option value="'+t.tag+'"'+(t.tag===selected?' selected':'')+'>'+t.emoji+' '+t.label+'</option>';
-          }).join('');
-        }
-
-        function renderRows(){
-          return schedule.map(function(slot, idx){
-            return `<div data-sch-idx="${idx}" style="display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.05);">
-              <input type="number" data-sf="hour" min="0" max="23" value="${slot.hour}" style="width:36px;font-size:13px;text-align:center;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:4px;outline:none;"/>
-              <span style="font-size:11px;color:rgba(20,24,28,.4);">~</span>
-              <input type="number" data-sf="endHour" min="0" max="24" value="${slot.endHour}" style="width:36px;font-size:13px;text-align:center;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:4px;outline:none;"/>
-              <input type="text" data-sf="activity" value="${esc(slot.activity||'')}" placeholder="活动" style="flex:1;font-size:12px;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:4px 6px;outline:none;"/>
-              <select data-sf="tag" style="font-size:11px;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:3px 4px;outline:none;">${tagOptions(slot.tag)}</select>
-              <button data-act="schDel" data-sidx="${idx}" style="font-size:13px;color:rgba(0,0,0,.25);background:transparent;border:0;cursor:pointer;padding:0 4px;">✕</button>
-            </div>`;
-          }).join('');
-        }
-
-        var inner = `
-          <div style="font-size:14px;font-weight:600;margin-bottom:6px;">📋 编辑作息表</div>
-          <div style="font-size:11px;color:rgba(20,24,28,.45);margin-bottom:10px;">设置角色一天的日程安排，属性会按作息自动变化</div>
-          <div data-el="schRows" style="max-height:50vh;overflow-y:auto;">${renderRows()}</div>
-          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
-            <button data-el="schAdd" style="font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);cursor:pointer;color:rgba(20,24,28,.6);">+ 添加时段</button>
-            <button data-el="schReset" style="font-size:12px;padding:6px 12px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);cursor:pointer;color:rgba(20,24,28,.6);">重置为默认</button>
+        var schedule = (cur.schedule && cur.schedule.length > 0) ? JSON.parse(JSON.stringify(cur.schedule)) : JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+        function tagOpts(sel){ return SCHEDULE_TAGS.map(function(t){ return '<option value="'+t.tag+'"'+(t.tag===sel?' selected':'')+'>'+t.label+'</option>'; }).join(''); }
+        function renderRows(){ return schedule.map(function(sl,i){
+          return `<div data-sch-idx="${i}" style="display:flex;align-items:center;gap:5px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.04);">
+            <input type="number" data-sf="hour" min="0" max="23" value="${sl.hour}" style="width:32px;font-size:12px;text-align:center;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:3px;outline:none;"/>
+            <span style="font-size:10px;color:rgba(20,24,28,.3);">~</span>
+            <input type="number" data-sf="endHour" min="0" max="24" value="${sl.endHour}" style="width:32px;font-size:12px;text-align:center;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:3px;outline:none;"/>
+            <input type="text" data-sf="activity" value="${esc(sl.activity||'')}" placeholder="活动" style="flex:1;font-size:12px;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:3px 5px;outline:none;"/>
+            <select data-sf="tag" style="font-size:11px;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:2px 3px;outline:none;">${tagOpts(sl.tag)}</select>
+            <button data-act="schDel" data-sidx="${i}" style="font-size:12px;color:rgba(0,0,0,.2);background:transparent;border:0;cursor:pointer;">✕</button>
+          </div>`;
+        }).join(''); }
+        var inner = `<div style="font-size:14px;font-weight:600;margin-bottom:4px;">${_phFlatIcon('📋')} 编辑作息表</div>
+          <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:8px;">设置角色一天的日程，属性会按作息自动变化</div>
+          <div data-el="schRows" style="max-height:45vh;overflow-y:auto;">${renderRows()}</div>
+          <div style="margin-top:6px;display:flex;gap:6px;">
+            <button data-el="schAdd" style="font-size:11px;padding:5px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);cursor:pointer;">+ 添加</button>
+            <button data-el="schReset" style="font-size:11px;padding:5px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);cursor:pointer;">重置默认</button>
           </div>
-          <div style="display:flex;gap:8px;margin-top:12px;">
+          <div style="display:flex;gap:8px;margin-top:10px;">
             <button data-el="schSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
             <button data-el="schCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button>
           </div>`;
         var ov = _cpShowOverlay(inner);
-
-        // 刷新行
-        function refreshOv(){
-          var container = ov.querySelector('[data-el="schRows"]');
-          if (container) container.innerHTML = renderRows();
-          // 重绑删除按钮
-          ov.querySelectorAll('[data-act="schDel"]').forEach(function(btn){
-            btn.addEventListener('click', function(){
-              var idx = parseInt(this.getAttribute('data-sidx'));
-              schedule.splice(idx, 1);
-              refreshOv();
-            });
-          });
-        }
-        refreshOv(); // 初始绑定
-
-        // 添加时段
-        ov.querySelector('[data-el="schAdd"]')?.addEventListener('click', function(){
-          var lastEnd = schedule.length > 0 ? schedule[schedule.length-1].endHour : 0;
-          schedule.push({ hour: lastEnd % 24, endHour: (lastEnd + 1) % 25, activity:'', tag:'free' });
-          refreshOv();
-        });
-
-        // 重置为默认
-        ov.querySelector('[data-el="schReset"]')?.addEventListener('click', function(){
-          schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
-          refreshOv();
-        });
-
-        // 取消
+        function refreshOv(){ var c = ov.querySelector('[data-el="schRows"]'); if(c) c.innerHTML = renderRows();
+          ov.querySelectorAll('[data-act="schDel"]').forEach(function(btn){ btn.addEventListener('click', function(){ schedule.splice(parseInt(this.getAttribute('data-sidx')), 1); refreshOv(); }); });
+        } refreshOv();
+        ov.querySelector('[data-el="schAdd"]')?.addEventListener('click', function(){ var le = schedule.length>0?schedule[schedule.length-1].endHour:0; schedule.push({hour:le%24,endHour:(le+1)%25,activity:'',tag:'free'}); refreshOv(); });
+        ov.querySelector('[data-el="schReset"]')?.addEventListener('click', function(){ schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE)); refreshOv(); });
         ov.querySelector('[data-el="schCancel"]')?.addEventListener('click', function(){ ov.remove(); });
-
-        // 保存
         ov.querySelector('[data-el="schSave"]')?.addEventListener('click', function(){
-          // 从 DOM 读取最新值
-          var rows = ov.querySelectorAll('[data-sch-idx]');
-          var newSch = [];
-          rows.forEach(function(row){
-            var h  = parseInt((row.querySelector('[data-sf="hour"]')||{}).value) || 0;
-            var eh = parseInt((row.querySelector('[data-sf="endHour"]')||{}).value) || 0;
-            var ac = ((row.querySelector('[data-sf="activity"]')||{}).value || '').trim();
-            var tg = ((row.querySelector('[data-sf="tag"]')||{}).value || 'free');
-            newSch.push({ hour:h, endHour:eh, activity:ac, tag:tg });
+          var ns = []; ov.querySelectorAll('[data-sch-idx]').forEach(function(row){
+            ns.push({ hour:parseInt((row.querySelector('[data-sf="hour"]')||{}).value)||0, endHour:parseInt((row.querySelector('[data-sf="endHour"]')||{}).value)||0,
+              activity:((row.querySelector('[data-sf="activity"]')||{}).value||'').trim(), tag:((row.querySelector('[data-sf="tag"]')||{}).value||'free') });
           });
-          var st = _loadCharState(npcId);
-          st.schedule = newSch;
-          st.lastCalcAt = Date.now();
-          _saveCharState(npcId, st);
-          ov.remove();
-          try{ toast('作息表已保存'); }catch(e){}
-          _renderCharBehaviorPage(npcId);
+          var st = _loadCharState(npcId); st.schedule = ns; st.lastCalcAt = Date.now(); _saveCharState(npcId, st);
+          ov.remove(); try{toast('作息表已保存');}catch(e){} _renderCharBehaviorPage(npcId);
+        });
+      }
+
+      // ★ 属性变化规则编辑器（每角色自定义）
+      function _openAttrRulesEditor(npcId){
+        var st = _loadCharState(npcId);
+        var rules = st.attrRules ? JSON.parse(JSON.stringify(st.attrRules)) : JSON.parse(JSON.stringify(DEFAULT_ATTR_RULES));
+        var msgCost = st.perMsgCost ? JSON.parse(JSON.stringify(st.perMsgCost)) : JSON.parse(JSON.stringify(DEFAULT_PER_MSG_COST));
+        var defs = _getAttrDefs(st);
+        var defKeys = defs.map(function(d){return d.key;});
+
+        function ruleTable(tag, tagLabel){
+          var cells = defKeys.map(function(k){
+            var d = defs.find(function(dd){return dd.key===k;});
+            var v = (rules[tag] && rules[tag][k] != null) ? rules[tag][k] : 0;
+            return `<div style="display:flex;align-items:center;gap:3px;">
+              <span style="font-size:11px;color:rgba(20,24,28,.5);min-width:28px;">${d?d.label:k}</span>
+              <input type="number" data-rule-tag="${tag}" data-rule-key="${k}" value="${v}" step="1" style="width:44px;font-size:11px;text-align:center;border:1px solid rgba(0,0,0,.08);border-radius:4px;padding:2px;outline:none;"/>
+            </div>`;
+          }).join('');
+          return `<div style="margin-bottom:8px;"><div style="font-size:12px;font-weight:600;color:rgba(20,24,28,.7);margin-bottom:3px;">${tagLabel}</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${cells}</div></div>`;
+        }
+
+        var msgCells = defKeys.map(function(k){
+          var d = defs.find(function(dd){return dd.key===k;});
+          return `<div style="display:flex;align-items:center;gap:3px;">
+            <span style="font-size:11px;color:rgba(20,24,28,.5);min-width:28px;">${d?d.label:k}</span>
+            <input type="number" data-msg-key="${k}" value="${msgCost[k]||0}" step="1" style="width:44px;font-size:11px;text-align:center;border:1px solid rgba(0,0,0,.08);border-radius:4px;padding:2px;outline:none;"/>
+          </div>`;
+        }).join('');
+
+        var inner = `<div style="font-size:14px;font-weight:600;margin-bottom:4px;">${_phFlatIcon('⚙️')} 属性变化规则</div>
+          <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:8px;">设置每小时各属性在不同作息下的变化量（正数=增加，负数=减少）</div>
+          <div style="max-height:50vh;overflow-y:auto;">
+            ${SCHEDULE_TAGS.map(function(t){ return ruleTable(t.tag, t.label); }).join('')}
+            <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06);">
+              <div style="font-size:12px;font-weight:600;color:rgba(20,24,28,.7);margin-bottom:3px;">每条消息消耗</div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;">${msgCells}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button data-el="rSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
+            <button data-el="rReset" style="padding:10px 16px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">恢复默认</button>
+            <button data-el="rCancel" style="padding:10px 16px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button>
+          </div>`;
+        var ov = _cpShowOverlay(inner);
+        ov.querySelector('[data-el="rCancel"]')?.addEventListener('click', function(){ ov.remove(); });
+        ov.querySelector('[data-el="rReset"]')?.addEventListener('click', function(){
+          var st2 = _loadCharState(npcId); st2.attrRules = null; st2.perMsgCost = null; _saveCharState(npcId, st2);
+          ov.remove(); try{toast('已恢复默认规则');}catch(e){} _renderCharBehaviorPage(npcId);
+        });
+        ov.querySelector('[data-el="rSave"]')?.addEventListener('click', function(){
+          var newRules = {};
+          SCHEDULE_TAGS.forEach(function(tg){ newRules[tg.tag] = {}; });
+          ov.querySelectorAll('[data-rule-tag]').forEach(function(inp){
+            var tag = inp.getAttribute('data-rule-tag'), key = inp.getAttribute('data-rule-key');
+            if (!newRules[tag]) newRules[tag] = {};
+            newRules[tag][key] = Number(inp.value) || 0;
+          });
+          var newMsg = {};
+          ov.querySelectorAll('[data-msg-key]').forEach(function(inp){ newMsg[inp.getAttribute('data-msg-key')] = Number(inp.value)||0; });
+          var st2 = _loadCharState(npcId); st2.attrRules = newRules; st2.perMsgCost = newMsg; _saveCharState(npcId, st2);
+          ov.remove(); try{toast('变化规则已保存');}catch(e){} _renderCharBehaviorPage(npcId);
+        });
+      }
+
+      // ★ 自定义属性管理器
+      function _openCustomAttrsEditor(npcId){
+        var st = _loadCharState(npcId);
+        var customs = st.customAttrs ? JSON.parse(JSON.stringify(st.customAttrs)) : [];
+
+        function renderList(){
+          if (!customs.length) return '<div style="font-size:12px;color:rgba(20,24,28,.4);padding:8px 0;">暂无自定义属性</div>';
+          return customs.map(function(c, i){
+            return `<div data-ca-idx="${i}" style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.04);">
+              <select data-caf="icon" style="width:38px;font-size:14px;border:1px solid rgba(0,0,0,.08);border-radius:6px;padding:2px;outline:none;background:rgba(255,255,255,.9);">
+                ${CUSTOM_ATTR_ICONS.map(function(ic){ return '<option value="'+ic+'"'+(ic===c.icon?' selected':'')+'>'+ic+'</option>'; }).join('')}
+              </select>
+              <input data-caf="label" value="${esc(c.label||'')}" placeholder="名称" style="width:48px;font-size:12px;border:1px solid rgba(0,0,0,.08);border-radius:6px;padding:3px 5px;outline:none;"/>
+              <input data-caf="key" value="${esc(c.key||'')}" placeholder="key" style="width:48px;font-size:11px;border:1px solid rgba(0,0,0,.08);border-radius:6px;padding:3px 5px;outline:none;color:rgba(20,24,28,.5);"/>
+              <input type="number" data-caf="init" value="${c.init||50}" min="0" max="100" style="width:36px;font-size:11px;text-align:center;border:1px solid rgba(0,0,0,.08);border-radius:6px;padding:2px;outline:none;" title="初始值"/>
+              <button data-act="caDel" data-cidx="${i}" style="font-size:12px;color:rgba(0,0,0,.2);background:transparent;border:0;cursor:pointer;">✕</button>
+            </div>`;
+          }).join('');
+        }
+
+        var inner = `<div style="font-size:14px;font-weight:600;margin-bottom:4px;">${_phFlatIcon('➕')} 自定义属性</div>
+          <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:8px;">添加专属属性（如武力、魅力、学识等）</div>
+          <div data-el="caList">${renderList()}</div>
+          <button data-el="caAdd" style="margin-top:6px;font-size:11px;padding:5px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);cursor:pointer;">+ 添加属性</button>
+          <div style="display:flex;gap:8px;margin-top:10px;">
+            <button data-el="caSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
+            <button data-el="caCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button>
+          </div>`;
+        var ov = _cpShowOverlay(inner);
+
+        function refreshList(){
+          var el = ov.querySelector('[data-el="caList"]'); if(el) el.innerHTML = renderList();
+          ov.querySelectorAll('[data-act="caDel"]').forEach(function(btn){ btn.addEventListener('click', function(){ customs.splice(parseInt(this.getAttribute('data-cidx')),1); refreshList(); }); });
+        } refreshList();
+
+        ov.querySelector('[data-el="caAdd"]')?.addEventListener('click', function(){
+          var n = customs.length + 1;
+          customs.push({ key:'custom_'+n, label:'属性'+n, icon:'💪', min:0, max:100, init:50 }); refreshList();
+        });
+        ov.querySelector('[data-el="caCancel"]')?.addEventListener('click', function(){ ov.remove(); });
+        ov.querySelector('[data-el="caSave"]')?.addEventListener('click', function(){
+          var newC = [];
+          ov.querySelectorAll('[data-ca-idx]').forEach(function(row){
+            var icon = (row.querySelector('[data-caf="icon"]')||{}).value||'💪';
+            var label = ((row.querySelector('[data-caf="label"]')||{}).value||'').trim();
+            var key = ((row.querySelector('[data-caf="key"]')||{}).value||'').trim().replace(/\s+/g,'_');
+            var init = parseInt((row.querySelector('[data-caf="init"]')||{}).value)||50;
+            if (key && label) newC.push({ key:key, label:label, icon:icon, min:0, max:100, init:init });
+          });
+          var st2 = _loadCharState(npcId);
+          st2.customAttrs = newC;
+          // 确保新属性有初始值
+          newC.forEach(function(c){ if(st2.attrs[c.key]==null) st2.attrs[c.key] = c.init; });
+          _saveCharState(npcId, st2);
+          ov.remove(); try{toast('自定义属性已保存');}catch(e){} _renderCharBehaviorPage(npcId);
         });
       }
 
@@ -13033,29 +13079,6 @@ const npc = _wxGetChatTargetMeta(npcId);
                 // 阶段B修复：清除模型可能泄露的 thinking/think 标签
                 text = String(text||'').replace(/<thinking>[\s\S]*?<\/thinking>/gi, '').replace(/<think>[\s\S]*?<\/think>/gi, '');
                 text = text.replace(/<\/?thinking>/gi, '').replace(/<\/?think>/gi, '').trim();
-                // ★ Phase 1：锚点时间提取（从 AI 回复中提取 <story_time>HH:MM</story_time>）
-                try{
-                  var _stMatch = text.match(/<story_time>([\s\S]*?)<\/story_time>/i);
-                  if (_stMatch && _stMatch[1]){
-                    var _anchorVal = _stMatch[1].trim();
-                    text = text.replace(/<story_time>[\s\S]*?<\/story_time>/gi, '').trim();
-                    // 保存到 settings
-                    try{
-                      var _acfg = phoneLoadSettings();
-                      if (_acfg.timeMode === 'anchor'){
-                        _acfg._anchorTime = _anchorVal.slice(0, 10);
-                        // 如果包含日期信息（格式：HH:MM 日期描述）
-                        var _anchorParts = _anchorVal.split(/\s+/);
-                        if (_anchorParts.length > 1){
-                          _acfg._anchorTime = _anchorParts[0];
-                          _acfg._anchorDate = _anchorParts.slice(1).join(' ');
-                        }
-                        phoneSaveSettings(_acfg);
-                        try{ updateTime(); }catch(_e){}
-                      }
-                    }catch(_e){}
-                  }
-                }catch(_e){}
                 return { ok:true, data:text, error:null };
 
               }catch(e){
@@ -13735,30 +13758,32 @@ const npc = _wxGetChatTargetMeta(npcId);
         return Math.floor(min + Math.random() * (max - min));
       }
 
-      // ========== 【模块 B3】角色状态系统 V2（多维属性 + 作息表 + catchUp 补算） ==========
-      // 存储键：meow_phone 前缀复用 _phLoad/_phSave（按 chatUID 隔离）
-      // Phase 1 核心：6 维属性 + 作息表 + 时间差补算，不用 setInterval
+      // ========== 【模块 B3】角色状态系统 V2（多维属性 + 自定义属性 + 作息表 + catchUp 补算） ==========
+      // Phase 1: 6 维默认属性 + 用户自定义属性 + 每角色独立变化规则 + 作息表 + 时间差补算
       var MOOD_ORDER = ['开心','兴奋','平静','害羞','疲惫','委屈','烦躁','生气'];
 
-      // ---- 默认 6 维属性定义 ----
-      var ATTR_DEFS = [
-        { key:'energy',  label:'精力', emoji:'⚡', min:0, max:100, init:80 },
-        { key:'mood',    label:'心情', emoji:'😊', min:0, max:100, init:60 },
-        { key:'health',  label:'健康', emoji:'❤️', min:0, max:100, init:90 },
-        { key:'hunger',  label:'饱腹', emoji:'🍚', min:0, max:100, init:70 },
-        { key:'bladder', label:'如厕', emoji:'🚻', min:0, max:100, init:20 },
-        { key:'fun',     label:'娱乐', emoji:'🎮', min:0, max:100, init:50 }
+      // ---- 默认 6 维属性定义（icon 用于 _phFlatIcon 查找） ----
+      var ATTR_DEFS_DEFAULT = [
+        { key:'energy',  label:'精力', icon:'⚡', min:0, max:100, init:80 },
+        { key:'mood',    label:'心情', icon:'😊', min:0, max:100, init:60 },
+        { key:'health',  label:'健康', icon:'❤️', min:0, max:100, init:90 },
+        { key:'hunger',  label:'饱腹', icon:'🍚', min:0, max:100, init:70 },
+        { key:'bladder', label:'如厕', icon:'🚻', min:0, max:100, init:20 },
+        { key:'fun',     label:'娱乐', icon:'🎮', min:0, max:100, init:50 }
       ];
+
+      // ---- 自定义属性可选图标列表 ----
+      var CUSTOM_ATTR_ICONS = ['💪','🛡️','✨','💎','⚔️','🏃','📈','💰','🧠','🔵','📊','🔮','⭐','🔥'];
 
       // ---- 作息表 tag 定义 ----
       var SCHEDULE_TAGS = [
-        { tag:'rest',     label:'睡眠', emoji:'😴' },
-        { tag:'wake',     label:'起床', emoji:'🌅' },
-        { tag:'eat',      label:'吃饭', emoji:'🍽️' },
-        { tag:'work',     label:'工作', emoji:'💼' },
-        { tag:'free',     label:'休闲', emoji:'🎵' },
-        { tag:'social',   label:'社交', emoji:'💬' },
-        { tag:'exercise', label:'运动', emoji:'🏃' }
+        { tag:'rest',     label:'睡眠', icon:'😴' },
+        { tag:'wake',     label:'起床', icon:'🌅' },
+        { tag:'eat',      label:'吃饭', icon:'🍽️' },
+        { tag:'work',     label:'工作', icon:'💼' },
+        { tag:'free',     label:'休闲', icon:'🎵' },
+        { tag:'social',   label:'社交', icon:'💬' },
+        { tag:'exercise', label:'运动', icon:'🏃' }
       ];
 
       // ---- 默认属性变化规则（每小时变化量，按作息 tag） ----
@@ -13775,7 +13800,7 @@ const npc = _wxGetChatTargetMeta(npcId);
       // ---- 默认每条消息消耗 ----
       var DEFAULT_PER_MSG_COST = { energy:-2, mood:0, health:0, hunger:-1, bladder:+1, fun:+1 };
 
-      // ---- 默认作息表模板（24 小时） ----
+      // ---- 默认作息表模板 ----
       var DEFAULT_SCHEDULE = [
         { hour:0,  endHour:7,  activity:'睡觉',     tag:'rest'  },
         { hour:7,  endHour:8,  activity:'起床洗漱', tag:'wake'  },
@@ -13790,25 +13815,35 @@ const npc = _wxGetChatTargetMeta(npcId);
         { hour:23, endHour:24, activity:'睡觉',     tag:'rest'  }
       ];
 
-      // ---- catchUp 补算最大分钟数（超过则重置属性为初始值） ----
-      var CATCHUP_MAX_MINUTES = 10080; // 一周
+      var CATCHUP_MAX_MINUTES = 10080;
 
-      // ---- 构建 V2 默认状态对象 ----
+      // ---- 获取角色的完整属性定义列表（默认 + 自定义） ----
+      function _getAttrDefs(state){
+        var defs = JSON.parse(JSON.stringify(ATTR_DEFS_DEFAULT));
+        var custom = (state && state.customAttrs) || [];
+        for (var i = 0; i < custom.length; i++){
+          var c = custom[i];
+          if (c && c.key && c.label){
+            defs.push({ key:c.key, label:c.label, icon:c.icon||'🔵', min:c.min||0, max:c.max||100, init:c.init||50, isCustom:true });
+          }
+        }
+        return defs;
+      }
+
       function _makeDefaultStateV2(){
         var attrs = {};
-        for (var i = 0; i < ATTR_DEFS.length; i++){
-          var d = ATTR_DEFS[i];
-          attrs[d.key] = d.init;
+        for (var i = 0; i < ATTR_DEFS_DEFAULT.length; i++){
+          attrs[ATTR_DEFS_DEFAULT[i].key] = ATTR_DEFS_DEFAULT[i].init;
         }
         return {
           _v: 2,
           attrs: attrs,
+          customAttrs: [],      // [{key, label, icon, min, max, init}]
           isKeyNPC: false,
           schedule: [],
-          attrRules: null,     // null = 用 DEFAULT_ATTR_RULES
-          perMsgCost: null,    // null = 用 DEFAULT_PER_MSG_COST
+          attrRules: null,      // null = 用 DEFAULT_ATTR_RULES
+          perMsgCost: null,     // null = 用 DEFAULT_PER_MSG_COST
           lastCalcAt: 0,
-          // 兼容旧字段
           moodText: '平静',
           bond: '普通',
           silentUntil: 0,
@@ -13817,17 +13852,14 @@ const npc = _wxGetChatTargetMeta(npcId);
         };
       }
 
-      // ---- 旧数据迁移：V1 → V2 ----
       function _migrateStateV1toV2(old){
         var s = _makeDefaultStateV2();
-        // 迁移旧字段
         if (old.energy != null) s.attrs.energy = Math.max(0, Math.min(100, Number(old.energy)||80));
         if (old.mood) s.moodText = old.mood;
         if (old.bond) s.bond = old.bond;
         if (old.silentUntil) s.silentUntil = old.silentUntil;
         if (old.silentReason) s.silentReason = old.silentReason;
         if (old.lastActiveAt) s.lastActiveAt = old.lastActiveAt;
-        // 根据旧 mood 推算 mood 数值
         var moodIdx = MOOD_ORDER.indexOf(s.moodText);
         if (moodIdx < 0) moodIdx = 2;
         s.attrs.mood = Math.round(100 - (moodIdx / (MOOD_ORDER.length - 1)) * 100);
@@ -13838,17 +13870,22 @@ const npc = _wxGetChatTargetMeta(npcId);
       function _loadCharState(npcId){
         var raw = _phLoad('charstate_'+String(npcId), null);
         if (!raw) return _makeDefaultStateV2();
-        // 检测版本：如果没有 _v 字段，说明是旧版 V1 数据
         if (!raw._v || raw._v < 2){
           var migrated = _migrateStateV1toV2(raw);
           _saveCharState(npcId, migrated);
           return migrated;
         }
-        // 确保 attrs 对象完整（防止属性缺失）
         if (!raw.attrs) raw.attrs = {};
-        for (var i = 0; i < ATTR_DEFS.length; i++){
-          var d = ATTR_DEFS[i];
+        if (!raw.customAttrs) raw.customAttrs = [];
+        // 确保默认属性完整
+        for (var i = 0; i < ATTR_DEFS_DEFAULT.length; i++){
+          var d = ATTR_DEFS_DEFAULT[i];
           if (raw.attrs[d.key] == null) raw.attrs[d.key] = d.init;
+        }
+        // 确保自定义属性值存在
+        for (var j = 0; j < raw.customAttrs.length; j++){
+          var ck = raw.customAttrs[j].key;
+          if (ck && raw.attrs[ck] == null) raw.attrs[ck] = raw.customAttrs[j].init || 50;
         }
         return raw;
       }
@@ -13856,328 +13893,193 @@ const npc = _wxGetChatTargetMeta(npcId);
         _phSave('charstate_'+String(npcId), s);
       }
 
-      // ---- 获取角色的作息表（isKeyNPC 才有，否则返回空数组） ----
-      function _getSchedule(state){
-        if (!state.isKeyNPC) return [];
-        if (state.schedule && state.schedule.length > 0) return state.schedule;
-        return [];
-      }
+      function _getSchedule(state){ return (state.isKeyNPC && state.schedule && state.schedule.length > 0) ? state.schedule : []; }
+      function _getAttrRules(state){ return state.attrRules || DEFAULT_ATTR_RULES; }
+      function _getPerMsgCost(state){ return state.perMsgCost || DEFAULT_PER_MSG_COST; }
 
-      // ---- 获取属性变化规则 ----
-      function _getAttrRules(state){
-        return state.attrRules || DEFAULT_ATTR_RULES;
-      }
-
-      // ---- 获取每条消息消耗 ----
-      function _getPerMsgCost(state){
-        return state.perMsgCost || DEFAULT_PER_MSG_COST;
-      }
-
-      // ---- 根据小时获取当前作息 tag ----
       function _getScheduleTagAtHour(schedule, hour){
-        hour = ((hour % 24) + 24) % 24; // 归一化到 0-23
+        hour = ((hour % 24) + 24) % 24;
         for (var i = 0; i < schedule.length; i++){
-          var slot = schedule[i];
-          var sh = slot.hour, eh = slot.endHour;
-          // 处理跨午夜的情况
-          if (eh <= sh){
-            if (hour >= sh || hour < eh) return slot.tag;
-          } else {
-            if (hour >= sh && hour < eh) return slot.tag;
-          }
+          var sl = schedule[i], sh = sl.hour, eh = sl.endHour;
+          if (eh <= sh){ if (hour >= sh || hour < eh) return sl.tag; }
+          else { if (hour >= sh && hour < eh) return sl.tag; }
         }
-        return 'free'; // 默认：没匹配到就算休闲
+        return 'free';
       }
 
-      // ---- clamp 属性值到 [min, max] ----
-      function _clampAttr(key, val){
-        for (var i = 0; i < ATTR_DEFS.length; i++){
-          if (ATTR_DEFS[i].key === key){
-            return Math.max(ATTR_DEFS[i].min, Math.min(ATTR_DEFS[i].max, Math.round(val)));
+      function _clampAttr(key, val, defs){
+        if (defs){
+          for (var i = 0; i < defs.length; i++){
+            if (defs[i].key === key) return Math.max(defs[i].min, Math.min(defs[i].max, Math.round(val)));
           }
         }
         return Math.max(0, Math.min(100, Math.round(val)));
       }
 
-      // ============================================================
-      // ★ catchUpStats：核心补算函数（Phase 1 关键）
-      // 触发时机：打开手机 UI、每条消息发送/接收、手动推进时间
-      // 精度：按作息段（segment）补算，不逐分钟循环
-      // ============================================================
+      // ★ catchUpStats
       function catchUpStats(npcId, options){
-        options = options || {};
         var s = _loadCharState(npcId);
         var now = Date.now();
         var lastCalc = s.lastCalcAt || now;
         var elapsedMs = now - lastCalc;
-        if (elapsedMs < 60000) return s; // 不足 1 分钟不补算
-
+        if (elapsedMs < 60000) return s;
         var elapsedMin = Math.floor(elapsedMs / 60000);
+        var defs = _getAttrDefs(s);
 
-        // ⚠️ 超过一周：直接重置到合理初始值
         if (elapsedMin > CATCHUP_MAX_MINUTES){
-          for (var i = 0; i < ATTR_DEFS.length; i++){
-            s.attrs[ATTR_DEFS[i].key] = ATTR_DEFS[i].init;
-          }
-          s.moodText = '平静';
-          s.silentUntil = 0;
-          s.silentReason = '';
-          s.lastCalcAt = now;
-          _saveCharState(npcId, s);
-          return s;
+          for (var i = 0; i < defs.length; i++) s.attrs[defs[i].key] = defs[i].init;
+          s.moodText = '平静'; s.silentUntil = 0; s.silentReason = '';
+          s.lastCalcAt = now; _saveCharState(npcId, s); return s;
         }
 
         var schedule = _getSchedule(s);
         var rules = _getAttrRules(s);
 
-        // 如果不是 keyNPC 或没有作息表，用简化逻辑（兼容旧行为）
         if (schedule.length === 0){
-          _catchUpSimple(s, elapsedMin);
-          s.lastCalcAt = now;
-          s.lastActiveAt = now;
-          _saveCharState(npcId, s);
-          return s;
+          _catchUpSimple(s, elapsedMin, defs);
+          s.lastCalcAt = now; s.lastActiveAt = now;
+          _saveCharState(npcId, s); return s;
         }
 
-        // ---- 按作息段分段补算 ----
-        // 从 lastCalc 时间点开始，逐段推进
         var cursor = new Date(lastCalc);
         var remaining = elapsedMin;
-
         while (remaining > 0){
-          var curHour = cursor.getHours();
-          var curMin  = cursor.getMinutes();
+          var curHour = cursor.getHours(), curMin = cursor.getMinutes();
           var tag = _getScheduleTagAtHour(schedule, curHour);
           var tagRule = rules[tag] || rules['free'] || {};
-
-          // 算这个 tag 段还剩多少分钟到下一段
           var nextSlotMin = _minutesToNextSlot(schedule, curHour, curMin);
-          if (nextSlotMin <= 0) nextSlotMin = 60; // 安全兜底
-
-          var segmentMin = Math.min(remaining, nextSlotMin);
-          var segmentHours = segmentMin / 60;
-
-          // 应用规则：attrs[x] += rule[x] * segmentHours
+          if (nextSlotMin <= 0) nextSlotMin = 60;
+          var segMin = Math.min(remaining, nextSlotMin);
+          var segH = segMin / 60;
           for (var ak in s.attrs){
-            if (s.attrs.hasOwnProperty(ak) && tagRule[ak] != null){
-              s.attrs[ak] = _clampAttr(ak, s.attrs[ak] + tagRule[ak] * segmentHours);
-            }
+            if (s.attrs.hasOwnProperty(ak) && tagRule[ak] != null)
+              s.attrs[ak] = _clampAttr(ak, s.attrs[ak] + tagRule[ak] * segH, defs);
           }
-
-          // 特殊：如厕 > 90 时自动归零（去了厕所）
-          if (s.attrs.bladder >= 90){
-            s.attrs.bladder = _clampAttr('bladder', 5);
-          }
-
-          // 推进游标
-          cursor = new Date(cursor.getTime() + segmentMin * 60000);
-          remaining -= segmentMin;
+          if (s.attrs.bladder >= 90) s.attrs.bladder = _clampAttr('bladder', 5, defs);
+          cursor = new Date(cursor.getTime() + segMin * 60000);
+          remaining -= segMin;
         }
-
-        // 根据属性数值推算 moodText（用于 prompt 和 UI）
         s.moodText = _attrToMoodText(s.attrs);
-
-        // 沉默冷却后自动恢复
         if (s.silentUntil > 0 && now > s.silentUntil + 60000){
-          s.attrs.energy = _clampAttr('energy', s.attrs.energy + 15);
+          s.attrs.energy = _clampAttr('energy', s.attrs.energy + 15, defs);
           if (s.silentUntil < now) s.silentReason = '';
         }
-
-        s.lastCalcAt = now;
-        s.lastActiveAt = now;
-        _saveCharState(npcId, s);
-        return s;
+        s.lastCalcAt = now; s.lastActiveAt = now;
+        _saveCharState(npcId, s); return s;
       }
 
-      // ---- 简化补算（无作息表的普通 NPC，保持旧行为风格） ----
-      function _catchUpSimple(s, elapsedMin){
-        var hours = elapsedMin / 60;
-        // 精力：随时间缓慢恢复（模拟休息）
-        s.attrs.energy = _clampAttr('energy', s.attrs.energy + hours * 2);
-        // 心情：趋向 50
-        var moodDiff = 50 - s.attrs.mood;
-        s.attrs.mood = _clampAttr('mood', s.attrs.mood + moodDiff * Math.min(1, hours * 0.1));
-        // 健康：缓慢恢复
-        s.attrs.health = _clampAttr('health', s.attrs.health + hours * 0.5);
-        // 饱腹：缓慢下降
-        s.attrs.hunger = _clampAttr('hunger', s.attrs.hunger - hours * 3);
-        // 如厕：缓慢上升
-        s.attrs.bladder = _clampAttr('bladder', s.attrs.bladder + hours * 2);
-        if (s.attrs.bladder >= 90) s.attrs.bladder = _clampAttr('bladder', 5);
-        // 娱乐：缓慢下降
-        s.attrs.fun = _clampAttr('fun', s.attrs.fun - hours * 2);
-        // 推算 moodText
+      function _catchUpSimple(s, elapsedMin, defs){
+        var h = elapsedMin / 60;
+        s.attrs.energy = _clampAttr('energy', s.attrs.energy + h * 2, defs);
+        var md = 50 - s.attrs.mood;
+        s.attrs.mood = _clampAttr('mood', s.attrs.mood + md * Math.min(1, h * 0.1), defs);
+        s.attrs.health = _clampAttr('health', s.attrs.health + h * 0.5, defs);
+        s.attrs.hunger = _clampAttr('hunger', s.attrs.hunger - h * 3, defs);
+        s.attrs.bladder = _clampAttr('bladder', s.attrs.bladder + h * 2, defs);
+        if (s.attrs.bladder >= 90) s.attrs.bladder = _clampAttr('bladder', 5, defs);
+        s.attrs.fun = _clampAttr('fun', s.attrs.fun - h * 2, defs);
         s.moodText = _attrToMoodText(s.attrs);
       }
 
-      // ---- 计算从当前时刻到下一个作息段切换的分钟数 ----
       function _minutesToNextSlot(schedule, curHour, curMin){
         if (!schedule.length) return 60;
-        // 找到当前所在的 slot
         for (var i = 0; i < schedule.length; i++){
-          var slot = schedule[i];
-          var sh = slot.hour, eh = slot.endHour;
-          var inSlot = false;
-          if (eh <= sh){
-            inSlot = (curHour >= sh || curHour < eh);
-          } else {
-            inSlot = (curHour >= sh && curHour < eh);
-          }
-          if (inSlot){
-            // 分钟数到 endHour:00
-            var targetMinOfDay = eh * 60;
-            var curMinOfDay = curHour * 60 + curMin;
-            if (eh <= sh) targetMinOfDay += 1440; // 跨午夜
-            if (curMinOfDay > targetMinOfDay) targetMinOfDay += 1440;
-            var diff = targetMinOfDay - curMinOfDay;
-            return Math.max(1, diff);
+          var sl = schedule[i], sh = sl.hour, eh = sl.endHour;
+          var inS = eh <= sh ? (curHour >= sh || curHour < eh) : (curHour >= sh && curHour < eh);
+          if (inS){
+            var t = eh * 60, c = curHour * 60 + curMin;
+            if (eh <= sh) t += 1440;
+            if (c > t) t += 1440;
+            return Math.max(1, t - c);
           }
         }
         return 60;
       }
 
-      // ---- 根据 attrs 数值推算中文情绪词 ----
       function _attrToMoodText(attrs){
-        var m = attrs.mood || 50;
-        var e = attrs.energy || 50;
-        if (m >= 85) return '兴奋';
-        if (m >= 70) return '开心';
-        if (m >= 55 && e >= 40) return '平静';
-        if (m >= 45 && e < 30) return '疲惫';
-        if (m >= 40) return '平静';
-        if (m >= 30) return '委屈';
-        if (m >= 15) return '烦躁';
+        var m = attrs.mood || 50, e = attrs.energy || 50;
+        if (m >= 85) return '兴奋'; if (m >= 70) return '开心';
+        if (m >= 55 && e >= 40) return '平静'; if (m >= 45 && e < 30) return '疲惫';
+        if (m >= 40) return '平静'; if (m >= 30) return '委屈'; if (m >= 15) return '烦躁';
         return '生气';
       }
 
-      // 根据用户消息 + 时间更新角色状态（纯规则 + catchUp）
       function _updateCharStateFromMsg(npcId, userText){
-        // ★ Phase 1 关键：每次消息先触发 catchUp 补算
         var s = catchUpStats(npcId);
         var now = Date.now();
         var txt = String(userText || '').toLowerCase();
-
-        // ---- 应用每条消息消耗 ----
+        var defs = _getAttrDefs(s);
         var cost = _getPerMsgCost(s);
         for (var ck in cost){
-          if (cost.hasOwnProperty(ck) && s.attrs[ck] != null){
-            s.attrs[ck] = _clampAttr(ck, s.attrs[ck] + cost[ck]);
-          }
+          if (cost.hasOwnProperty(ck) && s.attrs[ck] != null) s.attrs[ck] = _clampAttr(ck, s.attrs[ck] + cost[ck], defs);
         }
-
-        // ---- 情绪推断（对 mood 属性做加减） ----
         if (/谢谢|感谢|好棒|厉害|喜欢|爱你|开心|太好了|哈哈|😊|❤|💕|好可爱|好帅|夸|赞/.test(txt)){
-          s.attrs.mood = _clampAttr('mood', s.attrs.mood + 8);
-          s.attrs.energy = _clampAttr('energy', s.attrs.energy + 3);
-          // bond 暖化
-          var bondOrder = ['疏远','普通','亲近','暧昧','冷战中'];
-          var bi = bondOrder.indexOf(s.bond);
-          if (bi >= 0 && bi < 3) s.bond = bondOrder[Math.min(3, bi + 1)];
+          s.attrs.mood = _clampAttr('mood', s.attrs.mood + 8, defs);
+          s.attrs.energy = _clampAttr('energy', s.attrs.energy + 3, defs);
+          var bondOrd = ['疏远','普通','亲近','暧昧','冷战中'];
+          var bi = bondOrd.indexOf(s.bond); if (bi >= 0 && bi < 3) s.bond = bondOrd[Math.min(3, bi + 1)];
         }
         if (/烦|讨厌|滚|闭嘴|傻|笨|没用|骗|失望|难受|哭泣|气死|你去死|废物|垃圾/.test(txt)){
-          s.attrs.mood = _clampAttr('mood', s.attrs.mood - 15);
-          s.attrs.energy = _clampAttr('energy', s.attrs.energy - 8);
+          s.attrs.mood = _clampAttr('mood', s.attrs.mood - 15, defs);
+          s.attrs.energy = _clampAttr('energy', s.attrs.energy - 8, defs);
         }
         if (/还好吗|你怎么了|辛苦了|多休息|照顾好自己|没事吧|加油/.test(txt)){
-          s.attrs.mood = _clampAttr('mood', s.attrs.mood + 5);
-          s.attrs.energy = _clampAttr('energy', s.attrs.energy + 3);
+          s.attrs.mood = _clampAttr('mood', s.attrs.mood + 5, defs);
+          s.attrs.energy = _clampAttr('energy', s.attrs.energy + 3, defs);
         }
         if (/哦|嗯|ok|随便|无所谓|算了|不知道/.test(txt) && txt.length <= 4){
-          s.attrs.mood = _clampAttr('mood', s.attrs.mood - 4);
+          s.attrs.mood = _clampAttr('mood', s.attrs.mood - 4, defs);
         }
-
-        // ---- 推算 moodText ----
         s.moodText = _attrToMoodText(s.attrs);
-
-        // ---- 触发沉默窗口 ----
         if (s.silentUntil < now){
           if (s.attrs.energy < 18 || s.moodText === '生气'){
-            var silentMin = s.moodText === '生气' ? _randomBetween(4, 12) : _randomBetween(2, 6);
-            s.silentUntil = now + silentMin * 60000;
+            var silMin = s.moodText === '生气' ? _randomBetween(4, 12) : _randomBetween(2, 6);
+            s.silentUntil = now + silMin * 60000;
             s.silentReason = s.moodText === '生气' ? '生气' : '疲惫';
           }
         }
-
-        s.lastCalcAt = now;
-        s.lastActiveAt = now;
-        _saveCharState(npcId, s);
-        return s;
+        s.lastCalcAt = now; s.lastActiveAt = now;
+        _saveCharState(npcId, s); return s;
       }
 
-      // 构建状态块文字（注入 system prompt 用）
       function _buildStatePromptBlock(npcId){
         try{
-          // 先补算
           var s = catchUpStats(npcId);
           var a = s.attrs;
-
-          // ---- 属性条 ----
-          function barStr(val){
-            var bars = Math.round((val || 0) / 20);
-            return '▓'.repeat(bars) + '░'.repeat(5 - bars) + ' ' + (val||0) + '%';
-          }
-
-          var moodMap = {
-            '开心':'😄','兴奋':'🤩','平静':'😌','害羞':'😳',
-            '疲惫':'😴','委屈':'🥺','烦躁':'😤','生气':'😠'
-          };
-          var moodEmoji = moodMap[s.moodText] || '😌';
-
+          var defs = _getAttrDefs(s);
+          function barStr(v){ var b = Math.round((v||0)/20); return '▓'.repeat(b) + '░'.repeat(5-b) + ' ' + (v||0) + '%'; }
+          var moodMap = {'开心':'😄','兴奋':'🤩','平静':'😌','害羞':'😳','疲惫':'😴','委屈':'🥺','烦躁':'😤','生气':'😠'};
           var lines = [
             '【当前状态（你自己的实时状态，最高优先级）】',
-            '情绪：' + moodEmoji + ' ' + (s.moodText||'平静') + ' | 关系：' + (s.bond||'普通'),
-            '精力：' + barStr(a.energy),
-            '心情：' + barStr(a.mood),
-            '健康：' + barStr(a.health),
-            '饱腹：' + barStr(a.hunger),
-            '娱乐：' + barStr(a.fun)
+            '情绪：' + (moodMap[s.moodText]||'😌') + ' ' + (s.moodText||'平静') + ' | 关系：' + (s.bond||'普通')
           ];
-
-          // 如厕只在高值时提醒
-          if (a.bladder > 60){
-            lines.push('如厕需求：' + barStr(a.bladder) + (a.bladder > 80 ? ' ⚠️坐不住了' : ''));
+          for (var di = 0; di < defs.length; di++){
+            var d = defs[di], v = a[d.key];
+            if (d.key === 'bladder' && v <= 60) continue; // 如厕低值不提
+            var extra = '';
+            if (d.key === 'bladder' && v > 80) extra = ' ⚠️坐不住了';
+            lines.push(d.label + '：' + barStr(v) + extra);
           }
-
-          // ---- 作息表状态 ----
           if (s.isKeyNPC && s.schedule && s.schedule.length > 0){
-            var curHour = new Date().getHours();
-            var curTag = _getScheduleTagAtHour(s.schedule, curHour);
-            var curSlot = null;
+            var ch = new Date().getHours();
             for (var si = 0; si < s.schedule.length; si++){
               var sl = s.schedule[si];
-              var inSl = false;
-              if (sl.endHour <= sl.hour){
-                inSl = (curHour >= sl.hour || curHour < sl.endHour);
-              } else {
-                inSl = (curHour >= sl.hour && curHour < sl.endHour);
-              }
-              if (inSl){ curSlot = sl; break; }
-            }
-            if (curSlot){
-              lines.push('当前时段：' + curSlot.activity + '（' + curSlot.hour + ':00~' + curSlot.endHour + ':00）');
+              var inS = sl.endHour<=sl.hour ? (ch>=sl.hour||ch<sl.endHour) : (ch>=sl.hour&&ch<sl.endHour);
+              if (inS){ lines.push('当前时段：' + sl.activity + '（' + sl.hour + ':00~' + sl.endHour + ':00）'); break; }
             }
           }
-
-          // ---- 行为提示 ----
           var hint = '';
-          if (s.moodText === '生气') hint = '→ 情绪激动，可能短句、语气冲，若继续被激怒可能会不回复';
-          else if (s.moodText === '烦躁') hint = '→ 有些不耐烦，回复偏短';
-          else if (s.moodText === '疲惫') hint = '→ 没精神，回复简短，语气平淡';
-          else if (s.moodText === '委屈') hint = '→ 心里有些难受，可能话少';
-          else if (s.moodText === '开心') hint = '→ 状态好，活泼，可能主动多说';
-          else if (s.moodText === '兴奋') hint = '→ 很亢奋，感叹号多，可能连发';
-          else if (a.energy < 30) hint = '→ 精力低，回复简短';
-          else if (a.hunger < 20) hint = '→ 有点饿了，可能提到想吃东西';
-          else if (a.fun < 25) hint = '→ 有点无聊，可能主动找话题';
-          else hint = '→ 状态正常，正常聊天';
+          if (s.moodText==='生气') hint='→ 情绪激动，可能短句、语气冲';
+          else if (s.moodText==='烦躁') hint='→ 有些不耐烦，回复偏短';
+          else if (s.moodText==='疲惫') hint='→ 没精神，回复简短';
+          else if (a.energy<30) hint='→ 精力低，回复简短';
+          else if (a.hunger<20) hint='→ 有点饿了，可能提到想吃东西';
+          else if (a.fun<25) hint='→ 有点无聊，可能主动找话题';
+          else hint='→ 状态正常，正常聊天';
           lines.push(hint);
-
-          // 沉默提示
           if (s.silentUntil > Date.now()){
-            var leftMin = Math.ceil((s.silentUntil - Date.now()) / 60000);
-            lines.push('⚠️ 正处于短暂沉默期（还有约 '+leftMin+' 分钟），请先不回复，或仅用一句极短的话应付');
+            lines.push('⚠️ 正处于短暂沉默期（还有约 '+Math.ceil((s.silentUntil-Date.now())/60000)+' 分钟）');
           }
-
           return lines.join('\n');
         }catch(e){ return ''; }
       }
@@ -15788,7 +15690,6 @@ const npc = _wxGetChatTargetMeta(npcId);
               var sAfter = _loadCharState(npcId);
               sAfter.moodText = (sAfter.moodText === '生气') ? '烦躁' : '平静';
               if (sAfter.attrs) sAfter.attrs.energy = Math.min(100, (sAfter.attrs.energy||50) + 12);
-              if (sAfter.attrs) sAfter.attrs.mood = Math.min(100, (sAfter.attrs.mood||40) + 15);
               sAfter.silentUntil = 0;
               sAfter.silentReason = '';
               _saveCharState(npcId, sAfter);
@@ -17737,7 +17638,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             {icon:'🤖',label:'自动回复',type:'toggle',key:'autoReply',val:cfg.autoReply!==false},
             {icon:'📝',label:'上下文条数',value:(cfg.chatContextN||10)+'条',type:'nav',subpage:'chatContextN'},
             {icon:'⌨️',label:'打字效果',value:({none:'无',typewriter:'打字机',fadein:'淡入',glitch:'故障风'})[cfg.typingEffect||'none']||'无',type:'nav',subpage:'typingEffect'},
-            {icon:'⏰',label:'时间模式',value:({real:'现实时间',story:'故事时间（手动）',ratio:'比率推进',anchor:'锚点提取'})[cfg.timeMode]||'现实时间',type:'nav',subpage:'timeMode'},
+            {icon:'⏰',label:'时间模式',value:cfg.timeMode==='story'?'故事时间':'现实时间',type:'nav',subpage:'timeMode'},
           ]},
                     { title:'关于', rows:[
             {icon:'ℹ️',label:'版本',value:'MEOW Phone v2.1',type:'info'},
@@ -18113,72 +18014,40 @@ function renderSettingsUIApp(container){
       // -------- 设置：时间模式 --------
       function renderSettingsTimeMode(container){
         const cfg = phoneLoadSettings();
-        const mode = cfg.timeMode || 'real';
         let html = `<div class="settingSubPage">
           <div class="settingSubTitle">⏰ 时间模式</div>
-          <div class="settingSubDesc">选择手机状态栏显示的时间来源，也影响角色状态系统的时间计算</div>
-          <div class="sOptionGrid" style="grid-template-columns:1fr 1fr;">
-            <button class="sOptionBtn${mode==='real'?' active':''}" data-ph="tmReal">🕐 现实时间</button>
-            <button class="sOptionBtn${mode==='story'?' active':''}" data-ph="tmStory">📖 手动设置</button>
-            <button class="sOptionBtn${mode==='ratio'?' active':''}" data-ph="tmRatio">⏩ 比率推进</button>
-            <button class="sOptionBtn${mode==='anchor'?' active':''}" data-ph="tmAnchor">🎯 锚点提取</button>
+          <div class="settingSubDesc">选择手机状态栏显示的时间来源</div>
+          <div class="sOptionGrid">
+            <button class="sOptionBtn${cfg.timeMode!=='story'?' active':''}" data-ph="tmReal">🕐 现实时间</button>
+            <button class="sOptionBtn${cfg.timeMode==='story'?' active':''}" data-ph="tmStory">📖 故事时间</button>
           </div>
-          <!-- 手动模式配置 -->
-          <div data-ph="storyTimeConfig" style="margin-top:14px;${mode!=='story'?'display:none;':''}">
+          <div data-ph="storyTimeConfig" style="margin-top:14px;${cfg.timeMode!=='story'?'display:none;':''}">
             <div style="font-size:13px;color:var(--ph-text-sub);margin-bottom:6px;">自定义故事时间：</div>
             <input class="sTimeInput" type="time" value="${cfg.storyTime||'12:00'}" data-ph="storyTimeInput" />
             <div style="margin-top:8px;font-size:13px;color:var(--ph-text-sub);margin-bottom:6px;">自定义故事日期（选填）：</div>
             <input class="sTimeInput" type="text" value="${esc(cfg.storyDate||'')}" data-ph="storyDateInput" placeholder="例：魔法纪元 第3天" />
           </div>
-          <!-- 比率模式配置 -->
-          <div data-ph="ratioConfig" style="margin-top:14px;${mode!=='ratio'?'display:none;':''}">
-            <div style="font-size:13px;color:var(--ph-text-sub);margin-bottom:6px;">时间倍率：现实 1 小时 = 故事多少小时</div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <input class="sTimeInput" type="number" min="1" max="168" value="${cfg.timeRatio||24}" data-ph="ratioInput" style="width:80px;" />
-              <span style="font-size:12px;color:var(--ph-text-dim);">倍（默认 24 = 现实 1h = 故事 1 天）</span>
-            </div>
-            <div style="margin-top:8px;font-size:13px;color:var(--ph-text-sub);margin-bottom:6px;">起始故事时间：</div>
-            <input class="sTimeInput" type="time" value="${cfg.ratioStartTime||'08:00'}" data-ph="ratioStartTimeInput" />
-            <div style="margin-top:4px;font-size:11px;color:var(--ph-text-dim);">从现在起，故事时间以此为起点按倍率推进</div>
-          </div>
-          <!-- 锚点模式提示 -->
-          <div data-ph="anchorConfig" style="margin-top:14px;${mode!=='anchor'?'display:none;':''}">
-            <div style="font-size:12px;color:var(--ph-text-sub);line-height:1.5;padding:10px;background:rgba(0,0,0,.03);border-radius:8px;">
-              🎯 <b>锚点模式</b>：AI 回复时会尝试在隐藏标签中输出故事时间，小手机自动提取并更新。<br>
-              这是最智能的模式，但需要 AI 支持在回复中嵌入时间标记。<br><br>
-              格式示例：回复文本中包含 <code>&lt;story_time&gt;14:30&lt;/story_time&gt;</code>
-            </div>
-          </div>
         </div>`;
         container.innerHTML = html;
 
-        const btns = {
-          real:   container.querySelector('[data-ph="tmReal"]'),
-          story:  container.querySelector('[data-ph="tmStory"]'),
-          ratio:  container.querySelector('[data-ph="tmRatio"]'),
-          anchor: container.querySelector('[data-ph="tmAnchor"]')
-        };
-        const configs = {
-          story:  container.querySelector('[data-ph="storyTimeConfig"]'),
-          ratio:  container.querySelector('[data-ph="ratioConfig"]'),
-          anchor: container.querySelector('[data-ph="anchorConfig"]')
-        };
-
-        function _setTMode(m){
-          const cfg2 = phoneLoadSettings();
-          cfg2.timeMode = m;
-          phoneSaveSettings(cfg2);
-          // 更新按钮状态
-          Object.keys(btns).forEach(function(k){ if(btns[k]) btns[k].classList.toggle('active', k===m); });
-          // 显示/隐藏子面板
-          Object.keys(configs).forEach(function(k){ if(configs[k]) configs[k].style.display = k===m ? '' : 'none'; });
-          try{ updateTime(); }catch(e){}
-        }
-        Object.keys(btns).forEach(function(k){ if(btns[k]) btns[k].addEventListener('click', function(){ _setTMode(k); }); });
-
-        // 手动模式子设置
+        const btnReal = container.querySelector('[data-ph="tmReal"]');
+        const btnStory = container.querySelector('[data-ph="tmStory"]');
+        const storyConf = container.querySelector('[data-ph="storyTimeConfig"]');
         const storyTimeInp = container.querySelector('[data-ph="storyTimeInput"]');
         const storyDateInp = container.querySelector('[data-ph="storyDateInput"]');
+
+        function _setTMode(mode){
+          const cfg2 = phoneLoadSettings();
+          cfg2.timeMode = mode;
+          phoneSaveSettings(cfg2);
+          btnReal.classList.toggle('active', mode!=='story');
+          btnStory.classList.toggle('active', mode==='story');
+          if (storyConf) storyConf.style.display = mode==='story' ? '' : 'none';
+          try{ updateTime(); }catch(e){}
+        }
+        if (btnReal) btnReal.addEventListener('click', ()=> _setTMode('real'));
+        if (btnStory) btnStory.addEventListener('click', ()=> _setTMode('story'));
+
         if (storyTimeInp) storyTimeInp.addEventListener('change', ()=>{
           const cfg2 = phoneLoadSettings();
           cfg2.storyTime = storyTimeInp.value || '12:00';
@@ -18188,25 +18057,6 @@ function renderSettingsUIApp(container){
         if (storyDateInp) storyDateInp.addEventListener('input', ()=>{
           const cfg2 = phoneLoadSettings();
           cfg2.storyDate = storyDateInp.value || '';
-          phoneSaveSettings(cfg2);
-          try{ updateTime(); }catch(e){}
-        });
-
-        // 比率模式子设置
-        const ratioInp = container.querySelector('[data-ph="ratioInput"]');
-        const ratioStartInp = container.querySelector('[data-ph="ratioStartTimeInput"]');
-        if (ratioInp) ratioInp.addEventListener('change', ()=>{
-          const cfg2 = phoneLoadSettings();
-          cfg2.timeRatio = Math.max(1, Math.min(168, parseInt(ratioInp.value)||24));
-          ratioInp.value = cfg2.timeRatio;
-          cfg2.ratioAnchorRealMs = Date.now(); // 重置锚点
-          phoneSaveSettings(cfg2);
-          try{ updateTime(); }catch(e){}
-        });
-        if (ratioStartInp) ratioStartInp.addEventListener('change', ()=>{
-          const cfg2 = phoneLoadSettings();
-          cfg2.ratioStartTime = ratioStartInp.value || '08:00';
-          cfg2.ratioAnchorRealMs = Date.now();
           phoneSaveSettings(cfg2);
           try{ updateTime(); }catch(e){}
         });
@@ -18972,56 +18822,18 @@ function bindPageScroll(){
 
       function updateTime(){
         try{
-          const _tcfg = phoneLoadSettings();
-
-          // ✅ 手动故事时间模式
-          if (_tcfg.timeMode === 'story'){
-            ensureRoot();
-            const _te = root?.querySelector?.('[data-ph="time"]');
-            const _de = root?.querySelector?.('[data-ph="date"]');
-            if (_te) _te.textContent = _tcfg.storyTime || '12:00';
-            if (_de) _de.textContent = _tcfg.storyDate || '故事时间';
-            return;
-          }
-
-          // ✅ 比率推进模式
-          if (_tcfg.timeMode === 'ratio'){
-            ensureRoot();
-            const _te = root?.querySelector?.('[data-ph="time"]');
-            const _de = root?.querySelector?.('[data-ph="date"]');
-            var ratio = Math.max(1, Number(_tcfg.timeRatio) || 24);
-            var anchorReal = Number(_tcfg.ratioAnchorRealMs) || Date.now();
-            var startParts = (_tcfg.ratioStartTime || '08:00').split(':');
-            var startH = parseInt(startParts[0]) || 8;
-            var startM = parseInt(startParts[1]) || 0;
-            var elapsedReal = Date.now() - anchorReal; // 现实经过的毫秒
-            var elapsedStory = elapsedReal * ratio;    // 故事经过的毫秒
-            var storyTotalMin = startH * 60 + startM + Math.floor(elapsedStory / 60000);
-            var storyH = ((Math.floor(storyTotalMin / 60) % 24) + 24) % 24;
-            var storyM = ((storyTotalMin % 60) + 60) % 60;
-            var storyDays = Math.floor(storyTotalMin / (24 * 60));
-            if (_te) _te.textContent = String(storyH).padStart(2,'0') + ':' + String(storyM).padStart(2,'0');
-            if (_de && storyDays > 0) _de.textContent = '故事第 ' + (storyDays + 1) + ' 天';
-            else if (_de) _de.textContent = _tcfg.storyDate || '';
-            return;
-          }
-
-          // ✅ 锚点模式：显示最近提取的故事时间，没有则显示现实时间
-          if (_tcfg.timeMode === 'anchor'){
-            ensureRoot();
-            const _te = root?.querySelector?.('[data-ph="time"]');
-            const _de = root?.querySelector?.('[data-ph="date"]');
-            if (_tcfg._anchorTime){
-              if (_te) _te.textContent = _tcfg._anchorTime;
-              if (_de) _de.textContent = _tcfg._anchorDate || '锚点时间';
-            } else {
-              if (_te) _te.textContent = timeStr();
-              if (_de) _de.textContent = '等待锚点…';
+          // ✅ 故事时间模式：不覆盖，使用自定义时间
+          try{
+            const _tcfg = phoneLoadSettings();
+            if (_tcfg.timeMode === 'story'){
+              ensureRoot();
+              const _te = root?.querySelector?.('[data-ph="time"]');
+              const _de = root?.querySelector?.('[data-ph="date"]');
+              if (_te) _te.textContent = _tcfg.storyTime || '12:00';
+              if (_de) _de.textContent = _tcfg.storyDate || '故事时间';
+              return;
             }
-            return;
-          }
-
-          // ✅ 默认：现实时间
+          }catch(_e){}
           ensureRoot();
           const t = root.querySelector('[data-ph="time"]');
           if (t) t.textContent = timeStr();
