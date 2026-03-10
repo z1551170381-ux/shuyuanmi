@@ -2777,13 +2777,13 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   0%,60%,100%{ transform:translateY(0); opacity:.35; }
   30%{ transform:translateY(-5px); opacity:.85; }
 }
-/* === 状态面板卡片 === */
+/* === 状态面板卡片（点头像弹出·速览版） === */
 #${ID} .wxStatePanelCard{
   position:absolute; left:50%; top:52px; transform:translateX(-50%);
-  z-index:4000; width:calc(100% - 28px); max-width:300px;
-  background:rgba(255,255,255,.96); backdrop-filter:blur(16px);
-  border-radius:14px; box-shadow:0 6px 28px rgba(0,0,0,.18);
-  border:1px solid rgba(255,255,255,.6);
+  z-index:4000; width:calc(100% - 28px); max-width:280px;
+  background:rgba(255,255,255,.97); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,.16);
+  border:1px solid rgba(255,255,255,.7);
   animation:wxSPCSlideIn .18s ease;
   overflow:hidden;
 }
@@ -2791,25 +2791,112 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   from{ opacity:0; transform:translateX(-50%) translateY(-8px); }
   to{   opacity:1; transform:translateX(-50%) translateY(0); }
 }
-#${ID} .wxSPCRow{
-  display:flex; align-items:center; gap:10px;
-  padding:10px 14px; border-bottom:1px solid rgba(0,0,0,.05);
+/* 顶部主区 */
+#${ID} .wxSPCHeader{
+  display:flex; align-items:center; gap:12px; padding:14px 14px 10px;
 }
-#${ID} .wxSPCRow:last-child{ border-bottom:0; }
-#${ID} .wxSPCIcon{ font-size:18px; width:24px; text-align:center; flex-shrink:0; }
-#${ID} .wxSPCLabel{ font-size:11px; color:rgba(20,24,28,.4); min-width:36px; flex-shrink:0; }
-#${ID} .wxSPCValue{ font-size:13px; color:rgba(20,24,28,.85); flex:1; line-height:1.4; }
+#${ID} .wxSPCAvatar{
+  width:48px; height:48px; border-radius:50%; overflow:hidden;
+  background:rgba(0,0,0,.06); display:flex; align-items:center; justify-content:center;
+  font-size:20px; font-weight:700; flex-shrink:0;
+}
+#${ID} .wxSPCAvatar img{ width:100%; height:100%; object-fit:cover; }
+#${ID} .wxSPCNameWrap{ flex:1; min-width:0; }
+#${ID} .wxSPCName{ font-size:15px; font-weight:700; color:rgba(20,24,28,.9); }
+#${ID} .wxSPCMeta{ display:flex; align-items:center; gap:6px; margin-top:4px; flex-wrap:wrap; }
 #${ID} .wxSPCBond{
   display:inline-block; padding:2px 8px; border-radius:10px;
-  font-size:11.5px; font-weight:600;
+  font-size:11px; font-weight:600;
 }
-#${ID} .wxSPCClose{
-  display:block; width:100%; padding:10px;
-  border:0; background:transparent;
-  font-size:12px; color:rgba(20,24,28,.35);
-  cursor:pointer; text-align:center;
-  border-top:1px solid rgba(0,0,0,.05);
+#${ID} .wxSPCMoodChip{
+  display:inline-flex; align-items:center; gap:3px;
+  font-size:11px; color:rgba(20,24,28,.5);
 }
+/* 信息行 */
+#${ID} .wxSPCRow{
+  display:flex; align-items:center; gap:10px;
+  padding:8px 14px; border-top:1px solid rgba(0,0,0,.05);
+}
+#${ID} .wxSPCIcon{ font-size:16px; width:22px; text-align:center; flex-shrink:0; }
+#${ID} .wxSPCLabel{ font-size:11px; color:rgba(20,24,28,.38); min-width:32px; flex-shrink:0; }
+#${ID} .wxSPCValue{ font-size:12.5px; color:rgba(20,24,28,.82); flex:1; line-height:1.4; }
+/* 底部跳转按钮 */
+#${ID} .wxSPCFooter{
+  display:flex; align-items:center; justify-content:center;
+  padding:9px 14px; border-top:1px solid rgba(0,0,0,.05);
+  font-size:12px; color:rgba(20,24,28,.35); cursor:pointer;
+  gap:4px; transition:color .15s;
+}
+#${ID} .wxSPCFooter:hover{ color:var(--ph-accent, #07c160); }
+#${ID} .wxSPCClose{ display:none; } /* 旧按钮隐藏 */
+
+/* === 状态详情页（右上角✦按钮进入·完整版） === */
+#${ID} .wxStateDetailWrap{
+  padding-bottom:24px;
+}
+#${ID} .wxSDHero{
+  display:flex; align-items:center; gap:14px;
+  padding:18px 16px 14px;
+}
+#${ID} .wxSDAvatar{
+  width:60px; height:60px; border-radius:50%; overflow:hidden;
+  background:rgba(0,0,0,.06); display:flex; align-items:center; justify-content:center;
+  font-size:24px; font-weight:700; flex-shrink:0;
+}
+#${ID} .wxSDAvatar img{ width:100%; height:100%; object-fit:cover; }
+#${ID} .wxSDName{ font-size:17px; font-weight:700; color:var(--ph-text); margin-bottom:5px; }
+#${ID} .wxSDMeta{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+#${ID} .wxSDSchedule{
+  margin:0 14px 10px;
+  padding:9px 12px;
+  background:var(--ph-glass, rgba(255,255,255,.5));
+  border:1px solid var(--ph-glass-border, rgba(0,0,0,.07));
+  border-radius:12px; display:flex; align-items:center; gap:8px;
+  font-size:12px; color:var(--ph-text-sub);
+}
+#${ID} .wxSDSection{
+  margin:0 14px 10px;
+  background:var(--ph-glass, rgba(255,255,255,.6));
+  border:1px solid var(--ph-glass-border, rgba(0,0,0,.07));
+  border-radius:14px; overflow:hidden;
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+}
+#${ID} .wxSDSectionTitle{
+  font-size:10.5px; color:var(--ph-text-sub); letter-spacing:.4px;
+  padding:8px 14px 4px; opacity:.7;
+}
+#${ID} .wxSDAttrRow{
+  display:flex; align-items:center; gap:8px;
+  padding:7px 14px; border-bottom:1px solid rgba(0,0,0,.04);
+}
+#${ID} .wxSDAttrRow:last-child{ border-bottom:0; }
+#${ID} .wxSDAttrIcon{ font-size:14px; width:20px; text-align:center; flex-shrink:0; opacity:.7; }
+#${ID} .wxSDAttrLabel{ font-size:12px; color:var(--ph-text-sub); min-width:30px; flex-shrink:0; }
+#${ID} .wxSDAttrTrack{
+  flex:1; height:5px; background:rgba(0,0,0,.07); border-radius:3px; overflow:hidden;
+}
+#${ID} .wxSDAttrFill{ height:100%; border-radius:3px; transition:width 1.2s cubic-bezier(.4,0,.2,1); }
+#${ID} .wxSDAttrNum{ font-size:11px; color:var(--ph-text-sub); min-width:22px; text-align:right; }
+#${ID} .wxSDLogRow{
+  display:flex; align-items:center; gap:10px;
+  padding:8px 14px; border-bottom:1px solid rgba(0,0,0,.04);
+}
+#${ID} .wxSDLogRow:last-child{ border-bottom:0; }
+#${ID} .wxSDLogIcon{ font-size:16px; flex-shrink:0; }
+#${ID} .wxSDLogLabel{ font-size:12px; color:var(--ph-text); flex:1; }
+#${ID} .wxSDLogTime{ font-size:10px; color:var(--ph-text-sub); flex-shrink:0; }
+#${ID} .wxSDActions{
+  display:flex; gap:8px; padding:4px 14px 0;
+}
+#${ID} .wxSDActBtn{
+  flex:1; padding:9px; border-radius:10px;
+  border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));
+  background:var(--ph-glass, rgba(255,255,255,.7));
+  font-size:12px; color:var(--ph-text-sub); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:4px;
+  transition:opacity .15s;
+}
+#${ID} .wxSDActBtn:hover{ opacity:.75; }
 /* === 气泡长按菜单（横排） === */
 #${ID} .wxBubbleMenuMask{
   position:absolute; inset:0; z-index:8888;
@@ -4749,6 +4836,16 @@ function buildHTML(){
           if (act === 'wxSPCClose'){
             var spc = t.closest('.wxStatePanelCard'); if(spc) spc.remove(); return;
           }
+          if (act === 'wxOpenStateDetail'){
+            var _sdNid = t.getAttribute('data-npcid') || state.chatTarget;
+            if (!_sdNid) return;
+            // 关闭速览卡片
+            var _spc2 = root.querySelector('.wxStatePanelCard'); if(_spc2) _spc2.remove();
+            // 压栈，返回时回到聊天详情
+            state._innerStack.push(function(){ renderChatDetail(_sdNid); });
+            _renderStateDetailPage(_sdNid);
+            return;
+          }
           if (act === 'search'){ openApp('search'); return; }
           if (act === 'chatTab'){ switchChatTab(t); return; }
           if (act === 'sendChat'){ sendChatMessage(); return; }
@@ -5076,10 +5173,12 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           if (act === 'wxCSBack'){
             goBack(); return;
           }
-          // ★ 状态面板按钮（聊天设置页头像旁）
+          // ★ 状态面板按钮（聊天设置页头像旁）→ 跳状态详情页
           if (act === 'wxCSOpenStatePanel'){
             var spNid = t.getAttribute('data-npcid') || state.chatTarget;
-            try{ _showStatePanelCard(spNid); }catch(e){}
+            if (!spNid) return;
+            state._innerStack.push(function(){ _renderCharSettingsPage(spNid); });
+            _renderStateDetailPage(spNid);
             return;
           }
           // === 阶段B：戳一戳设置动作 ===
@@ -11741,10 +11840,16 @@ const npc = _wxGetChatTargetMeta(npcId);
           if (titleEl) titleEl.textContent = npc.name;
         }catch(e){}
 
-        // ✅ 注入"+"到 app bar 右侧 → 进入角色设置页
+        // ✅ 注入右上角按钮：✦ → 状态详情页，➕ → 角色设置页
         try{
           const spacer = root.querySelector('.phAppBarSpacer');
-          if (spacer) spacer.innerHTML = `<button class="wxTopBtn" data-act="wxCharSettings" data-npcid="${esc(contactId)}" style="appearance:none;border:0;background:transparent;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;">${_phFlatIcon('➕')}</button>`;
+          if (spacer) spacer.innerHTML =
+            `<div style="display:flex;align-items:center;gap:2px;">
+              <button class="wxTopBtn" data-act="wxOpenStateDetail" data-npcid="${esc(contactId)}"
+                style="appearance:none;border:0;background:transparent;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;font-size:17px;opacity:.75;">✦</button>
+              <button class="wxTopBtn" data-act="wxCharSettings" data-npcid="${esc(contactId)}"
+                style="appearance:none;border:0;background:transparent;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;">${_phFlatIcon('➕')}</button>
+            </div>`;
         }catch(e){}
 
         // 读取自定义聊天背景
@@ -12427,46 +12532,54 @@ const npc = _wxGetChatTargetMeta(npcId);
         // 手动设置（V2 多维）
         body.querySelector('[data-act="cbSetMood"]')?.addEventListener('click', function(){
           var nid = this.getAttribute('data-npcid') || contactId;
-          var cur = _loadCharState(nid);
-          var curDefs = _getAttrDefs(cur);
-          var moodOptHtml = MOOD_ORDER.map(function(m){ return `<option value="${m}"${m===(cur.moodText||'平静')?' selected':''}>${m}</option>`; }).join('');
-          var bondOptHtml = ['疏远','普通','亲近','暧昧','冷战中'].map(function(bd){ return `<option value="${bd}"${bd===cur.bond?' selected':''}>${bd}</option>`; }).join('');
-          var attrSliders = curDefs.map(function(d){
-            var v = (cur.attrs && cur.attrs[d.key] != null) ? cur.attrs[d.key] : d.init;
-            return `<div style="margin-bottom:5px;display:flex;align-items:center;gap:6px;">
-              <span style="width:22px;color:rgba(20,24,28,.45);display:flex;justify-content:center;">${_phFlatIcon(d.icon||'🔵')}</span>
-              <span style="font-size:12px;color:rgba(20,24,28,.6);min-width:28px;">${d.label}</span>
-              <input type="range" data-el="attr_${d.key}" min="0" max="100" value="${v}" style="flex:1;accent-color:var(--ph-accent, #07c160);"/>
-              <span data-el="attrLbl_${d.key}" style="font-size:11px;color:rgba(20,24,28,.4);min-width:24px;text-align:right;">${v}</span>
-            </div>`;
-          }).join('');
-          var inner = `
-            <div style="font-size:14px;font-weight:600;margin-bottom:10px;">手动设置状态</div>
-            <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;"><span style="font-size:12px;color:rgba(20,24,28,.6);min-width:36px;">情绪</span>
-              <select data-el="moodSel" style="flex:1;font-size:13px;border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:6px 8px;outline:none;">${moodOptHtml}</select></div>
-            <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;"><span style="font-size:12px;color:rgba(20,24,28,.6);min-width:36px;">关系</span>
-              <select data-el="bondSel" style="flex:1;font-size:13px;border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:6px 8px;outline:none;">${bondOptHtml}</select></div>
-            <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:4px;">属性值</div>
-            ${attrSliders}
-            <div style="display:flex;gap:8px;margin-top:8px;">
-              <button data-el="moodSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">确定</button>
-              <button data-el="moodCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button>
-            </div>`;
-          var ov = _cpShowOverlay(inner);
-          curDefs.forEach(function(d){
-            var inp = ov.querySelector('[data-el="attr_'+d.key+'"]'), lbl = ov.querySelector('[data-el="attrLbl_'+d.key+'"]');
-            if (inp && lbl) inp.addEventListener('input', function(){ lbl.textContent = this.value; });
-          });
-          ov.querySelector('[data-el="moodCancel"]').addEventListener('click', function(){ ov.remove(); });
-          ov.querySelector('[data-el="moodSave"]').addEventListener('click', function(){
-            var sNew = _loadCharState(nid);
-            sNew.moodText = ov.querySelector('[data-el="moodSel"]').value;
-            sNew.bond = ov.querySelector('[data-el="bondSel"]').value;
-            var nd = _getAttrDefs(sNew);
-            nd.forEach(function(d){ var inp = ov.querySelector('[data-el="attr_'+d.key+'"]'); if(inp) sNew.attrs[d.key] = Number(inp.value); });
-            sNew.silentUntil = 0; sNew.silentReason = ''; sNew.lastCalcAt = Date.now();
-            _saveCharState(nid, sNew); ov.remove(); try{toast('状态已更新');}catch(e){} _renderCharBehaviorPage(nid);
-          });
+          _openManualStateEditor(nid, function(){ _renderCharBehaviorPage(nid); });
+        });
+      }
+
+      // ===== 手动设置状态弹窗（公共，供行为参数页和状态详情页共用） =====
+      function _openManualStateEditor(npcId, onDone){
+        var nid = npcId;
+        var cur = _loadCharState(nid);
+        var curDefs = _getAttrDefs(cur);
+        var moodOptHtml = MOOD_ORDER.map(function(m){ return `<option value="${m}"${m===(cur.moodText||'平静')?' selected':''}>${m}</option>`; }).join('');
+        var bondOptHtml = ['疏远','普通','亲近','暧昧','冷战中'].map(function(bd){ return `<option value="${bd}"${bd===cur.bond?' selected':''}>${bd}</option>`; }).join('');
+        var attrSliders = curDefs.map(function(d){
+          var v = (cur.attrs && cur.attrs[d.key] != null) ? cur.attrs[d.key] : d.init;
+          return `<div style="margin-bottom:5px;display:flex;align-items:center;gap:6px;">
+            <span style="width:22px;color:rgba(20,24,28,.45);display:flex;justify-content:center;">${_phFlatIcon(d.icon||'🔵')}</span>
+            <span style="font-size:12px;color:rgba(20,24,28,.6);min-width:28px;">${d.label}</span>
+            <input type="range" data-el="attr_${d.key}" min="0" max="100" value="${v}" style="flex:1;accent-color:var(--ph-accent, #07c160);"/>
+            <span data-el="attrLbl_${d.key}" style="font-size:11px;color:rgba(20,24,28,.4);min-width:24px;text-align:right;">${v}</span>
+          </div>`;
+        }).join('');
+        var inner = `
+          <div style="font-size:14px;font-weight:600;margin-bottom:10px;">手动设置状态</div>
+          <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;"><span style="font-size:12px;color:rgba(20,24,28,.6);min-width:36px;">情绪</span>
+            <select data-el="moodSel" style="flex:1;font-size:13px;border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:6px 8px;outline:none;">${moodOptHtml}</select></div>
+          <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;"><span style="font-size:12px;color:rgba(20,24,28,.6);min-width:36px;">关系</span>
+            <select data-el="bondSel" style="flex:1;font-size:13px;border:1px solid rgba(0,0,0,.1);border-radius:8px;padding:6px 8px;outline:none;">${bondOptHtml}</select></div>
+          <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:4px;">属性值</div>
+          ${attrSliders}
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button data-el="moodSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">确定</button>
+            <button data-el="moodCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button>
+          </div>`;
+        var ov = _cpShowOverlay(inner);
+        curDefs.forEach(function(d){
+          var inp = ov.querySelector('[data-el="attr_'+d.key+'"]'), lbl = ov.querySelector('[data-el="attrLbl_'+d.key+'"]');
+          if (inp && lbl) inp.addEventListener('input', function(){ lbl.textContent = this.value; });
+        });
+        ov.querySelector('[data-el="moodCancel"]').addEventListener('click', function(){ ov.remove(); });
+        ov.querySelector('[data-el="moodSave"]').addEventListener('click', function(){
+          var sNew = _loadCharState(nid);
+          sNew.moodText = ov.querySelector('[data-el="moodSel"]').value;
+          sNew.bond = ov.querySelector('[data-el="bondSel"]').value;
+          var nd = _getAttrDefs(sNew);
+          nd.forEach(function(d){ var inp = ov.querySelector('[data-el="attr_'+d.key+'"]'); if(inp) sNew.attrs[d.key] = Number(inp.value); });
+          sNew.silentUntil = 0; sNew.silentReason = ''; sNew.lastCalcAt = Date.now();
+          _saveCharState(nid, sNew); ov.remove();
+          try{ toast('状态已更新'); }catch(e){}
+          if (typeof onDone === 'function') onDone();
         });
       }
 
@@ -13777,72 +13890,83 @@ const npc = _wxGetChatTargetMeta(npcId);
       }
 
       // ===== Typing 指示器 =====
-      // ===== AppBar 子标题 typing 控制 =====
-      // ===== 状态面板卡片（点击 AppBar 标题弹出） =====
+      // ===== 状态速览卡片（点头像弹出·轻量版） =====
       function _showStatePanelCard(npcId){
-        // 已存在则关闭
         var existing = root.querySelector('.wxStatePanelCard');
         if (existing){ existing.remove(); return; }
 
-        var db = loadContactsDB();
-        var npc = findContactById(db, npcId) || { name: String(npcId), avatar: String(npcId).charAt(0) };
-        var s = _loadCharState(npcId);
+        var db  = loadContactsDB();
+        var npc = findContactById(db, npcId) || { name:String(npcId), avatar:String(npcId).charAt(0) };
+        var s   = catchUpStats(npcId);
+        var bx  = _loadCharBehavior(npcId);
 
         var moodEmoji = {'开心':'😄','兴奋':'🤩','平静':'😌','害羞':'😳','疲惫':'😴','委屈':'🥺','烦躁':'😤','生气':'😠'};
-        var bondColor = {'疏远':'#aaa','普通':'rgba(20,24,28,.45)','亲近':'var(--ph-accent, #07c160)','暧昧':'#f39c12','冷战中':'#e74c3c'};
+        var bondColor = {'疏远':'#aaa','普通':'rgba(20,24,28,.45)','亲近':'#07c160','暧昧':'#f39c12','冷战中':'#e74c3c'};
         var bondBg    = {'疏远':'rgba(0,0,0,.05)','普通':'rgba(0,0,0,.06)','亲近':'rgba(7,193,96,.1)','暧昧':'rgba(243,156,18,.1)','冷战中':'rgba(231,76,60,.1)'};
+
         var energyPct = Math.max(0, Math.min(100, (s.attrs && s.attrs.energy) || 0));
-        var energyColor = energyPct > 60 ? 'var(--ph-accent, #07c160)' : energyPct > 30 ? '#f39c12' : '#e74c3c';
+        var energyColor = energyPct > 60 ? '#07c160' : energyPct > 30 ? '#f39c12' : '#e74c3c';
 
-        var bx = _loadCharBehavior(npcId);
-        var wearing   = bx.wearing   || '';
-        var doing     = bx.doing     || '';
-        var heartLine = bx.heartLine || '';
-        // 读取自定义条目
-        var customEntries = _safeArr(bx.customStatusEntries);
-
-        var silentTip = '';
-        if (s.silentUntil > Date.now()){
-          var leftM = Math.ceil((s.silentUntil - Date.now())/60000);
-          silentTip = `<div class="wxSPCRow"><span class="wxSPCIcon">🤐</span><span class="wxSPCLabel">状态</span><span class="wxSPCValue" style="color:#e74c3c;">冷静中，约 ${leftM} 分钟后回来</span></div>`;
+        // 当前作息时段
+        var scheduleNow = '';
+        if (s.isKeyNPC && s.schedule && s.schedule.length){
+          var _ch = new Date().getHours();
+          for (var _si = 0; _si < s.schedule.length; _si++){
+            var _sl = s.schedule[_si];
+            var _in = _sl.endHour <= _sl.hour
+              ? (_ch >= _sl.hour || _ch < _sl.endHour)
+              : (_ch >= _sl.hour && _ch < _sl.endHour);
+            if (_in){ scheduleNow = _sl.activity; break; }
+          }
+        }
+        // 如果 LifeEngine 有当前行为也用上
+        if (s.currentBehavior && s.currentBehavior.endAt > Date.now()){
+          scheduleNow = s.currentBehavior.label;
         }
 
-        var customRows = customEntries.map(function(e){
-          if (!e || !e.label || !e.value) return '';
-          return `<div class="wxSPCRow"><span class="wxSPCIcon">${esc(e.icon||'📌')}</span><span class="wxSPCLabel">${esc(e.label)}</span><span class="wxSPCValue">${esc(e.value)}</span></div>`;
-        }).join('');
+        // 头像 HTML
+        var avatarImg = phoneGetAvatar ? phoneGetAvatar(npcId) : null;
+        var avatarHtml = avatarImg
+          ? `<img src="${avatarImg}"/>`
+          : esc(npc.avatar || (npc.name||'?').charAt(0));
+
+        // 可选信息行
+        var rows = '';
+        if (scheduleNow) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">🗓</span><span class="wxSPCLabel">正在</span><span class="wxSPCValue">${esc(scheduleNow)}</span></div>`;
+        if (bx.heartLine) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">💬</span><span class="wxSPCLabel">心声</span><span class="wxSPCValue" style="font-style:italic;color:rgba(20,24,28,.5);">"${esc(bx.heartLine)}"</span></div>`;
+        var silentLeft = s.silentUntil > Date.now() ? Math.ceil((s.silentUntil - Date.now())/60000) : 0;
+        if (silentLeft > 0) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">🤐</span><span class="wxSPCLabel">状态</span><span class="wxSPCValue" style="color:#e74c3c;">冷静中，约 ${silentLeft} 分钟后回来</span></div>`;
 
         var card = doc.createElement('div');
         card.className = 'wxStatePanelCard';
         card.innerHTML = `
-          <div class="wxSPCRow" style="padding:12px 14px;">
-            <span style="font-size:26px;">${moodEmoji[s.moodText||'平静']||'😌'}</span>
-            <div style="flex:1;">
-              <div style="font-size:14px;font-weight:700;color:rgba(20,24,28,.88);">${esc(npc.name)}</div>
-              <div style="margin-top:3px;display:flex;align-items:center;gap:6px;">
-                <span class="wxSPCBond" style="color:${bondColor[s.bond]||'#888'};background:${bondBg[s.bond]||'rgba(0,0,0,.05)'};">${esc(s.bond)}</span>
-                <span style="font-size:11px;color:rgba(20,24,28,.4);">精力</span>
-                <div style="flex:1;max-width:60px;height:4px;background:rgba(0,0,0,.08);border-radius:2px;overflow:hidden;">
-                  <div style="height:100%;width:${energyPct}%;background:${energyColor};border-radius:2px;"></div>
-                </div>
-                <span style="font-size:10px;color:rgba(20,24,28,.35);">${energyPct}%</span>
+          <div class="wxSPCHeader">
+            <div class="wxSPCAvatar">${avatarHtml}</div>
+            <div class="wxSPCNameWrap">
+              <div class="wxSPCName">${esc(npc.name)}</div>
+              <div class="wxSPCMeta">
+                <span class="wxSPCBond" style="color:${bondColor[s.bond]||'#888'};background:${bondBg[s.bond]||'rgba(0,0,0,.05)'};">${esc(s.bond||'普通')}</span>
+                <span class="wxSPCMoodChip">${moodEmoji[s.moodText||'平静']||'😌'} ${esc(s.moodText||'平静')}</span>
               </div>
             </div>
           </div>
-          <div class="wxSPCRow"><span class="wxSPCIcon">💭</span><span class="wxSPCLabel">心情</span><span class="wxSPCValue">${esc(s.moodText||'平静')}</span></div>
-          ${wearing ? `<div class="wxSPCRow"><span class="wxSPCIcon">👗</span><span class="wxSPCLabel">穿着</span><span class="wxSPCValue">${esc(wearing)}</span></div>` : ''}
-          ${doing   ? `<div class="wxSPCRow"><span class="wxSPCIcon">🎯</span><span class="wxSPCLabel">正在</span><span class="wxSPCValue">${esc(doing)}</span></div>` : ''}
-          ${silentTip}
-          ${heartLine ? `<div class="wxSPCRow"><span class="wxSPCIcon">💬</span><span class="wxSPCLabel">心声</span><span class="wxSPCValue" style="font-style:italic;color:rgba(20,24,28,.55);">"${esc(heartLine)}"</span></div>` : ''}
-          ${customRows}
-          <button class="wxSPCClose" data-act="wxSPCClose">收起</button>
+          <div class="wxSPCRow">
+            <span class="wxSPCIcon">⚡</span>
+            <span class="wxSPCLabel">精力</span>
+            <div style="flex:1;height:5px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden;">
+              <div style="height:100%;width:${energyPct}%;background:${energyColor};border-radius:3px;transition:width .8s;"></div>
+            </div>
+            <span style="font-size:10px;color:rgba(20,24,28,.35);min-width:22px;text-align:right;">${energyPct}</span>
+          </div>
+          ${rows}
+          <div class="wxSPCFooter" data-act="wxOpenStateDetail" data-npcid="${esc(npcId)}">
+            查看完整状态 ›
+          </div>
         `;
-        // ✅ 挂在 .phApp 上（position:absolute; inset:0；无 overflow:hidden）
-        // .phShell 有 overflow:hidden 会裁掉卡片！
+
         var _cardParent = root.querySelector('.phApp') || root.querySelector('.phShell') || root;
         _cardParent.appendChild(card);
 
-        // 延迟 80ms 再注册关闭监听，避免触发本次点击
         setTimeout(function(){
           var closeOnce = function(ev){
             if (card.contains(ev.target)) return;
@@ -13851,6 +13975,146 @@ const npc = _wxGetChatTargetMeta(npcId);
           };
           root.addEventListener('click', closeOnce, true);
         }, 80);
+      }
+
+      // ===== 状态详情页（右上角 ✦ 按钮·完整版） =====
+      function _renderStateDetailPage(npcId){
+        var body = root.querySelector('[data-ph="appBody"]');
+        if (!body) return;
+
+        var db  = loadContactsDB();
+        var npc = findContactById(db, npcId) || { name:String(npcId), avatar:String(npcId).charAt(0) };
+        var s   = catchUpStats(npcId);
+        var defs = _getAttrDefs(s);
+        var attrs = s.attrs || {};
+        var bx  = _loadCharBehavior(npcId);
+
+        try{ var t2 = root.querySelector('[data-ph="appTitle"]'); if(t2) t2.textContent='状态详情'; }catch(e){}
+        try{ var sp2 = root.querySelector('.phAppBarSpacer'); if(sp2) sp2.innerHTML=''; }catch(e){}
+
+        var moodEmoji = {'开心':'😄','兴奋':'🤩','平静':'😌','害羞':'😳','疲惫':'😴','委屈':'🥺','烦躁':'😤','生气':'😠'};
+        var bondColor = {'疏远':'#aaa','普通':'rgba(20,24,28,.45)','亲近':'#07c160','暧昧':'#f39c12','冷战中':'#e74c3c'};
+        var bondBg    = {'疏远':'rgba(0,0,0,.05)','普通':'rgba(0,0,0,.06)','亲近':'rgba(7,193,96,.1)','暧昧':'rgba(243,156,18,.1)','冷战中':'rgba(231,76,60,.1)'};
+
+        // 头像
+        var avatarImg = phoneGetAvatar ? phoneGetAvatar(npcId) : null;
+        var avatarHtml = avatarImg
+          ? `<img src="${avatarImg}"/>`
+          : esc(npc.avatar || (npc.name||'?').charAt(0));
+
+        // 当前作息时段
+        var scheduleNow = '', scheduleIcon = '🗓';
+        if (s.isKeyNPC && s.schedule && s.schedule.length){
+          var _ch2 = new Date().getHours();
+          for (var _si2 = 0; _si2 < s.schedule.length; _si2++){
+            var _sl2 = s.schedule[_si2];
+            var _in2 = _sl2.endHour <= _sl2.hour
+              ? (_ch2 >= _sl2.hour || _ch2 < _sl2.endHour)
+              : (_ch2 >= _sl2.hour && _ch2 < _sl2.endHour);
+            if (_in2){
+              scheduleNow = _sl2.activity + '（' + _sl2.hour + ':00–' + _sl2.endHour + ':00）';
+              var _tInfo2 = SCHEDULE_TAGS.find(function(tt){ return tt.tag === _sl2.tag; });
+              if (_tInfo2) scheduleIcon = _tInfo2.icon;
+              break;
+            }
+          }
+        }
+        if (s.currentBehavior && s.currentBehavior.endAt > Date.now()){
+          scheduleNow = s.currentBehavior.label;
+          scheduleIcon = s.currentBehavior.icon || '🎯';
+        }
+
+        // 属性条（带动画：从 prevAttrs 滚到新值）
+        var prevAttrs = s._prevAttrs || {};
+        var doAnim = !!s._animNeeded;
+        var attrRowsHtml = defs.filter(function(d){ return !d.hideBar; }).map(function(d){
+          var val  = Math.max(0, Math.min(100, attrs[d.key]||0));
+          var from = doAnim ? Math.max(0, Math.min(100, prevAttrs[d.key]||0)) : val;
+          var color = val > 60 ? 'var(--ph-accent, #07c160)' : val > 30 ? '#f39c12' : '#e74c3c';
+          var fid = 'sdf_' + d.key;
+          return `<div class="wxSDAttrRow">
+            <span class="wxSDAttrIcon">${_phFlatIcon(d.icon||'🔵')}</span>
+            <span class="wxSDAttrLabel">${d.label}</span>
+            <div class="wxSDAttrTrack"><div id="${fid}" class="wxSDAttrFill" style="width:${from}%;background:${color};"></div></div>
+            <span class="wxSDAttrNum" id="${fid}_n">${Math.round(from)}</span>
+          </div>${doAnim && from !== val
+            ? `<script>(function(){var e=document.getElementById('${fid}'),n=document.getElementById('${fid}_n');if(!e)return;setTimeout(function(){e.style.width='${val}%';if(n)n.textContent='${Math.round(val)}';},80);})()</script>`
+            : ''}`;
+        }).join('');
+
+        // 生活日志
+        var logs = [];
+        try{ logs = LifeEngine.getLifeLog(npcId, 8); }catch(e){}
+        var logHtml = logs.length
+          ? logs.slice().reverse().map(function(entry){
+              var t3 = entry.time ? new Date(entry.time) : null;
+              var ts3 = t3 ? (t3.getHours()<10?'0':'')+t3.getHours()+':'+(t3.getMinutes()<10?'0':'')+t3.getMinutes() : '';
+              return `<div class="wxSDLogRow">
+                <span class="wxSDLogIcon">${entry.icon||'📋'}</span>
+                <span class="wxSDLogLabel">${esc(entry.label||'')}</span>
+                <span class="wxSDLogTime">${ts3}</span>
+              </div>`;
+            }).join('')
+          : `<div style="padding:14px;font-size:12px;color:var(--ph-text-sub);text-align:center;opacity:.6;">暂无动态记录</div>`;
+
+        // 冷静提示
+        var silentBanner = '';
+        if (s.silentUntil > Date.now()){
+          var leftM2 = Math.ceil((s.silentUntil - Date.now())/60000);
+          silentBanner = `<div style="margin:0 14px 10px;padding:9px 12px;background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.15);border-radius:12px;font-size:12px;color:#e74c3c;display:flex;align-items:center;gap:6px;">🤐 冷静中，约 ${leftM2} 分钟后恢复</div>`;
+        }
+
+        body.innerHTML = `<div class="wxStateDetailWrap">
+
+          <!-- Hero -->
+          <div class="wxSDHero">
+            <div class="wxSDAvatar">${avatarHtml}</div>
+            <div style="flex:1;min-width:0;">
+              <div class="wxSDName">${esc(npc.name)}</div>
+              <div class="wxSDMeta">
+                <span class="wxSPCBond" style="color:${bondColor[s.bond]||'#888'};background:${bondBg[s.bond]||'rgba(0,0,0,.05)'};">${esc(s.bond||'普通')}</span>
+                <span style="font-size:12px;color:var(--ph-text-sub);">${moodEmoji[s.moodText||'平静']||'😌'} ${esc(s.moodText||'平静')}</span>
+              </div>
+            </div>
+          </div>
+
+          ${silentBanner}
+
+          <!-- 当前时段 -->
+          ${scheduleNow ? `<div class="wxSDSchedule"><span style="font-size:16px;">${scheduleIcon}</span><span>当前：${esc(scheduleNow)}</span></div>` : ''}
+
+          <!-- 属性 -->
+          <div style="margin:0 14px 4px;font-size:10.5px;color:var(--ph-text-sub);letter-spacing:.4px;opacity:.7;padding:0 2px;">多维状态</div>
+          <div class="wxSDSection">${attrRowsHtml}</div>
+
+          <!-- 操作按钮 -->
+          <div class="wxSDActions">
+            <button class="wxSDActBtn" data-act="cbResetState" data-npcid="${esc(npcId)}">${_phFlatIcon('🔄')} 重置</button>
+            <button class="wxSDActBtn" data-act="cbSetMood"   data-npcid="${esc(npcId)}">${_phFlatIcon('✏')} 手动调整</button>
+          </div>
+
+          <!-- 最近动态 -->
+          <div style="margin:14px 14px 4px;font-size:10.5px;color:var(--ph-text-sub);letter-spacing:.4px;opacity:.7;padding:0 2px;">最近动态</div>
+          <div class="wxSDSection">${logHtml}</div>
+
+        </div>`;
+
+        // 事件：重置 / 手动设置（复用行为参数页的逻辑）
+        body.querySelector('[data-act="cbResetState"]')?.addEventListener('click', function(){
+          var nid = this.getAttribute('data-npcid') || npcId;
+          var old = _loadCharState(nid), fresh = _makeDefaultStateV2();
+          fresh.isKeyNPC = old.isKeyNPC; fresh.schedule = old.schedule;
+          fresh.attrRules = old.attrRules; fresh.perMsgCost = old.perMsgCost;
+          fresh.customAttrs = old.customAttrs; fresh.personality = old.personality;
+          fresh.lastCalcAt = Date.now();
+          _saveCharState(nid, fresh);
+          try{ toast('状态已重置'); }catch(e){}
+          _renderStateDetailPage(nid);
+        });
+        body.querySelector('[data-act="cbSetMood"]')?.addEventListener('click', function(){
+          var nid = this.getAttribute('data-npcid') || npcId;
+          _openManualStateEditor(nid, function(){ _renderStateDetailPage(nid); });
+        });
       }
 
       function _showTypingInAppBar(npcName){
