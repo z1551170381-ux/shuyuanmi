@@ -1248,6 +1248,18 @@ function phoneApplyWallpaper(base64OrEmpty, target){
         case '🖼': return s('<path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>');
         case '➕': return s('<path d="M11 5h2v14h-2V5zm-6 6h14v2H5v-2z"/>');
 case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>');
+case '📅': return s('<path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>');
+case '🔔': return s('<path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/>');
+case '🫂': return s('<path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>');
+case '🎧': return s('<path d="M12 3c-4.97 0-9 4.03-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7c0-4.97-4.03-9-9-9z"/>');
+case '🗓': return s('<path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>');
+case '📝': return s('<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>');
+case '🎤': return s('<path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V21h2v-3.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>');
+case '📱': return s('<path d="M15.5 1h-8C6.12 1 5 2.12 5 3.5v17C5 21.88 6.12 23 7.5 23h8c1.38 0 2.5-1.12 2.5-2.5v-17C18 2.12 16.88 1 15.5 1zm-4 21c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm4.5-4H7V4h9v14z"/>');
+case '🚶': return s('<path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3C14.8 12 16.8 13 19 13v-2c-1.9 0-3.5-1-4.3-2.4l-1-1.6c-.4-.6-1-1-1.7-1-.3 0-.5.1-.8.1L6 8.3V13h2V9.6l1.8-.7z"/>');
+case '🪟': return s('<path d="M3 3v18h18V3H3zm8 16H5v-6h6v6zm0-8H5V5h6v6zm8 8h-6v-6h6v6zm0-8h-6V5h6v6z"/>');
+case '🌙': return s('<path d="M12.43 2.3c-5.1.43-9.13 4.74-9.13 9.95 0 5.52 4.48 10 10 10 3.72 0 6.96-2.04 8.7-5.06-1.2.53-2.51.82-3.89.82-5.31 0-9.62-4.39-9.5-9.75.04-2.19.77-4.2 1.97-5.82-.05-.01-.1-.05-.15-.14z"/>');
+case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="1.5" opacity=".5"/><circle cx="14" cy="8" r="1" opacity=".5"/><circle cx="11" cy="14" r="1.5" opacity=".5"/><circle cx="16" cy="13" r="1" opacity=".5"/>');
         case '🏷': return s('<path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/>');
         case '📋': return s('<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>'); // 📋
         case '↩': case '↩️': return s('<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>'); // ↩
@@ -2826,6 +2838,10 @@ case '📁': return s('<path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 
   padding:9px 14px; border-top:1px solid rgba(0,0,0,.05);
   font-size:12px; color:rgba(20,24,28,.35); cursor:pointer;
   gap:4px; transition:color .15s;
+  appearance:none; -webkit-appearance:none;
+  background:transparent; border-left:0; border-right:0; border-bottom:0;
+  width:100%; box-sizing:border-box; font-family:inherit; line-height:inherit;
+  outline:none; margin:0;
 }
 #${ID} .wxSPCFooter:hover{ color:var(--ph-accent, #07c160); }
 #${ID} .wxSPCClose{ display:none; } /* 旧按钮隐藏 */
@@ -14334,7 +14350,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             <span style="font-size:10px;color:rgba(20,24,28,.35);min-width:22px;text-align:right;">${energyPct}</span>
           </div>
           ${rows}
-          <button class="wxSPCFooter" data-act="wxSPCToDetail" data-npcid="${esc(npcId)}" type="button" style="appearance:none;-webkit-appearance:none;font:inherit;width:100%;box-sizing:border-box;">
+          <button class="wxSPCFooter" data-act="wxSPCToDetail" data-npcid="${esc(npcId)}" type="button">
             查看完整状态 ›
           </button>
         `;
