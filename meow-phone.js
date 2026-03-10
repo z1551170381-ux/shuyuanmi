@@ -12462,9 +12462,11 @@ const npc = _wxGetChatTargetMeta(npcId);
 
           try{
             var npc2 = findContactById(loadContactsDB(), nid) || { name:String(nid) };
-            // ★ 先刷新酒馆世界书缓存，确保数据最新
-            try{ _refreshTavernWBCache(); }catch(e){}
+            // ★ await 刷新酒馆世界书缓存，确保数据就绪
+            try{ await _refreshTavernWBCache(); }catch(e){}
             var profile = _gatherCharBio(nid);
+            // ★ 调试提示：显示收集到多少字的角色信息
+            try{ toast('已收集 ' + profile.length + ' 字角色信息，正在生成…'); }catch(e){}
             var tagList = SCHEDULE_TAGS.map(function(t){ return t.tag + '(' + t.label + ')'; }).join(', ');
 
             var sysPrompt =
@@ -12749,8 +12751,9 @@ const npc = _wxGetChatTargetMeta(npcId);
           btn.disabled = true; btn.textContent = '分析中…';
           try{
             // ★ 用共用函数汇总所有角色描述来源
-            try{ _refreshTavernWBCache(); }catch(e){}
+            try{ await _refreshTavernWBCache(); }catch(e){}
             var bio = _gatherCharBio(nid);
+            try{ toast('已收集 ' + bio.length + ' 字角色信息，正在分析…'); }catch(e){}
 
             if (!bio || bio.trim().length < 5){
               btn.disabled = false; btn.textContent = '❌ 未找到角色描述';
