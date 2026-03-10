@@ -14334,25 +14334,13 @@ const npc = _wxGetChatTargetMeta(npcId);
             <span style="font-size:10px;color:rgba(20,24,28,.35);min-width:22px;text-align:right;">${energyPct}</span>
           </div>
           ${rows}
-          <div class="wxSPCFooter" onmousedown="if(window.__meowSpcJump)window.__meowSpcJump(event)" ontouchstart="if(window.__meowSpcJump)window.__meowSpcJump(event)" data-npcid="${esc(npcId)}">
+          <button class="wxSPCFooter" data-act="wxSPCToDetail" data-npcid="${esc(npcId)}" type="button" style="appearance:none;-webkit-appearance:none;font:inherit;width:100%;box-sizing:border-box;">
             查看完整状态 ›
-          </div>
+          </button>
         `;
 
         var _cardParent = root.querySelector('.phApp') || root.querySelector('.phShell') || root;
         _cardParent.appendChild(card);
-
-        // ★ 全局函数 + inline handler：完全绕开所有事件拦截
-        window.__meowSpcJump = function(ev){
-          try{ ev.stopPropagation(); ev.preventDefault(); }catch(e){}
-          window.__meowSpcJump = null; // 一次性
-          card.remove();
-          var nid = npcId;
-          state.chatTarget = nid;
-          state._innerStack = [function(){ state.app='chatDetail'; renderChatDetail(nid); }];
-          state.app = 'stateDetail';
-          _renderStateDetailPage(nid);
-        };
 
         setTimeout(function(){
           var closeOnce = function(ev){
