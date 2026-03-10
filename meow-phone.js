@@ -12462,27 +12462,33 @@ const npc = _wxGetChatTargetMeta(npcId);
 
           try{
             var npc2 = findContactById(loadContactsDB(), nid) || { name:String(nid) };
+            // ★ 先刷新酒馆世界书缓存，确保数据最新
+            try{ _refreshTavernWBCache(); }catch(e){}
             var profile = _gatherCharBio(nid);
             var tagList = SCHEDULE_TAGS.map(function(t){ return t.tag + '(' + t.label + ')'; }).join(', ');
 
             var sysPrompt =
-              '你是角色作息表生成器。根据角色信息，生成一份符合角色身份的24小时作息表。\n' +
-              '【可用 tag】: ' + tagList + '\n' +
-              '【要求】\n' +
+              '你是角色作息表生成器。你必须根据角色的【具体职业、爱好、性格、生活习惯】来定制作息，绝对不能输出千篇一律的通用模板。\n\n' +
+              '【可用 tag】: ' + tagList + '\n\n' +
+              '【格式要求】\n' +
               '1. 返回纯 JSON 数组，每项格式：{"hour":起始小时(0-23),"endHour":结束小时(1-24),"activity":"活动描述","tag":"对应tag"}\n' +
               '2. 覆盖完整24小时（hour=0到endHour=24），时段不重叠\n' +
               '3. 8-12个时段，活动描述简短（4-8字）\n' +
-              '4. 贴合角色身份，不要套通用模板\n' +
-              '5. 只输出 JSON，不加任何说明或 markdown 代码块';
+              '4. 只输出 JSON，不加任何说明或 markdown 代码块\n\n' +
+              '【关键要求 - 个性化】\n' +
+              '- 仔细阅读下面的角色描述，找出角色的职业/工作内容/爱好/生活方式\n' +
+              '- activity 描述必须用角色实际会做的事，例如：coser→"化妆试装"、程序员→"写代码"、学生→"上课"\n' +
+              '- 不要用"上午专注工作""下午处理事务"这种模糊通用的描述\n' +
+              '- 作息时间要符合角色生活节奏，比如自由职业者可能晚睡晚起，上班族早起通勤';
 
-            var userMsg = '角色名：' + (npc2.name || nid) + '\n\n' + (profile || '无特别描述，请生成通用现代都市角色作息');
+            var userMsg = '角色名：' + (npc2.name || nid) + '\n\n以下是角色的详细信息，请仔细阅读后生成专属作息表：\n\n' + (profile || '无特别描述，请生成通用现代都市角色作息');
 
             var result = await PhoneAI.chat({
               system: sysPrompt,
               messages: [{ role:'user', content:userMsg }],
-              temperature: 0.7,
-              maxTokens: 600,
-              timeout: 40
+              temperature: 0.8,
+              maxTokens: 1000,
+              timeout: 45
             });
 
             if (!result || !result.ok) throw new Error(result ? result.error : 'AI 请求失败');
@@ -12743,6 +12749,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           btn.disabled = true; btn.textContent = '分析中…';
           try{
             // ★ 用共用函数汇总所有角色描述来源
+            try{ _refreshTavernWBCache(); }catch(e){}
             var bio = _gatherCharBio(nid);
 
             if (!bio || bio.trim().length < 5){
@@ -15214,22 +15221,23 @@ const npc = _wxGetChatTargetMeta(npcId);
             if (!cfg.endpoint) return { error: 'API 未配置：请在小手机设置 → API 预设中填写接口地址' };
             if (!cfg.key) return { error: 'API 密钥未配置：请在小手机设置 → API 预设中填写密钥' };
 
-            var prompt = '请分析以下角色描述，判断这个角色的性格特征，返回纯JSON对象（不要任何其他文字、不要markdown代码块）：\n' +
+            var prompt = '请仔细阅读以下角色的全部信息（包括角色卡、世界书、聊天记录、总结等），分析这个角色的真实性格特征。\n' +
+              '不要给出中庸的 50 分，要根据角色实际表现给出有区分度的分数。\n\n' +
               '字段说明：\n' +
-              '- socialDrive（社交主动性）：越高越主动找人聊天，越低越喜欢等别人\n' +
-              '- emotionDisplay（情绪外显度）：越高越喜怒形于色，越低越内敛克制\n' +
-              '- discipline（自律程度）：越高作息越规律，越低越容易懒散\n' +
-              '- dependency（依赖倾向）：越高越依赖他人/容易孤独，越低独处越自在\n' +
-              '- resilience（情绪弹性）：越高情绪回正越快，越低低落状态越持久\n' +
-              '返回格式：{"socialDrive":数字,"emotionDisplay":数字,"discipline":数字,"dependency":数字,"resilience":数字}\n' +
-              '所有数字为0-100之间的整数。\n' +
-              '角色描述：' + String(bioText).slice(0, 2000);
+              '- socialDrive（社交主动性 0-100）：喜欢主动找人聊天→高分，喜欢独处等别人来→低分\n' +
+              '- emotionDisplay（情绪外显度 0-100）：喜怒形于色、爱表达→高分，内敛克制、面瘫→低分\n' +
+              '- discipline（自律程度 0-100）：作息规律、做事有计划→高分，随性散漫、拖延→低分\n' +
+              '- dependency（依赖倾向 0-100）：粘人、需要陪伴、撒娇→高分，独立、不需要人→低分\n' +
+              '- resilience（情绪弹性 0-100）：受挫后很快恢复、乐观→高分，容易低落、持续消沉→低分\n\n' +
+              '返回纯 JSON 对象，不加任何其他文字或 markdown：\n' +
+              '{"socialDrive":数字,"emotionDisplay":数字,"discipline":数字,"dependency":数字,"resilience":数字}\n\n' +
+              '角色信息：\n' + String(bioText).slice(0, 2000);
 
             var resp = await PhoneAI._request({
-              system: '你是角色性格分析助手，只返回JSON，不要任何其他文字。',
+              system: '你是角色性格分析专家。你会仔细阅读角色的所有信息来源（角色卡、世界书、聊天记录、总结），给出精准的性格评分。每个维度必须根据实际信息给出有区分度的分数（不要全部给50），只返回 JSON。',
               messages: [{ role:'user', content: prompt }],
-              temperature: 0.3,
-              maxTokens: 150
+              temperature: 0.4,
+              maxTokens: 200
             });
 
             // API 层面失败
