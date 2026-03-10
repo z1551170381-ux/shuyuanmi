@@ -12676,18 +12676,59 @@ const npc = _wxGetChatTargetMeta(npcId);
           var btn = this;
           btn.disabled = true; btn.textContent = '分析中…';
           try{
+            // ★ 从所有来源汇总角色描述（和 buildSystemPrompt 一致）
+            var bioParts = [];
+
+            // 1. 酒馆角色卡描述
+            try{ var cardDesc = _readCurrentCharCardDesc(); if (cardDesc) bioParts.push(cardDesc); }catch(e){}
+
+            // 2. 世界书（酒馆缓存 > 本地 WB > 全局 WB）
+            try{
+              if (_tavernWBCache.text && (Date.now() - _tavernWBCache.updatedAt < 300000)){
+                bioParts.push(_tavernWBCache.text);
+              } else {
+                var roleText = _readRoleTextFromWB();
+                if (roleText) bioParts.push(roleText);
+              }
+            }catch(e){}
+            try{
+              var gwb = loadPhoneGlobalWB();
+              if (gwb && gwb.enabled && gwb.text && gwb.text.trim()) bioParts.push(gwb.text.trim());
+            }catch(e){}
+
+            // 3. 小手机本地 profile
             var db2 = loadContactsDB();
             var npc2 = findContactById(db2, nid) || {};
             var charEx2 = _loadCharExtra(nid);
-            var bio = [npc2.profile || '', charEx2.profile || '', npc2.personality || '', npc2.description || ''].filter(Boolean).join('\n').slice(0, 800);
+            if (npc2.profile) bioParts.push(npc2.profile);
+            if (charEx2.profile && charEx2.profile !== npc2.profile) bioParts.push(charEx2.profile);
+
+            // 4. 聊天总结
+            try{
+              var sumData = getChatSummary(nid);
+              if (sumData && sumData.summaryText && sumData.summaryText.trim()) bioParts.push(sumData.summaryText.trim());
+            }catch(e){}
+
+            // 5. ST persona_description
+            try{
+              var ctx = meowGetSTCtx();
+              if (ctx && ctx.persona_description && ctx.persona_description.trim()) bioParts.push(ctx.persona_description.trim());
+            }catch(e){}
+
+            var bio = bioParts.filter(Boolean).join('\n').slice(0, 2000);
+
+            if (!bio || bio.trim().length < 5){
+              btn.disabled = false; btn.textContent = '❌ 未找到角色描述';
+              try{ toast('未找到角色描述：角色卡、世界书、通讯录 profile、总结均为空'); }catch(e){}
+              return;
+            }
+
             var result = await LifeEngine.extractPersonality(nid, bio);
             if (result && result.error){
-              // ★ AI 调用失败，显示具体原因
               btn.disabled = false; btn.textContent = '❌ 分析失败，请重试';
               try{ toast('性格分析失败：' + result.error); }catch(e){}
               console.warn('[性格分析] 失败原因：', result.error);
             } else if (result && result.socialDrive != null){
-              // ★ 成功
               try{ toast('性格分析完成 ✓'); }catch(e){}
               _renderCharBehaviorPage(nid);
             } else {
@@ -15116,7 +15157,7 @@ const npc = _wxGetChatTargetMeta(npcId);
               '- resilience（情绪弹性）：越高情绪回正越快，越低低落状态越持久\n' +
               '返回格式：{"socialDrive":数字,"emotionDisplay":数字,"discipline":数字,"dependency":数字,"resilience":数字}\n' +
               '所有数字为0-100之间的整数。\n' +
-              '角色描述：' + String(bioText).slice(0, 800);
+              '角色描述：' + String(bioText).slice(0, 2000);
 
             var resp = await PhoneAI._request({
               system: '你是角色性格分析助手，只返回JSON，不要任何其他文字。',
