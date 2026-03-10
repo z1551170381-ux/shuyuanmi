@@ -14334,7 +14334,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             <span style="font-size:10px;color:rgba(20,24,28,.35);min-width:22px;text-align:right;">${energyPct}</span>
           </div>
           ${rows}
-          <div class="wxSPCFooter" data-npcid="${esc(npcId)}" id="_spcFooter_${esc(npcId)}">
+          <div class="wxSPCFooter" onmousedown="if(window.__meowSpcJump)window.__meowSpcJump(event)" ontouchstart="if(window.__meowSpcJump)window.__meowSpcJump(event)" data-npcid="${esc(npcId)}">
             查看完整状态 ›
           </div>
         `;
@@ -14342,27 +14342,17 @@ const npc = _wxGetChatTargetMeta(npcId);
         var _cardParent = root.querySelector('.phApp') || root.querySelector('.phShell') || root;
         _cardParent.appendChild(card);
 
-        // ★ 用最底层的方式绑定——直接 onmousedown + ontouchstart，不走任何事件委托
-        (function(){
-          var footer = doc.getElementById('_spcFooter_' + npcId);
-          if (!footer) footer = card.querySelector('.wxSPCFooter');
-          if (footer){
-            var fired = false;
-            var doJump = function(ev){
-              if (fired) return;
-              fired = true;
-              try{ ev.stopPropagation(); ev.preventDefault(); }catch(e){}
-              card.remove();
-              var nid = npcId;
-              state.chatTarget = nid;
-              state._innerStack = [function(){ state.app='chatDetail'; renderChatDetail(nid); }];
-              state.app = 'stateDetail';
-              _renderStateDetailPage(nid);
-            };
-            footer.onmousedown = doJump;
-            footer.ontouchstart = doJump;
-          }
-        })();
+        // ★ 全局函数 + inline handler：完全绕开所有事件拦截
+        window.__meowSpcJump = function(ev){
+          try{ ev.stopPropagation(); ev.preventDefault(); }catch(e){}
+          window.__meowSpcJump = null; // 一次性
+          card.remove();
+          var nid = npcId;
+          state.chatTarget = nid;
+          state._innerStack = [function(){ state.app='chatDetail'; renderChatDetail(nid); }];
+          state.app = 'stateDetail';
+          _renderStateDetailPage(nid);
+        };
 
         setTimeout(function(){
           var closeOnce = function(ev){
