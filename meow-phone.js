@@ -12139,6 +12139,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         const db = loadContactsDB();
         const npc = findContactById(db, contactId) || { id:contactId, name:String(contactId), avatar:String(contactId).charAt(0), profile:'' };
         const charEx = _loadCharExtra(contactId);
+        const s = _loadCharState(contactId);
 
         // 标题
         try{
