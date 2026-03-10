@@ -12127,7 +12127,11 @@ const npc = _wxGetChatTargetMeta(npcId);
       function _renderCharSettingsPage(contactId){
         const body = root.querySelector('[data-ph="appBody"]');
         if (!body) return;
-        // 重置 body 背景（聊天页可能设置了背景图）
+        // 先清空 body（防止任何情况下聊天内容残留）
+        body.innerHTML = '';
+        body.style.cssText = '';
+        try{
+        // 重置 body 背景
         body.style.backgroundImage = '';
         body.style.backgroundSize = '';
         body.style.backgroundPosition = '';
@@ -12250,6 +12254,11 @@ const npc = _wxGetChatTargetMeta(npcId);
           </div>
         </div>`;
         body.innerHTML = html;
+        }catch(e){
+          console.error('[CharSettings] render error:', e);
+          body.innerHTML = '<div style="padding:20px;color:red;font-size:12px;">设置页渲染出错：' + String(e.message||e).slice(0,80) + '</div>';
+          return;
+        }
         // 自定义提示词失焦自动保存
         try{
           const promptInp = body.querySelector('[data-el="sumCustomPrompt"]');
