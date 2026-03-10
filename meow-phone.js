@@ -14534,7 +14534,8 @@ const npc = _wxGetChatTargetMeta(npcId);
       function catchUpStats(npcId, options){
         var s = _loadCharState(npcId);
         var now = Date.now();
-        var lastCalc = s.lastCalcAt || now;
+        // lastCalcAt=0 表示从未计算过，视为 24 小时前开始计时
+        var lastCalc = (s.lastCalcAt && s.lastCalcAt > 0) ? s.lastCalcAt : (now - 24 * 60 * 60000);
         var elapsedMs = now - lastCalc;
 
         // ★ 动画支持：存下变化前的快照，UI 读取后做滚动动画
