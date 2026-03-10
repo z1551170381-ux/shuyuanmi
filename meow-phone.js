@@ -12841,8 +12841,8 @@ const npc = _wxGetChatTargetMeta(npcId);
         }).join('');
 
         var inner = `<div style="font-size:14px;font-weight:600;margin-bottom:4px;">${_phFlatIcon('⚙️')} 属性变化规则</div>
-          <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:8px;">设置每小时各属性在不同作息下的变化量（正数=增加，负数=减少）</div>
-          <div style="max-height:50vh;overflow-y:auto;">
+          <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:8px;">设置每分钟各属性在不同作息下的变化量（正数=增加，负数=减少）</div>
+          <div>
             ${SCHEDULE_TAGS.map(function(t){ return ruleTable(t.tag, t.label); }).join('')}
             <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,.06);">
               <div style="font-size:12px;font-weight:600;color:rgba(20,24,28,.7);margin-bottom:3px;">每条消息消耗</div>
@@ -14183,6 +14183,19 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         var _cardParent = root.querySelector('.phApp') || root.querySelector('.phShell') || root;
         _cardParent.appendChild(card);
+
+        // 直接绑定"查看完整状态"（不靠全局代理，避免 capture 阶段竞争导致卡片先被关闭）
+        var _spcFooter = card.querySelector('.wxSPCFooter');
+        if (_spcFooter){
+          _spcFooter.addEventListener('click', function(e){
+            e.stopPropagation();
+            card.remove();
+            var nid = _spcFooter.getAttribute('data-npcid') || npcId;
+            state._innerStack.push(function(){ state.app='chatDetail'; renderChatDetail(nid); });
+            state.app = 'charSettings';
+            _renderStateDetailPage(nid);
+          });
+        }
 
         setTimeout(function(){
           var closeOnce = function(ev){
@@ -16917,6 +16930,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           background:rgba(255,255,255,.96);backdrop-filter:blur(12px);
           border-radius:16px;width:100%;max-width:280px;padding:20px;
           box-shadow:0 8px 32px rgba(0,0,0,.18);
+          max-height:80vh;overflow-y:auto;
         ">${innerHtml}</div>`;
         ov.addEventListener('click', (e)=>{ if(e.target===ov) ov.remove(); });
         root.appendChild(ov);
