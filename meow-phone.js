@@ -11829,6 +11829,57 @@ const npc = _wxGetChatTargetMeta(npcId);
       /* ========== 聊天详情（版面6：微信聊天风格 — 模块化重构） ========== */
       /* 骨架 + 各面板独立渲染函数 + 数据层分离 */
 
+      /* --- 共用：汇总角色全量描述（性格分析/作息生成/等所有需要角色背景的 AI 调用共用） --- */
+      function _gatherCharBio(npcId){
+        var parts = [];
+        try{
+          // 1. 酒馆角色卡描述
+          var cardDesc = _readCurrentCharCardDesc();
+          if (cardDesc) parts.push('[角色卡描述]\n' + cardDesc.slice(0, 1500));
+        }catch(e){}
+        try{
+          // 2. 世界书（酒馆缓存 > 本地 WB > 全局 WB）
+          if (_tavernWBCache && _tavernWBCache.text && (Date.now() - _tavernWBCache.updatedAt < 300000)){
+            parts.push('[世界书]\n' + _tavernWBCache.text.slice(0, 800));
+          } else {
+            var roleText = _readRoleTextFromWB();
+            if (roleText) parts.push('[本地世界书]\n' + roleText.slice(0, 800));
+          }
+          var gwb = loadPhoneGlobalWB();
+          if (gwb && gwb.enabled && gwb.text && gwb.text.trim())
+            parts.push('[小手机世界书]\n' + gwb.text.trim().slice(0, 500));
+        }catch(e){}
+        try{
+          // 3. 小手机通讯录 profile
+          var db = loadContactsDB();
+          var npc = findContactById(db, npcId) || {};
+          var charEx = _loadCharExtra(npcId);
+          if (npc.profile) parts.push('[角色设定]\n' + npc.profile.slice(0, 500));
+          if (charEx.profile && charEx.profile !== npc.profile) parts.push('[扩展设定]\n' + charEx.profile.slice(0, 500));
+        }catch(e){}
+        try{
+          // 4. 聊天总结
+          var sumData = getChatSummary(npcId);
+          if (sumData && sumData.summaryText && sumData.summaryText.trim())
+            parts.push('[聊天总结]\n' + sumData.summaryText.trim().slice(0, 600));
+        }catch(e){}
+        try{
+          // 5. ST persona
+          var ctx = meowGetSTCtx();
+          if (ctx && ctx.persona_description && ctx.persona_description.trim())
+            parts.push('[用户身份]\n' + ctx.persona_description.trim().slice(0, 300));
+        }catch(e){}
+        try{
+          // 6. 最近聊天记录（最后10条）
+          var log = getLog(npcId);
+          if (log && log.length){
+            var recent = log.slice(-10).map(function(m){ return (m.role === 'me' ? '用户' : '角色') + ': ' + String(m.text||'').slice(0, 100); }).join('\n');
+            parts.push('[最近对话]\n' + recent);
+          }
+        }catch(e){}
+        return parts.filter(Boolean).join('\n\n').slice(0, 3000);
+      }
+
       /* --- 数据层：提醒系统 --- */
       const LS_REMINDERS = 'meow_phone_reminders_v1';
       function _loadReminders(npcId){
@@ -12411,8 +12462,7 @@ const npc = _wxGetChatTargetMeta(npcId);
 
           try{
             var npc2 = findContactById(loadContactsDB(), nid) || { name:String(nid) };
-            var charEx2 = _loadCharExtra(nid);
-            var profile = (npc2.profile || npc2.description || charEx2.profile || '').slice(0, 400);
+            var profile = _gatherCharBio(nid);
             var tagList = SCHEDULE_TAGS.map(function(t){ return t.tag + '(' + t.label + ')'; }).join(', ');
 
             var sysPrompt =
@@ -12425,7 +12475,7 @@ const npc = _wxGetChatTargetMeta(npcId);
               '4. 贴合角色身份，不要套通用模板\n' +
               '5. 只输出 JSON，不加任何说明或 markdown 代码块';
 
-            var userMsg = '角色名：' + (npc2.name || nid) + '\n角色介绍：' + (profile || '无特别描述，请生成通用现代都市角色作息');
+            var userMsg = '角色名：' + (npc2.name || nid) + '\n\n' + (profile || '无特别描述，请生成通用现代都市角色作息');
 
             var result = await PhoneAI.chat({
               system: sysPrompt,
@@ -12692,46 +12742,8 @@ const npc = _wxGetChatTargetMeta(npcId);
           var btn = this;
           btn.disabled = true; btn.textContent = '分析中…';
           try{
-            // ★ 从所有来源汇总角色描述（和 buildSystemPrompt 一致）
-            var bioParts = [];
-
-            // 1. 酒馆角色卡描述
-            try{ var cardDesc = _readCurrentCharCardDesc(); if (cardDesc) bioParts.push(cardDesc); }catch(e){}
-
-            // 2. 世界书（酒馆缓存 > 本地 WB > 全局 WB）
-            try{
-              if (_tavernWBCache.text && (Date.now() - _tavernWBCache.updatedAt < 300000)){
-                bioParts.push(_tavernWBCache.text);
-              } else {
-                var roleText = _readRoleTextFromWB();
-                if (roleText) bioParts.push(roleText);
-              }
-            }catch(e){}
-            try{
-              var gwb = loadPhoneGlobalWB();
-              if (gwb && gwb.enabled && gwb.text && gwb.text.trim()) bioParts.push(gwb.text.trim());
-            }catch(e){}
-
-            // 3. 小手机本地 profile
-            var db2 = loadContactsDB();
-            var npc2 = findContactById(db2, nid) || {};
-            var charEx2 = _loadCharExtra(nid);
-            if (npc2.profile) bioParts.push(npc2.profile);
-            if (charEx2.profile && charEx2.profile !== npc2.profile) bioParts.push(charEx2.profile);
-
-            // 4. 聊天总结
-            try{
-              var sumData = getChatSummary(nid);
-              if (sumData && sumData.summaryText && sumData.summaryText.trim()) bioParts.push(sumData.summaryText.trim());
-            }catch(e){}
-
-            // 5. ST persona_description
-            try{
-              var ctx = meowGetSTCtx();
-              if (ctx && ctx.persona_description && ctx.persona_description.trim()) bioParts.push(ctx.persona_description.trim());
-            }catch(e){}
-
-            var bio = bioParts.filter(Boolean).join('\n').slice(0, 2000);
+            // ★ 用共用函数汇总所有角色描述来源
+            var bio = _gatherCharBio(nid);
 
             if (!bio || bio.trim().length < 5){
               btn.disabled = false; btn.textContent = '❌ 未找到角色描述';
