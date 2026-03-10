@@ -13392,6 +13392,26 @@ const npc = _wxGetChatTargetMeta(npcId);
           }catch(e){}
         }
 
+        // ★ AI 属性变化：解析到 [属性:饱腹+35,心情+5] 后叠加到角色状态
+        if (parsed.attrChanges){
+          try{
+            var _sAttr = _loadCharState(npcId);
+            var _defsAttr = _getAttrDefs(_sAttr);
+            var _changed = false;
+            for (var _ak in parsed.attrChanges){
+              if (parsed.attrChanges.hasOwnProperty(_ak) && _sAttr.attrs.hasOwnProperty(_ak)){
+                _sAttr.attrs[_ak] = _clampAttr(_ak, _sAttr.attrs[_ak] + parsed.attrChanges[_ak], _defsAttr);
+                _changed = true;
+              }
+            }
+            if (_changed){
+              _sAttr.moodText = _attrToMoodText(_sAttr.attrs);
+              _sAttr.lastCalcAt = Date.now(); // 更新锚点，防止 catchUp 重复算
+              _saveCharState(npcId, _sAttr);
+            }
+          }catch(e){ console.warn('[AttrChange] error:', e); }
+        }
+
         // 写消息日志
         pushLog(npcId, 'them', cleanText);
         bumpThread(npcId, { lastMsg: cleanText, lastTime: _now(), unread: 0 });
@@ -13839,7 +13859,28 @@ const npc = _wxGetChatTargetMeta(npcId);
           s = s.replace(stateTagMatch[0], '').trim();
         }
 
-        return { cleanText: s, sendVoice: sendVoice, stickerGroup: stickerGroup, stickerIdx: stickerIdx, stateUpdate: stateUpdate };
+        // ★ 检测 [属性:精力+10,饱腹+35,心情-5]
+        var attrChanges = null;
+        var attrTagMatch = s.match(/\[属性[:：]([^\]]+)\]/i);
+        if (attrTagMatch){
+          attrChanges = {};
+          var _attrNameMap = {'精力':'energy','心情':'mood','健康':'health','饱腹':'hunger','如厕':'bladder','娱乐':'fun','孤独':'loneliness'};
+          var _attrPairs = attrTagMatch[1].split(/[,，]/);
+          for (var _ai = 0; _ai < _attrPairs.length; _ai++){
+            var _ap = _attrPairs[_ai].trim();
+            var _am = _ap.match(/^(.+?)([+\-])(\d+(?:\.\d+)?)$/);
+            if (_am){
+              var _aName = _am[1].trim();
+              var _aKey = _attrNameMap[_aName] || _aName;
+              var _aVal = parseFloat(_am[3]) * (_am[2] === '-' ? -1 : 1);
+              if (_aKey && !isNaN(_aVal)) attrChanges[_aKey] = _aVal;
+            }
+          }
+          if (Object.keys(attrChanges).length === 0) attrChanges = null;
+          s = s.replace(attrTagMatch[0], '').trim();
+        }
+
+        return { cleanText: s, sendVoice: sendVoice, stickerGroup: stickerGroup, stickerIdx: stickerIdx, stateUpdate: stateUpdate, attrChanges: attrChanges };
       }
 
       function _convertSpecialTags(text){
@@ -14187,7 +14228,15 @@ const npc = _wxGetChatTargetMeta(npcId);
           }
         }
 
-        parts.push('---\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息的长度随机变化：有的很短（1-5字，如"嗯""好的""？"），有的中等（一两句话），偶尔有一条较长的。\n模拟真实手机聊天的节奏感——不要把所有内容压缩成一段话。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长\n\n示例格式：\n嗯|||怎么了？|||你今天怎么这么安静\n\n【状态同步（必须执行）】\n每次回复时，你必须在最后一条消息的末尾附加状态标记（标记不会显示给用户）。\n根据当前对话内容和场景，更新你的穿着、正在做什么、以及内心独白：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。示例：\n好啊，那我们出发吧 [状态:穿着=白色连衣裙,正在=准备出门,心声=好期待今天的约会]' + _customEntryHint + voiceInstructions + stkForAI);
+        // ★ 构建当前属性提示，让 AI 知道角色现在的状态值
+        var _sForAttr = catchUpStats(npcId);
+        var _attrHint = '';
+        if (_sForAttr.attrs){
+          var _a = _sForAttr.attrs;
+          _attrHint = '\n当前属性值：精力=' + Math.round(_a.energy||0) + ' 心情=' + Math.round(_a.mood||0) + ' 健康=' + Math.round(_a.health||0) + ' 饱腹=' + Math.round(_a.hunger||0) + ' 如厕=' + Math.round(_a.bladder||0) + ' 娱乐=' + Math.round(_a.fun||0);
+        }
+
+        parts.push('---\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息的长度随机变化：有的很短（1-5字，如"嗯""好的""？"），有的中等（一两句话），偶尔有一条较长的。\n模拟真实手机聊天的节奏感——不要把所有内容压缩成一段话。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长\n\n示例格式：\n嗯|||怎么了？|||你今天怎么这么安静\n\n【状态同步（必须执行）】\n每次回复时，你必须在最后一条消息的末尾附加两个标记（标记不会显示给用户）。\n\n标记1 - 状态描述：根据当前对话内容和场景，更新你的穿着、正在做什么、以及内心独白：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。\n\n标记2 - 属性变化：根据对话中发生的事情，输出属性的变化量（正数为增加，负数为减少）：\n[属性:属性名+数值,属性名-数值]\n可用属性：精力、心情、健康、饱腹、如厕、娱乐（值域0-100，只写有变化的）\n变化量要合理：吃饭→饱腹+30~50，聊天开心→心情+5~15，运动→精力-10~20、健康+5\n如果对话没有涉及属性变化（纯闲聊），可以只写 [属性:心情+3] 之类的微调。' + _attrHint + '\n\n完整示例：\n吃饱了，舒服～ [状态:穿着=家居服,正在=收拾碗筷,心声=泡面也还行] [属性:饱腹+40,心情+5,娱乐-3]' + _customEntryHint + voiceInstructions + stkForAI);
 
         return parts.join('\n\n');
       }
@@ -14219,7 +14268,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             var _in = _sl.endHour <= _sl.hour
               ? (_ch >= _sl.hour || _ch < _sl.endHour)
               : (_ch >= _sl.hour && _ch < _sl.endHour);
-            if (_in){ scheduleNow = _sl.activity; break; }
+            if (_in){ scheduleNow = _sl.activity + '（' + _sl.hour + ':00–' + _sl.endHour + ':00）'; break; }
           }
         }
         // 如果 LifeEngine 有当前行为也用上
@@ -14233,15 +14282,17 @@ const npc = _wxGetChatTargetMeta(npcId);
           ? `<img src="${avatarImg}"/>`
           : esc(npc.avatar || (npc.name||'?').charAt(0));
 
-        // 可选信息行：心情文字 + 当前在做 + 心声 + 冷静中
+        // 可选信息行：心情文字 + 作息 + 当前在做 + 穿着 + 心声 + 冷静中
         var rows = '';
         rows += `<div class="wxSPCRow">
           <span class="wxSPCIcon">${moodEmoji[s.moodText||'平静']||'😌'}</span>
           <span class="wxSPCLabel">心情</span>
           <span class="wxSPCValue">${esc(s.moodText||'平静')}</span>
         </div>`;
-        if (scheduleNow) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">🗓</span><span class="wxSPCLabel">正在</span><span class="wxSPCValue">${esc(scheduleNow)}</span></div>`;
-        else if (bx.doing) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">🎯</span><span class="wxSPCLabel">正在</span><span class="wxSPCValue">${esc(bx.doing)}</span></div>`;
+        // ★ 作息时段独立显示（始终显示，不和 doing 互斥）
+        if (scheduleNow) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">🗓</span><span class="wxSPCLabel">作息</span><span class="wxSPCValue">${esc(scheduleNow)}</span></div>`;
+        // ★ AI 更新的"正在做"单独显示
+        if (bx.doing) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">🎯</span><span class="wxSPCLabel">正在</span><span class="wxSPCValue">${esc(bx.doing)}</span></div>`;
         if (bx.wearing) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">👗</span><span class="wxSPCLabel">穿着</span><span class="wxSPCValue">${esc(bx.wearing)}</span></div>`;
         if (bx.heartLine) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">💬</span><span class="wxSPCLabel">心声</span><span class="wxSPCValue" style="font-style:italic;color:rgba(20,24,28,.5);">"${esc(bx.heartLine)}"</span></div>`;
         // ★ 显示自定义条目
@@ -14289,18 +14340,14 @@ const npc = _wxGetChatTargetMeta(npcId);
             e.stopPropagation();
             card.remove();
             var nid = _spcFooter.getAttribute('data-npcid') || npcId;
-            // 先完整渲染 charSettings（清理 chatDetail 遗留样式），再跳状态详情
+            // ★ 直接跳转状态详情页，不经过聊天设置
             state.chatTarget = nid;
-            state._innerStack = [];
+            // 返回栈：按返回 → 回到聊天页
+            state._innerStack = state._innerStack || [];
             state._innerStack.push(function(){ state.app='chatDetail'; renderChatDetail(nid); });
-            state._innerStack.push(function(){ _renderCharSettingsPage(nid); });
-            state.app = 'charSettings';
-            _renderCharSettingsPage(nid);
-            // 延迟一帧再跳状态详情，确保 charSettings 已完成渲染
-            setTimeout(function(){
-              state._innerStack.push(function(){ _renderCharSettingsPage(nid); });
-              _renderStateDetailPage(nid);
-            }, 30);
+            state.app = 'charSettings'; // 标记当前在子页面（用于返回按钮逻辑）
+            // 直接渲染状态详情
+            _renderStateDetailPage(nid);
           });
         }
 
