@@ -12665,6 +12665,10 @@ const npc = _wxGetChatTargetMeta(npcId);
           fresh.isKeyNPC = old.isKeyNPC; fresh.schedule = old.schedule;
           fresh.attrRules = old.attrRules; fresh.perMsgCost = old.perMsgCost;
           fresh.customAttrs = old.customAttrs; fresh.lastCalcAt = Date.now();
+          // 恢复自定义属性初始值
+          (old.customAttrs||[]).forEach(function(c){ if(c.key) fresh.attrs[c.key] = c.init||50; });
+          _saveCharState(nid, fresh); try{ toast('状态已重置'); }catch(e){} _renderCharBehaviorPage(nid);
+        });
 
         // ★ 性格提取按钮
         body.querySelector('[data-act="cbExtractPersonality"]')?.addEventListener('click', async function(){
@@ -12684,10 +12688,6 @@ const npc = _wxGetChatTargetMeta(npcId);
               btn.disabled = false; btn.textContent = '分析失败，请重试';
             }
           }catch(e){ btn.disabled = false; btn.textContent = '分析出错，请重试'; console.warn(e); }
-        });
-          // 恢复自定义属性初始值
-          (old.customAttrs||[]).forEach(function(c){ if(c.key) fresh.attrs[c.key] = c.init||50; });
-          _saveCharState(nid, fresh); try{ toast('状态已重置'); }catch(e){} _renderCharBehaviorPage(nid);
         });
 
         // ★ isKeyNPC 开关
