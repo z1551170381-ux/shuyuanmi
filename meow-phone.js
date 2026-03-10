@@ -14271,9 +14271,10 @@ const npc = _wxGetChatTargetMeta(npcId);
             if (_in){ scheduleNow = _sl.activity + '（' + _sl.hour + ':00–' + _sl.endHour + ':00）'; break; }
           }
         }
-        // 如果 LifeEngine 有当前行为也用上
+        // ★ LifeEngine 当前行为单独存放，不覆盖作息
+        var lifeBehaviorNow = '';
         if (s.currentBehavior && s.currentBehavior.endAt > Date.now()){
-          scheduleNow = s.currentBehavior.label;
+          lifeBehaviorNow = s.currentBehavior.label;
         }
 
         // 头像 HTML
@@ -14289,9 +14290,11 @@ const npc = _wxGetChatTargetMeta(npcId);
           <span class="wxSPCLabel">心情</span>
           <span class="wxSPCValue">${esc(s.moodText||'平静')}</span>
         </div>`;
-        // ★ 作息时段独立显示（始终显示，不和 doing 互斥）
+        // ★ 作息时段独立显示
         if (scheduleNow) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">🗓</span><span class="wxSPCLabel">作息</span><span class="wxSPCValue">${esc(scheduleNow)}</span></div>`;
-        // ★ AI 更新的"正在做"单独显示
+        // ★ LifeEngine 行为（如果和 AI doing 不同则都显示）
+        if (lifeBehaviorNow && lifeBehaviorNow !== bx.doing) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">🎯</span><span class="wxSPCLabel">正在</span><span class="wxSPCValue">${esc(lifeBehaviorNow)}</span></div>`;
+        // ★ AI 更新的"正在做"
         if (bx.doing) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">🎯</span><span class="wxSPCLabel">正在</span><span class="wxSPCValue">${esc(bx.doing)}</span></div>`;
         if (bx.wearing) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">👗</span><span class="wxSPCLabel">穿着</span><span class="wxSPCValue">${esc(bx.wearing)}</span></div>`;
         if (bx.heartLine) rows += `<div class="wxSPCRow"><span class="wxSPCIcon">💬</span><span class="wxSPCLabel">心声</span><span class="wxSPCValue" style="font-style:italic;color:rgba(20,24,28,.5);">"${esc(bx.heartLine)}"</span></div>`;
@@ -14333,23 +14336,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         var _cardParent = root.querySelector('.phApp') || root.querySelector('.phShell') || root;
         _cardParent.appendChild(card);
 
-        // 直接绑定"查看完整状态"（不靠全局代理，避免 capture 阶段竞争导致卡片先被关闭）
-        var _spcFooter = card.querySelector('.wxSPCFooter');
-        if (_spcFooter){
-          _spcFooter.addEventListener('click', function(e){
-            e.stopPropagation();
-            card.remove();
-            var nid = _spcFooter.getAttribute('data-npcid') || npcId;
-            // ★ 直接跳转状态详情页，不经过聊天设置
-            state.chatTarget = nid;
-            // 返回栈：按返回 → 回到聊天页
-            state._innerStack = state._innerStack || [];
-            state._innerStack.push(function(){ state.app='chatDetail'; renderChatDetail(nid); });
-            state.app = 'charSettings'; // 标记当前在子页面（用于返回按钮逻辑）
-            // 直接渲染状态详情
-            _renderStateDetailPage(nid);
-          });
-        }
+        // ★ 不再用直接绑定（stopPropagation 会阻止全局代理），统一由全局 act delegate 的 wxSPCToDetail 处理
 
         setTimeout(function(){
           var closeOnce = function(ev){
