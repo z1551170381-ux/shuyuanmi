@@ -3035,6 +3035,67 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID} .wxTranslateBtn:hover{ color:var(--ph-accent, #07c160); }
 /* === 阶段B：戳一戳系统消息 === */
+/* === Phase 3：线下模式样式 === */
+#${ID} .wxOfflineWrap{
+  background:linear-gradient(180deg, rgba(245,240,230,.98), rgba(235,228,215,.96));
+  min-height:100%; padding:16px 18px;
+}
+#${ID} .wxOfflineParagraph{
+  font-size:14px; line-height:1.9; color:rgba(46,38,26,.82);
+  margin-bottom:14px; text-indent:0; position:relative;
+  animation:phBubbleIn .25s ease-out;
+}
+#${ID} .wxOfflineParagraph .rpSpeaker{
+  font-weight:700; color:rgba(46,38,26,.55); font-size:12px;
+  display:block; margin-bottom:2px;
+}
+#${ID} .wxOfflineParagraph .rpText{ display:block; }
+#${ID} .wxOfflineParagraph .rpAction{ font-style:italic; color:rgba(120,100,70,.7); }
+#${ID} .wxOfflineParagraph .rpDialog{ color:rgba(46,38,26,.95); }
+#${ID} .wxOfflineParagraph.me .rpText{ color:rgba(70,90,130,.85); }
+#${ID} .wxSceneBanner{
+  text-align:center; padding:18px 14px; margin-bottom:16px;
+  border-bottom:1px solid rgba(0,0,0,.06);
+}
+#${ID} .wxSceneBanner .wxSceneName{
+  font-size:15px; font-weight:700; color:rgba(46,38,26,.65); letter-spacing:.5px;
+}
+#${ID} .wxSceneBanner .wxSceneDesc{
+  font-size:12px; color:rgba(46,38,26,.4); margin-top:4px; line-height:1.5;
+}
+#${ID} .wxOfflineInputBar{
+  padding:10px 14px; border-top:1px solid rgba(0,0,0,.06);
+  background:rgba(245,240,230,.95); display:flex; gap:8px; align-items:flex-end;
+}
+#${ID} .wxOfflineInputBar textarea{
+  flex:1; border:1px solid rgba(0,0,0,.08); border-radius:10px;
+  padding:8px 12px; font-size:13px; resize:none; outline:none;
+  background:rgba(255,255,255,.7); font-family:inherit; line-height:1.5;
+  min-height:36px; max-height:120px; color:rgba(46,38,26,.8);
+}
+#${ID} .wxOfflineInputBar textarea::placeholder{ color:rgba(46,38,26,.3); }
+#${ID} .wxOfflineInputBar button{
+  padding:8px 14px; border-radius:10px; border:0;
+  background:var(--ph-accent, #07c160); color:#fff;
+  font-size:13px; font-weight:600; cursor:pointer; flex-shrink:0;
+}
+/* === Phase 4：分支指示条 === */
+#${ID} .wxBranchBar{
+  display:flex; align-items:center; gap:6px; padding:4px 10px;
+  background:rgba(0,0,0,.03); font-size:11px; color:rgba(20,24,28,.45);
+  border-bottom:1px solid rgba(0,0,0,.04);
+}
+#${ID} .wxBranchBar .wxBBLabel{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#${ID} .wxBranchBar button{
+  font-size:10px; padding:2px 8px; border-radius:4px;
+  border:1px solid rgba(0,0,0,.08); background:rgba(255,255,255,.8); cursor:pointer;
+}
+/* offline mode fold */
+#${ID} .wxOfflineFold{
+  text-align:center; padding:8px; font-size:11px; color:rgba(20,24,28,.35);
+  cursor:pointer; user-select:none;
+}
+#${ID} .wxOfflineFold:hover{ color:rgba(20,24,28,.55); }
 #${ID} .wxPokeMsg{
   text-align:center; font-size:11px; color:rgba(20,24,28,.35);
   padding:4px 0; font-style:italic; max-width:100%;
@@ -4871,7 +4932,47 @@ function buildHTML(){
             return;
           }
           if (act === 'wxOfflineMode'){
-            try{ toast('线下模式 · 敬请期待'); }catch(e){}
+            var offNid = t.getAttribute('data-npcid') || state.chatTarget;
+            var newMode = _toggleChatMode(offNid);
+            _injectCustomCSS(offNid);
+            if (newMode === 'offline'){
+              // 打开场景编辑（首次）
+              var scene = _loadSceneData(offNid);
+              if (!scene.name && !scene.location){
+                _openSceneEditor(offNid);
+              }
+            }
+            renderChatDetail(offNid);
+            try{ toast(newMode === 'offline' ? '☕ 已切换到线下模式' : '💬 已切换到在线模式'); }catch(e){}
+            return;
+          }
+          // ★ Phase 4：分支管理
+          if (act === 'wxBranchMgr'){
+            var brNid = t.getAttribute('data-npcid') || state.chatTarget;
+            _openBranchManager(brNid);
+            return;
+          }
+          // ★ Phase 5：时间线查看
+          if (act === 'wxTimeline'){
+            var tlNid = t.getAttribute('data-npcid') || state.chatTarget;
+            _openTimelineViewer(tlNid);
+            return;
+          }
+          // ★ Phase 3：场景编辑
+          if (act === 'wxSceneEdit'){
+            var seNid = t.getAttribute('data-npcid') || state.chatTarget;
+            _openSceneEditor(seNid);
+            return;
+          }
+          // ★ Phase 4：插入主线
+          if (act === 'wxInsertMainline'){
+            var imNid = t.getAttribute('data-npcid') || state.chatTarget;
+            var log = _getLogForBranch(imNid);
+            if (log.length < 2){ try{toast('消息太少，无法插入');}catch(e){} return; }
+            var startStr = prompt('从第几条消息开始？（1-' + log.length + '）', '1');
+            var endStr = prompt('到第几条消息结束？', String(log.length));
+            if (startStr === null || endStr === null) return;
+            _insertToMainline(imNid, parseInt(startStr)-1, parseInt(endStr)-1);
             return;
           }
           if (act === 'search'){ openApp('search'); return; }
@@ -7423,12 +7524,23 @@ function getNPCCandidatesFromRecentMainChat(){
         db.updatedAt = _now();
         _phSave(PHONE_IM_KEYS.logs, db);
       }
-      function pushLog(npcId, role, text){
+      function pushLog(npcId, role, text, extra){
         const logs = loadLogs();
         logs.map ||= {};
         const id = String(npcId);
         logs.map[id] ||= [];
-        logs.map[id].push({ role, text:String(text||''), t:_now() });
+        var entry = { role, text:String(text||''), t:_now() };
+        // ★ Phase 3: 模式标记
+        var mode = _getChatMode(npcId);
+        if (mode) entry.mode = mode;
+        // ★ Phase 4: 分支标记
+        var branch = _getActiveBranch(npcId);
+        if (branch && branch !== 'main') entry.branch = branch;
+        // 额外字段
+        if (extra && typeof extra === 'object'){
+          for (var ek in extra){ if (extra.hasOwnProperty(ek)) entry[ek] = extra[ek]; }
+        }
+        logs.map[id].push(entry);
         // 控制长度（避免发烫/爆存储）
         if (logs.map[id].length > 200) logs.map[id] = logs.map[id].slice(-200);
         saveLogs(logs);
@@ -11923,21 +12035,47 @@ const npc = _wxGetChatTargetMeta(npcId);
           if (titleEl) titleEl.textContent = npc.name;
         }catch(e){}
 
-        // ✅ 注入右上角按钮：✦ → 线下模式（占位），➕ → 角色设置页
+        // ✅ 注入右上角按钮：☕/💬 模式切换 + 📋 时间线 + 🔀 分支 + ➕ 设置
+        var _chatMode = _getChatMode(contactId);
         try{
           const spacer = root.querySelector('.phAppBarSpacer');
           if (spacer) spacer.innerHTML =
-            `<button class="wxTopBtn" data-act="wxOfflineMode" data-npcid="${esc(contactId)}"
-              style="appearance:none;border:0;background:transparent;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;font-size:17px;opacity:.75;">✦</button>
+            `<button class="wxTopBtn" data-act="wxTimeline" data-npcid="${esc(contactId)}"
+              style="appearance:none;border:0;background:transparent;cursor:pointer;width:28px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;font-size:14px;opacity:.65;" title="时间线">📋</button>
+            <button class="wxTopBtn" data-act="wxBranchMgr" data-npcid="${esc(contactId)}"
+              style="appearance:none;border:0;background:transparent;cursor:pointer;width:28px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;font-size:14px;opacity:.65;" title="分支">🔀</button>
+            <button class="wxTopBtn" data-act="wxOfflineMode" data-npcid="${esc(contactId)}"
+              style="appearance:none;border:0;background:transparent;cursor:pointer;width:28px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;font-size:15px;opacity:.8;" title="${_chatMode==='offline'?'切回在线':'切到线下'}">${_chatMode==='offline'?'💬':'☕'}</button>
             <button class="wxTopBtn" data-act="wxCharSettings" data-npcid="${esc(contactId)}"
-              style="appearance:none;border:0;background:transparent;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;">${_phFlatIcon('➕')}</button>`;
+              style="appearance:none;border:0;background:transparent;cursor:pointer;width:28px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;">${_phFlatIcon('➕')}</button>`;
         }catch(e){}
+
+        // ✅ 标题：线下模式显示场景名
+        if (_chatMode === 'offline'){
+          try{
+            var scene = _loadSceneData(contactId);
+            var titleEl2 = root.querySelector('[data-ph="appTitle"]');
+            if (titleEl2) titleEl2.textContent = '☕ 线下 · ' + (scene.name || '未命名');
+          }catch(e){}
+        }
 
         // 读取自定义聊天背景
         const charEx = _loadCharExtra(contactId);
         const bgStyle = charEx.chatBg ? `background-image:url('${charEx.chatBg}');background-size:cover;background-position:center;` : '';
 
-        // 渲染骨架
+        // 渲染骨架（根据模式切换）
+        if (_chatMode === 'offline'){
+          var sceneData = _loadSceneData(contactId);
+          body.innerHTML = `
+            <div class="wxChatDetailWrap">
+              <div class="wxChatMsgs wxOfflineWrap" data-ph="chatMsgs" style="${bgStyle}"></div>
+              <div class="wxOfflineInputBar">
+                <button data-act="wxSceneEdit" data-npcid="${esc(contactId)}" style="padding:8px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.6);cursor:pointer;font-size:13px;flex-shrink:0;">☕</button>
+                <textarea rows="1" placeholder="描述你的行动…" data-ph="chatInput" inputmode="text" enterkeyhint="send" autocomplete="off"></textarea>
+                <button data-act="wxSendChat" title="发送" style="flex-shrink:0;">发送</button>
+              </div>
+            </div>`;
+        } else {
         body.innerHTML = `
           <div class="wxChatDetailWrap">
             <div class="wxChatMsgs" data-ph="chatMsgs" style="${bgStyle}"></div>
@@ -11961,9 +12099,28 @@ const npc = _wxGetChatTargetMeta(npcId);
               <div class="wxCPItem" data-act="wxCPAction" data-cpact="music"><div class="wxCPIco">${_phFlatIcon('🎵')}</div><div class="wxCPLabel">音乐</div></div>
             </div>
           </div>`;
+        } // end if-else offline/online
 
-        // 填充历史消息
-        _chatDetail_fillHistory(body, npc, contactId);
+        // ★ Phase 4：分支指示条
+        var _bd = _loadBranchData(contactId);
+        if (Object.keys(_bd.branches).length > 1){
+          var _brBar = doc.createElement('div');
+          _brBar.className = 'wxBranchBar';
+          _brBar.innerHTML = '<span class="wxBBLabel">🔀 ' + esc((_bd.branches[_bd.activeBranch]||{}).label||'主线') + '</span>' +
+            '<button data-act="wxBranchMgr" data-npcid="' + esc(contactId) + '">管理</button>';
+          var _chatWrap = body.querySelector('.wxChatDetailWrap');
+          if (_chatWrap) _chatWrap.insertBefore(_brBar, _chatWrap.firstChild);
+        }
+
+        // 注入自定义 CSS
+        _injectCustomCSS(contactId);
+
+        // 填充历史消息（线下用段落，在线用气泡）
+        if (_chatMode === 'offline'){
+          _chatDetail_fillHistoryOffline(body, npc, contactId);
+        } else {
+          _chatDetail_fillHistory(body, npc, contactId);
+        }
 
         // 绑定输入框
         _chatDetail_bindInput(body, contactId);
@@ -11973,6 +12130,31 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         // 清未读
         bumpThread(contactId, { unread:0 });
+      }
+
+      /* --- 子渲染：线下模式填充历史 --- */
+      function _chatDetail_fillHistoryOffline(body, npc, contactId){
+        var msgs = body.querySelector('[data-ph="chatMsgs"]');
+        var log = _getLogForBranch(contactId);
+        if (!msgs) return;
+        var scene = _loadSceneData(contactId);
+        _renderSceneBanner(msgs, scene.name, scene.description);
+        if (!log.length){
+          var tip = doc.createElement('div');
+          tip.className = 'wxOfflineParagraph';
+          tip.innerHTML = '<em class="rpAction">（场景就绪，等待你的行动…）</em>';
+          msgs.appendChild(tip);
+        } else {
+          for (var i = 0; i < log.length; i++){
+            var x = log[i];
+            if (x.mode && x.mode !== 'offline' && x.mode !== _getChatMode(contactId)){
+              // 折叠不同模式的消息
+              continue;
+            }
+            _renderOfflineParagraph(msgs, npc, x.role, x.text, x.t, x);
+          }
+        }
+        requestAnimationFrame(function(){ try{ msgs.scrollTop = msgs.scrollHeight; }catch(e){} });
       }
 
       /* --- 子渲染：填充历史消息 --- */
@@ -13220,6 +13402,13 @@ const npc = _wxGetChatTargetMeta(npcId);
       }
 
       function _wxAppendBubble(msgs, npc, role, text, ts, meta, flags){
+        // ★ Phase 3: 线下模式 → 用段落渲染代替气泡
+        try{
+          if (state.chatTarget && _getChatMode(state.chatTarget) === 'offline' && role !== 'system'){
+            _renderOfflineParagraph(msgs, npc, role, text, ts, meta);
+            return;
+          }
+        }catch(e){}
         // flags: { edited:bool, recalled:bool }
         var fl = flags || {};
         const b = doc.createElement('div');
@@ -14275,6 +14464,13 @@ const npc = _wxGetChatTargetMeta(npcId);
         }
 
         parts.push('---\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息的长度随机变化：有的很短（1-5字，如"嗯""好的""？"），有的中等（一两句话），偶尔有一条较长的。\n模拟真实手机聊天的节奏感——不要把所有内容压缩成一段话。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长\n\n示例格式：\n嗯|||怎么了？|||你今天怎么这么安静\n\n【状态同步（必须执行）】\n每次回复时，你必须在最后一条消息的末尾附加两个标记（标记不会显示给用户）。\n\n标记1 - 状态描述：根据当前对话内容和场景，更新你的穿着、正在做什么、以及内心独白：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。\n\n标记2 - 属性变化：根据对话中发生的事情，输出属性的变化量（正数为增加，负数为减少）：\n[属性:属性名+数值,属性名-数值]\n可用属性：精力、心情、健康、饱腹、如厕、娱乐（值域0-100，只写有变化的）\n变化量要合理：吃饭→饱腹+30~50，聊天开心→心情+5~15，运动→精力-10~20、健康+5\n如果对话没有涉及属性变化（纯闲聊），可以只写 [属性:心情+3] 之类的微调。' + _attrHint + '\n\n完整示例：\n吃饱了，舒服～ [状态:穿着=家居服,正在=收拾碗筷,心声=泡面也还行] [属性:饱腹+40,心情+5,娱乐-3]' + _customEntryHint + voiceInstructions + stkForAI);
+
+        // ★ Phase 3: 线下模式追加 prompt
+        try{
+          if (_getChatMode(npcId) === 'offline'){
+            parts.push(_buildOfflinePromptAddition(npcId));
+          }
+        }catch(e){}
 
         return parts.join('\n\n');
       }
@@ -20360,6 +20556,558 @@ function bindPageScroll(){
         }catch(e){ console.warn('[LifePush] init error:', e); }
       }
 
+
+// ============================================================
+// ★★★ Phase 3-5 系统：线下模式 + 分支 + 时间线总结 ★★★
+// ============================================================
+
+// ========== Phase 3A：聊天模式管理（online/offline） ==========
+var _chatModes = {}; // 缓存：contactId → 'online'|'offline'
+function _getChatMode(npcId){ return _chatModes[npcId] || _phLoad('chatmode_'+String(npcId), 'online') || 'online'; }
+function _setChatMode(npcId, mode){
+  _chatModes[npcId] = mode;
+  _phSave('chatmode_'+String(npcId), mode);
+}
+function _toggleChatMode(npcId){
+  var cur = _getChatMode(npcId);
+  var next = cur === 'online' ? 'offline' : 'online';
+  _setChatMode(npcId, next);
+  return next;
+}
+
+// ========== Phase 3B：场景系统 ==========
+function _loadSceneData(npcId){
+  return _phLoad('scene_'+String(npcId), { name:'', location:'', description:'' });
+}
+function _saveSceneData(npcId, data){
+  _phSave('scene_'+String(npcId), data);
+}
+
+// ========== Phase 3C：自定义样式系统 ==========
+var STYLE_PRESETS = {
+  default_white: { name:'默认白', css:'', font:'' },
+  dark_night:    { name:'暗夜',   css:'.wxOfflineParagraph{color:rgba(220,220,220,.9);} .wxOfflineWrap{background:rgba(15,15,20,.95);}', font:'' },
+  ancient:       { name:'古风',   css:'.wxOfflineParagraph{font-family:"STKaiti","KaiTi",serif;color:rgba(80,50,30,.85);line-height:2;} .wxOfflineWrap{background:linear-gradient(180deg,#f5e6c8,#e8d5a8);}', font:'STKaiti,KaiTi,serif' },
+  cyberpunk:     { name:'赛博朋克', css:'.wxOfflineParagraph{color:#0ff;text-shadow:0 0 4px #0ff;font-family:"Courier New",monospace;} .wxOfflineWrap{background:linear-gradient(180deg,#0a0a1a,#1a0a2e);}', font:'Courier New,monospace' }
+};
+
+function _loadCustomStyle(npcId){
+  return _phLoad('customstyle_'+String(npcId), {
+    onlineStyle: { css:'', bubbleHTML:null },
+    offlineStyle: { css:'', paragraphHTML:null, sceneBannerHTML:null, bgImage:null, font:null, preset:'default_white' },
+  });
+}
+function _saveCustomStyle(npcId, data){ _phSave('customstyle_'+String(npcId), data); }
+
+function _injectCustomCSS(npcId){
+  try{
+    var existing = root.querySelector('#meow-phone-custom-css');
+    if (existing) existing.remove();
+    var mode = _getChatMode(npcId);
+    var styles = _loadCustomStyle(npcId);
+    var css = '';
+    if (mode === 'offline'){
+      var preset = styles.offlineStyle.preset || 'default_white';
+      if (STYLE_PRESETS[preset]) css += STYLE_PRESETS[preset].css + '\n';
+      css += styles.offlineStyle.css || '';
+    } else {
+      css += styles.onlineStyle.css || '';
+    }
+    if (css.trim()){
+      var st = doc.createElement('style');
+      st.id = 'meow-phone-custom-css';
+      st.textContent = css;
+      root.appendChild(st);
+    }
+  }catch(e){}
+}
+
+// ========== Phase 3D：线下模式渲染器 ==========
+function _renderOfflineParagraph(container, npc, role, text, ts, meta){
+  var p = doc.createElement('div');
+  p.className = 'wxOfflineParagraph ' + role;
+  p.setAttribute('data-msgts', String(ts||0));
+  p.setAttribute('data-msgrole', role);
+  p.setAttribute('data-msgtext', String(text||''));
+  if (meta && meta.mode) p.setAttribute('data-mode', meta.mode);
+  if (meta && meta.branch) p.setAttribute('data-branch', meta.branch);
+
+  var speaker = role === 'me' ? '你' : (npc.name || '对方');
+  var displayText = String(text || '').trim();
+
+  // 解析 RP 格式：*动作* 和 "对话"
+  var formatted = esc(displayText)
+    .replace(/\*([^*]+)\*/g, '<em class="rpAction">$1</em>')
+    .replace(/"([^"]+)"/g, '<span class="rpDialog">"$1"</span>')
+    .replace(/「([^」]+)」/g, '<span class="rpDialog">「$1」</span>');
+
+  var nameTag = role === 'me' ? '' : '<span class="rpSpeaker">' + esc(speaker) + '</span>';
+
+  p.innerHTML = nameTag + '<span class="rpText">' + formatted + '</span>';
+  container.appendChild(p);
+  return p;
+}
+
+function _renderSceneBanner(container, sceneName, sceneDesc){
+  var banner = doc.createElement('div');
+  banner.className = 'wxSceneBanner';
+  banner.innerHTML = '<div class="wxSceneName">☕ ' + esc(sceneName || '未命名场景') + '</div>' +
+    (sceneDesc ? '<div class="wxSceneDesc">' + esc(sceneDesc) + '</div>' : '');
+  container.appendChild(banner);
+}
+
+// ========== Phase 3E：线下模式 buildSystemPrompt 追加 ==========
+function _buildOfflinePromptAddition(npcId){
+  var scene = _loadSceneData(npcId);
+  var lines = [
+    '\n\n【当前模式：线下面对面】',
+    '你现在和用户面对面，不是在手机上聊天。',
+    '用小说/RP 风格描写，包括动作描写、表情变化、环境细节。',
+    '可以使用 *动作* 和 "对话" 格式。',
+    '不要写太长，保持2-4段。'
+  ];
+  if (scene.location) lines.push('当前地点：' + scene.location);
+  if (scene.description) lines.push('场景描述：' + scene.description);
+  return lines.join('\n');
+}
+
+// ========== Phase 3F：场景编辑弹窗 ==========
+function _openSceneEditor(npcId){
+  var scene = _loadSceneData(npcId);
+  var inner = `
+    <div style="font-size:14px;font-weight:600;margin-bottom:8px;">☕ 场景设置</div>
+    <div style="margin-bottom:8px;">
+      <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">场景名称</div>
+      <input data-el="sceneName" value="${esc(scene.name||'')}" placeholder="如：咖啡厅、家中客厅" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;"/>
+    </div>
+    <div style="margin-bottom:8px;">
+      <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">地点</div>
+      <input data-el="sceneLoc" value="${esc(scene.location||'')}" placeholder="如：城市里的一家安静咖啡厅" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;"/>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">场景描述（可选）</div>
+      <textarea data-el="sceneDesc" rows="3" placeholder="环境描述、氛围、时间等" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;">${esc(scene.description||'')}</textarea>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button data-el="sceneSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
+      <button data-el="sceneCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button>
+    </div>`;
+  var ov = _cpShowOverlay(inner);
+  ov.querySelector('[data-el="sceneCancel"]')?.addEventListener('click', function(){ ov.remove(); });
+  ov.querySelector('[data-el="sceneSave"]')?.addEventListener('click', function(){
+    var newScene = {
+      name: (ov.querySelector('[data-el="sceneName"]')?.value||'').trim(),
+      location: (ov.querySelector('[data-el="sceneLoc"]')?.value||'').trim(),
+      description: (ov.querySelector('[data-el="sceneDesc"]')?.value||'').trim()
+    };
+    _saveSceneData(npcId, newScene);
+    ov.remove();
+    try{ toast('场景已保存'); }catch(e){}
+    // 刷新标题
+    try{
+      var titleEl = root.querySelector('[data-ph="appTitle"]');
+      if (titleEl && _getChatMode(npcId) === 'offline'){
+        titleEl.textContent = '☕ 线下 · ' + (newScene.name || '未命名');
+      }
+    }catch(e){}
+  });
+}
+
+// ========== Phase 4A：分支数据管理 ==========
+function _loadBranchData(npcId){
+  return _phLoad('branches_'+String(npcId), {
+    branches: { main: { label:'主线', createdAt:Date.now(), forkFrom:null } },
+    activeBranch: 'main',
+    anchors: []
+  });
+}
+function _saveBranchData(npcId, data){ _phSave('branches_'+String(npcId), data); }
+
+function _getActiveBranch(npcId){
+  var bd = _loadBranchData(npcId);
+  return bd.activeBranch || 'main';
+}
+
+// 创建锚点（存档点）
+function _createAnchor(npcId, label){
+  var bd = _loadBranchData(npcId);
+  var log = getLog(npcId);
+  var lastMsg = log.length > 0 ? log[log.length - 1] : null;
+  var anchorId = 'anchor_' + Date.now().toString(36);
+  bd.anchors.push({
+    id: anchorId,
+    messageIndex: log.length - 1,
+    messageTs: lastMsg ? lastMsg.t : 0,
+    label: label || ('锚点 ' + bd.anchors.length),
+    storyTime: null,
+    createdAt: Date.now(),
+    branch: bd.activeBranch
+  });
+  _saveBranchData(npcId, bd);
+  return anchorId;
+}
+
+// 从锚点 fork 新分支
+function _forkFromAnchor(npcId, anchorId){
+  var bd = _loadBranchData(npcId);
+  var anchor = bd.anchors.find(function(a){ return a.id === anchorId; });
+  if (!anchor) return null;
+
+  var branchId = 'branch_' + Date.now().toString(36);
+  bd.branches[branchId] = {
+    label: '分支 · ' + (Object.keys(bd.branches).length),
+    createdAt: Date.now(),
+    forkFrom: { branch: anchor.branch, anchorId: anchorId, messageIndex: anchor.messageIndex }
+  };
+
+  // 复制锚点之前的消息到新分支
+  var logs = loadLogs();
+  var allMsgs = _safeArr(logs.map && logs.map[String(npcId)]);
+  var forkMsgs = allMsgs.slice(0, anchor.messageIndex + 1).map(function(m){
+    var clone = JSON.parse(JSON.stringify(m));
+    clone.branch = branchId;
+    return clone;
+  });
+  // 追加 fork 出来的消息
+  for (var i = 0; i < forkMsgs.length; i++){
+    allMsgs.push(forkMsgs[i]);
+  }
+  logs.map[String(npcId)] = allMsgs;
+  saveLogs(logs);
+
+  // 切换到新分支
+  bd.activeBranch = branchId;
+  _saveBranchData(npcId, bd);
+  return branchId;
+}
+
+// 切换分支
+function _switchBranch(npcId, branchId){
+  var bd = _loadBranchData(npcId);
+  if (!bd.branches[branchId]) return false;
+  bd.activeBranch = branchId;
+  _saveBranchData(npcId, bd);
+  return true;
+}
+
+// 获取当前分支的消息（过滤）
+function _getLogForBranch(npcId){
+  var activeBranch = _getActiveBranch(npcId);
+  var log = getLog(npcId);
+  return log.filter(function(m){
+    var mb = m.branch || 'main';
+    return mb === activeBranch;
+  });
+}
+
+// ========== Phase 4B：分支管理 UI ==========
+function _openBranchManager(npcId){
+  var bd = _loadBranchData(npcId);
+  var branchKeys = Object.keys(bd.branches);
+
+  var branchListHtml = branchKeys.map(function(bk){
+    var br = bd.branches[bk];
+    var isActive = bk === bd.activeBranch;
+    var forkInfo = br.forkFrom ? ' (从 ' + (bd.branches[br.forkFrom.branch]||{}).label + ' 分叉)' : '';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.04);">
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:${isActive?'600':'400'};color:rgba(20,24,28,${isActive?'.9':'.6'});">
+          ${isActive?'● ':''}${esc(br.label)}${forkInfo}
+        </div>
+        <div style="font-size:10px;color:rgba(20,24,28,.35);">${new Date(br.createdAt).toLocaleString()}</div>
+      </div>
+      ${!isActive ? '<button data-act="brSwitch" data-brid="'+bk+'" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);cursor:pointer;">切换</button>' : '<span style="font-size:11px;color:var(--ph-accent,#07c160);">当前</span>'}
+    </div>`;
+  }).join('');
+
+  var anchorListHtml = bd.anchors.length === 0 ? '<div style="font-size:12px;color:rgba(20,24,28,.4);padding:8px 0;">暂无锚点</div>' :
+    bd.anchors.map(function(a){
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.04);">
+        <div style="flex:1;">
+          <div style="font-size:12px;color:rgba(20,24,28,.7);">📍 ${esc(a.label)}</div>
+          <div style="font-size:10px;color:rgba(20,24,28,.35);">消息 #${a.messageIndex+1} · ${new Date(a.createdAt).toLocaleString()}</div>
+        </div>
+        <button data-act="brFork" data-anchorid="${a.id}" style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);cursor:pointer;">分叉</button>
+      </div>`;
+    }).join('');
+
+  var inner = `
+    <div style="font-size:14px;font-weight:600;margin-bottom:8px;">🔀 分支管理</div>
+    <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:6px;">分支列表</div>
+    <div style="max-height:30vh;overflow-y:auto;">${branchListHtml}</div>
+    <div style="margin-top:10px;font-size:11px;color:rgba(20,24,28,.4);margin-bottom:6px;">锚点（存档点）</div>
+    <div style="max-height:20vh;overflow-y:auto;">${anchorListHtml}</div>
+    <div style="margin-top:10px;display:flex;gap:6px;">
+      <button data-el="brAddAnchor" style="flex:1;font-size:12px;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);cursor:pointer;">📍 创建锚点</button>
+      <button data-el="brClose" style="flex:1;font-size:12px;padding:8px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);cursor:pointer;">关闭</button>
+    </div>`;
+  var ov = _cpShowOverlay(inner);
+
+  ov.querySelector('[data-el="brClose"]')?.addEventListener('click', function(){ ov.remove(); });
+  ov.querySelector('[data-el="brAddAnchor"]')?.addEventListener('click', function(){
+    var label = prompt('锚点名称：', '锚点 ' + (bd.anchors.length + 1));
+    if (label === null) return;
+    _createAnchor(npcId, label);
+    ov.remove();
+    try{ toast('锚点已创建'); }catch(e){}
+  });
+
+  ov.querySelectorAll('[data-act="brSwitch"]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var brid = this.getAttribute('data-brid');
+      _switchBranch(npcId, brid);
+      ov.remove();
+      try{ toast('已切换到 ' + (bd.branches[brid]||{}).label); }catch(e){}
+      renderChatDetail(npcId);
+    });
+  });
+
+  ov.querySelectorAll('[data-act="brFork"]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var anchorId = this.getAttribute('data-anchorid');
+      var newBranch = _forkFromAnchor(npcId, anchorId);
+      if (newBranch){
+        ov.remove();
+        try{ toast('已创建新分支并切换'); }catch(e){}
+        renderChatDetail(npcId);
+      }
+    });
+  });
+}
+
+// ========== Phase 4C：插入主线功能 ==========
+function _insertToMainline(npcId, startIdx, endIdx){
+  try{
+    var log = _getLogForBranch(npcId);
+    if (startIdx < 0 || endIdx >= log.length || startIdx > endIdx) return false;
+    var db = loadContactsDB();
+    var npc = findContactById(db, npcId) || { id:npcId, name:String(npcId) };
+
+    var selected = log.slice(startIdx, endIdx + 1);
+    var rpText = selected.map(function(m){
+      var speaker = m.role === 'me' ? '{{user}}' : npc.name;
+      return speaker + ': ' + String(m.text||'');
+    }).join('\n');
+
+    // 尝试写入酒馆主线
+    var stCtx = meowGetSTCtx();
+    if (stCtx && stCtx.chat && Array.isArray(stCtx.chat)){
+      var rpMsg = {
+        name: npc.name,
+        is_user: false,
+        is_system: false,
+        send_date: Date.now(),
+        mes: '【从小手机插入的剧情片段】\n' + rpText
+      };
+      stCtx.chat.push(rpMsg);
+      try{ toast('已插入主线（' + selected.length + '条消息）'); }catch(e){}
+      return true;
+    } else {
+      // 降级：复制到剪贴板
+      try{ navigator.clipboard.writeText(rpText); toast('已复制到剪贴板（酒馆上下文不可用）'); }catch(e){ toast('插入失败'); }
+      return false;
+    }
+  }catch(e){ return false; }
+}
+
+// ========== Phase 5A：时间线总结存储 ==========
+function _loadTimeline(npcId){
+  return _phLoad('timeline_'+String(npcId), {
+    entries: [],
+    customPrompt: null,
+    displayTemplate: null
+  });
+}
+function _saveTimeline(npcId, data){ _phSave('timeline_'+String(npcId), data); }
+
+// ========== Phase 5B：生成时间线总结条目 ==========
+function _generateSourceHash(msgs){
+  var str = msgs.map(function(m){ return (m.role||'') + ':' + String(m.text||'').length; }).join('|');
+  var hash = 0;
+  for (var i = 0; i < str.length; i++){
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return 'h_' + Math.abs(hash).toString(36);
+}
+
+async function _generateTimelineEntry(npcId, fromIdx, toIdx){
+  var log = _getLogForBranch(npcId);
+  if (fromIdx < 0 || toIdx >= log.length) return null;
+
+  var selected = log.slice(fromIdx, toIdx + 1);
+  var sourceHash = _generateSourceHash(selected);
+
+  // 检查防重复
+  var tl = _loadTimeline(npcId);
+  if (tl.entries.some(function(e){ return e.sourceHash === sourceHash; })){
+    try{ toast('这段内容已经总结过了'); }catch(e){}
+    return null;
+  }
+
+  // 构建对话文本给 AI
+  var db = loadContactsDB();
+  var npc = findContactById(db, npcId) || { name:String(npcId) };
+  var dialogText = selected.map(function(m){
+    return (m.role === 'me' ? '用户' : npc.name) + ': ' + String(m.text||'').slice(0, 300);
+  }).join('\n');
+
+  // 带上上一条 todos
+  var lastTodos = [];
+  if (tl.entries.length > 0){
+    var lastEntry = tl.entries[tl.entries.length - 1];
+    if (lastEntry.structured && lastEntry.structured.todos) lastTodos = lastEntry.structured.todos;
+  }
+
+  var customPrompt = tl.customPrompt || '';
+  var systemPrompt = customPrompt || `你是一个客观的剧情记录员。请分析以下对话片段，输出纯 JSON（不要 markdown 代码块）：
+{
+  "storyTime": "提取的故事内时间（如有）",
+  "facts": ["客观事实1", "客观事实2"],
+  "quotes": ["重要原话1", "重要原话2"],
+  "turning": ["转折点或重要决定"],
+  "props": ["新出现或使用的道具/物品"],
+  "todos": [{"text":"待办内容","done":false}]
+}
+${lastTodos.length > 0 ? '上一次的待办：' + JSON.stringify(lastTodos) + '\n请判断哪些已完成（done:true）并保留未完成的。' : ''}
+只记录客观事实，不主观评价。摘取关键原话。`;
+
+  try{
+    var result = await PhoneAI.chat({
+      system: systemPrompt,
+      messages: [{ role:'user', content:'对话片段（第' + (fromIdx+1) + '~' + (toIdx+1) + '条）：\n' + dialogText.slice(0, 3000) }],
+      temperature: 0.3,
+      maxTokens: 800
+    });
+
+    if (!result.ok) { try{toast(result.error||'总结失败');}catch(e){} return null; }
+
+    var raw = String(result.data||'').trim();
+    // 尝试解析 JSON
+    var structured = null;
+    try{
+      raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+      structured = JSON.parse(raw);
+    }catch(e){
+      structured = { facts:[raw], quotes:[], turning:[], props:[], todos:[] };
+    }
+
+    // 构建 displayText
+    var display = [];
+    if (structured.storyTime) display.push('⏰ ' + structured.storyTime);
+    if (structured.facts && structured.facts.length) display.push('📋 事实：\n' + structured.facts.map(function(f){return '  · '+f;}).join('\n'));
+    if (structured.quotes && structured.quotes.length) display.push('💬 原话：\n' + structured.quotes.map(function(q){return '  「'+q+'」';}).join('\n'));
+    if (structured.turning && structured.turning.length) display.push('⚡ 转折：\n' + structured.turning.map(function(t){return '  · '+t;}).join('\n'));
+    if (structured.props && structured.props.length) display.push('🎒 道具：' + structured.props.join('、'));
+    if (structured.todos && structured.todos.length) display.push('📝 待办：\n' + structured.todos.map(function(t){return '  '+(t.done?'✅':'☐')+' '+t.text;}).join('\n'));
+
+    var entry = {
+      id: 'tl_' + Date.now().toString(36),
+      range: [fromIdx, toIdx],
+      sourceHash: sourceHash,
+      promptVersion: 1,
+      storyTime: structured.storyTime || '',
+      structured: structured,
+      displayText: display.join('\n\n'),
+      userEdited: null,
+      createdAt: Date.now()
+    };
+
+    tl.entries.push(entry);
+    _saveTimeline(npcId, tl);
+    try{ toast('时间线条目已生成'); }catch(e){}
+    return entry;
+  }catch(e){
+    try{ toast('总结生成失败: ' + e.message); }catch(e2){}
+    return null;
+  }
+}
+
+// ========== Phase 5C：时间线 UI ==========
+function _openTimelineViewer(npcId){
+  var tl = _loadTimeline(npcId);
+  var log = _getLogForBranch(npcId);
+
+  function renderEntries(){
+    if (!tl.entries.length) return '<div style="text-align:center;padding:20px;color:rgba(20,24,28,.4);font-size:12px;">暂无时间线条目<br>在聊天中积累一些对话后，点击下方"生成总结"</div>';
+    return tl.entries.map(function(e, idx){
+      var displayText = e.userEdited || e.displayText || '（无内容）';
+      return `<div data-tl-idx="${idx}" style="margin-bottom:10px;padding:10px 12px;background:rgba(255,255,255,.85);border-radius:10px;border:1px solid rgba(0,0,0,.06);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:11px;color:rgba(20,24,28,.4);">#${e.range[0]+1}~${e.range[1]+1}</span>
+          <span style="font-size:10px;color:rgba(20,24,28,.3);">${e.storyTime || new Date(e.createdAt).toLocaleString()}</span>
+        </div>
+        <div style="font-size:12px;color:rgba(20,24,28,.75);white-space:pre-wrap;line-height:1.6;">${esc(displayText)}</div>
+        <div style="margin-top:6px;display:flex;gap:4px;">
+          <button data-act="tlEdit" data-tlidx="${idx}" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);cursor:pointer;">编辑</button>
+          <button data-act="tlDel" data-tlidx="${idx}" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(220,53,69,.2);background:rgba(220,53,69,.06);color:#c9302c;cursor:pointer;">删除</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  var inner = `
+    <div style="font-size:14px;font-weight:600;margin-bottom:4px;">📋 时间线总结</div>
+    <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:8px;">客观事实记录，每次叠加而非覆盖 · 共 ${tl.entries.length} 条</div>
+    <div data-el="tlEntries" style="max-height:50vh;overflow-y:auto;">${renderEntries()}</div>
+    <div style="margin-top:8px;display:flex;gap:6px;">
+      <button data-el="tlGenerate" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">✨ 生成总结</button>
+      <button data-el="tlClose" style="padding:10px 16px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">关闭</button>
+    </div>`;
+  var ov = _cpShowOverlay(inner);
+
+  function bindEntryActions(){
+    ov.querySelectorAll('[data-act="tlEdit"]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var idx = parseInt(this.getAttribute('data-tlidx'));
+        var entry = tl.entries[idx];
+        if (!entry) return;
+        var newText = prompt('编辑时间线条目：', entry.userEdited || entry.displayText || '');
+        if (newText === null) return;
+        entry.userEdited = newText;
+        _saveTimeline(npcId, tl);
+        var container = ov.querySelector('[data-el="tlEntries"]');
+        if (container) container.innerHTML = renderEntries();
+        bindEntryActions();
+      });
+    });
+    ov.querySelectorAll('[data-act="tlDel"]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var idx = parseInt(this.getAttribute('data-tlidx'));
+        if (!confirm('确定删除这条时间线记录？')) return;
+        tl.entries.splice(idx, 1);
+        _saveTimeline(npcId, tl);
+        var container = ov.querySelector('[data-el="tlEntries"]');
+        if (container) container.innerHTML = renderEntries();
+        bindEntryActions();
+      });
+    });
+  }
+  bindEntryActions();
+
+  ov.querySelector('[data-el="tlClose"]')?.addEventListener('click', function(){ ov.remove(); });
+  ov.querySelector('[data-el="tlGenerate"]')?.addEventListener('click', async function(){
+    // 确定要总结的范围
+    var lastEnd = 0;
+    if (tl.entries.length > 0){
+      lastEnd = tl.entries[tl.entries.length - 1].range[1] + 1;
+    }
+    if (lastEnd >= log.length){
+      try{ toast('没有新的未总结消息'); }catch(e){}
+      return;
+    }
+    var fromIdx = lastEnd;
+    var toIdx = log.length - 1;
+    try{ toast('正在生成总结…'); }catch(e){}
+    var entry = await _generateTimelineEntry(npcId, fromIdx, toIdx);
+    if (entry){
+      tl = _loadTimeline(npcId); // 重新加载
+      var container = ov.querySelector('[data-el="tlEntries"]');
+      if (container) container.innerHTML = renderEntries();
+      bindEntryActions();
+    }
+  });
+}
       return { initOnce, showFull, showMini, showPill, hide, openApp, openHome, openChat, state };
     })();
   }
