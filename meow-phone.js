@@ -5300,6 +5300,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             else if (cspage === 'chatBg') _renderChatBgSettings(nid);
             else if (cspage === 'reminders') _renderRemindersPage(nid);
             else if (cspage === 'pokeSettings') _renderPokeSettingsPage(nid);
+            else if (cspage === 'proactiveDebug') _renderProactiveDebugPage(nid);
             return;
           }
           if (act === 'wxCSBack'){
@@ -5392,6 +5393,41 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             saveChatSummary(nid, onSum, 'online');
             saveChatSummary(nid, offSum, 'offline');
             try{ toast('总结与提示词设置已保存'); }catch(e){}
+            return;
+          }
+          if (act === 'wxPDRefresh'){
+            var pdNid0 = t.getAttribute('data-npcid') || state.chatTarget;
+            if (pdNid0) _renderProactiveDebugPage(pdNid0);
+            return;
+          }
+          if (act === 'wxPDReconcile'){
+            var pdNid1 = t.getAttribute('data-npcid') || state.chatTarget;
+            if (!pdNid1) return;
+            _reconcileDailyOnlineProactive(pdNid1, 'debug_reconcile').then(function(inserted){
+              try{ toast(inserted ? '已完成每日对账补发' : '本次没有补发，去看调试结果'); }catch(e){}
+              _renderProactiveDebugPage(pdNid1);
+              if (state.chatTarget === pdNid1 && state.app === 'chatDetail'){ try{ renderChatDetail(pdNid1); }catch(e){} }
+            }).catch(function(){ _renderProactiveDebugPage(pdNid1); });
+            return;
+          }
+          if (act === 'wxPDTestDaily'){
+            var pdNid2 = t.getAttribute('data-npcid') || state.chatTarget;
+            if (!pdNid2) return;
+            _forceOnlineProactive(pdNid2, 'daily').then(function(inserted){
+              try{ toast(inserted ? '每日保底测试成功' : '每日保底测试失败'); }catch(e){}
+              _renderProactiveDebugPage(pdNid2);
+              if (state.chatTarget === pdNid2 && state.app === 'chatDetail'){ try{ renderChatDetail(pdNid2); }catch(e){} }
+            }).catch(function(){ _renderProactiveDebugPage(pdNid2); });
+            return;
+          }
+          if (act === 'wxPDTestRandom'){
+            var pdNid3 = t.getAttribute('data-npcid') || state.chatTarget;
+            if (!pdNid3) return;
+            _forceOnlineProactive(pdNid3, 'random').then(function(inserted){
+              try{ toast(inserted ? '随机主动测试成功' : '随机主动测试失败'); }catch(e){}
+              _renderProactiveDebugPage(pdNid3);
+              if (state.chatTarget === pdNid3 && state.app === 'chatDetail'){ try{ renderChatDetail(pdNid3); }catch(e){} }
+            }).catch(function(){ _renderProactiveDebugPage(pdNid3); });
             return;
           }
           if (act === 'wxCSGenSummary'){
@@ -6742,7 +6778,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           catchUpStats(contactId);
           // 异步：离线补发（写入历史消息）
           LifeEngine.catchUpProactiveMsgs(contactId, _elapsed).catch(function(){});
-          _ensureDailyOnlineProactive(contactId).then(function(inserted){
+          _reconcileDailyOnlineProactive(contactId, 'open_chat').then(function(inserted){
             if (!inserted) return;
             if (state.chatTarget === contactId && state.app === 'chatDetail'){
               try{ renderChatDetail(contactId); }catch(e){}
@@ -12548,6 +12584,14 @@ const npc = _wxGetChatTargetMeta(npcId);
                 </div>
                 <button class="wxReminderToggle ${charEx.enableLifePush!==false?'on':'off'}" data-act="wxCSToggleLifePush" data-npcid="${esc(contactId)}" style="margin-left:auto;flex-shrink:0;"></button>
               </div>
+              <div class="wxCSItem" data-act="wxCSNav" data-cspage="proactiveDebug" data-npcid="${esc(contactId)}">
+                <div class="wxCSIco">${_phFlatIcon('🧪')}</div>
+                <div class="wxCSName">
+                  主动消息调试
+                  <div style="font-size:11px;color:rgba(20,24,28,.4);margin-top:1px;">查看每日保底、失败原因、测试按钮</div>
+                </div>
+                <div class="wxCSArrow">›</div>
+              </div>
             </div>
 
             <div class="wxCSGroup" style="margin-top:12px;">
@@ -12758,6 +12802,80 @@ const npc = _wxGetChatTargetMeta(npcId);
           var nid = this.getAttribute('data-npcid') || npcId;
           _openScheduleEditor(nid);
         });
+      }
+
+      function _renderProactiveDebugPage(npcId){
+        var body = root.querySelector('[data-ph="appBody"]');
+        if (!body) return;
+        var db = loadContactsDB();
+        var npc = findContactById(db, npcId) || { name:String(npcId) };
+        var ce = _loadCharExtra(npcId);
+        var meta = _loadProactiveMeta(npcId);
+        var apiInfo = _getActiveApiPresetInfo();
+        var now = Date.now();
+        var dailyReady = _isDailyPushWindow(now);
+        var randomReady = _isRandomPushWindow(now);
+        var logs = Array.isArray(meta.debugLog) ? meta.debugLog.slice().reverse() : [];
+        try{ var t = root.querySelector('[data-ph="appTitle"]'); if(t) t.textContent='主动消息调试'; }catch(e){}
+        try{ var sp = root.querySelector('.phAppBarSpacer'); if(sp) sp.innerHTML=''; }catch(e){}
+        function infoRow(label, value){
+          return '<div style="display:flex;justify-content:space-between;gap:12px;padding:9px 14px;border-bottom:1px solid rgba(0,0,0,.05);font-size:12px;"><span style="color:rgba(20,24,28,.46);">'+ esc(label) +'</span><span style="color:rgba(20,24,28,.82);text-align:right;word-break:break-word;">'+ esc(value == null ? '—' : String(value)) +'</span></div>';
+        }
+        body.innerHTML = `<div style="padding-bottom:26px;">
+          <div style="margin:14px 14px 0;padding:14px;border-radius:16px;background:var(--ph-glass,rgba(255,255,255,.78));border:1px solid var(--ph-glass-border,rgba(0,0,0,.07));backdrop-filter:blur(12px);">
+            <div style="font-size:15px;font-weight:700;color:rgba(20,24,28,.86);">${esc(npc.name || npcId)}</div>
+            <div style="font-size:11px;color:rgba(20,24,28,.45);margin-top:4px;line-height:1.7;">这里能看每日保底有没有查账成功、AI 有没有回、失败卡在哪里，也能直接手动测试。</div>
+          </div>
+
+          <div style="margin:12px 14px 0;font-size:10.5px;color:rgba(20,24,28,.38);letter-spacing:.35px;padding:0 2px;">当前状态</div>
+          <div style="margin:6px 14px 0;border-radius:14px;overflow:hidden;background:var(--ph-glass,rgba(255,255,255,.78));border:1px solid var(--ph-glass-border,rgba(0,0,0,.07));backdrop-filter:blur(12px);">
+            ${infoRow('主动消息开关', ce.enableLifePush === false ? '关闭' : '开启')}
+            ${infoRow('页面可见', (typeof document !== 'undefined' && document.visibilityState === 'visible') ? '是' : '否')}
+            ${infoRow('每日时间窗', dailyReady ? '允许（10:00-22:00）' : '当前不在窗口')}
+            ${infoRow('随机时间窗', randomReady ? '允许（08:00-23:00）' : '当前不在窗口')}
+            ${infoRow('今日已成功保底', meta.lastOnlineDailyDate === _dayKey(now) ? '是' : '否')}
+            ${infoRow('上次对账来源', meta.lastReconcileReason || '—')}
+            ${infoRow('上次对账时间', _fmtDebugTs(meta.lastReconcileAt))}
+          </div>
+
+          <div style="margin:12px 14px 0;font-size:10.5px;color:rgba(20,24,28,.38);letter-spacing:.35px;padding:0 2px;">API 预设</div>
+          <div style="margin:6px 14px 0;border-radius:14px;overflow:hidden;background:var(--ph-glass,rgba(255,255,255,.78));border:1px solid var(--ph-glass-border,rgba(0,0,0,.07));backdrop-filter:blur(12px);">
+            ${infoRow('当前预设', apiInfo.name || '未配置')}
+            ${infoRow('模型', apiInfo.model || '未设置')}
+            ${infoRow('请求地址', apiInfo.baseUrl || '未设置')}
+            ${infoRow('配置是否齐全', apiInfo.ready ? '是' : '否（地址/密钥/模型缺失）')}
+          </div>
+
+          <div style="margin:12px 14px 0;font-size:10.5px;color:rgba(20,24,28,.38);letter-spacing:.35px;padding:0 2px;">每日保底</div>
+          <div style="margin:6px 14px 0;border-radius:14px;overflow:hidden;background:var(--ph-glass,rgba(255,255,255,.78));border:1px solid var(--ph-glass-border,rgba(0,0,0,.07));backdrop-filter:blur(12px);">
+            ${infoRow('状态', meta.lastOnlineDailyStatus || '—')}
+            ${infoRow('最近尝试', _fmtDebugTs(meta.lastOnlineDailyTryAt))}
+            ${infoRow('最近成功', _fmtDebugTs(meta.lastOnlineDailySuccessAt))}
+            ${infoRow('失败原因', meta.lastOnlineDailyFailReason || '—')}
+            ${infoRow('最近来源', meta.lastOnlineDailyReason || '—')}
+          </div>
+
+          <div style="margin:12px 14px 0;font-size:10.5px;color:rgba(20,24,28,.38);letter-spacing:.35px;padding:0 2px;">随机主动</div>
+          <div style="margin:6px 14px 0;border-radius:14px;overflow:hidden;background:var(--ph-glass,rgba(255,255,255,.78));border:1px solid var(--ph-glass-border,rgba(0,0,0,.07));backdrop-filter:blur(12px);">
+            ${infoRow('状态', meta.lastOnlineRandomStatus || '—')}
+            ${infoRow('最近尝试', _fmtDebugTs(meta.lastOnlineRandomTryAt))}
+            ${infoRow('最近成功', _fmtDebugTs(meta.lastOnlineRandomSuccessAt))}
+            ${infoRow('失败原因', meta.lastOnlineRandomFailReason || '—')}
+            ${infoRow('最近来源', meta.lastOnlineRandomReason || '—')}
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 14px 0;">
+            <button data-act="wxPDReconcile" data-npcid="${esc(npcId)}" style="padding:11px 10px;border-radius:12px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">重新对账补发</button>
+            <button data-act="wxPDRefresh" data-npcid="${esc(npcId)}" style="padding:11px 10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.92);color:rgba(20,24,28,.72);font-size:13px;cursor:pointer;">刷新状态</button>
+            <button data-act="wxPDTestDaily" data-npcid="${esc(npcId)}" style="padding:11px 10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.92);color:rgba(20,24,28,.72);font-size:13px;cursor:pointer;">测试每日保底</button>
+            <button data-act="wxPDTestRandom" data-npcid="${esc(npcId)}" style="padding:11px 10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.92);color:rgba(20,24,28,.72);font-size:13px;cursor:pointer;">测试随机主动</button>
+          </div>
+
+          <div style="margin:12px 14px 0;font-size:10.5px;color:rgba(20,24,28,.38);letter-spacing:.35px;padding:0 2px;">最近调试记录</div>
+          <div style="margin:6px 14px 0;border-radius:14px;overflow:hidden;background:var(--ph-glass,rgba(255,255,255,.78));border:1px solid var(--ph-glass-border,rgba(0,0,0,.07));backdrop-filter:blur(12px);">
+            ${logs.length ? logs.slice(0, 18).map(function(item){ return '<div style="padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.05);"><div style="display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(20,24,28,.42);"><span>'+ esc(_fmtDebugTs(item.t)) +'</span><span style="padding:2px 6px;border-radius:999px;background:rgba(0,0,0,.05);">'+ esc(item.kind || 'sys') +'</span><span>'+ esc(item.stage || '') +'</span></div><div style="margin-top:4px;font-size:12px;color:rgba(20,24,28,.8);line-height:1.55;word-break:break-word;">'+ esc(item.detail || '') +'</div></div>'; }).join('') : '<div style="padding:18px 14px;font-size:12px;color:rgba(20,24,28,.38);text-align:center;">还没有调试记录。你可以先点测试按钮，或者切后台再回来触发对账。</div>'}
+          </div>
+        </div>`;
       }
 
       function _renderCharBehaviorPage(contactId){
@@ -15362,11 +15480,19 @@ const npc = _wxGetChatTargetMeta(npcId);
               maxTokens: 80,
               timeout: 20
             });
+            var proactiveKind = (opts && opts.kind) ? String(opts.kind) : (String(behaviorKey||'').indexOf('daily') >= 0 ? 'daily' : 'random');
             if (result && result.ok && result.data){
-              return String(result.data).trim().replace(/^["「『【]|["」』】]$/g, '').slice(0, 120);
+              var cleanText = String(result.data).trim().replace(/^["「『【]|["」』】]$/g, '').slice(0, 120);
+              if (cleanText){
+                try{ _pushProactiveDebug(npcId, proactiveKind, 'ai_ok', cleanText.slice(0, 80)); }catch(e){}
+                return cleanText;
+              }
+              try{ _setProactiveAttemptState(npcId, proactiveKind, { status:'fail', failReason:'AI 返回空文本' }); _pushProactiveDebug(npcId, proactiveKind, 'ai_empty', 'AI 返回空文本'); }catch(e){}
+              return null;
             }
+            try{ _setProactiveAttemptState(npcId, proactiveKind, { status:'fail', failReason:(result && result.error) ? String(result.error) : 'AI 请求失败' }); _pushProactiveDebug(npcId, proactiveKind, 'ai_fail', (result && result.error) ? String(result.error) : 'AI 请求失败'); }catch(e){}
             return null;
-          }catch(e){ console.warn('[LifeEngine] _generateAIMsg error:', e); return null; }
+          }catch(e){ console.warn('[LifeEngine] _generateAIMsg error:', e); try{ var proactiveKind2 = (opts && opts.kind) ? String(opts.kind) : (String(behaviorKey||'').indexOf('daily') >= 0 ? 'daily' : 'random'); _setProactiveAttemptState(npcId, proactiveKind2, { status:'fail', failReason:String((e&&e.message)||e||'未知异常') }); _pushProactiveDebug(npcId, proactiveKind2, 'ai_error', String((e&&e.message)||e||'未知异常')); }catch(_e){} return null; }
         }
 
         // ---- 主动消息队列（存元信息，flush 时再调 AI） ----
@@ -20581,6 +20707,14 @@ function bindPageScroll(){
         try{
           W.addEventListener('resize',()=>{ if(state.mode==='full') updateTime(); },{passive:true});
         }catch(e){}
+        try{
+          W.addEventListener('focus', function(){ _scheduleGlobalDailyReconcile('window_focus', 350); }, { passive:true });
+        }catch(e){}
+        try{
+          D.addEventListener('visibilitychange', function(){
+            if (D.visibilityState === 'visible') _scheduleGlobalDailyReconcile('page_visible', 280);
+          }, { passive:true });
+        }catch(e){}
         // MeowDB 初始化（IndexedDB 基础设施）
         try{
           MeowDB.init().then(function(ok){
@@ -20670,7 +20804,7 @@ function bindPageScroll(){
                 var p3 = s3.personality || {};
 
                 // 每日保底：只补线上消息，不依赖当前正在看哪种模式
-                _ensureDailyOnlineProactive(npcId).then(function(inserted){
+                _reconcileDailyOnlineProactive(npcId, 'foreground_timer').then(function(inserted){
                   if (!inserted) return;
                   if (state.chatTarget === npcId && state.app === 'chatDetail'){
                     try{ renderChatDetail(npcId); }catch(e){}
@@ -20689,6 +20823,8 @@ function bindPageScroll(){
                 if (h4 < 8 || h4 > 23) return; // 深夜/清晨不推
 
                 _lastFgPushCheck[npcId] = Date.now();
+                _setProactiveAttemptState(npcId, 'random', { tryAt: Date.now(), status:'trying', reason:'foreground_timer', failReason:'' });
+                _pushProactiveDebug(npcId, 'random', 'try', 'foreground_timer');
 
                 // 异步生成消息 + 写入 + 弹窗
                 (async function(nId, sSnap){
@@ -20862,11 +20998,87 @@ function _loadProactiveMeta(npcId){
     lastOnlineRandomAt: 0,
     lastOnlineDailyTryAt: 0,
     lastOnlineRandomTryAt: 0,
+    lastOnlineDailySuccessAt: 0,
+    lastOnlineRandomSuccessAt: 0,
+    lastOnlineDailyFailReason: '',
+    lastOnlineRandomFailReason: '',
+    lastOnlineDailyStatus: '',
+    lastOnlineRandomStatus: '',
+    lastOnlineDailyReason: '',
+    lastOnlineRandomReason: '',
+    lastReconcileAt: 0,
+    lastReconcileReason: '',
+    debugLog: [],
     lastInsertedAt: 0
   });
 }
 function _saveProactiveMeta(npcId, data){ _phSave('proactive_meta_' + String(npcId), data || {}); }
+function _pushProactiveDebug(npcId, kind, stage, detail){
+  try{
+    var meta = _loadProactiveMeta(npcId);
+    var list = Array.isArray(meta.debugLog) ? meta.debugLog : [];
+    list.push({ t:Date.now(), kind:String(kind||'sys'), stage:String(stage||'event'), detail:String(detail||'') });
+    if (list.length > 40) list = list.slice(-40);
+    meta.debugLog = list;
+    _saveProactiveMeta(npcId, meta);
+  }catch(e){}
+}
+function _setProactiveAttemptState(npcId, kind, patch){
+  try{
+    var meta = _loadProactiveMeta(npcId);
+    var tag = String(kind||'random') === 'daily' ? 'Daily' : 'Random';
+    if (patch && patch.tryAt != null) meta['lastOnline' + tag + 'TryAt'] = Number(patch.tryAt || 0);
+    if (patch && patch.successAt != null) meta['lastOnline' + tag + 'SuccessAt'] = Number(patch.successAt || 0);
+    if (patch && patch.failReason != null) meta['lastOnline' + tag + 'FailReason'] = String(patch.failReason || '');
+    if (patch && patch.status != null) meta['lastOnline' + tag + 'Status'] = String(patch.status || '');
+    if (patch && patch.reason != null) meta['lastOnline' + tag + 'Reason'] = String(patch.reason || '');
+    _saveProactiveMeta(npcId, meta);
+  }catch(e){}
+}
+function _getTrackedLifeNpcIds(){
+  try{
+    var prefix = _phUID() + '_charstate_';
+    return Object.keys(localStorage).filter(function(k){ return k.indexOf(prefix) === 0; }).map(function(k){ return k.slice(prefix.length); }).filter(Boolean);
+  }catch(e){ return []; }
+}
+function _getActiveApiPresetInfo(){
+  try{
+    var data = _loadApiPresets ? _loadApiPresets() : null;
+    var presets = (data && data.presets) || [];
+    var activeId = (data && data.activeId) || '';
+    var preset = presets.find(function(p){ return p.id === activeId; }) || presets[0] || null;
+    if (!preset) return { name:'未配置', model:'', baseUrl:'', ready:false };
+    return {
+      name: String(preset.name || '未命名预设'),
+      model: String(preset.model || ''),
+      baseUrl: String(preset.baseUrl || ''),
+      ready: !!(preset.baseUrl && preset.apiKey && preset.model)
+    };
+  }catch(e){ return { name:'读取失败', model:'', baseUrl:'', ready:false }; }
+}
+function _fmtDebugTs(ts){
+  if (!ts) return '—';
+  try{
+    var d = new Date(Number(ts||0));
+    var y = d.getFullYear();
+    var m = String(d.getMonth()+1).padStart(2,'0');
+    var dd = String(d.getDate()).padStart(2,'0');
+    var hh = String(d.getHours()).padStart(2,'0');
+    var mm = String(d.getMinutes()).padStart(2,'0');
+    return y + '-' + m + '-' + dd + ' ' + hh + ':' + mm;
+  }catch(e){ return '—'; }
+}
+function _isDailyPushWindow(ts){
+  var h = new Date(ts || Date.now()).getHours();
+  return h >= 10 && h <= 22;
+}
+function _isRandomPushWindow(ts){
+  var h = new Date(ts || Date.now()).getHours();
+  return h >= 8 && h <= 23;
+}
 var _onlineDailyPushLocks = {};
+var _proactiveReconcileTimer = 0;
+var _lastGlobalReconcileAt = 0;
 function _pickFakeOnlinePushTs(npcId, kind, branchId){
   var now = Date.now();
   var branch = branchId || (typeof _getActiveBranch === 'function' ? _getActiveBranch(npcId) : 'main');
@@ -20929,39 +21141,78 @@ function _insertOnlineProactiveMessage(npcId, text, opts){
       var meta = _loadProactiveMeta(npcId);
       meta.lastOnlinePushAt = now;
       if (kind === 'random') meta.lastOnlineRandomAt = now;
+      if (kind === 'daily') meta.lastOnlineDailyDate = _dayKey(now);
       meta.lastInsertedAt = now;
       _saveProactiveMeta(npcId, meta);
+      _setProactiveAttemptState(npcId, kind, { successAt: now, failReason:'', status:'success' });
+      _pushProactiveDebug(npcId, kind, 'insert_ok', finalText.slice(0, 80));
     }catch(e){}
     return { npcId:npcId, text:finalText, ts:ts, branch:branch, kind:kind };
   }catch(e){ console.warn('[LifePush] insert online proactive error:', e); return null; }
 }
-async function _ensureDailyOnlineProactive(npcId){
+async function _ensureDailyOnlineProactive(npcId, opts){
+  opts = opts || {};
+  var source = String(opts.source || 'unknown');
   try{
     var ce = _loadCharExtra(npcId);
-    if (ce.enableLifePush === false) return null;
+    if (ce.enableLifePush === false){
+      _setProactiveAttemptState(npcId, 'daily', { status:'skip', reason:'开关关闭', failReason:'主动消息开关关闭' });
+      _pushProactiveDebug(npcId, 'daily', 'skip', '开关关闭 · ' + source);
+      return null;
+    }
     var now = Date.now();
-    var h = new Date(now).getHours();
-    if (h < 10 || h > 22) return null;
+    if (!opts.force && !_isDailyPushWindow(now)){
+      _setProactiveAttemptState(npcId, 'daily', { status:'skip', reason:'不在每日时间窗', failReason:'当前不在 10:00-22:00' });
+      _pushProactiveDebug(npcId, 'daily', 'skip', '不在时间窗 · ' + source);
+      return null;
+    }
     var meta0 = _loadProactiveMeta(npcId);
     var today = _dayKey(now);
-    if (meta0.lastOnlineDailyDate === today) return null;
-    if (meta0.lastOnlineDailyTryAt && (now - Number(meta0.lastOnlineDailyTryAt || 0) < 30 * 60 * 1000)) return null;
-    if (_onlineDailyPushLocks[npcId]) return null;
+    if (!opts.force && meta0.lastOnlineDailyDate === today){
+      _setProactiveAttemptState(npcId, 'daily', { status:'skip', reason:'今天已成功发送', failReason:'' });
+      _pushProactiveDebug(npcId, 'daily', 'skip', '今天已成功发送 · ' + source);
+      return null;
+    }
+    if (!opts.force && meta0.lastOnlineDailyTryAt && (now - Number(meta0.lastOnlineDailyTryAt || 0) < 30 * 60 * 1000)){
+      _setProactiveAttemptState(npcId, 'daily', { status:'cooldown', reason:'30分钟冷却中', failReason:'距离上次尝试不足30分钟' });
+      _pushProactiveDebug(npcId, 'daily', 'cooldown', '30分钟冷却中 · ' + source);
+      return null;
+    }
+    if (_onlineDailyPushLocks[npcId]){
+      _pushProactiveDebug(npcId, 'daily', 'locked', '已有进行中的请求 · ' + source);
+      return null;
+    }
     _onlineDailyPushLocks[npcId] = 1;
     try{
       var metaTry = _loadProactiveMeta(npcId);
       metaTry.lastOnlineDailyTryAt = now;
+      metaTry.lastReconcileAt = now;
+      metaTry.lastReconcileReason = source;
       _saveProactiveMeta(npcId, metaTry);
+      _setProactiveAttemptState(npcId, 'daily', { tryAt: now, status:'trying', reason: source, failReason:'' });
+      _pushProactiveDebug(npcId, 'daily', 'try', source);
       var s = _loadCharState(npcId);
-      if (!s || !s.attrs) return null;
+      if (!s || !s.attrs){
+        _setProactiveAttemptState(npcId, 'daily', { status:'fail', reason:source, failReason:'角色状态缺失' });
+        _pushProactiveDebug(npcId, 'daily', 'fail', '角色状态缺失');
+        return null;
+      }
       var aiText = null;
       if (typeof LifeEngine !== 'undefined' && LifeEngine && typeof LifeEngine._generateAIMsg === 'function'){
         try{ aiText = await LifeEngine._generateAIMsg(npcId, 'daily_online', '在今天的间隙里想起了你', s, { mode:'online', kind:'daily', atTs: now }); }catch(e){}
       }
       aiText = String(aiText || '').trim();
-      if (!aiText) return null;
+      if (!aiText){
+        _setProactiveAttemptState(npcId, 'daily', { status:'fail', reason:source, failReason:'AI 返回空文本或请求失败' });
+        _pushProactiveDebug(npcId, 'daily', 'fail', 'AI 返回空文本或请求失败');
+        return null;
+      }
       var inserted = _insertOnlineProactiveMessage(npcId, aiText, { kind:'daily' });
-      if (!inserted) return null;
+      if (!inserted){
+        _setProactiveAttemptState(npcId, 'daily', { status:'fail', reason:source, failReason:'消息写入失败' });
+        _pushProactiveDebug(npcId, 'daily', 'fail', '消息写入失败');
+        return null;
+      }
       var meta = _loadProactiveMeta(npcId);
       meta.lastOnlineDailyDate = today;
       meta.lastOnlinePushAt = now;
@@ -20971,9 +21222,67 @@ async function _ensureDailyOnlineProactive(npcId){
     }finally{
       delete _onlineDailyPushLocks[npcId];
     }
-  }catch(e){ console.warn('[LifePush] ensure daily online proactive error:', e); return null; }
+  }catch(e){ console.warn('[LifePush] ensure daily online proactive error:', e); _setProactiveAttemptState(npcId, 'daily', { status:'fail', reason:source, failReason:String((e&&e.message)||e||'未知异常') }); _pushProactiveDebug(npcId, 'daily', 'error', String((e&&e.message)||e||'未知异常')); return null; }
 }
-
+async function _forceOnlineProactive(npcId, kind){
+  kind = String(kind||'daily') === 'random' ? 'random' : 'daily';
+  var source = 'debug_force_' + kind;
+  try{
+    var now = Date.now();
+    var s = _loadCharState(npcId);
+    if (!s || !s.attrs){
+      _setProactiveAttemptState(npcId, kind, { tryAt:now, status:'fail', reason:source, failReason:'角色状态缺失' });
+      _pushProactiveDebug(npcId, kind, 'fail', '角色状态缺失');
+      return null;
+    }
+    _setProactiveAttemptState(npcId, kind, { tryAt:now, status:'trying', reason:source, failReason:'' });
+    _pushProactiveDebug(npcId, kind, 'try', source);
+    var behaviorKey = kind === 'daily' ? 'daily_online' : 'social';
+    var behaviorLabel = kind === 'daily' ? '在今天的间隙里想起了你' : '在忙碌里忽然想起了你';
+    var aiText = null;
+    if (typeof LifeEngine !== 'undefined' && LifeEngine && typeof LifeEngine._generateAIMsg === 'function'){
+      try{ aiText = await LifeEngine._generateAIMsg(npcId, behaviorKey, behaviorLabel, s, { mode:'online', kind:kind, atTs: now }); }catch(e){}
+    }
+    aiText = String(aiText || '').trim();
+    if (!aiText){
+      _setProactiveAttemptState(npcId, kind, { status:'fail', reason:source, failReason:'AI 返回空文本或请求失败' });
+      _pushProactiveDebug(npcId, kind, 'fail', 'AI 返回空文本或请求失败');
+      return null;
+    }
+    var inserted = _insertOnlineProactiveMessage(npcId, aiText, { kind:kind });
+    if (!inserted){
+      _setProactiveAttemptState(npcId, kind, { status:'fail', reason:source, failReason:'消息写入失败' });
+      _pushProactiveDebug(npcId, kind, 'fail', '消息写入失败');
+      return null;
+    }
+    return inserted;
+  }catch(e){
+    _setProactiveAttemptState(npcId, kind, { status:'fail', reason:source, failReason:String((e&&e.message)||e||'未知异常') });
+    _pushProactiveDebug(npcId, kind, 'error', String((e&&e.message)||e||'未知异常'));
+    return null;
+  }
+}
+async function _reconcileDailyOnlineProactive(npcId, source, opts){
+  source = String(source || 'manual_reconcile');
+  return _ensureDailyOnlineProactive(npcId, Object.assign({}, opts || {}, { source: source }));
+}
+async function _reconcileAllDailyOnlineProactive(source, opts){
+  var ids = _getTrackedLifeNpcIds();
+  var out = [];
+  for (var i = 0; i < ids.length; i++){
+    try{ out.push(await _reconcileDailyOnlineProactive(ids[i], source || 'global_reconcile', opts)); }catch(e){}
+  }
+  return out;
+}
+function _scheduleGlobalDailyReconcile(source, delayMs){
+  var now = Date.now();
+  if (now - _lastGlobalReconcileAt < 8000) return;
+  _lastGlobalReconcileAt = now;
+  try{ if (_proactiveReconcileTimer) clearTimeout(_proactiveReconcileTimer); }catch(e){}
+  _proactiveReconcileTimer = setTimeout(function(){
+    _reconcileAllDailyOnlineProactive(source || 'scheduled_reconcile').catch(function(){});
+  }, Math.max(0, Number(delayMs || 0)));
+}
 // ========== Phase 3A：聊天模式管理（online/offline） ==========
 var _chatModes = {}; // 缓存：contactId → 'online'|'offline'
 function _getChatMode(npcId){ return _chatModes[npcId] || _phLoad('chatmode_'+String(npcId), 'online') || 'online'; }
