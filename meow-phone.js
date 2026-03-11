@@ -13979,9 +13979,14 @@ const npc = _wxGetChatTargetMeta(npcId);
           this[reqKey] = true;
 
           var timeoutMs = ((opts && opts.timeout) || 30) * 1000;
+          // ★ 后台标签页给更长超时（浏览器会延迟定时器）
+          try{ if (doc.hidden || doc.visibilityState === 'hidden') timeoutMs = Math.max(timeoutMs, 60000); }catch(e){}
           var timer = setTimeout(function(){
             try{ ctrlWrap.reason = 'timeout'; ctrlWrap.controller.abort(); }catch(e){}
           }, timeoutMs);
+
+          // ★ 网络重试次数（proactive 给 2 次重试，普通给 1 次）
+          var maxRetries = channel === 'proactive' ? 2 : 1;
 
           try{
             var body = {
@@ -14006,77 +14011,82 @@ const npc = _wxGetChatTargetMeta(npcId);
 
             var lastStatus = 0;
             var lastErrorBody = '';
+            var lastNetError = '';
 
             for (var ui = 0; ui < urls.length; ui++){
               var url = urls[ui];
-              try{
-                void(0)&&console.log('[PhoneAI] 尝试:', url);
-                var resp = await fetch(url, {
-                  method: 'POST',
-                  headers: headers,
-                  body: bodyStr,
-                  signal: ctrlWrap.controller.signal,
-                  cache: 'no-store'
-                });
 
-                // 如果是 404 且还有其他候选 URL，继续尝试
-                if (resp.status === 404 && ui < urls.length - 1){
-                  void(0)&&console.log('[PhoneAI] 404:', url, '→ 尝试下一个候选');
-                  continue;
-                }
+              // ★ 带重试的 fetch
+              for (var retry = 0; retry <= maxRetries; retry++){
+                // 已被取消则不再重试
+                if (ctrlWrap.controller.signal.aborted) break;
 
-                clearTimeout(timer);
-
-                if (!resp.ok){
-                  lastStatus = resp.status;
-                  try{ lastErrorBody = await resp.text(); }catch(e){ lastErrorBody = ''; }
-                  console.warn('[PhoneAI] 请求失败:', resp.status, url, lastErrorBody.slice(0, 200));
-                  if (resp.status === 401 || resp.status === 403) return { ok:false, data:null, error:'API 密钥无效，请检查 API 设置' };
-                  if (resp.status === 429) return { ok:false, data:null, error:'请求太频繁，请稍后再试' };
-                  if (resp.status >= 500) return { ok:false, data:null, error:'AI 服务异常，请重试' };
-                  return { ok:false, data:null, error:'请求失败 ('+resp.status+')' };
-                }
-
-                // 成功！缓存这个 URL
-                this._cachedChatUrl = url;
-                void(0)&&console.log('[PhoneAI] ✅ 成功:', url);
-
-                var json = await resp.json();
-                var text = '';
                 try{
-                  text = json.choices[0].message.content || '';
-                }catch(e){
-                  // 兼容其他响应格式
-                  try{ text = json.output_text || json.result || json.response || ''; }catch(e2){}
-                }
-                if (!text && json){
-                  try{ text = JSON.stringify(json).slice(0, 500); }catch(e){}
-                }
-                // 阶段B修复：清除模型可能泄露的 thinking/think 标签
-                text = String(text||'').replace(/<thinking>[\s\S]*?<\/thinking>/gi, '').replace(/<think>[\s\S]*?<\/think>/gi, '');
-                text = text.replace(/<\/?thinking>/gi, '').replace(/<\/?think>/gi, '').trim();
-                return { ok:true, data:text, error:null };
+                  var resp = await fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: bodyStr,
+                    signal: ctrlWrap.controller.signal,
+                    cache: 'no-store'
+                  });
 
-              }catch(e){
-                // AbortError 直接返回（区分超时 / 被新请求替换 / 手动取消）
-                if (e && e.name === 'AbortError'){
+                  if (resp.status === 404 && ui < urls.length - 1){
+                    break; // 跳到下一个候选 URL
+                  }
+
                   clearTimeout(timer);
-                  var abortReason = String(ctrlWrap.reason || 'aborted');
-                  if (abortReason === 'timeout') return { ok:false, data:null, error:'请求超时' };
-                  if (abortReason === 'replaced') return { ok:false, data:null, error:'请求被同通道新请求中断' };
-                  if (abortReason === 'manual') return { ok:false, data:null, error:'请求被手动取消' };
-                  return { ok:false, data:null, error:'请求被中断' };
-                }
-                // 网络错误且还有候选，继续
-                if (ui < urls.length - 1){
-                  void(0)&&console.log('[PhoneAI] 网络错误:', url, e.message, '→ 尝试下一个候选');
-                  continue;
-                }
-                throw e; // 最后一个候选也失败，抛给外层 catch
-              }
-            }
 
-            // 所有候选都失败
+                  if (!resp.ok){
+                    lastStatus = resp.status;
+                    try{ lastErrorBody = await resp.text(); }catch(e){ lastErrorBody = ''; }
+                    console.warn('[PhoneAI] 请求失败:', resp.status, url, lastErrorBody.slice(0, 200));
+                    if (resp.status === 401 || resp.status === 403) return { ok:false, data:null, error:'API 密钥无效，请检查 API 设置' };
+                    if (resp.status === 429) return { ok:false, data:null, error:'请求太频繁，请稍后再试' };
+                    if (resp.status >= 500) return { ok:false, data:null, error:'AI 服务异常，请重试' };
+                    return { ok:false, data:null, error:'请求失败 ('+resp.status+')' };
+                  }
+
+                  this._cachedChatUrl = url;
+
+                  var json = await resp.json();
+                  var text = '';
+                  try{
+                    text = json.choices[0].message.content || '';
+                  }catch(e){
+                    try{ text = json.output_text || json.result || json.response || ''; }catch(e2){}
+                  }
+                  if (!text && json){
+                    try{ text = JSON.stringify(json).slice(0, 500); }catch(e){}
+                  }
+                  text = String(text||'').replace(/<thinking>[\s\S]*?<\/thinking>/gi, '').replace(/<think>[\s\S]*?<\/think>/gi, '');
+                  text = text.replace(/<\/?thinking>/gi, '').replace(/<\/?think>/gi, '').trim();
+                  return { ok:true, data:text, error:null };
+
+                }catch(e){
+                  if (e && e.name === 'AbortError'){
+                    clearTimeout(timer);
+                    var abortReason = String(ctrlWrap.reason || 'aborted');
+                    if (abortReason === 'timeout') return { ok:false, data:null, error:'请求超时' };
+                    if (abortReason === 'replaced') return { ok:false, data:null, error:'请求被同通道新请求中断' };
+                    if (abortReason === 'manual') return { ok:false, data:null, error:'请求被手动取消' };
+                    return { ok:false, data:null, error:'请求被中断' };
+                  }
+                  lastNetError = String((e && e.message) || '');
+                  // ★ 网络错误：重试（等 2 秒后再试）
+                  if (retry < maxRetries){
+                    console.log('[PhoneAI] 网络错误，第' + (retry+1) + '次重试:', url, lastNetError);
+                    await new Promise(function(r){ setTimeout(r, 2000 + retry * 1000); });
+                    continue;
+                  }
+                  // 最后一次重试也失败
+                  if (ui < urls.length - 1){
+                    break; // 尝试下一个 URL
+                  }
+                  throw e;
+                }
+              } // end retry loop
+            } // end url loop
+
             clearTimeout(timer);
             return { ok:false, data:null, error:'所有 API 地址均失败 ('+lastStatus+')' };
 
@@ -14092,7 +14102,11 @@ const npc = _wxGetChatTargetMeta(npcId);
             var msg = String((e && e.message) || '');
             console.error('[PhoneAI] 异常:', msg);
             if (msg.indexOf('timeout') >= 0 || msg.indexOf('Timeout') >= 0) return { ok:false, data:null, error:'请求超时，请重试' };
-            return { ok:false, data:null, error:'网络连接失败，请检查网络' };
+            // ★ 更详细的错误提示
+            if (msg.indexOf('Failed to fetch') >= 0 || msg.indexOf('NetworkError') >= 0 || msg.indexOf('network') >= 0){
+              return { ok:false, data:null, error:'网络连接失败（可能是后台标签页被浏览器限制）' };
+            }
+            return { ok:false, data:null, error:'请求失败: ' + msg.slice(0, 80) };
           }finally{
             clearTimeout(timer);
             this[reqKey] = false;
@@ -20805,9 +20819,54 @@ function bindPageScroll(){
           }
 
           var _lastFgPushCheck = {}; // npcId → timestamp，防止同一角色连续推
+          var _pendingFgRetry = []; // ★ 后台失败的待重试列表
+
+          // ★ 页面回到前台时重试失败的主动消息
+          try{
+            doc.addEventListener('visibilitychange', function(){
+              if (doc.visibilityState !== 'visible') return;
+              if (!_pendingFgRetry.length) return;
+              // 清理过期条目（超过 30 分钟的不再重试）
+              var now = Date.now();
+              _pendingFgRetry = _pendingFgRetry.filter(function(item){ return now - item.queuedAt < 30 * 60 * 1000; });
+              if (!_pendingFgRetry.length) return;
+              var batch = _pendingFgRetry.splice(0);
+              console.log('[LifePush] 页面恢复前台，重试 ' + batch.length + ' 个待发消息');
+              batch.forEach(function(item){
+                // 延迟 3-8 秒错开
+                setTimeout(function(){
+                  try{
+                    _lastFgPushCheck[item.npcId] = Date.now();
+                    (async function(nId){
+                      try{
+                        var db4r = loadContactsDB();
+                        var npc4r = findContactById(db4r, nId) || { name:String(nId) };
+                        var s3r = _loadCharState(nId);
+                        var fgTextR = null;
+                        if (typeof LifeEngine !== 'undefined' && LifeEngine && typeof LifeEngine._generateAIMsg === 'function')
+                          fgTextR = await LifeEngine._generateAIMsg(nId, 'social', '忽然想起了你', s3r, { mode:'online', kind:'random', atTs:Date.now() });
+                        fgTextR = String(fgTextR||'').trim();
+                        if (!fgTextR) return;
+                        var ins = _insertOnlineProactiveMessage(nId, fgTextR, { kind:'random' });
+                        if (!ins) return;
+                        bumpThread(nId, { lastMsg:fgTextR.slice(0,30), lastTime:ins.ts, unread:1 });
+                        if (state.chatTarget === nId && state.app === 'chatDetail') try{renderChatDetail(nId);}catch(e){}
+                        _showLifePushToast(nId, npc4r.name||nId, (npc4r.avatar||''), fgTextR, function(){ try{openChat(nId);}catch(e){} });
+                      }catch(e){ console.warn('[LifePush] retry error:', e); }
+                    })(item.npcId);
+                  }catch(e){}
+                }, 3000 + Math.random() * 5000);
+              });
+            });
+          }catch(e){}
 
           var _fgPushTimer = setInterval(function(){
             try{
+              // ★ 页面在后台时不发 API 请求（浏览器会杀掉 fetch）
+              // 改为标记待发，回到前台时由 visibilitychange 处理
+              var _pageHidden = false;
+              try{ _pageHidden = doc.hidden || doc.visibilityState === 'hidden'; }catch(e){}
+
               var prefix2 = _phUID() + '_charstate_';
               Object.keys(localStorage).forEach(function(k){
                 if (k.indexOf(prefix2) !== 0) return;
@@ -20829,12 +20888,15 @@ function bindPageScroll(){
                 var p3 = s3.personality || {};
 
                 // 每日保底：只补线上消息，不依赖当前正在看哪种模式
-                _reconcileDailyOnlineProactive(npcId, 'foreground_timer').then(function(inserted){
-                  if (!inserted) return;
-                  if (state.chatTarget === npcId && state.app === 'chatDetail'){
-                    try{ renderChatDetail(npcId); }catch(e){}
-                  }
-                }).catch(function(){});
+                // ★ 后台时跳过（避免 fetch 被浏览器杀掉）
+                if (!_pageHidden){
+                  _reconcileDailyOnlineProactive(npcId, 'foreground_timer').then(function(inserted){
+                    if (!inserted) return;
+                    if (state.chatTarget === npcId && state.app === 'chatDetail'){
+                      try{ renderChatDetail(npcId); }catch(e){}
+                    }
+                  }).catch(function(){});
+                }
 
                 // 触发条件：孤独感高 + 精力充足 + 合理时间
                 var h4 = new Date().getHours();
@@ -20849,7 +20911,14 @@ function bindPageScroll(){
 
                 _lastFgPushCheck[npcId] = Date.now();
                 _setProactiveAttemptState(npcId, 'random', { tryAt: Date.now(), status:'trying', reason:'foreground_timer', failReason:'' });
-                _pushProactiveDebug(npcId, 'random', 'try', 'foreground_timer');
+                _pushProactiveDebug(npcId, 'random', 'try', _pageHidden ? 'bg_queued' : 'foreground_timer');
+
+                // ★ 如果页面在后台，加入待重试队列而不是直接发请求
+                if (_pageHidden){
+                  _pendingFgRetry.push({ npcId: npcId, queuedAt: Date.now() });
+                  _pushProactiveDebug(npcId, 'random', 'queued', '页面后台，等待回到前台重试');
+                  return; // forEach return，跳过这个 npc
+                }
 
                 // 异步生成消息 + 写入 + 弹窗
                 (async function(nId, sSnap){
