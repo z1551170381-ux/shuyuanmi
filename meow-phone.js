@@ -15400,7 +15400,8 @@ const npc = _wxGetChatTargetMeta(npcId);
             var s2 = _loadCharState(npcId);
             var text = null;
             if (item.needAI) text = await _generateAIMsg(npcId, item.behaviorKey, item.behaviorLabel||'做了些事', s2, { mode:'online', atTs:item.sendAt });
-            if (!text) text = item.fallbackText || _getOnlineFallbackText(npcId, 'random', item.sendAt) || '...';
+            text = String(text || '').trim();
+            if (!text) continue;
             results.push({ text:text, ts:item.sendAt, mode:'online', branch:item.branch || (typeof _getActiveBranch === 'function' ? _getActiveBranch(npcId) : 'main') });
           }
           return results;
@@ -15450,7 +15451,8 @@ const npc = _wxGetChatTargetMeta(npcId);
             for (var gi = 0; gi < chosen.length; gi++){
               var msgTs = chosen[gi].getTime() + _randomBetween(0, 25) * 60000;
               var aiText = await _generateAIMsg(npcId, 'social', '想着你', s, { mode:'online', atTs: msgTs });
-              if (!aiText) aiText = _getOnlineFallbackText(npcId, 'daily', msgTs);
+              aiText = String(aiText || '').trim();
+              if (!aiText) continue;
               _insertOnlineProactiveMessage(npcId, aiText, { ts: msgTs, kind:'daily' });
             }
           }catch(e){ console.warn('[LifeEngine] catchUpProactiveMsgs error:', e); }
@@ -20701,7 +20703,8 @@ function bindPageScroll(){
                       if (typeof LifeEngine !== 'undefined' && LifeEngine && typeof LifeEngine._generateAIMsg === 'function')
                         fgText = await LifeEngine._generateAIMsg(nId, 'social', '在忙碌里忽然想起了你', sSnap, { mode:'online', kind:'random', atTs: Date.now() });
                     }catch(e){}
-                    if (!fgText) fgText = _getOnlineFallbackText(nId, 'random', Date.now());
+                    fgText = String(fgText || '').trim();
+                    if (!fgText) return;
 
                     // 写入聊天记录（伪装成稍早发出的线上消息）
                     var inserted5 = _insertOnlineProactiveMessage(nId, fgText, { kind:'random' });
@@ -20857,6 +20860,8 @@ function _loadProactiveMeta(npcId){
     lastOnlineDailyDate: '',
     lastOnlinePushAt: 0,
     lastOnlineRandomAt: 0,
+    lastOnlineDailyTryAt: 0,
+    lastOnlineRandomTryAt: 0,
     lastInsertedAt: 0
   });
 }
@@ -20901,7 +20906,8 @@ function _insertOnlineProactiveMessage(npcId, text, opts){
     var kind = (opts && opts.kind) || 'random';
     var now = Date.now();
     var ts = (opts && opts.ts) ? Number(opts.ts) : _pickFakeOnlinePushTs(npcId, kind, branch);
-    var finalText = String(text || '').trim() || _getOnlineFallbackText(npcId, kind, ts);
+    var finalText = String(text || '').trim();
+    if (!finalText) return null;
     var lg = loadLogs();
     lg.map ||= {};
     var id = String(npcId);
@@ -20939,16 +20945,21 @@ async function _ensureDailyOnlineProactive(npcId){
     var meta0 = _loadProactiveMeta(npcId);
     var today = _dayKey(now);
     if (meta0.lastOnlineDailyDate === today) return null;
+    if (meta0.lastOnlineDailyTryAt && (now - Number(meta0.lastOnlineDailyTryAt || 0) < 30 * 60 * 1000)) return null;
     if (_onlineDailyPushLocks[npcId]) return null;
     _onlineDailyPushLocks[npcId] = 1;
     try{
+      var metaTry = _loadProactiveMeta(npcId);
+      metaTry.lastOnlineDailyTryAt = now;
+      _saveProactiveMeta(npcId, metaTry);
       var s = _loadCharState(npcId);
       if (!s || !s.attrs) return null;
       var aiText = null;
       if (typeof LifeEngine !== 'undefined' && LifeEngine && typeof LifeEngine._generateAIMsg === 'function'){
         try{ aiText = await LifeEngine._generateAIMsg(npcId, 'daily_online', '在今天的间隙里想起了你', s, { mode:'online', kind:'daily', atTs: now }); }catch(e){}
       }
-      if (!aiText) aiText = _getOnlineFallbackText(npcId, 'daily', now);
+      aiText = String(aiText || '').trim();
+      if (!aiText) return null;
       var inserted = _insertOnlineProactiveMessage(npcId, aiText, { kind:'daily' });
       if (!inserted) return null;
       var meta = _loadProactiveMeta(npcId);
