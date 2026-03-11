@@ -13903,7 +13903,9 @@ const npc = _wxGetChatTargetMeta(npcId);
       // ===== 开始 =====
       const PhoneAI = {
         _controller: null,
+        _proactiveController: null,
         _requesting: false,
+        _proactiveRequesting: false,
         _replySeqId: 0,
 
         _getConfig: function(){
@@ -13965,15 +13967,20 @@ const npc = _wxGetChatTargetMeta(npcId);
           if (!cfg.endpoint) return { ok:false, data:null, error:'请先配置 API' };
           if (!cfg.key) return { ok:false, data:null, error:'请先配置 API 密钥' };
 
-          if (this._controller){
-            try{ this._controller.abort(); }catch(e){}
+          var channel = (opts && opts.channel === 'proactive') ? 'proactive' : 'default';
+          var ctrlKey = channel === 'proactive' ? '_proactiveController' : '_controller';
+          var reqKey = channel === 'proactive' ? '_proactiveRequesting' : '_requesting';
+          var prevWrap = this[ctrlKey];
+          if (prevWrap && prevWrap.controller){
+            try{ prevWrap.reason = 'replaced'; prevWrap.controller.abort(); }catch(e){}
           }
-          this._controller = new AbortController();
-          this._requesting = true;
+          var ctrlWrap = { controller:new AbortController(), reason:'' };
+          this[ctrlKey] = ctrlWrap;
+          this[reqKey] = true;
 
           var timeoutMs = ((opts && opts.timeout) || 30) * 1000;
           var timer = setTimeout(function(){
-            try{ PhoneAI._controller.abort(); }catch(e){}
+            try{ ctrlWrap.reason = 'timeout'; ctrlWrap.controller.abort(); }catch(e){}
           }, timeoutMs);
 
           try{
@@ -14008,7 +14015,7 @@ const npc = _wxGetChatTargetMeta(npcId);
                   method: 'POST',
                   headers: headers,
                   body: bodyStr,
-                  signal: this._controller.signal,
+                  signal: ctrlWrap.controller.signal,
                   cache: 'no-store'
                 });
 
@@ -14051,10 +14058,14 @@ const npc = _wxGetChatTargetMeta(npcId);
                 return { ok:true, data:text, error:null };
 
               }catch(e){
-                // AbortError 直接返回
+                // AbortError 直接返回（区分超时 / 被新请求替换 / 手动取消）
                 if (e && e.name === 'AbortError'){
                   clearTimeout(timer);
-                  return { ok:false, data:null, error:null };
+                  var abortReason = String(ctrlWrap.reason || 'aborted');
+                  if (abortReason === 'timeout') return { ok:false, data:null, error:'请求超时' };
+                  if (abortReason === 'replaced') return { ok:false, data:null, error:'请求被同通道新请求中断' };
+                  if (abortReason === 'manual') return { ok:false, data:null, error:'请求被手动取消' };
+                  return { ok:false, data:null, error:'请求被中断' };
                 }
                 // 网络错误且还有候选，继续
                 if (ui < urls.length - 1){
@@ -14071,13 +14082,21 @@ const npc = _wxGetChatTargetMeta(npcId);
 
           }catch(e){
             clearTimeout(timer);
-            if (e && e.name === 'AbortError') return { ok:false, data:null, error:null };
+            if (e && e.name === 'AbortError'){
+              var abortReason2 = String(ctrlWrap.reason || 'aborted');
+              if (abortReason2 === 'timeout') return { ok:false, data:null, error:'请求超时' };
+              if (abortReason2 === 'replaced') return { ok:false, data:null, error:'请求被同通道新请求中断' };
+              if (abortReason2 === 'manual') return { ok:false, data:null, error:'请求被手动取消' };
+              return { ok:false, data:null, error:'请求被中断' };
+            }
             var msg = String((e && e.message) || '');
             console.error('[PhoneAI] 异常:', msg);
             if (msg.indexOf('timeout') >= 0 || msg.indexOf('Timeout') >= 0) return { ok:false, data:null, error:'请求超时，请重试' };
             return { ok:false, data:null, error:'网络连接失败，请检查网络' };
           }finally{
-            this._requesting = false;
+            clearTimeout(timer);
+            this[reqKey] = false;
+            if (this[ctrlKey] === ctrlWrap) this[ctrlKey] = null;
           }
         },
 
@@ -14087,7 +14106,8 @@ const npc = _wxGetChatTargetMeta(npcId);
             system: (opts && opts.system) || '',
             temperature: (opts && opts.temperature != null) ? opts.temperature : 0.85,
             maxTokens: (opts && opts.maxTokens) ? opts.maxTokens : 1024,
-            timeout: (opts && opts.timeout) ? opts.timeout : 30
+            timeout: (opts && opts.timeout) ? opts.timeout : 30,
+            channel: (opts && opts.channel) || 'default'
           });
         },
 
@@ -14195,13 +14215,17 @@ const npc = _wxGetChatTargetMeta(npcId);
           }finally{ if(overrideModel) this._getConfig=origGetConfig; }
         },
 
-        abort: function(){
-          if (this._controller){
-            try{ this._controller.abort(); }catch(e){}
-            this._controller = null;
+        abort: function(channel){
+          var ch = channel === 'proactive' ? 'proactive' : 'default';
+          var ctrlKey = ch === 'proactive' ? '_proactiveController' : '_controller';
+          var reqKey = ch === 'proactive' ? '_proactiveRequesting' : '_requesting';
+          var wrap = this[ctrlKey];
+          if (wrap && wrap.controller){
+            try{ wrap.reason = 'manual'; wrap.controller.abort(); }catch(e){}
           }
-          this._requesting = false;
-          this._replySeqId++;
+          this[ctrlKey] = null;
+          this[reqKey] = false;
+          if (ch === 'default') this._replySeqId++;
         },
 
         destroy: function(){
@@ -15478,7 +15502,8 @@ const npc = _wxGetChatTargetMeta(npcId);
               messages: [{ role:'user', content:'（请直接输出那条消息）' }],
               temperature: 0.9,
               maxTokens: 80,
-              timeout: 20
+              timeout: 45,
+              channel: 'proactive'
             });
             var proactiveKind = (opts && opts.kind) ? String(opts.kind) : (String(behaviorKey||'').indexOf('daily') >= 0 ? 'daily' : 'random');
             if (result && result.ok && result.data){
@@ -21203,8 +21228,10 @@ async function _ensureDailyOnlineProactive(npcId, opts){
       }
       aiText = String(aiText || '').trim();
       if (!aiText){
-        _setProactiveAttemptState(npcId, 'daily', { status:'fail', reason:source, failReason:'AI 返回空文本或请求失败' });
-        _pushProactiveDebug(npcId, 'daily', 'fail', 'AI 返回空文本或请求失败');
+        var metaFailDaily = _loadProactiveMeta(npcId);
+        var failDaily = String(metaFailDaily.lastOnlineDailyFailReason || '').trim() || 'AI 返回空文本或请求失败';
+        _setProactiveAttemptState(npcId, 'daily', { status:'fail', reason:source, failReason:failDaily });
+        _pushProactiveDebug(npcId, 'daily', 'fail', failDaily);
         return null;
       }
       var inserted = _insertOnlineProactiveMessage(npcId, aiText, { kind:'daily' });
@@ -21245,8 +21272,11 @@ async function _forceOnlineProactive(npcId, kind){
     }
     aiText = String(aiText || '').trim();
     if (!aiText){
-      _setProactiveAttemptState(npcId, kind, { status:'fail', reason:source, failReason:'AI 返回空文本或请求失败' });
-      _pushProactiveDebug(npcId, kind, 'fail', 'AI 返回空文本或请求失败');
+      var metaFailAny = _loadProactiveMeta(npcId);
+      var failAny = kind === 'daily' ? String(metaFailAny.lastOnlineDailyFailReason || '').trim() : String(metaFailAny.lastOnlineRandomFailReason || '').trim();
+      failAny = failAny || 'AI 返回空文本或请求失败';
+      _setProactiveAttemptState(npcId, kind, { status:'fail', reason:source, failReason:failAny });
+      _pushProactiveDebug(npcId, kind, 'fail', failAny);
       return null;
     }
     var inserted = _insertOnlineProactiveMessage(npcId, aiText, { kind:kind });
