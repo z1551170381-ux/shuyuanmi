@@ -5811,6 +5811,26 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             return;
           }
           if (act === 'afForumSettings'){ _openForumFeedSettings(); return; }
+          if (act === 'weatherRefresh'){
+            try{ toast('🌤️ 正在生成天气…'); }catch(e){}
+            _generateWeatherData().then(function(){ var b=root.querySelector('[data-ph="appBody"]'); if(b&&state.currentApp==='weather') renderWeather(b); });
+            return;
+          }
+          if (act === 'calendarRefresh'){
+            try{ toast('📅 正在生成日程…'); }catch(e){}
+            _generateCalendarData().then(function(){ var b=root.querySelector('[data-ph="appBody"]'); if(b&&state.currentApp==='calendar') renderCalendar(b); });
+            return;
+          }
+          if (act === 'smsRefresh'){
+            try{ toast('✉️ 正在生成短信…'); }catch(e){}
+            _generateSmsData().then(function(){ var b=root.querySelector('[data-ph="appBody"]'); if(b&&state.currentApp==='sms') renderSmsApp(b); });
+            return;
+          }
+          if (act === 'smsDetail'){
+            var smsIdx = parseInt(el.getAttribute('data-smsidx') || (el.closest && el.closest('[data-smsidx]') ? el.closest('[data-smsidx]').getAttribute('data-smsidx') : ''));
+            if(!isNaN(smsIdx)) _showSmsDetail(smsIdx);
+            return;
+          }
           if (act === 'afBrowserSettings'){ _openBrowserFeedSettings(); return; }
           if (act === 'afMomentsSettings'){ _openMomentsFeedSettings(); return; }
           if (act === 'phClearAppData'){
@@ -11231,7 +11251,7 @@ ${lines}
         h+='</div>';
 
         h+='<div class="phCard" style="margin-bottom:12px;"><div style="font-weight:700;color:var(--ph-text);margin-bottom:10px;">自动更新目标</div>';
-        [{k:'forum',l:'论坛',a:true},{k:'browser',l:'浏览器',a:true},{k:'moments',l:'朋友圈',a:true},{k:'shop',l:'购物（开发中）',a:false},{k:'weather',l:'天气（开发中）',a:false}].forEach(function(tg){
+        [{k:'forum',l:'论坛',a:true},{k:'browser',l:'浏览器',a:true},{k:'moments',l:'朋友圈',a:true},{k:'weather',l:'天气资讯',a:true},{k:'calendar',l:'日历日程',a:true},{k:'sms',l:'短信',a:true}].forEach(function(tg){
           h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;opacity:'+(tg.a?'1':'0.4')+';"><span style="font-size:13px;color:var(--ph-text);">'+tg.l+'</span>';
           h+=tg.a?'<button class="sToggle'+((cfg.autoTargets||{})[tg.k]?' on':'')+'" data-aftgt="'+tg.k+'" style="flex-shrink:0;"></button>':'<span style="font-size:11px;color:var(--ph-text-dim);">开发中</span>';
           h+='</div>';
@@ -12014,22 +12034,103 @@ const npc = _wxGetChatTargetMeta(npcId);
       }
 
       /* ========== 短信 App ========== */
+      // ===== 短信 AI 生成 =====
+      var LS_PHONE_SMS_DATA = 'meow_phone_g_sms_ai_v1';
+      function _loadSmsData(){ try{ return lsGet(LS_PHONE_SMS_DATA, null); }catch(e){ return null; } }
+      function _saveSmsData(d){ try{ lsSet(LS_PHONE_SMS_DATA, d); }catch(e){} }
+
+      async function _generateSmsData(worldCtx){
+        var ctx = worldCtx || '';
+        if(!ctx){
+          try{
+            var cfg = getAutofeedCfg();
+            ctx = AutoFeedEngine._buildContext(cfg);
+          }catch(e){}
+        }
+        var extraParts = [];
+        try{ var cd = _readCurrentCharCardDesc(); if(cd) extraParts.push('[角色卡]\n'+cd.slice(0,800)); }catch(e){}
+        try{ var stCtx = meowGetSTCtx(); if(stCtx&&stCtx.persona_description) extraParts.push('[用户设定]\n'+stCtx.persona_description.slice(0,400)); }catch(e){}
+        try{
+          var db = loadContactsDB(); var cl = _safeArr(db.list).map(function(c){ return c.name||'?'; }).join('、');
+          if(cl) extraParts.push('[通讯录]\n'+cl.slice(0,300));
+        }catch(e){}
+        try{
+          var cid = (typeof phoneGetChatUID==='function')?phoneGetChatUID():'';
+          var sd = getChatSummary(cid, _getChatMode(cid));
+          if(sd&&sd.summaryText) extraParts.push('[聊天总结]\n'+sd.summaryText.slice(0,500));
+        }catch(e){}
+        var fullCtx = ctx + '\n\n' + extraParts.join('\n\n');
+
+        var sysPrompt = '你是一个角色扮演世界的手机短信生成器。根据世界观、角色关系、用户身份等信息，为用户手机生成各种短信。\n'
+          + '短信类型包括：工作（领导/同事通知）、娱乐（活动/游戏推荐）、私人（朋友/亲人关心）、广告（促销/推销）、好友（通讯录角色发的有趣消息）、系统通知。\n'
+          + '请输出纯 JSON（不要 markdown 代码块）：\n'
+          + '{\n'
+          + '  "messages": [\n'
+          + '    {"from":"发件人名","preview":"短信预览内容(30字以内)","fullText":"完整短信内容(50-200字)","time":"HH:MM","category":"work|fun|personal|ad|friend|system","unread":true},\n'
+          + '    ...\n'
+          + '  ]\n'
+          + '}\n生成8-15条短信，类型要多样，内容要符合世界观和角色关系。好友短信应使用通讯录中的角色名。广告短信可以搞笑有趣。';
+        try{
+          var result = await _tlApiEnqueue(function(){
+            return PhoneAI.chat({ system:sysPrompt, messages:[{role:'user',content:fullCtx.slice(0,4000)||'（请生成一些有趣的虚拟手机短信）'}], temperature:0.85, maxTokens:1200, channel:'proactive', timeout:60 });
+          });
+          if(!result.ok) return;
+          var raw = String(result.data||'').replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
+          var parsed = JSON.parse(raw);
+          parsed._generatedAt = Date.now();
+          _saveSmsData(parsed);
+          try{ toast('✉️ 短信已更新'); }catch(e){}
+        }catch(e){ console.warn('[SmsAI] 生成失败:', e); }
+      }
+
       function renderSmsApp(container){
-        const msgs = [
-          {from:'系统通知',preview:'你有一条新的系统消息',time:'10:30',unread:true},
-          {from:'天气助手',preview:'今日天气：多云转晴，最高26°',time:'08:00',unread:false},
-          {from:'论坛提醒',preview:'你的帖子收到了3条新评论',time:'昨天',unread:true},
-        ];
-        let html = '<div class="chatList">';
-        msgs.forEach(m=>{
-          html += `<div class="chatItem" data-chatid="sms_${esc(m.from)}">
-            <div class="cAvatar svgIco" style="${m.unread?'box-shadow:0 0 0 2px var(--ph-accent);':''}">${_phFlatIcon('✉️')}</div>
-            <div class="cInfo"><div class="cName" style="${m.unread?'font-weight:800;':'font-weight:500;'}">${esc(m.from)}</div><div class="cLastMsg">${esc(m.preview)}</div></div>
-            <div class="cTime">${m.time}</div>
-          </div>`;
+        setAppBarRight('<button class="phBarRBtn" data-act="smsRefresh" title="刷新短信">' + _phFlatIcon('🔄') + '</button>');
+        var sd = _loadSmsData();
+        var msgs = (sd && Array.isArray(sd.messages)) ? sd.messages : [];
+
+        if(!msgs.length){
+          container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--ph-text-dim);font-size:13px;">暂无短信<br><br><button data-act="smsRefresh" style="padding:8px 20px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;cursor:pointer;">✉️ 生成短信</button></div>';
+          return;
+        }
+
+        var catIcons = { work:'💼', fun:'🎮', personal:'💌', ad:'📢', friend:'👋', system:'⚙️' };
+        var catLabels = { work:'工作', fun:'娱乐', personal:'私人', ad:'广告', friend:'好友', system:'系统' };
+        var html = '<div class="chatList">';
+        msgs.forEach(function(m, idx){
+          var icon = catIcons[m.category] || '✉️';
+          var catLabel = catLabels[m.category] || '';
+          html += '<div class="chatItem" data-act="smsDetail" data-smsidx="'+idx+'">'
+            + '<div class="cAvatar svgIco" style="'+(m.unread?'box-shadow:0 0 0 2px var(--ph-accent);':'')+'">'+_phFlatIcon(icon)+'</div>'
+            + '<div class="cInfo"><div class="cName" style="'+(m.unread?'font-weight:800;':'font-weight:500;')+'">'
+            + esc(m.from||'未知')
+            + (catLabel ? ' <span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(0,0,0,.05);color:var(--ph-text-dim);">'+catLabel+'</span>' : '')
+            + '</div><div class="cLastMsg">'+esc(m.preview||'')+'</div></div>'
+            + '<div class="cTime">'+(m.time||'')+'</div></div>';
         });
         html += '</div>';
+        if(sd._generatedAt){
+          html += '<div style="text-align:center;font-size:10px;color:var(--ph-text-dim);padding:8px 0;">上次更新：'+new Date(sd._generatedAt).toLocaleString()+'</div>';
+        }
         container.innerHTML = html;
+      }
+
+      function _showSmsDetail(idx){
+        var sd = _loadSmsData();
+        var msgs = (sd && Array.isArray(sd.messages)) ? sd.messages : [];
+        var m = msgs[idx];
+        if(!m) return;
+        // 标记已读
+        m.unread = false;
+        _saveSmsData(sd);
+        var catIcons = { work:'💼', fun:'🎮', personal:'💌', ad:'📢', friend:'👋', system:'⚙️' };
+        var icon = catIcons[m.category] || '✉️';
+        var inner = '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">'+icon+' '+esc(m.from||'')+'</div>'
+          + '<div style="font-size:10px;color:rgba(20,24,28,.4);margin-bottom:10px;">'+(m.time||'')+'</div>'
+          + '<div style="font-size:13px;color:rgba(20,24,28,.75);line-height:1.7;white-space:pre-wrap;">'+esc(m.fullText||m.preview||'')+'</div>'
+          + '<div style="margin-top:14px;text-align:center;"><button data-el="smsDetailClose" style="padding:8px 24px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">关闭</button></div>';
+        var ov = _cpShowOverlay(inner);
+        var closeBtn = ov.querySelector('[data-el="smsDetailClose"]');
+        if(closeBtn) closeBtn.onclick = function(){ ov.remove(); var body = root.querySelector('[data-ph="appBody"]'); if(body) renderSmsApp(body); };
       }
 
       /* ========== 聊天详情（版面6：微信聊天风格 — 模块化重构） ========== */
@@ -14213,7 +14314,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           if(overrideModel){ var self=this; this._getConfig=function(){ var c=origGetConfig.call(self); c.model=overrideModel; return c; }; }
 
           try{
-            var result=await this._request({ system:sysPrompt, messages:[{role:'user',content:context||'（无额外上下文，请基于你的知识生成有趣的世界观资讯内容）'}], temperature:0.9, maxTokens:2048, timeout:90 });
+            var result=await this._request({ system:sysPrompt, messages:[{role:'user',content:context||'（无额外上下文，请基于你的知识生成有趣的世界观资讯内容）'}], temperature:0.9, maxTokens:2048, timeout:90, channel:'proactive' });
             if(!result.ok) return result;
             void(0)&&console.log('[PhoneAI.generateFeed] 原始返回:', String(result.data||'').substring(0,300));
             var parsed=_parseFeedJSON(result.data);
@@ -15504,7 +15605,7 @@ const npc = _wxGetChatTargetMeta(npcId);
               (socialDrive > 65 ? '比较主动爱聊天。' : socialDrive < 35 ? '平时话不多，这次难得主动。' : '') +
               (emotionDisplay > 65 ? '情绪外放。' : emotionDisplay < 35 ? '情绪内敛。' : '') + '\n' +
               (targetMode === 'online' && charEx.onlineChatPrompt ? '【线上聊天附加要求】\n' + String(charEx.onlineChatPrompt).trim() + '\n' : '') +
-              '【要求】发一条简短自然的消息，1-2句，像真实聊天，不要正式，不要引号，直接输出内容。若当前时段在工作/休息中，要让消息带一点忙里偷闲、稍后看到或刚空下来的感觉。' +
+              '【要求】发一条简短自然的消息，2-3句，像真实聊天，不要正式，不要引号，直接输出内容。若当前时段在工作/休息中，要让消息带一点忙里偷闲、稍后看到或刚空下来的感觉。不直接说想你之类的话，而是找话题' +
               (recentLogs.length ? '\n【最近对话】\n' + recentLogs.join('\n') : '');
 
             var result = await PhoneAI.chat({
@@ -16728,15 +16829,19 @@ const npc = _wxGetChatTargetMeta(npcId);
         saveSummaryStore(store);
       }
 
-      // 后台静默触发自动总结：直接写入当前模式的时间线总结
+      // 后台静默触发自动总结：直接写入当前模式的时间线总结（使用队列避免被挤掉）
       async function _triggerAutoSummary(npcId, mode){
         try{
           var apiCfg = PhoneAI._getConfig();
           if (!apiCfg.endpoint || !apiCfg.key) return;
           var targetMode = _normChatMode(mode || _getChatMode(npcId));
-          var pending = _getTimelinePendingRange(npcId, targetMode);
+          var ce = _loadCharExtra(npcId);
+          var chunkSize = Math.max(5, ce.autoSumEvery || 20);
+          var pending = _getTimelinePendingRange(npcId, targetMode, chunkSize);
           if (!pending) return;
-          await _generateTimelineEntry(npcId, pending.fromIdx, pending.toIdx, targetMode, { silent:true, auto:true });
+          await _tlApiEnqueue(function(){
+            return _generateTimelineEntry(npcId, pending.fromIdx, pending.toIdx, targetMode, { silent:true, auto:true });
+          });
         }catch(e){}
       }
 
@@ -16887,7 +16992,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             if(isManual && !this._isManualRun){
               void(0)&&console.log('[AutoFeed] 手动优先：中断自动任务');
               this._aborted=true;
-              try{ PhoneAI.abort(); }catch(e){}
+              try{ PhoneAI.abort('proactive'); }catch(e){}
               // 等一小段让旧请求清理
               await new Promise(function(r){ setTimeout(r, 300); });
               this._running=false;
@@ -16901,7 +17006,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           if(!isManual&&cfg.cooldownUntil>Date.now()) return{ok:false,error:'cooldown'};
           var apiCfg=PhoneAI._getConfig();
           if(!apiCfg.endpoint||!apiCfg.key){ try{toast('请先在设置中配置 API');}catch(e){} return{ok:false,error:'no_api'}; }
-          if(!targets.length){ var at=cfg.autoTargets||{}; if(at.forum)targets.push('forum'); if(at.browser)targets.push('browser'); if(at.moments)targets.push('moments'); }
+          if(!targets.length){ var at=cfg.autoTargets||{}; if(at.forum)targets.push('forum'); if(at.browser)targets.push('browser'); if(at.moments)targets.push('moments'); if(at.weather)targets.push('weather'); if(at.calendar)targets.push('calendar'); if(at.sms)targets.push('sms'); }
           if(!targets.length){ try{toast('没有已开启的资讯目标');}catch(e){} return{ok:false,error:'no_targets'}; }
 
           this._running=true; this._aborted=false; this._isManualRun=isManual;
@@ -16912,11 +17017,27 @@ const npc = _wxGetChatTargetMeta(npcId);
             var context=this._buildContext(cfg);
             void(0)&&console.log('[AutoFeed] 上下文长度:', context.length, '字');
             var appCfg=getAutofeedAppCfg();
-            var result=await PhoneAI.generateFeed({context:context,targets:targets,appConfigs:{forum:appCfg.forum,browser:appCfg.browser,moments:appCfg.moments}});
+            // 通过队列排队，避免被聊天挤掉
+            var self2=this;
+            var result=await _tlApiEnqueue(function(){
+              return PhoneAI.generateFeed({context:context,targets:targets,appConfigs:{forum:appCfg.forum,browser:appCfg.browser,moments:appCfg.moments}});
+            });
             if(this._aborted) return{ok:false,error:'aborted'};
             if(!result.ok) throw new Error(result.error||'API 调用失败');
 
             this._dispatchResults(result.data, targets);
+
+            // 分发天气/日历/短信（独立 API 调用，排队进行）
+            var worldCtx = context;
+            if(targets.indexOf('weather')>=0){
+              try{ await _generateWeatherData(worldCtx); }catch(e){ console.warn('[AutoFeed] 天气生成失败:', e); }
+            }
+            if(targets.indexOf('calendar')>=0){
+              try{ await _generateCalendarData(worldCtx); }catch(e){ console.warn('[AutoFeed] 日历生成失败:', e); }
+            }
+            if(targets.indexOf('sms')>=0){
+              try{ await _generateSmsData(worldCtx); }catch(e){ console.warn('[AutoFeed] 短信生成失败:', e); }
+            }
 
             cfg=getAutofeedCfg(); cfg.lastRunAt=Date.now(); cfg.lastRunKey=this._dayKey(); cfg.lastError=''; saveAutofeedCfg(cfg);
             try{toast('✅ 资讯生成完成！');}catch(e){}
@@ -18445,40 +18566,123 @@ const npc = _wxGetChatTargetMeta(npcId);
       }
 
       /* ========== 日历 App ========== */
+      // ===== 日历 AI 生成 =====
+      var LS_PHONE_CALENDAR_DATA = 'meow_phone_g_calendar_ai_v1';
+      function _loadCalendarData(){ try{ return lsGet(LS_PHONE_CALENDAR_DATA, null); }catch(e){ return null; } }
+      function _saveCalendarData(d){ try{ lsSet(LS_PHONE_CALENDAR_DATA, d); }catch(e){} }
+
+      async function _generateCalendarData(worldCtx){
+        var ctx = worldCtx || '';
+        if(!ctx){
+          try{
+            var cfg = getAutofeedCfg();
+            ctx = AutoFeedEngine._buildContext(cfg);
+          }catch(e){}
+        }
+        // 额外收集用户设定和角色卡信息
+        var extraParts = [];
+        try{ var cd = _readCurrentCharCardDesc(); if(cd) extraParts.push('[角色卡]\n'+cd.slice(0,1000)); }catch(e){}
+        try{ var stCtx = meowGetSTCtx(); if(stCtx&&stCtx.persona_description) extraParts.push('[用户设定]\n'+stCtx.persona_description.slice(0,500)); }catch(e){}
+        // 收集时间线总结
+        try{
+          var cid = (typeof phoneGetChatUID==='function')?phoneGetChatUID():'';
+          ['online','offline'].forEach(function(md){
+            var sd = getChatSummary(cid, md);
+            if(sd&&sd.summaryText) extraParts.push('['+md+'总结]\n'+sd.summaryText.slice(0,500));
+          });
+        }catch(e){}
+        var fullCtx = ctx + '\n\n' + extraParts.join('\n\n');
+
+        var sysPrompt = '你是一个角色扮演世界的日历/日程生成器。根据世界观、角色关系、聊天总结、用户设定等信息，为"用户（主角）"生成今日和近几天的日程安排。\n'
+          + '日程应包含：工作/学习安排、社交约会、重要事件、纪念日提醒等，要符合世界观和角色关系。\n'
+          + '请输出纯 JSON（不要 markdown 代码块）：\n'
+          + '{\n'
+          + '  "todayEvents": [ {"time":"10:00","title":"事件名","desc":"简短描述","color":"#6366f1","category":"work|social|personal|reminder"}, ... ],\n'
+          + '  "upcoming": [ {"day":"明天","events":[{"time":"14:00","title":"...","desc":"..."}]}, {"day":"后天","events":[...]} ],\n'
+          + '  "reminders": ["提醒1","提醒2"]\n'
+          + '}\n生成4-8个今日事件和2-3天的未来日程。内容要贴合角色关系和世界观。';
+        try{
+          var result = await _tlApiEnqueue(function(){
+            return PhoneAI.chat({ system:sysPrompt, messages:[{role:'user',content:fullCtx.slice(0,4000)||'（请根据一般都市生活生成日程）'}], temperature:0.8, maxTokens:1000, channel:'proactive', timeout:60 });
+          });
+          if(!result.ok) return;
+          var raw = String(result.data||'').replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
+          var parsed = JSON.parse(raw);
+          parsed._generatedAt = Date.now();
+          _saveCalendarData(parsed);
+          try{ toast('📅 日历日程已更新'); }catch(e){}
+        }catch(e){ console.warn('[CalendarAI] 生成失败:', e); }
+      }
+
       function renderCalendar(container){
+        setAppBarRight('<button class="phBarRBtn" data-act="calendarRefresh" title="刷新日程">' + _phFlatIcon('🔄') + '</button>');
         const now=new Date();
         const y=now.getFullYear(),m=now.getMonth(),today=now.getDate();
         const firstDay=new Date(y,m,1).getDay();
         const dim=new Date(y,m+1,0).getDate();
         const dip=new Date(y,m,0).getDate();
         const mn=['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
-        let html=`<div class="phCard" style="margin-top:8px;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-            <span style="font-weight:700;color:var(--ph-text);font-size:16px;">${y}年 ${mn[m]}</span>
-            <span style="font-size:12px;color:var(--ph-text-dim);">现实时间</span>
-          </div>
-          <div class="calGrid">`;
-        ['日','一','二','三','四','五','六'].forEach(h=>{html+=`<div class="calH">${h}</div>`;});
-        for(let i=firstDay-1;i>=0;i--) html+=`<div class="calD other">${dip-i}</div>`;
-        for(let d=1;d<=dim;d++) html+=`<div class="calD${d===today?' today':''}">${d}</div>`;
+        let html='<div class="phCard" style="margin-top:8px;">'
+          + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
+          + '<span style="font-weight:700;color:var(--ph-text);font-size:16px;">'+y+'年 '+mn[m]+'</span>'
+          + '<span style="font-size:12px;color:var(--ph-text-dim);">现实时间</span>'
+          + '</div><div class="calGrid">';
+        ['日','一','二','三','四','五','六'].forEach(function(h){html+='<div class="calH">'+h+'</div>';});
+        for(let i=firstDay-1;i>=0;i--) html+='<div class="calD other">'+(dip-i)+'</div>';
+        for(let d=1;d<=dim;d++) html+='<div class="calD'+(d===today?' today':'')+'">'+d+'</div>';
         const rem=(firstDay+dim)%7===0?0:7-(firstDay+dim)%7;
-        for(let i=1;i<=rem;i++) html+=`<div class="calD other">${i}</div>`;
-        html+=`</div></div>`;
-        // Events
-        const events = [
-          {time:'10:00',title:'与好友约会',color:'#6366f1'},
-          {time:'14:00',title:'下午茶时间',color:'#ec4899'},
-          {time:'20:00',title:'晚间聊天',color:'#8b5cf6'},
-        ];
-        html += `<div class="phCard"><div style="font-weight:600;color:var(--ph-text);margin-bottom:10px;">📌 今日事项</div>`;
-        events.forEach(ev=>{
-          html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);">
-            <div style="width:4px;height:32px;border-radius:2px;background:${ev.color};flex-shrink:0;"></div>
-            <div><div style="font-size:13px;color:var(--ph-text);">${ev.title}</div><div style="font-size:11px;color:var(--ph-text-dim);">${ev.time}</div></div>
-          </div>`;
+        for(let i=1;i<=rem;i++) html+='<div class="calD other">'+i+'</div>';
+        html+='</div></div>';
+
+        var cd = _loadCalendarData();
+        var hasData = cd && cd.todayEvents && cd.todayEvents.length;
+        var catColors = { work:'#6366f1', social:'#ec4899', personal:'#8b5cf6', reminder:'#f59e0b' };
+        var catLabels = { work:'工作', social:'社交', personal:'个人', reminder:'提醒' };
+
+        if(!hasData){
+          html += '<div class="phCard"><div style="font-weight:600;color:var(--ph-text);margin-bottom:10px;">📌 今日事项</div>'
+            + '<div style="text-align:center;padding:20px 0;color:var(--ph-text-dim);font-size:12px;">暂无日程数据<br><br><button data-act="calendarRefresh" style="padding:6px 16px;border-radius:8px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:12px;cursor:pointer;">📅 生成日程</button></div></div>';
+          container.innerHTML = html;
+          return;
+        }
+
+        // 今日事项
+        html += '<div class="phCard"><div style="font-weight:600;color:var(--ph-text);margin-bottom:10px;">📌 今日事项</div>';
+        cd.todayEvents.forEach(function(ev){
+          var color = ev.color || catColors[ev.category] || '#6366f1';
+          var catTag = ev.category ? '<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:'+color+'22;color:'+color+';margin-left:4px;">'+esc(catLabels[ev.category]||ev.category)+'</span>' : '';
+          html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);">'
+            + '<div style="width:4px;height:32px;border-radius:2px;background:'+color+';flex-shrink:0;"></div>'
+            + '<div style="flex:1;"><div style="font-size:13px;color:var(--ph-text);">'+esc(ev.title||'')+catTag+'</div>'
+            + '<div style="font-size:11px;color:var(--ph-text-dim);">'+(ev.time||'')+(ev.desc?' · '+esc(ev.desc):'')+'</div></div></div>';
         });
-        html+='</div>';
-        container.innerHTML=html;
+        html += '</div>';
+
+        // 未来几天
+        var upcoming = cd.upcoming || [];
+        if(upcoming.length){
+          html += '<div class="phCard"><div style="font-weight:600;color:var(--ph-text);margin-bottom:10px;">📆 近期安排</div>';
+          upcoming.forEach(function(day){
+            html += '<div style="font-size:12px;font-weight:600;color:var(--ph-text);padding:6px 0 2px;">'+esc(day.day||'')+'</div>';
+            (day.events||[]).forEach(function(ev){
+              html += '<div style="font-size:12px;color:var(--ph-text-sub);padding:3px 0 3px 12px;">'+esc(ev.time||'')+' '+esc(ev.title||'')+'</div>';
+            });
+          });
+          html += '</div>';
+        }
+
+        // 提醒
+        var reminders = cd.reminders || [];
+        if(reminders.length){
+          html += '<div class="phCard"><div style="font-weight:600;color:var(--ph-text);margin-bottom:8px;">🔔 提醒</div>';
+          reminders.forEach(function(r){ html += '<div style="font-size:12px;color:var(--ph-text-sub);padding:3px 0;">· '+esc(r)+'</div>'; });
+          html += '</div>';
+        }
+
+        if(cd._generatedAt){
+          html += '<div style="text-align:center;font-size:10px;color:var(--ph-text-dim);padding:8px 0;">上次更新：'+new Date(cd._generatedAt).toLocaleString()+'</div>';
+        }
+        container.innerHTML = html;
       }
 
       /* ========== 论坛 App（微博风格） ========== */
@@ -19440,39 +19644,94 @@ const npc = _wxGetChatTargetMeta(npcId);
         }
       }
 
+      // ===== 天气 AI 生成 =====
+      var LS_PHONE_WEATHER_DATA = 'meow_phone_g_weather_ai_v1';
+      function _loadWeatherData(){ try{ return lsGet(LS_PHONE_WEATHER_DATA, null); }catch(e){ return null; } }
+      function _saveWeatherData(d){ try{ lsSet(LS_PHONE_WEATHER_DATA, d); }catch(e){} }
+
+      async function _generateWeatherData(worldCtx){
+        var ctx = worldCtx || '';
+        if(!ctx){
+          try{
+            var cfg = getAutofeedCfg();
+            ctx = AutoFeedEngine._buildContext(cfg);
+          }catch(e){}
+        }
+        var sysPrompt = '你是一个世界观内嵌天气系统。根据提供的世界观设定、聊天总结等信息，为这个虚拟世界生成今日和未来几天的天气数据。\n'
+          + '天气应当符合世界观设定（如末日世界可能有辐射尘、奇幻世界可能有魔法风暴等）。\n'
+          + '请输出纯 JSON（不要 markdown 代码块）：\n'
+          + '{\n'
+          + '  "cityName": "城市/地区名（根据世界观）",\n'
+          + '  "today": { "type": "sunny|cloudy|partcloud|rainy|thunder|snow", "temp": "24°", "desc": "简短天气描述", "humidity": "62%", "wind": "3级", "uv": "中等" },\n'
+          + '  "forecast": [ {"day":"明天","type":"sunny","high":"28°","low":"19°"}, ... (4天) ],\n'
+          + '  "news": [ {"title":"天气新闻标题","desc":"50字以内描述"}, {"title":"...","desc":"..."} ],\n'
+          + '  "tips": ["注意事项1","注意事项2"]\n'
+          + '}\n生成的内容要符合世界观，有趣且实用。';
+        try{
+          var result = await _tlApiEnqueue(function(){
+            return PhoneAI.chat({ system:sysPrompt, messages:[{role:'user',content:ctx.slice(0,3000)||'（无额外上下文，请生成一个有趣的虚拟世界天气）'}], temperature:0.8, maxTokens:800, channel:'proactive', timeout:60 });
+          });
+          if(!result.ok) return;
+          var raw = String(result.data||'').replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
+          var parsed = JSON.parse(raw);
+          parsed._generatedAt = Date.now();
+          _saveWeatherData(parsed);
+          try{ toast('🌤️ 天气资讯已更新'); }catch(e){}
+        }catch(e){ console.warn('[WeatherAI] 生成失败:', e); }
+      }
+
       function renderWeather(container){
-        const fc=[
-          {day:'今天',type:'partcloud',high:'26°',low:'18°'},
-          {day:'明天',type:'sunny',high:'28°',low:'19°'},
-          {day:'后天',type:'sunny',high:'30°',low:'20°'},
-          {day:'周四',type:'rainy',high:'22°',low:'16°'},
-          {day:'周五',type:'thunder',high:'20°',low:'15°'}
-        ];
-        let html=`<div class="weatherMain">
-          <div class="weatherIcon">${_weatherSVG('partcloud')}</div>
-          <div class="weatherTemp">24°</div>
-          <div class="weatherDesc">多云转晴</div>
-          <div class="weatherDetail">
-            <div class="wd"><div class="wdVal">62%</div>湿度</div>
-            <div class="wd"><div class="wdVal">3级</div>风力</div>
-            <div class="wd"><div class="wdVal">中等</div>紫外线</div>
-          </div>
-        </div>
-        <div class="phCard"><div style="display:flex;align-items:center;gap:6px;font-weight:600;color:var(--ph-text);margin-bottom:10px;font-size:0;"><span style="font-size:14px;">${_weatherSVG("calendar")}</span><span style="font-size:14px;">未来几天</span></div>`;
-        fc.forEach(f=>{
-          html += `<div class="forecastRow">
-            <span class="fDay">${f.day}</span>
-            <span class="fIcon" style="color:var(--ph-text-sub);">${_weatherSVG(f.type)}</span>
-            <div class="fRange"><span class="fLow">${f.low}</span><div class="fBar"></div><span class="fHigh">${f.high}</span></div>
-          </div>`;
-        });
-        html += '</div>';
-        // News cards
-        html += `<div class="phCard"><div style="display:flex;align-items:center;gap:6px;font-weight:600;color:var(--ph-text);margin-bottom:10px;"><span style="font-size:0;color:var(--ph-text-sub);">${_weatherSVG("news")}</span><span style="font-size:14px;">天气资讯</span></div>
-          <div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);"><div style="font-size:13px;color:var(--ph-text);">冷空气即将到来</div><div style="font-size:11px;color:var(--ph-text-dim);margin-top:2px;">预计本周后半段气温明显下降，注意保暖</div></div>
-          <div style="padding:8px 0;"><div style="font-size:13px;color:var(--ph-text);">周末适合户外活动</div><div style="font-size:11px;color:var(--ph-text-dim);margin-top:2px;">周六周日阳光充足，适宜出行</div></div>
-        </div>`;
-        container.innerHTML=html;
+        var wd = _loadWeatherData();
+        var hasData = wd && wd.today;
+        // 顶部刷新按钮
+        setAppBarRight('<button class="phBarRBtn" data-act="weatherRefresh" title="刷新天气">' + _phFlatIcon('🔄') + '</button>');
+
+        if(!hasData){
+          container.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--ph-text-dim);font-size:13px;">暂无天气数据<br><br><button data-act="weatherRefresh" style="padding:8px 20px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;cursor:pointer;">🌤️ 生成天气</button></div>';
+          return;
+        }
+        var t = wd.today;
+        var cityName = wd.cityName || '未知地区';
+        var fc = wd.forecast || [];
+        var html = '<div class="weatherMain">'
+          + '<div style="font-size:11px;color:var(--ph-text-dim);margin-bottom:4px;">📍 '+esc(cityName)+'</div>'
+          + '<div class="weatherIcon">'+_weatherSVG(t.type||'partcloud')+'</div>'
+          + '<div class="weatherTemp">'+(t.temp||'--')+'</div>'
+          + '<div class="weatherDesc">'+esc(t.desc||'')+'</div>'
+          + '<div class="weatherDetail">'
+          + '<div class="wd"><div class="wdVal">'+(t.humidity||'--')+'</div>湿度</div>'
+          + '<div class="wd"><div class="wdVal">'+(t.wind||'--')+'</div>风力</div>'
+          + '<div class="wd"><div class="wdVal">'+(t.uv||'--')+'</div>紫外线</div>'
+          + '</div></div>';
+        // 未来几天
+        if(fc.length){
+          html += '<div class="phCard"><div style="display:flex;align-items:center;gap:6px;font-weight:600;color:var(--ph-text);margin-bottom:10px;font-size:0;"><span style="font-size:14px;">'+_weatherSVG("calendar")+'</span><span style="font-size:14px;">未来几天</span></div>';
+          fc.forEach(function(f){
+            html += '<div class="forecastRow"><span class="fDay">'+esc(f.day||'')+'</span><span class="fIcon" style="color:var(--ph-text-sub);">'+_weatherSVG(f.type||'sunny')+'</span><div class="fRange"><span class="fLow">'+(f.low||'')+'</span><div class="fBar"></div><span class="fHigh">'+(f.high||'')+'</span></div></div>';
+          });
+          html += '</div>';
+        }
+        // 天气资讯
+        var news = wd.news || [];
+        if(news.length){
+          html += '<div class="phCard"><div style="display:flex;align-items:center;gap:6px;font-weight:600;color:var(--ph-text);margin-bottom:10px;"><span style="font-size:0;color:var(--ph-text-sub);">'+_weatherSVG("news")+'</span><span style="font-size:14px;">天气资讯</span></div>';
+          news.forEach(function(n,i){
+            html += '<div style="padding:8px 0;'+(i<news.length-1?'border-bottom:1px solid rgba(255,255,255,.04);':'')+'"><div style="font-size:13px;color:var(--ph-text);">'+esc(n.title||'')+'</div><div style="font-size:11px;color:var(--ph-text-dim);margin-top:2px;">'+esc(n.desc||'')+'</div></div>';
+          });
+          html += '</div>';
+        }
+        // 注意事项
+        var tips = wd.tips || [];
+        if(tips.length){
+          html += '<div class="phCard"><div style="font-weight:600;color:var(--ph-text);margin-bottom:8px;">⚠️ 注意事项</div>';
+          tips.forEach(function(t2){ html += '<div style="font-size:12px;color:var(--ph-text-sub);padding:3px 0;">· '+esc(t2)+'</div>'; });
+          html += '</div>';
+        }
+        // 生成时间
+        if(wd._generatedAt){
+          html += '<div style="text-align:center;font-size:10px;color:var(--ph-text-dim);padding:8px 0;">上次更新：'+new Date(wd._generatedAt).toLocaleString()+'</div>';
+        }
+        container.innerHTML = html;
       }
 
       /* ========== 浏览器 App ========== */
@@ -22082,17 +22341,50 @@ function _syncSummaryFromTimeline(npcId, mode){
   existing.updatedAt = Date.now();
   saveChatSummary(npcId, existing, mode);
 }
-function _getTimelinePendingRange(npcId, mode){
+function _getTimelinePendingRange(npcId, mode, maxChunk){
   var targetMode = _normChatMode(mode || _getChatMode(npcId));
   var log = _getLogForModeBranch(npcId, targetMode);
   var tl = _loadTimeline(npcId);
   var bucket = _getTimelineModeState(tl, targetMode, true);
   var lastEnd = bucket.entries.length > 0 ? bucket.entries[bucket.entries.length - 1].range[1] + 1 : 0;
   if (lastEnd >= log.length) return null;
-  return { fromIdx:lastEnd, toIdx:log.length - 1, logLength:log.length };
+  var endIdx = log.length - 1;
+  // 如果指定了 maxChunk，分批返回
+  if (maxChunk && maxChunk > 0 && (endIdx - lastEnd + 1) > maxChunk){
+    endIdx = lastEnd + maxChunk - 1;
+  }
+  return { fromIdx:lastEnd, toIdx:endIdx, logLength:log.length, hasMore: endIdx < log.length - 1 };
 }
 
 // ========== Phase 5B：生成时间线总结条目 ==========
+// ---- 时间线专用 API 队列（避免被聊天挤掉）----
+var _tlApiQueue = [];
+var _tlApiRunning = false;
+async function _tlApiEnqueue(fn){
+  return new Promise(function(resolve, reject){
+    _tlApiQueue.push({ fn:fn, resolve:resolve, reject:reject });
+    _tlApiFlush();
+  });
+}
+async function _tlApiFlush(){
+  if (_tlApiRunning) return;
+  if (_tlApiQueue.length === 0) return;
+  _tlApiRunning = true;
+  var task = _tlApiQueue.shift();
+  try{
+    var result = await task.fn();
+    task.resolve(result);
+  }catch(e){
+    task.reject(e);
+  }finally{
+    _tlApiRunning = false;
+    if (_tlApiQueue.length > 0) setTimeout(_tlApiFlush, 300);
+  }
+}
+function _tlApiClearQueue(){
+  _tlApiQueue.length = 0;
+}
+
 function _generateSourceHash(msgs){
   var str = msgs.map(function(m){ return (m.role||'') + ':' + String(m.text||'').length; }).join('|');
   var hash = 0;
@@ -22170,7 +22462,9 @@ ${todoHint}
       system: systemPrompt,
       messages: [{ role:'user', content:'对话片段（第' + (fromIdx+1) + '~' + (toIdx+1) + '条）：\n' + dialogText.slice(0, 3000) }],
       temperature: 0.3,
-      maxTokens: 800
+      maxTokens: 800,
+      channel: 'proactive',
+      timeout: 60
     });
     if (!result.ok) {
       if (!(opts && opts.silent)) { try{toast(result.error||'总结失败');}catch(e){} }
@@ -22217,53 +22511,140 @@ ${todoHint}
     return null;
   }
 }
-// ========== Phase 5C：时间线 UI ==========
+// ========== Phase 5C：时间线 UI（V2 重写：队列+分批+待办+编辑+删除）==========
 function _openTimelineViewer(npcId){
   var viewMode = _normChatMode(_getChatMode(npcId));
+  var isGenerating = false;
+  var genAborted = false;
 
   function _modeLabel(mode){ return mode === 'offline' ? '线下总结' : '线上总结'; }
   function _currentEntries(){
     var tl = _loadTimeline(npcId);
     return _safeArr((_getTimelineModeState(tl, viewMode, true) || {}).entries);
   }
+  function _getChunkSize(){
+    try{
+      var ce = _loadCharExtra(npcId);
+      return Math.max(5, ce.autoSumEvery || 20);
+    }catch(e){ return 20; }
+  }
+  function _getPendingInfo(){
+    var chunkSize = _getChunkSize();
+    var targetMode = _normChatMode(viewMode);
+    var log = _getLogForModeBranch(npcId, targetMode);
+    var tl = _loadTimeline(npcId);
+    var bucket = _getTimelineModeState(tl, targetMode, true);
+    var lastEnd = bucket.entries.length > 0 ? bucket.entries[bucket.entries.length - 1].range[1] + 1 : 0;
+    var remaining = Math.max(0, log.length - lastEnd);
+    return { remaining: remaining, chunkSize: chunkSize, lastEnd: lastEnd, logLength: log.length };
+  }
+
+  // ---- 重建 displayText ----
+  function _rebuildEntryDisplay(entry){
+    if (!entry || !entry.structured) return;
+    var s = entry.structured;
+    var display = [];
+    if (s.storyTime) display.push('⏰ ' + s.storyTime);
+    if (s.facts && s.facts.length) display.push('📋 事实：\n' + s.facts.map(function(f){ return '  · ' + f; }).join('\n'));
+    if (s.quotes && s.quotes.length) display.push('💬 原话：\n' + s.quotes.map(function(q){ return '  「' + q + '」'; }).join('\n'));
+    if (s.turning && s.turning.length) display.push('⚡ 转折：\n' + s.turning.map(function(t){ return '  · ' + t; }).join('\n'));
+    if (s.props && s.props.length) display.push('🎒 道具：' + s.props.join('、'));
+    if (s.todos && s.todos.length) display.push('📝 待办：\n' + s.todos.map(function(t){ return '  ' + (t.done ? '✅' : '☐') + ' ' + t.text; }).join('\n'));
+    entry.displayText = display.join('\n\n');
+    if (entry.userEdited) entry.userEdited = null;
+  }
+
+  // ---- 渲染待办列表 ----
+  function renderTodos(entries){
+    var allTodos = [];
+    entries.forEach(function(e, eIdx){
+      if (e.structured && e.structured.todos){
+        e.structured.todos.forEach(function(t, tIdx){
+          allTodos.push({ entryIdx:eIdx, todoIdx:tIdx, text:t.text||'', done:!!t.done, entryId:e.id });
+        });
+      }
+    });
+    if (allTodos.length === 0) return '';
+    var html = '<div style="margin:10px 0;padding:10px 12px;background:rgba(255,248,230,.9);border-radius:10px;border:1px solid rgba(255,180,0,.15);">';
+    html += '<div style="font-size:12px;font-weight:600;color:rgba(20,24,28,.7);margin-bottom:6px;">📝 待办跟踪</div>';
+    allTodos.forEach(function(t){
+      var doneStyle = t.done ? 'text-decoration:line-through;color:rgba(20,24,28,.3);' : 'color:rgba(20,24,28,.75);';
+      html += '<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:4px;padding:3px 0;">';
+      html += '<button data-act="todoToggle" data-eidx="'+t.entryIdx+'" data-tidx="'+t.todoIdx+'" style="flex-shrink:0;width:20px;height:20px;border-radius:4px;border:1.5px solid '+(t.done?'#07c160':'rgba(0,0,0,.2)')+';background:'+(t.done?'#07c160':'transparent')+';cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;padding:0;">'+(t.done?'✓':'')+'</button>';
+      html += '<span style="font-size:12px;line-height:1.5;'+doneStyle+'flex:1;">'+esc(t.text)+'</span>';
+      html += '<button data-act="todoEdit" data-eidx="'+t.entryIdx+'" data-tidx="'+t.todoIdx+'" style="flex-shrink:0;font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.8);cursor:pointer;color:rgba(20,24,28,.4);">✏️</button>';
+      html += '</div>';
+    });
+    html += '<button data-act="todoAdd" style="margin-top:4px;font-size:11px;padding:4px 10px;border-radius:6px;border:1px dashed rgba(0,0,0,.12);background:transparent;cursor:pointer;color:rgba(20,24,28,.4);width:100%;">+ 添加待办</button>';
+    html += '</div>';
+    return html;
+  }
+
+  // ---- 渲染条目列表 ----
   function renderEntries(){
     var entries = _currentEntries();
-    if (!entries.length) return '<div style="text-align:center;padding:20px;color:rgba(20,24,28,.4);font-size:12px;">暂无' + _modeLabel(viewMode) + '<br>点击下方“生成总结”即可开始累积</div>';
+    if (!entries.length) return '<div style="text-align:center;padding:20px;color:rgba(20,24,28,.4);font-size:12px;">暂无' + _modeLabel(viewMode) + '<br>点击下方"生成总结"即可开始累积</div>';
     return entries.map(function(e, idx){
       var displayText = e.userEdited || e.displayText || '（无内容）';
-      return `<div data-tl-idx="${idx}" style="margin-bottom:10px;padding:10px 12px;background:rgba(255,255,255,.85);border-radius:10px;border:1px solid rgba(0,0,0,.06);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <span style="font-size:11px;color:rgba(20,24,28,.4);">#${e.range[0]+1}~${e.range[1]+1}</span>
-          <span style="font-size:10px;color:rgba(20,24,28,.3);">${e.storyTime || new Date(e.createdAt).toLocaleString()}</span>
-        </div>
-        <div style="font-size:12px;color:rgba(20,24,28,.75);white-space:pre-wrap;line-height:1.6;">${esc(displayText)}</div>
-        <div style="margin-top:6px;display:flex;gap:4px;">
-          <button data-act="tlEdit" data-tlidx="${idx}" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);cursor:pointer;">编辑</button>
-          <button data-act="tlDel" data-tlidx="${idx}" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(220,53,69,.2);background:rgba(220,53,69,.06);color:#c9302c;cursor:pointer;">删除</button>
-        </div>
-      </div>`;
+      return '<div data-tl-idx="'+idx+'" style="margin-bottom:10px;padding:10px 12px;background:rgba(255,255,255,.85);border-radius:10px;border:1px solid rgba(0,0,0,.06);">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
+        + '<span style="font-size:11px;color:rgba(20,24,28,.4);">#'+(e.range[0]+1)+'~'+(e.range[1]+1)+'</span>'
+        + '<span style="font-size:10px;color:rgba(20,24,28,.3);">'+(e.storyTime || new Date(e.createdAt).toLocaleString())+'</span>'
+        + '</div>'
+        + '<div style="font-size:12px;color:rgba(20,24,28,.75);white-space:pre-wrap;line-height:1.6;">'+esc(displayText)+'</div>'
+        + '<div style="margin-top:6px;display:flex;gap:4px;">'
+        + '<button data-act="tlEdit" data-tlidx="'+idx+'" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);cursor:pointer;">编辑</button>'
+        + '<button data-act="tlDel" data-tlidx="'+idx+'" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(220,53,69,.2);background:rgba(220,53,69,.06);color:#c9302c;cursor:pointer;">删除</button>'
+        + '</div></div>';
     }).join('');
   }
   function renderTabs(){
-    return `<div style="display:flex;gap:6px;margin:8px 0 10px;">
-      <button data-act="tlSwitchMode" data-tlmode="online" style="flex:1;padding:8px 10px;border-radius:10px;border:${viewMode==='online'?'0':'1px solid rgba(0,0,0,.08)'};background:${viewMode==='online'?'var(--ph-accent, #07c160)':'rgba(255,255,255,.92)'};color:${viewMode==='online'?'#fff':'rgba(20,24,28,.68)'};font-size:12px;cursor:pointer;">线上总结</button>
-      <button data-act="tlSwitchMode" data-tlmode="offline" style="flex:1;padding:8px 10px;border-radius:10px;border:${viewMode==='offline'?'0':'1px solid rgba(0,0,0,.08)'};background:${viewMode==='offline'?'var(--ph-accent, #07c160)':'rgba(255,255,255,.92)'};color:${viewMode==='offline'?'#fff':'rgba(20,24,28,.68)'};font-size:12px;cursor:pointer;">线下总结</button>
-    </div>`;
+    return '<div style="display:flex;gap:6px;margin:8px 0 10px;">'
+      + '<button data-act="tlSwitchMode" data-tlmode="online" style="flex:1;padding:8px 10px;border-radius:10px;border:'+(viewMode==='online'?'0':'1px solid rgba(0,0,0,.08)')+';background:'+(viewMode==='online'?'var(--ph-accent, #07c160)':'rgba(255,255,255,.92)')+';color:'+(viewMode==='online'?'#fff':'rgba(20,24,28,.68)')+';font-size:12px;cursor:pointer;">线上总结</button>'
+      + '<button data-act="tlSwitchMode" data-tlmode="offline" style="flex:1;padding:8px 10px;border-radius:10px;border:'+(viewMode==='offline'?'0':'1px solid rgba(0,0,0,.08)')+';background:'+(viewMode==='offline'?'var(--ph-accent, #07c160)':'rgba(255,255,255,.92)')+';color:'+(viewMode==='offline'?'#fff':'rgba(20,24,28,.68)')+';font-size:12px;cursor:pointer;">线下总结</button>'
+      + '</div>';
+  }
+  function renderStatus(){
+    var info = _getPendingInfo();
+    var statusText = '已总结至第 ' + info.lastEnd + ' 条，共 ' + info.logLength + ' 条';
+    if (info.remaining > 0) statusText += '（剩余 ' + info.remaining + ' 条未总结）';
+    return '<div style="font-size:10px;color:rgba(20,24,28,.35);margin:4px 0 2px;padding:0 2px;">'+statusText+'</div>';
+  }
+  function renderChunkSetting(){
+    var chunkSize = _getChunkSize();
+    return '<div style="display:flex;align-items:center;gap:6px;margin:6px 0 4px;">'
+      + '<span style="font-size:10px;color:rgba(20,24,28,.4);">每次总结</span>'
+      + '<input data-el="chunkInput" type="number" min="5" max="200" value="'+chunkSize+'" style="width:50px;padding:2px 4px;border-radius:4px;border:1px solid rgba(0,0,0,.1);font-size:11px;text-align:center;" />'
+      + '<span style="font-size:10px;color:rgba(20,24,28,.4);">条消息</span>'
+      + '<button data-act="chunkSave" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);cursor:pointer;">保存</button>'
+      + '</div>';
+  }
+  function renderGenProgress(){
+    if (!isGenerating) return '';
+    return '<div data-el="tlProgress" style="margin:6px 0;padding:8px 10px;background:rgba(7,193,96,.06);border-radius:8px;border:1px solid rgba(7,193,96,.15);">'
+      + '<div style="font-size:11px;color:rgba(7,193,96,.8);">⏳ 正在生成总结…</div>'
+      + '<div data-el="tlProgressText" style="font-size:10px;color:rgba(20,24,28,.35);margin-top:2px;"></div>'
+      + '</div>';
   }
   function renderBody(){
     var entries = _currentEntries();
-    return `${renderTabs()}
-      <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:8px;">当前查看：${_modeLabel(viewMode)} · 共 ${entries.length} 条</div>
-      <div data-el="tlEntries" style="max-height:50vh;overflow-y:auto;">${renderEntries()}</div>
-      <div style="margin-top:8px;display:flex;gap:6px;">
-        <button data-el="tlGenerate" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">✨ 生成总结</button>
-        <button data-el="tlClose" style="padding:10px 16px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">关闭</button>
-      </div>`;
+    return renderTabs()
+      + '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:4px;">当前查看：'+ _modeLabel(viewMode) +' · 共 '+entries.length+' 条</div>'
+      + renderStatus()
+      + renderChunkSetting()
+      + renderTodos(entries)
+      + renderGenProgress()
+      + '<div data-el="tlEntries" style="max-height:42vh;overflow-y:auto;margin:6px 0;">' + renderEntries() + '</div>'
+      + '<div style="margin-top:8px;display:flex;gap:6px;">'
+      + '<button data-el="tlGenerate" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;'+(isGenerating?'opacity:.5;':'')+'">✨ 生成总结</button>'
+      + (isGenerating ? '<button data-el="tlAbort" style="padding:10px 12px;border-radius:10px;border:1px solid rgba(220,53,69,.3);background:rgba(220,53,69,.06);color:#c9302c;font-size:12px;cursor:pointer;">停止</button>' : '')
+      + '<button data-el="tlClose" style="padding:10px 16px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">关闭</button>'
+      + '</div>';
   }
 
-  var inner = `<div style="font-size:14px;font-weight:600;margin-bottom:4px;">📋 时间线总结</div>
-    <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:4px;">线上线下分开记录，切模式时会跟着切页</div>
-    <div data-el="tlRoot">${renderBody()}</div>`;
+  var inner = '<div style="font-size:14px;font-weight:600;margin-bottom:4px;">📋 时间线总结</div>'
+    + '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:4px;">线上线下分开记录，切模式时会跟着切页</div>'
+    + '<div data-el="tlRoot">' + renderBody() + '</div>';
   var ov = _cpShowOverlay(inner);
 
   function refresh(){
@@ -22271,56 +22652,191 @@ function _openTimelineViewer(npcId){
     if (rootEl) rootEl.innerHTML = renderBody();
     bindEvents();
   }
-  function bindEntryActions(){
-    ov.querySelectorAll('[data-act="tlEdit"]').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var idx = parseInt(this.getAttribute('data-tlidx'));
-        var tl = _loadTimeline(npcId);
-        var bucket = _getTimelineModeState(tl, viewMode, true);
-        var entry = bucket.entries[idx];
-        if (!entry) return;
-        var newText = prompt('编辑时间线条目：', entry.userEdited || entry.displayText || '');
-        if (newText === null) return;
-        entry.userEdited = newText;
-        _saveTimeline(npcId, tl);
-        _syncSummaryFromTimeline(npcId, viewMode);
-        refresh();
-      });
-    });
-    ov.querySelectorAll('[data-act="tlDel"]').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        var idx = parseInt(this.getAttribute('data-tlidx'));
-        if (!confirm('确定删除这条时间线记录？')) return;
-        var tl = _loadTimeline(npcId);
-        var bucket = _getTimelineModeState(tl, viewMode, true);
-        bucket.entries.splice(idx, 1);
-        _saveTimeline(npcId, tl);
-        _syncSummaryFromTimeline(npcId, viewMode);
-        refresh();
-      });
-    });
+  function updateProgressText(text){
+    var el = ov.querySelector('[data-el="tlProgressText"]');
+    if (el) el.textContent = text;
   }
+
+  // ---- 编辑覆盖层（替代 prompt()）----
+  function showEditOverlay(idx){
+    var tl = _loadTimeline(npcId);
+    var bucket = _getTimelineModeState(tl, viewMode, true);
+    var entry = bucket.entries[idx];
+    if (!entry) return;
+    var curText = entry.userEdited || entry.displayText || '';
+    var editOv = document.createElement('div');
+    editOv.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;';
+    editOv.innerHTML = '<div style="width:min(90vw,380px);max-height:80vh;background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;">'
+      + '<div style="font-size:13px;font-weight:600;">编辑时间线条目 #'+(entry.range[0]+1)+'~'+(entry.range[1]+1)+'</div>'
+      + '<textarea data-el="editTA" style="width:100%;height:200px;border:1px solid rgba(0,0,0,.12);border-radius:8px;padding:8px;font-size:12px;line-height:1.6;resize:vertical;box-sizing:border-box;">'+esc(curText)+'</textarea>'
+      + '<div style="display:flex;gap:6px;justify-content:flex-end;">'
+      + '<button data-el="editCancel" style="padding:6px 14px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;font-size:12px;cursor:pointer;">取消</button>'
+      + '<button data-el="editSave" style="padding:6px 14px;border-radius:8px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:12px;cursor:pointer;">保存</button>'
+      + '</div></div>';
+    document.body.appendChild(editOv);
+    var ta = editOv.querySelector('[data-el="editTA"]');
+    if (ta) ta.focus();
+    editOv.querySelector('[data-el="editCancel"]').onclick = function(){ editOv.remove(); };
+    editOv.querySelector('[data-el="editSave"]').onclick = function(){
+      var newText = ta.value;
+      var tl2 = _loadTimeline(npcId);
+      var bucket2 = _getTimelineModeState(tl2, viewMode, true);
+      if (bucket2.entries[idx]){
+        bucket2.entries[idx].userEdited = newText;
+        _saveTimeline(npcId, tl2);
+        _syncSummaryFromTimeline(npcId, viewMode);
+      }
+      editOv.remove();
+      refresh();
+    };
+  }
+
+  // ---- 事件绑定（全部用 onclick 避免重复绑定）----
   function bindEvents(){
-    bindEntryActions();
-    ov.querySelectorAll('[data-act="tlSwitchMode"]').forEach(function(btn){
-      btn.addEventListener('click', function(){
-        viewMode = _normChatMode(this.getAttribute('data-tlmode'));
+    // 条目编辑
+    ov.querySelectorAll('[data-act="tlEdit"]').forEach(function(btn){
+      btn.onclick = function(){ showEditOverlay(parseInt(this.getAttribute('data-tlidx'))); };
+    });
+    // 条目删除
+    ov.querySelectorAll('[data-act="tlDel"]').forEach(function(btn){
+      btn.onclick = function(){
+        var idx = parseInt(this.getAttribute('data-tlidx'));
+        if (!confirm('确定删除这条时间线记录？删除后不可恢复。')) return;
+        var tl = _loadTimeline(npcId);
+        var bucket = _getTimelineModeState(tl, viewMode, true);
+        if (idx >= 0 && idx < bucket.entries.length){
+          bucket.entries.splice(idx, 1);
+          _saveTimeline(npcId, tl);
+          _syncSummaryFromTimeline(npcId, viewMode);
+          try{ toast('已删除'); }catch(e){}
+        }
         refresh();
-      });
+      };
     });
+    // 模式切换
+    ov.querySelectorAll('[data-act="tlSwitchMode"]').forEach(function(btn){
+      btn.onclick = function(){ viewMode = _normChatMode(this.getAttribute('data-tlmode')); refresh(); };
+    });
+    // 待办切换完成
+    ov.querySelectorAll('[data-act="todoToggle"]').forEach(function(btn){
+      btn.onclick = function(){
+        var eIdx = parseInt(this.getAttribute('data-eidx'));
+        var tIdx = parseInt(this.getAttribute('data-tidx'));
+        var tl = _loadTimeline(npcId);
+        var bucket = _getTimelineModeState(tl, viewMode, true);
+        var entry = bucket.entries[eIdx];
+        if (entry && entry.structured && entry.structured.todos && entry.structured.todos[tIdx]){
+          entry.structured.todos[tIdx].done = !entry.structured.todos[tIdx].done;
+          _rebuildEntryDisplay(entry);
+          _saveTimeline(npcId, tl);
+          _syncSummaryFromTimeline(npcId, viewMode);
+        }
+        refresh();
+      };
+    });
+    // 待办编辑
+    ov.querySelectorAll('[data-act="todoEdit"]').forEach(function(btn){
+      btn.onclick = function(){
+        var eIdx = parseInt(this.getAttribute('data-eidx'));
+        var tIdx = parseInt(this.getAttribute('data-tidx'));
+        var tl = _loadTimeline(npcId);
+        var bucket = _getTimelineModeState(tl, viewMode, true);
+        var entry = bucket.entries[eIdx];
+        if (entry && entry.structured && entry.structured.todos && entry.structured.todos[tIdx]){
+          var newText = prompt('修改待办内容：', entry.structured.todos[tIdx].text || '');
+          if (newText === null) return;
+          if (newText.trim() === ''){ entry.structured.todos.splice(tIdx, 1); }
+          else { entry.structured.todos[tIdx].text = newText.trim(); }
+          _rebuildEntryDisplay(entry);
+          _saveTimeline(npcId, tl);
+          _syncSummaryFromTimeline(npcId, viewMode);
+        }
+        refresh();
+      };
+    });
+    // 添加待办
+    var addBtn = ov.querySelector('[data-act="todoAdd"]');
+    if (addBtn) addBtn.onclick = function(){
+      var newText = prompt('新增待办事项：');
+      if (!newText || !newText.trim()) return;
+      var tl = _loadTimeline(npcId);
+      var bucket = _getTimelineModeState(tl, viewMode, true);
+      if (!bucket.entries.length){ try{ toast('请先生成至少一条总结'); }catch(e){} return; }
+      var lastEntry = bucket.entries[bucket.entries.length - 1];
+      if (!lastEntry.structured) lastEntry.structured = {};
+      if (!lastEntry.structured.todos) lastEntry.structured.todos = [];
+      lastEntry.structured.todos.push({ text:newText.trim(), done:false });
+      _rebuildEntryDisplay(lastEntry);
+      _saveTimeline(npcId, tl);
+      _syncSummaryFromTimeline(npcId, viewMode);
+      refresh();
+    };
+    // 分批大小保存
+    var chunkSaveBtn = ov.querySelector('[data-act="chunkSave"]');
+    if (chunkSaveBtn) chunkSaveBtn.onclick = function(){
+      var input = ov.querySelector('[data-el="chunkInput"]');
+      if (!input) return;
+      var val = Math.max(5, Math.min(200, parseInt(input.value) || 20));
+      var ce = _loadCharExtra(npcId);
+      ce.autoSumEvery = val;
+      _saveCharExtra(npcId, ce);
+      try{ toast('已保存：每次总结 '+val+' 条'); }catch(e){}
+      refresh();
+    };
+    // 关闭
     var closeBtn = ov.querySelector('[data-el="tlClose"]');
-    if (closeBtn) closeBtn.addEventListener('click', function(){ ov.remove(); });
+    if (closeBtn) closeBtn.onclick = function(){ _tlApiClearQueue(); genAborted = true; ov.remove(); };
+    // 停止生成
+    var abortBtn = ov.querySelector('[data-el="tlAbort"]');
+    if (abortBtn) abortBtn.onclick = function(){
+      genAborted = true;
+      _tlApiClearQueue();
+      try{ PhoneAI.abort('proactive'); }catch(e){}
+      isGenerating = false;
+      try{ toast('已停止生成'); }catch(e){}
+      refresh();
+    };
+    // 生成总结（排队+分批+自动续接）
     var genBtn = ov.querySelector('[data-el="tlGenerate"]');
-    if (genBtn) genBtn.addEventListener('click', async function(){
-      var pending = _getTimelinePendingRange(npcId, viewMode);
+    if (genBtn) genBtn.onclick = async function(){
+      if (isGenerating) return;
+      var chunkSize = _getChunkSize();
+      var pending = _getTimelinePendingRange(npcId, viewMode, chunkSize);
       if (!pending){ try{ toast('没有新的未总结消息'); }catch(e){} return; }
-      try{ toast('正在生成总结…'); }catch(e){}
-      var entry = await _generateTimelineEntry(npcId, pending.fromIdx, pending.toIdx, viewMode);
-      if (entry) refresh();
-    });
+      isGenerating = true;
+      genAborted = false;
+      refresh();
+      var batchNo = 0;
+      while(!genAborted){
+        var p = _getTimelinePendingRange(npcId, viewMode, chunkSize);
+        if (!p) break;
+        batchNo++;
+        updateProgressText('第 '+batchNo+' 批：第 '+(p.fromIdx+1)+'~'+(p.toIdx+1)+' 条…');
+        try{
+          var entry = await _tlApiEnqueue(function(){
+            return _generateTimelineEntry(npcId, p.fromIdx, p.toIdx, viewMode);
+          });
+          if (!entry) break;
+          var rootEl = ov.querySelector('[data-el="tlRoot"]');
+          if (!rootEl) break;
+          refresh();
+          isGenerating = true;
+          if (!_getTimelinePendingRange(npcId, viewMode, chunkSize)) break;
+          await new Promise(function(r){ setTimeout(r, 500); });
+        }catch(e){
+          try{ toast('总结生成出错: '+((e&&e.message)||'')); }catch(e2){}
+          break;
+        }
+      }
+      isGenerating = false;
+      genAborted = false;
+      refresh();
+      if (batchNo > 0) try{ toast('总结生成完毕，共 '+batchNo+' 批'); }catch(e){}
+    };
   }
   bindEvents();
 }
+
       return { initOnce, showFull, showMini, showPill, hide, openApp, openHome, openChat, state };
     })();
   }
