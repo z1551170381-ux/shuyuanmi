@@ -5404,7 +5404,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             var pdNid1 = t.getAttribute('data-npcid') || state.chatTarget;
             if (!pdNid1) return;
             _reconcileDailyOnlineProactive(pdNid1, 'debug_reconcile').then(function(inserted){
-              try{ toast(inserted ? '已完成每日对账补发' : '本次没有补发，去看调试结果'); }catch(e){}
+              try{ toast(inserted && inserted.queued ? '已排队，回前台后自动补发' : (inserted ? '已完成每日对账补发' : '本次没有补发，去看调试结果')); }catch(e){}
               _renderProactiveDebugPage(pdNid1);
               if (state.chatTarget === pdNid1 && state.app === 'chatDetail'){ try{ renderChatDetail(pdNid1); }catch(e){} }
             }).catch(function(){ _renderProactiveDebugPage(pdNid1); });
@@ -5414,7 +5414,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             var pdNid2 = t.getAttribute('data-npcid') || state.chatTarget;
             if (!pdNid2) return;
             _forceOnlineProactive(pdNid2, 'daily').then(function(inserted){
-              try{ toast(inserted ? '每日保底测试成功' : '每日保底测试失败'); }catch(e){}
+              try{ toast(inserted && inserted.queued ? '已排队，回前台或当前回复结束后自动补发' : (inserted ? '每日保底测试成功' : '每日保底测试失败')); }catch(e){}
               _renderProactiveDebugPage(pdNid2);
               if (state.chatTarget === pdNid2 && state.app === 'chatDetail'){ try{ renderChatDetail(pdNid2); }catch(e){} }
             }).catch(function(){ _renderProactiveDebugPage(pdNid2); });
@@ -5424,7 +5424,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             var pdNid3 = t.getAttribute('data-npcid') || state.chatTarget;
             if (!pdNid3) return;
             _forceOnlineProactive(pdNid3, 'random').then(function(inserted){
-              try{ toast(inserted ? '随机主动测试成功' : '随机主动测试失败'); }catch(e){}
+              try{ toast(inserted && inserted.queued ? '已排队，回前台或当前回复结束后自动补发' : (inserted ? '随机主动测试成功' : '随机主动测试失败')); }catch(e){}
               _renderProactiveDebugPage(pdNid3);
               if (state.chatTarget === pdNid3 && state.app === 'chatDetail'){ try{ renderChatDetail(pdNid3); }catch(e){} }
             }).catch(function(){ _renderProactiveDebugPage(pdNid3); });
@@ -6784,6 +6784,8 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
               try{ renderChatDetail(contactId); }catch(e){}
             }
           }).catch(function(){});
+          try{ _schedulePendingChatReplyRecovery('open_chat', 1200, contactId); }catch(_e){}
+          try{ _schedulePendingProactiveRecovery('open_chat', 1500, contactId); }catch(_e2){}
         }catch(e){}
 
         // ★ flush 前台队列（async，AI 生成完再注入聊天）
@@ -13979,14 +13981,9 @@ const npc = _wxGetChatTargetMeta(npcId);
           this[reqKey] = true;
 
           var timeoutMs = ((opts && opts.timeout) || 30) * 1000;
-          // ★ 后台标签页给更长超时（浏览器会延迟定时器）
-          try{ if (doc.hidden || doc.visibilityState === 'hidden') timeoutMs = Math.max(timeoutMs, 60000); }catch(e){}
           var timer = setTimeout(function(){
             try{ ctrlWrap.reason = 'timeout'; ctrlWrap.controller.abort(); }catch(e){}
           }, timeoutMs);
-
-          // ★ 网络重试次数（proactive 给 2 次重试，普通给 1 次）
-          var maxRetries = channel === 'proactive' ? 2 : 1;
 
           try{
             var body = {
@@ -14011,82 +14008,77 @@ const npc = _wxGetChatTargetMeta(npcId);
 
             var lastStatus = 0;
             var lastErrorBody = '';
-            var lastNetError = '';
 
             for (var ui = 0; ui < urls.length; ui++){
               var url = urls[ui];
+              try{
+                void(0)&&console.log('[PhoneAI] 尝试:', url);
+                var resp = await fetch(url, {
+                  method: 'POST',
+                  headers: headers,
+                  body: bodyStr,
+                  signal: ctrlWrap.controller.signal,
+                  cache: 'no-store'
+                });
 
-              // ★ 带重试的 fetch
-              for (var retry = 0; retry <= maxRetries; retry++){
-                // 已被取消则不再重试
-                if (ctrlWrap.controller.signal.aborted) break;
-
-                try{
-                  var resp = await fetch(url, {
-                    method: 'POST',
-                    headers: headers,
-                    body: bodyStr,
-                    signal: ctrlWrap.controller.signal,
-                    cache: 'no-store'
-                  });
-
-                  if (resp.status === 404 && ui < urls.length - 1){
-                    break; // 跳到下一个候选 URL
-                  }
-
-                  clearTimeout(timer);
-
-                  if (!resp.ok){
-                    lastStatus = resp.status;
-                    try{ lastErrorBody = await resp.text(); }catch(e){ lastErrorBody = ''; }
-                    console.warn('[PhoneAI] 请求失败:', resp.status, url, lastErrorBody.slice(0, 200));
-                    if (resp.status === 401 || resp.status === 403) return { ok:false, data:null, error:'API 密钥无效，请检查 API 设置' };
-                    if (resp.status === 429) return { ok:false, data:null, error:'请求太频繁，请稍后再试' };
-                    if (resp.status >= 500) return { ok:false, data:null, error:'AI 服务异常，请重试' };
-                    return { ok:false, data:null, error:'请求失败 ('+resp.status+')' };
-                  }
-
-                  this._cachedChatUrl = url;
-
-                  var json = await resp.json();
-                  var text = '';
-                  try{
-                    text = json.choices[0].message.content || '';
-                  }catch(e){
-                    try{ text = json.output_text || json.result || json.response || ''; }catch(e2){}
-                  }
-                  if (!text && json){
-                    try{ text = JSON.stringify(json).slice(0, 500); }catch(e){}
-                  }
-                  text = String(text||'').replace(/<thinking>[\s\S]*?<\/thinking>/gi, '').replace(/<think>[\s\S]*?<\/think>/gi, '');
-                  text = text.replace(/<\/?thinking>/gi, '').replace(/<\/?think>/gi, '').trim();
-                  return { ok:true, data:text, error:null };
-
-                }catch(e){
-                  if (e && e.name === 'AbortError'){
-                    clearTimeout(timer);
-                    var abortReason = String(ctrlWrap.reason || 'aborted');
-                    if (abortReason === 'timeout') return { ok:false, data:null, error:'请求超时' };
-                    if (abortReason === 'replaced') return { ok:false, data:null, error:'请求被同通道新请求中断' };
-                    if (abortReason === 'manual') return { ok:false, data:null, error:'请求被手动取消' };
-                    return { ok:false, data:null, error:'请求被中断' };
-                  }
-                  lastNetError = String((e && e.message) || '');
-                  // ★ 网络错误：重试（等 2 秒后再试）
-                  if (retry < maxRetries){
-                    console.log('[PhoneAI] 网络错误，第' + (retry+1) + '次重试:', url, lastNetError);
-                    await new Promise(function(r){ setTimeout(r, 2000 + retry * 1000); });
-                    continue;
-                  }
-                  // 最后一次重试也失败
-                  if (ui < urls.length - 1){
-                    break; // 尝试下一个 URL
-                  }
-                  throw e;
+                // 如果是 404 且还有其他候选 URL，继续尝试
+                if (resp.status === 404 && ui < urls.length - 1){
+                  void(0)&&console.log('[PhoneAI] 404:', url, '→ 尝试下一个候选');
+                  continue;
                 }
-              } // end retry loop
-            } // end url loop
 
+                clearTimeout(timer);
+
+                if (!resp.ok){
+                  lastStatus = resp.status;
+                  try{ lastErrorBody = await resp.text(); }catch(e){ lastErrorBody = ''; }
+                  console.warn('[PhoneAI] 请求失败:', resp.status, url, lastErrorBody.slice(0, 200));
+                  if (resp.status === 401 || resp.status === 403) return { ok:false, data:null, error:'API 密钥无效，请检查 API 设置' };
+                  if (resp.status === 429) return { ok:false, data:null, error:'请求太频繁，请稍后再试' };
+                  if (resp.status >= 500) return { ok:false, data:null, error:'AI 服务异常，请重试' };
+                  return { ok:false, data:null, error:'请求失败 ('+resp.status+')' };
+                }
+
+                // 成功！缓存这个 URL
+                this._cachedChatUrl = url;
+                void(0)&&console.log('[PhoneAI] ✅ 成功:', url);
+
+                var json = await resp.json();
+                var text = '';
+                try{
+                  text = json.choices[0].message.content || '';
+                }catch(e){
+                  // 兼容其他响应格式
+                  try{ text = json.output_text || json.result || json.response || ''; }catch(e2){}
+                }
+                if (!text && json){
+                  try{ text = JSON.stringify(json).slice(0, 500); }catch(e){}
+                }
+                // 阶段B修复：清除模型可能泄露的 thinking/think 标签
+                text = String(text||'').replace(/<thinking>[\s\S]*?<\/thinking>/gi, '').replace(/<think>[\s\S]*?<\/think>/gi, '');
+                text = text.replace(/<\/?thinking>/gi, '').replace(/<\/?think>/gi, '').trim();
+                return { ok:true, data:text, error:null };
+
+              }catch(e){
+                // AbortError 直接返回（区分超时 / 被新请求替换 / 手动取消）
+                if (e && e.name === 'AbortError'){
+                  clearTimeout(timer);
+                  var abortReason = String(ctrlWrap.reason || 'aborted');
+                  if (abortReason === 'timeout') return { ok:false, data:null, error:'请求超时' };
+                  if (abortReason === 'replaced') return { ok:false, data:null, error:'请求被同通道新请求中断' };
+                  if (abortReason === 'manual') return { ok:false, data:null, error:'请求被手动取消' };
+                  return { ok:false, data:null, error:'请求被中断' };
+                }
+                // 网络错误且还有候选，继续
+                if (ui < urls.length - 1){
+                  void(0)&&console.log('[PhoneAI] 网络错误:', url, e.message, '→ 尝试下一个候选');
+                  continue;
+                }
+                throw e; // 最后一个候选也失败，抛给外层 catch
+              }
+            }
+
+            // 所有候选都失败
             clearTimeout(timer);
             return { ok:false, data:null, error:'所有 API 地址均失败 ('+lastStatus+')' };
 
@@ -14102,11 +14094,15 @@ const npc = _wxGetChatTargetMeta(npcId);
             var msg = String((e && e.message) || '');
             console.error('[PhoneAI] 异常:', msg);
             if (msg.indexOf('timeout') >= 0 || msg.indexOf('Timeout') >= 0) return { ok:false, data:null, error:'请求超时，请重试' };
-            // ★ 更详细的错误提示
-            if (msg.indexOf('Failed to fetch') >= 0 || msg.indexOf('NetworkError') >= 0 || msg.indexOf('network') >= 0){
-              return { ok:false, data:null, error:'网络连接失败（可能是后台标签页被浏览器限制）' };
-            }
-            return { ok:false, data:null, error:'请求失败: ' + msg.slice(0, 80) };
+            var isBgInterrupted = false;
+            try{
+              var _docBg = (typeof D !== 'undefined' && D) ? D : document;
+              var _hidden = !!(_docBg && _docBg.visibilityState && _docBg.visibilityState !== 'visible');
+              var _focusOk = !!(_docBg && _docBg.hasFocus ? _docBg.hasFocus() : true);
+              isBgInterrupted = _hidden || !_focusOk;
+            }catch(_bgErr){}
+            if (isBgInterrupted) return { ok:false, data:null, error:'页面切到后台时连接中断' };
+            return { ok:false, data:null, error:'网络连接失败，请检查网络' };
           }finally{
             clearTimeout(timer);
             this[reqKey] = false;
@@ -17538,12 +17534,13 @@ const npc = _wxGetChatTargetMeta(npcId);
         }
 
         // 写入用户消息（显示引用格式）
+        const userMsgTs = _now();
         pushLog(npcId, 'me', hasQuote ? quoteDisplay : text);
-        bumpThread(npcId, { lastMsg:text, lastTime:_now(), unread:0 });
+        bumpThread(npcId, { lastMsg:text, lastTime:userMsgTs, unread:0 });
 
         const msgs = root.querySelector('[data-ph="chatMsgs"]');
         if (msgs){
-          _wxAppendBubble(msgs, npc, 'me', hasQuote ? quoteDisplay : text, _now());
+          _wxAppendBubble(msgs, npc, 'me', hasQuote ? quoteDisplay : text, userMsgTs);
           requestAnimationFrame(()=>{ msgs.scrollTop = msgs.scrollHeight; });
         }
 
@@ -17593,6 +17590,20 @@ const npc = _wxGetChatTargetMeta(npcId);
           // 有请求在跑，先 abort
           if (PhoneAI._requesting){ PhoneAI.abort(); }
 
+          try{
+            _markPendingChatReply(npcId, {
+              userTs: userMsgTs,
+              mode: (typeof _getChatMode === 'function' ? _getChatMode(npcId) : 'online'),
+              branch: (typeof _getActiveBranch === 'function' ? _getActiveBranch(npcId) : 'main'),
+              textPreview: String(text || '').slice(0, 80),
+              quoted: !!hasQuote,
+              status: 'sending',
+              lastError: '',
+              lastTryAt: Date.now(),
+              source: 'send_chat'
+            });
+          }catch(_e){}
+
           // 记录本次序列 ID（用于检测切换会话/关闭）
           PhoneAI._replySeqId++;
           const mySeqId = PhoneAI._replySeqId;
@@ -17609,12 +17620,14 @@ const npc = _wxGetChatTargetMeta(npcId);
           // 3. 调用 API
           const result = await PhoneAI.chat({
             messages: contextMessages,
-            system: systemPrompt
+            system: systemPrompt,
+            timeout: 60
           });
 
           // 检查序列是否仍有效（未切换会话/关闭）
           if (mySeqId !== PhoneAI._replySeqId || state.chatTarget !== myChatId){
             _hideTypingIndicator();
+            try{ _markPendingChatReply(npcId, { status:'pending', lastError:'聊天中途离开页面，等待回到前台后自动补发', lastTryAt:Date.now(), source:'chat_switched_away' }); }catch(_e){}
             return;
           }
 
@@ -17623,7 +17636,8 @@ const npc = _wxGetChatTargetMeta(npcId);
           if (!result.ok){
             // AbortError 静默（error 为 null）
             if (result.error){
-              try{ toast(result.error); }catch(e){}
+              try{ _markPendingChatReply(npcId, { status:'pending', lastError:String(result.error), lastTryAt:Date.now(), source:'chat_request_fail' }); }catch(_e){}
+              try{ toast(_classifyRecoverableChatError(result.error) ? '连接中断，回到页面后会自动补发' : result.error); }catch(e){}
             }
             return;
           }
@@ -17668,14 +17682,174 @@ const npc = _wxGetChatTargetMeta(npcId);
             await _writeAIReply(npcId, npc, replies[ri], _now());
           }
 
+          try{ _clearPendingChatReply(npcId); }catch(_e){}
+
           // 阶段B：AI回复完成后概率触发（戳一戳 + 引用）
           _postReplyProbabilityTriggers(npcId, npc, replies);
 
         }catch(e){
           _hideTypingIndicator();
+          try{ _markPendingChatReply(npcId, { status:'pending', lastError:String((e&&e.message)||e||'未知异常'), lastTryAt:Date.now(), source:'chat_exception' }); }catch(_e){}
           // 不崩原则：吞掉异常，不影响后续操作
           try{ if (e && e.name !== 'AbortError') console.warn('[PhoneAI]', e); }catch(_){}
         }
+      }
+
+
+      var _pendingChatReplyRecoverTimer = 0;
+      var _pendingChatReplyLocks = {};
+      function _pendingChatReplyIndexKey(){ return 'pending_chat_reply_index_v1'; }
+      function _pendingChatReplyStorageKey(npcId){ return 'pending_chat_reply_' + String(npcId); }
+      function _loadPendingChatReplyIndex(){
+        var arr = _phLoad(_pendingChatReplyIndexKey(), []);
+        if (!Array.isArray(arr)) return [];
+        var out = [];
+        var seen = {};
+        for (var i = 0; i < arr.length; i++){
+          var id = String(arr[i] || '').trim();
+          if (!id || seen[id]) continue;
+          seen[id] = 1;
+          out.push(id);
+        }
+        return out;
+      }
+      function _savePendingChatReplyIndex(arr){
+        arr = Array.isArray(arr) ? arr : [];
+        var out = [];
+        var seen = {};
+        for (var i = 0; i < arr.length; i++){
+          var id = String(arr[i] || '').trim();
+          if (!id || seen[id]) continue;
+          seen[id] = 1;
+          out.push(id);
+        }
+        _phSave(_pendingChatReplyIndexKey(), out);
+      }
+      function _touchPendingChatReplyIndex(npcId, keep){
+        var id = String(npcId || '').trim();
+        if (!id) return;
+        var arr = _loadPendingChatReplyIndex();
+        var next = arr.filter(function(x){ return String(x) !== id; });
+        if (keep) next.push(id);
+        _savePendingChatReplyIndex(next);
+      }
+      function _loadPendingChatReply(npcId){
+        var raw = _phLoad(_pendingChatReplyStorageKey(npcId), null);
+        return raw && typeof raw === 'object' ? raw : null;
+      }
+      function _savePendingChatReply(npcId, data){
+        if (data && typeof data === 'object'){
+          data.npcId = String(npcId || data.npcId || '');
+          _phSave(_pendingChatReplyStorageKey(npcId), data);
+          _touchPendingChatReplyIndex(npcId, true);
+        } else {
+          _phSave(_pendingChatReplyStorageKey(npcId), null);
+          _touchPendingChatReplyIndex(npcId, false);
+        }
+      }
+      function _clearPendingChatReply(npcId){ _savePendingChatReply(npcId, null); }
+      function _markPendingChatReply(npcId, patch){
+        var cur = _loadPendingChatReply(npcId) || { npcId:String(npcId), createdAt:Date.now(), tries:0 };
+        patch = patch || {};
+        Object.keys(patch).forEach(function(k){ cur[k] = patch[k]; });
+        if (patch && patch.lastTryAt) cur.tries = Number(cur.tries || 0) + 1;
+        _savePendingChatReply(npcId, cur);
+        return cur;
+      }
+      function _classifyRecoverableChatError(msg){
+        msg = String(msg || '');
+        if (!msg) return false;
+        return /网络连接失败|请求超时|请求被中断|后台|Failed to fetch|fetch|连接中断/i.test(msg);
+      }
+      function _hasActualReplyAfterTs(npcId, ts, mode, branch){
+        try{
+          var raw = ((loadLogs().map || {})[String(npcId)] || []);
+          for (var i = raw.length - 1; i >= 0; i--){
+            var m = raw[i] || {};
+            if (String(m.role || '') !== 'them') continue;
+            if (mode && typeof _normChatMode === 'function'){
+              var mm = _normChatMode(m.mode || 'online');
+              if (mm !== _normChatMode(mode)) continue;
+            }
+            if (branch && String(m.branch || 'main') !== String(branch || 'main')) continue;
+            if (Number(m.t || 0) >= Number(ts || 0)) return true;
+          }
+        }catch(e){}
+        return false;
+      }
+      async function _retryPendingChatReply(npcId, source){
+        npcId = String(npcId || '').trim();
+        source = String(source || 'pending_recover');
+        if (!npcId) return null;
+        if (_pendingChatReplyLocks[npcId]) return null;
+        var pending = _loadPendingChatReply(npcId);
+        if (!pending) return null;
+        try{
+          var _doc2 = (typeof D !== 'undefined' && D) ? D : document;
+          if (_doc2 && _doc2.visibilityState && _doc2.visibilityState !== 'visible') return null;
+        }catch(e){}
+        try{ if (typeof navigator !== 'undefined' && navigator && navigator.onLine === false){ _markPendingChatReply(npcId, { status:'pending', lastError:'设备离线', lastRecoverSource:source }); return null; } }catch(e){}
+        var mode = pending.mode || (typeof _getChatMode === 'function' ? _getChatMode(npcId) : 'online');
+        var branch = pending.branch || (typeof _getActiveBranch === 'function' ? _getActiveBranch(npcId) : 'main');
+        if (_hasActualReplyAfterTs(npcId, pending.userTs || pending.createdAt || 0, mode, branch)){
+          _clearPendingChatReply(npcId);
+          return { ok:true, skipped:'already_replied' };
+        }
+        if (pending.mode && typeof _getChatMode === 'function' && _getChatMode(npcId) !== pending.mode && source !== 'force') return null;
+        if (PhoneAI._requesting) return null;
+        _pendingChatReplyLocks[npcId] = 1;
+        try{
+          var db = loadContactsDB();
+          var npc = findContactById(db, npcId) || { id:npcId, name:String(npcId), avatar:(String(npcId).charAt(0)), profile:'' };
+          _markPendingChatReply(npcId, { status:'retrying', lastError:'', lastTryAt:Date.now(), lastRecoverSource:source });
+          if (state.chatTarget === npcId && state.app === 'chatDetail'){
+            try{ _showTypingIndicator(npc.name); }catch(e){}
+          }
+          var contextN = _getChatContextN();
+          var contextMessages = _getRecentMessagesForAPI(npcId, contextN);
+          var systemPrompt = buildSystemPrompt(npcId);
+          var result = await PhoneAI.chat({ messages: contextMessages, system: systemPrompt, timeout: 60 });
+          try{ _hideTypingIndicator(); }catch(e){}
+          if (!result || !result.ok || !result.data){
+            var err = (result && result.error) ? String(result.error) : 'AI 请求失败';
+            _markPendingChatReply(npcId, { status:'pending', lastError:err, lastRecoverSource:source });
+            return null;
+          }
+          var replies = parseMultiMessages(result.data);
+          if (!Array.isArray(replies) || !replies.length){
+            _markPendingChatReply(npcId, { status:'pending', lastError:'AI 返回空文本', lastRecoverSource:source });
+            return null;
+          }
+          var baseTs = Date.now();
+          for (var ri = 0; ri < replies.length; ri++){
+            await _writeAIReply(npcId, npc, replies[ri], baseTs + ri * 1000);
+          }
+          _clearPendingChatReply(npcId);
+          return { ok:true, count:replies.length };
+        }catch(e){
+          try{ _hideTypingIndicator(); }catch(_e){}
+          _markPendingChatReply(npcId, { status:'pending', lastError:String((e&&e.message)||e||'未知异常'), lastRecoverSource:source });
+          return null;
+        }finally{
+          delete _pendingChatReplyLocks[npcId];
+        }
+      }
+      async function _recoverAllPendingChatReplies(source){
+        var ids = _loadPendingChatReplyIndex();
+        var out = [];
+        for (var i = 0; i < ids.length; i++){
+          try{ out.push(await _retryPendingChatReply(ids[i], source || 'pending_recover')); }catch(e){}
+        }
+        return out;
+      }
+      function _schedulePendingChatReplyRecovery(source, delayMs, onlyNpcId){
+        try{ clearTimeout(_pendingChatReplyRecoverTimer); }catch(e){}
+        _pendingChatReplyRecoverTimer = setTimeout(function(){
+          try{
+            if (onlyNpcId) _retryPendingChatReply(onlyNpcId, source || 'pending_recover');
+            else _recoverAllPendingChatReplies(source || 'pending_recover');
+          }catch(e){}
+        }, Math.max(80, Number(delayMs || 240)));
       }
 
       // sendChat 路由：根据当前 chatTarget 分发
@@ -20747,13 +20921,19 @@ function bindPageScroll(){
           W.addEventListener('resize',()=>{ if(state.mode==='full') updateTime(); },{passive:true});
         }catch(e){}
         try{
-          W.addEventListener('focus', function(){ _scheduleGlobalDailyReconcile('window_focus', 350); }, { passive:true });
+          W.addEventListener('focus', function(){ _scheduleGlobalDailyReconcile('window_focus', 1200); try{ _schedulePendingChatReplyRecovery('window_focus', 1500); }catch(_e){} try{ _schedulePendingProactiveRecovery('window_focus', 1700); }catch(_e2){} }, { passive:true });
         }catch(e){}
         try{
           D.addEventListener('visibilitychange', function(){
-            if (D.visibilityState === 'visible') _scheduleGlobalDailyReconcile('page_visible', 280);
+            if (D.visibilityState === 'visible'){
+              _scheduleGlobalDailyReconcile('page_visible', 1200);
+              try{ _schedulePendingChatReplyRecovery('page_visible', 1500); }catch(_e){}
+              try{ _schedulePendingProactiveRecovery('page_visible', 1800); }catch(_e2){}
+            }
           }, { passive:true });
         }catch(e){}
+        try{ W.addEventListener('online', function(){ try{ _schedulePendingChatReplyRecovery('window_online', 1200); }catch(_e){} try{ _scheduleGlobalDailyReconcile('window_online', 1300); }catch(_e2){} try{ _schedulePendingProactiveRecovery('window_online', 1600); }catch(_e3){} }, { passive:true }); }catch(e){}
+        try{ W.addEventListener('pageshow', function(){ try{ _schedulePendingChatReplyRecovery('page_show', 1200); }catch(_e){} try{ _schedulePendingProactiveRecovery('page_show', 1600); }catch(_e2){} }, { passive:true }); }catch(e){}
         // MeowDB 初始化（IndexedDB 基础设施）
         try{
           MeowDB.init().then(function(ok){
@@ -20819,54 +20999,9 @@ function bindPageScroll(){
           }
 
           var _lastFgPushCheck = {}; // npcId → timestamp，防止同一角色连续推
-          var _pendingFgRetry = []; // ★ 后台失败的待重试列表
-
-          // ★ 页面回到前台时重试失败的主动消息
-          try{
-            doc.addEventListener('visibilitychange', function(){
-              if (doc.visibilityState !== 'visible') return;
-              if (!_pendingFgRetry.length) return;
-              // 清理过期条目（超过 30 分钟的不再重试）
-              var now = Date.now();
-              _pendingFgRetry = _pendingFgRetry.filter(function(item){ return now - item.queuedAt < 30 * 60 * 1000; });
-              if (!_pendingFgRetry.length) return;
-              var batch = _pendingFgRetry.splice(0);
-              console.log('[LifePush] 页面恢复前台，重试 ' + batch.length + ' 个待发消息');
-              batch.forEach(function(item){
-                // 延迟 3-8 秒错开
-                setTimeout(function(){
-                  try{
-                    _lastFgPushCheck[item.npcId] = Date.now();
-                    (async function(nId){
-                      try{
-                        var db4r = loadContactsDB();
-                        var npc4r = findContactById(db4r, nId) || { name:String(nId) };
-                        var s3r = _loadCharState(nId);
-                        var fgTextR = null;
-                        if (typeof LifeEngine !== 'undefined' && LifeEngine && typeof LifeEngine._generateAIMsg === 'function')
-                          fgTextR = await LifeEngine._generateAIMsg(nId, 'social', '忽然想起了你', s3r, { mode:'online', kind:'random', atTs:Date.now() });
-                        fgTextR = String(fgTextR||'').trim();
-                        if (!fgTextR) return;
-                        var ins = _insertOnlineProactiveMessage(nId, fgTextR, { kind:'random' });
-                        if (!ins) return;
-                        bumpThread(nId, { lastMsg:fgTextR.slice(0,30), lastTime:ins.ts, unread:1 });
-                        if (state.chatTarget === nId && state.app === 'chatDetail') try{renderChatDetail(nId);}catch(e){}
-                        _showLifePushToast(nId, npc4r.name||nId, (npc4r.avatar||''), fgTextR, function(){ try{openChat(nId);}catch(e){} });
-                      }catch(e){ console.warn('[LifePush] retry error:', e); }
-                    })(item.npcId);
-                  }catch(e){}
-                }, 3000 + Math.random() * 5000);
-              });
-            });
-          }catch(e){}
 
           var _fgPushTimer = setInterval(function(){
             try{
-              // ★ 页面在后台时不发 API 请求（浏览器会杀掉 fetch）
-              // 改为标记待发，回到前台时由 visibilitychange 处理
-              var _pageHidden = false;
-              try{ _pageHidden = doc.hidden || doc.visibilityState === 'hidden'; }catch(e){}
-
               var prefix2 = _phUID() + '_charstate_';
               Object.keys(localStorage).forEach(function(k){
                 if (k.indexOf(prefix2) !== 0) return;
@@ -20888,15 +21023,12 @@ function bindPageScroll(){
                 var p3 = s3.personality || {};
 
                 // 每日保底：只补线上消息，不依赖当前正在看哪种模式
-                // ★ 后台时跳过（避免 fetch 被浏览器杀掉）
-                if (!_pageHidden){
-                  _reconcileDailyOnlineProactive(npcId, 'foreground_timer').then(function(inserted){
-                    if (!inserted) return;
-                    if (state.chatTarget === npcId && state.app === 'chatDetail'){
-                      try{ renderChatDetail(npcId); }catch(e){}
-                    }
-                  }).catch(function(){});
-                }
+                _reconcileDailyOnlineProactive(npcId, 'foreground_timer').then(function(inserted){
+                  if (!inserted) return;
+                  if (state.chatTarget === npcId && state.app === 'chatDetail'){
+                    try{ renderChatDetail(npcId); }catch(e){}
+                  }
+                }).catch(function(){});
 
                 // 触发条件：孤独感高 + 精力充足 + 合理时间
                 var h4 = new Date().getHours();
@@ -20911,14 +21043,7 @@ function bindPageScroll(){
 
                 _lastFgPushCheck[npcId] = Date.now();
                 _setProactiveAttemptState(npcId, 'random', { tryAt: Date.now(), status:'trying', reason:'foreground_timer', failReason:'' });
-                _pushProactiveDebug(npcId, 'random', 'try', _pageHidden ? 'bg_queued' : 'foreground_timer');
-
-                // ★ 如果页面在后台，加入待重试队列而不是直接发请求
-                if (_pageHidden){
-                  _pendingFgRetry.push({ npcId: npcId, queuedAt: Date.now() });
-                  _pushProactiveDebug(npcId, 'random', 'queued', '页面后台，等待回到前台重试');
-                  return; // forEach return，跳过这个 npc
-                }
+                _pushProactiveDebug(npcId, 'random', 'try', 'foreground_timer');
 
                 // 异步生成消息 + 写入 + 弹窗
                 (async function(nId, sSnap){
@@ -21129,6 +21254,131 @@ function _setProactiveAttemptState(npcId, kind, patch){
     _saveProactiveMeta(npcId, meta);
   }catch(e){}
 }
+
+function _pendingProactiveIndexKey(){ return 'pending_proactive_index_v1'; }
+function _pendingProactiveStorageKey(npcId){ return 'pending_proactive_' + String(npcId); }
+function _loadPendingProactiveIndex(){
+  var arr = _phLoad(_pendingProactiveIndexKey(), []);
+  if (!Array.isArray(arr)) return [];
+  var out = [];
+  var seen = {};
+  for (var i = 0; i < arr.length; i++){
+    var id = String(arr[i] || '').trim();
+    if (!id || seen[id]) continue;
+    seen[id] = 1;
+    out.push(id);
+  }
+  return out;
+}
+function _savePendingProactiveIndex(arr){
+  arr = Array.isArray(arr) ? arr : [];
+  var out = [];
+  var seen = {};
+  for (var i = 0; i < arr.length; i++){
+    var id = String(arr[i] || '').trim();
+    if (!id || seen[id]) continue;
+    seen[id] = 1;
+    out.push(id);
+  }
+  _phSave(_pendingProactiveIndexKey(), out);
+}
+function _touchPendingProactiveIndex(npcId, keep){
+  var id = String(npcId || '').trim();
+  if (!id) return;
+  var arr = _loadPendingProactiveIndex();
+  var next = arr.filter(function(x){ return String(x) !== id; });
+  if (keep) next.push(id);
+  _savePendingProactiveIndex(next);
+}
+function _loadPendingProactive(npcId){
+  var raw = _phLoad(_pendingProactiveStorageKey(npcId), null);
+  return raw && typeof raw === 'object' ? raw : null;
+}
+function _savePendingProactive(npcId, data){
+  if (data && typeof data === 'object'){
+    data.npcId = String(npcId || data.npcId || '');
+    _phSave(_pendingProactiveStorageKey(npcId), data);
+    _touchPendingProactiveIndex(npcId, true);
+  } else {
+    _phSave(_pendingProactiveStorageKey(npcId), null);
+    _touchPendingProactiveIndex(npcId, false);
+  }
+}
+function _queuePendingProactive(npcId, kind, reason, source){
+  try{
+    kind = String(kind||'random') === 'daily' ? 'daily' : 'random';
+    reason = String(reason || '当前条件不适合立即请求，已排队等待恢复');
+    source = String(source || ('queue_' + kind));
+    var now = Date.now();
+    var cur = _loadPendingProactive(npcId) || { npcId:String(npcId), kind:kind, createdAt:now, tries:0 };
+    cur.kind = kind;
+    cur.reason = source;
+    cur.lastError = reason;
+    cur.lastQueuedAt = now;
+    cur.status = 'queued';
+    cur.tries = Number(cur.tries || 0);
+    _savePendingProactive(npcId, cur);
+    _setProactiveAttemptState(npcId, kind, { tryAt:now, status:'queued', reason:source, failReason:reason });
+    _pushProactiveDebug(npcId, kind, 'queued', reason);
+    return { queued:true, reason:reason, kind:kind, source:source };
+  }catch(e){ return { queued:true, reason:String((e&&e.message)||e||'已排队'), kind:kind, source:source }; }
+}
+function _shouldDeferProactiveRequest(){
+  try{
+    var _doc = (typeof D !== 'undefined' && D) ? D : document;
+    if (_doc && _doc.visibilityState && _doc.visibilityState !== 'visible') return '页面在后台，已改为回前台后补发';
+    if (_doc && _doc.hasFocus && !_doc.hasFocus()) return '页面失焦，已改为回前台后补发';
+  }catch(e){}
+  try{ if (typeof navigator !== 'undefined' && navigator && navigator.onLine === false) return '设备离线，已等待网络恢复后补发'; }catch(e){}
+  try{ if (PhoneAI && (PhoneAI._requesting || PhoneAI._proactiveRequesting)) return '当前还有 AI 请求在进行，已排队等待上一条结束'; }catch(e){}
+  return '';
+}
+var _pendingProactiveRecoverTimer = 0;
+async function _retryPendingProactive(npcId, source){
+  npcId = String(npcId || '').trim();
+  source = String(source || 'pending_proactive_recover');
+  if (!npcId) return null;
+  var pending = _loadPendingProactive(npcId);
+  if (!pending) return null;
+  var deferReason = _shouldDeferProactiveRequest();
+  if (deferReason) return null;
+  try{
+    pending.tries = Number(pending.tries || 0) + 1;
+    pending.lastTryAt = Date.now();
+    pending.status = 'retrying';
+    pending.lastRecoverSource = source;
+    _savePendingProactive(npcId, pending);
+    var inserted = await _forceOnlineProactive(npcId, pending.kind || 'random');
+    if (inserted && !inserted.queued){
+      _savePendingProactive(npcId, null);
+      return inserted;
+    }
+    return inserted;
+  }catch(e){
+    try{
+      pending.status = 'queued';
+      pending.lastError = String((e&&e.message)||e||'恢复失败');
+      pending.lastRecoverSource = source;
+      _savePendingProactive(npcId, pending);
+    }catch(_e){}
+    return null;
+  }
+}
+async function _recoverAllPendingProactive(source, onlyNpcId){
+  var ids = onlyNpcId ? [String(onlyNpcId)] : _loadPendingProactiveIndex();
+  var out = [];
+  for (var i = 0; i < ids.length; i++){
+    try{ out.push(await _retryPendingProactive(ids[i], source || 'pending_proactive_recover')); }catch(e){}
+  }
+  return out;
+}
+function _schedulePendingProactiveRecovery(source, delayMs, npcId){
+  try{ if (_pendingProactiveRecoverTimer) clearTimeout(_pendingProactiveRecoverTimer); }catch(e){}
+  _pendingProactiveRecoverTimer = setTimeout(function(){
+    _pendingProactiveRecoverTimer = 0;
+    _recoverAllPendingProactive(source || 'pending_proactive_recover', npcId).catch(function(){});
+  }, Math.max(1200, Number(delayMs || 0) || 0));
+}
 function _getTrackedLifeNpcIds(){
   try{
     var prefix = _phUID() + '_charstate_';
@@ -21285,6 +21535,10 @@ async function _ensureDailyOnlineProactive(npcId, opts){
       _saveProactiveMeta(npcId, metaTry);
       _setProactiveAttemptState(npcId, 'daily', { tryAt: now, status:'trying', reason: source, failReason:'' });
       _pushProactiveDebug(npcId, 'daily', 'try', source);
+      var deferReason = _shouldDeferProactiveRequest();
+      if (deferReason){
+        return _queuePendingProactive(npcId, 'daily', deferReason, source);
+      }
       var s = _loadCharState(npcId);
       if (!s || !s.attrs){
         _setProactiveAttemptState(npcId, 'daily', { status:'fail', reason:source, failReason:'角色状态缺失' });
@@ -21333,6 +21587,10 @@ async function _forceOnlineProactive(npcId, kind){
     }
     _setProactiveAttemptState(npcId, kind, { tryAt:now, status:'trying', reason:source, failReason:'' });
     _pushProactiveDebug(npcId, kind, 'try', source);
+    var deferReason = _shouldDeferProactiveRequest();
+    if (deferReason){
+      return _queuePendingProactive(npcId, kind, deferReason, source);
+    }
     var behaviorKey = kind === 'daily' ? 'daily_online' : 'social';
     var behaviorLabel = kind === 'daily' ? '在今天的间隙里想起了你' : '在忙碌里忽然想起了你';
     var aiText = null;
