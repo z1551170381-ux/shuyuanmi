@@ -6742,6 +6742,12 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           catchUpStats(contactId);
           // 异步：离线补发（写入历史消息）
           LifeEngine.catchUpProactiveMsgs(contactId, _elapsed).catch(function(){});
+          _ensureDailyOnlineProactive(contactId).then(function(inserted){
+            if (!inserted) return;
+            if (state.chatTarget === contactId && state.app === 'chatDetail'){
+              try{ renderChatDetail(contactId); }catch(e){}
+            }
+          }).catch(function(){});
         }catch(e){}
 
         // ★ flush 前台队列（async，AI 生成完再注入聊天）
@@ -6755,7 +6761,8 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
               logs3.map ||= {};
               var id3 = String(contactId);
               logs3.map[id3] ||= [];
-              logs3.map[id3].push({ role:'them', text:qm.text, t:qm.ts || Date.now(), fromLife:true });
+              logs3.map[id3].push({ role:'them', text:qm.text, t:qm.ts || Date.now(), fromLife:true, mode:'online', branch:(qm.branch || (typeof _getActiveBranch === 'function' ? _getActiveBranch(contactId) : 'main')), insertedAt:Date.now(), proactiveKind:'random' });
+              logs3.map[id3].sort(function(a,b){ return Number(a.t||0) - Number(b.t||0); });
               saveLogs(logs3);
               // 如果当前还在看这个聊天，刷新一下消息列表
               if (state.chatTarget === contactId && state.app === 'chatDetail'){
@@ -14305,6 +14312,16 @@ const npc = _wxGetChatTargetMeta(npcId);
           if (behaviorBlock) parts.push(behaviorBlock);
         }catch(e){}
 
+        try{
+          var personalityCoreBlock = _buildPersonalityPromptBlock(npcId, { mode:_getChatMode(npcId) });
+          if (personalityCoreBlock) parts.push(personalityCoreBlock);
+        }catch(e){}
+
+        try{
+          var temporalBlock = _buildTemporalPromptBlock(npcId, _getChatMode(npcId), Date.now());
+          if (temporalBlock) parts.push(temporalBlock);
+        }catch(e){}
+
         // === 1. [世界观]：优先级：酒馆世界书条目内容 > 本地世界书 role tab > 小手机全局世界书 ===
 
         // C2-fix: 从缓存读取酒馆世界书条目的实际内容
@@ -15295,18 +15312,21 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         // ---- 主动消息队列（延迟发送，行为做完才告诉你） ----
         // ---- AI 生成主动消息内容 ----
-        async function _generateAIMsg(npcId, behaviorKey, behaviorLabel, s){
+        async function _generateAIMsg(npcId, behaviorKey, behaviorLabel, s, opts){
           try{
             var db = loadContactsDB();
             var npc = findContactById(db, npcId) || { name: String(npcId) };
             var charEx = _loadCharExtra(npcId);
+            var targetMode = (opts && opts.mode) ? String(opts.mode) : 'online';
+            var promptTs = (opts && opts.atTs) ? Number(opts.atTs) : Date.now();
 
             // 读最近10条聊天记录作为上下文
             var recentLogs = [];
             try{
-              var logs = loadLogs();
-              var raw = (logs.map && logs.map[String(npcId)]) || [];
-              recentLogs = raw.slice(-10).map(function(m){
+              var raw = targetMode === 'online' && typeof _getLogForModeBranch === 'function'
+                ? _getLogForModeBranch(npcId, 'online')
+                : ((loadLogs().map || {})[String(npcId)] || []);
+              recentLogs = _safeArr(raw).slice(-10).map(function(m){
                 return (m.role==='me'?'用户':'角色') + '：' + String(m.text||'').slice(0,80);
               });
             }catch(e){}
@@ -15314,20 +15334,25 @@ const npc = _wxGetChatTargetMeta(npcId);
             var p = s.personality || {};
             var socialDrive = p.socialDrive != null ? p.socialDrive : 50;
             var emotionDisplay = p.emotionDisplay != null ? p.emotionDisplay : 50;
+            var personalityBlock = _buildPersonalityPromptBlock(npcId, { concise:true });
 
             var stateDesc = '';
             if (s.attrs.energy < 30) stateDesc += '有点累，';
-            if (s.attrs.hunger < 30) stateDesc += '刚吃完饭，';
+            if (s.attrs.hunger < 30) stateDesc += '有点饿，';
             if ((s.attrs.loneliness||0) > 65) stateDesc += '有点想你，';
             stateDesc += '心情' + (s.moodText||'平静');
 
+            var temporalBlock = _buildTemporalPromptBlock(npcId, targetMode, promptTs);
             var sysPrompt = '你正在扮演「' + (npc.name||npcId) + '」。\n' +
               (npc.profile || npc.description || charEx.profile || '').slice(0,300) + '\n\n' +
+              (temporalBlock ? temporalBlock + '\n\n' : '') +
+              (personalityBlock ? personalityBlock + '\n\n' : '') +
               '【行为背景】你刚刚' + behaviorLabel + '，' + stateDesc + '，想主动联系用户。\n' +
               '【性格】' +
               (socialDrive > 65 ? '比较主动爱聊天。' : socialDrive < 35 ? '平时话不多，这次难得主动。' : '') +
               (emotionDisplay > 65 ? '情绪外放。' : emotionDisplay < 35 ? '情绪内敛。' : '') + '\n' +
-              '【要求】发一条简短自然的消息，1-2句，像真实聊天，不要正式，不要引号，直接输出内容。' +
+              (targetMode === 'online' && charEx.onlineChatPrompt ? '【线上聊天附加要求】\n' + String(charEx.onlineChatPrompt).trim() + '\n' : '') +
+              '【要求】发一条简短自然的消息，1-2句，像真实聊天，不要正式，不要引号，直接输出内容。若当前时段在工作/休息中，要让消息带一点忙里偷闲、稍后看到或刚空下来的感觉。' +
               (recentLogs.length ? '\n【最近对话】\n' + recentLogs.join('\n') : '');
 
             var result = await PhoneAI.chat({
@@ -15351,7 +15376,8 @@ const npc = _wxGetChatTargetMeta(npcId);
           var q = _phLoad(key, []);
           if (!Array.isArray(q)) q = [];
           q.push({ npcId:npcId, sendAt:Date.now()+delay, fallbackText:fallbackText,
-                   behaviorKey:behaviorKey, behaviorLabel:behaviorLabel, needAI:true });
+                   behaviorKey:behaviorKey, behaviorLabel:behaviorLabel, needAI:true,
+                   mode:'online', branch:(typeof _getActiveBranch === 'function' ? _getActiveBranch(npcId) : 'main') });
           if (q.length > 20) q = q.slice(q.length - 20);
           _phSave(key, q);
         }
@@ -15373,9 +15399,9 @@ const npc = _wxGetChatTargetMeta(npcId);
             var item = ready[ri];
             var s2 = _loadCharState(npcId);
             var text = null;
-            if (item.needAI) text = await _generateAIMsg(npcId, item.behaviorKey, item.behaviorLabel||'做了些事', s2);
-            if (!text) text = item.fallbackText || '...';
-            results.push({ text:text, ts:item.sendAt });
+            if (item.needAI) text = await _generateAIMsg(npcId, item.behaviorKey, item.behaviorLabel||'做了些事', s2, { mode:'online', atTs:item.sendAt });
+            if (!text) text = item.fallbackText || _getOnlineFallbackText(npcId, 'random', item.sendAt) || '...';
+            results.push({ text:text, ts:item.sendAt, mode:'online', branch:item.branch || (typeof _getActiveBranch === 'function' ? _getActiveBranch(npcId) : 'main') });
           }
           return results;
         }
@@ -15423,28 +15449,9 @@ const npc = _wxGetChatTargetMeta(npcId);
 
             for (var gi = 0; gi < chosen.length; gi++){
               var msgTs = chosen[gi].getTime() + _randomBetween(0, 25) * 60000;
-              var aiText = await _generateAIMsg(npcId, 'social', '想着你', s);
-              if (!aiText) continue;
-
-              var logs2 = loadLogs();
-              logs2.map ||= {};
-              var id2 = String(npcId);
-              logs2.map[id2] ||= [];
-              logs2.map[id2].push({ role:'them', text:aiText, t:msgTs, fromLife:true });
-              logs2.map[id2].sort(function(a,b){ return (a.t||0)-(b.t||0); });
-              if (logs2.map[id2].length > 200) logs2.map[id2] = logs2.map[id2].slice(-200);
-              saveLogs(logs2);
-
-              // 更新 thread 未读
-              var th4 = loadThreads();
-              var thr4 = th4.list.find(function(x){ return String(x.id)===String(npcId); });
-              if (thr4){
-                thr4.unread = (thr4.unread||0) + 1;
-                thr4.lastMsg = aiText.slice(0,30) + (aiText.length>30?'…':'');
-                thr4.lastTime = msgTs;
-                saveThreads(th4);
-              }
-              _writeLifeLog(npcId, { time:msgTs, icon:'💬', label:'想找你聊聊', key:'social' });
+              var aiText = await _generateAIMsg(npcId, 'social', '想着你', s, { mode:'online', atTs: msgTs });
+              if (!aiText) aiText = _getOnlineFallbackText(npcId, 'daily', msgTs);
+              _insertOnlineProactiveMessage(npcId, aiText, { ts: msgTs, kind:'daily' });
             }
           }catch(e){ console.warn('[LifeEngine] catchUpProactiveMsgs error:', e); }
         }
@@ -15571,7 +15578,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           }
         }
 
-        return { tick, getLifeLog, flushMsgQueue, catchUpProactiveMsgs, extractPersonality, BEHAVIORS };
+        return { tick, getLifeLog, flushMsgQueue, catchUpProactiveMsgs, extractPersonality, BEHAVIORS, _generateAIMsg, ensureDailyOnlineProactive:_ensureDailyOnlineProactive };
       })();
 
 
@@ -15737,6 +15744,82 @@ const npc = _wxGetChatTargetMeta(npcId);
           var quoteLabel = QUOTE_LABELS[QUOTE_OPTS.indexOf(b.quoteHabit)] || '偶尔引用';
           lines.push('引用回复习惯：' + quoteLabel);
           return '【角色行为风格（请严格遵守）】\n' + lines.join('\n');
+        }catch(e){ return ''; }
+      }
+
+      function _buildPersonalityPromptBlock(npcId, opts){
+        try{
+          var s = catchUpStats(npcId);
+          var p = (s && s.personality) || {};
+          var hasAny = p.socialDrive != null || p.emotionDisplay != null || p.discipline != null || p.dependency != null || p.resilience != null;
+          if (!hasAny) return '';
+          function cap(v){
+            v = Number(v);
+            if (!isFinite(v)) v = 50;
+            if (v < 0) v = 0;
+            if (v > 100) v = 100;
+            return Math.round(v);
+          }
+          function level(v){
+            v = cap(v);
+            if (v >= 85) return '很高';
+            if (v >= 65) return '偏高';
+            if (v >= 40) return '中等';
+            if (v >= 20) return '偏低';
+            return '很低';
+          }
+          function descSocial(v){
+            v = cap(v);
+            if (v >= 75) return '你天生更愿意主动开口、接话和延展话题，很多时候会先表达自己。';
+            if (v >= 55) return '你并不排斥主动聊天，熟起来后会自然接住话题，也偶尔会先来找人。';
+            if (v >= 35) return '你主动和被动都可能，更多看当下心情、关系和时机。';
+            if (v >= 15) return '你平时更被动，往往等对方先开口，不会无缘无故表现得很热络。';
+            return '你很少主动挑起聊天，偏向独处和观察，不会突然变得黏人健谈。';
+          }
+          function descEmotion(v){
+            v = cap(v);
+            if (v >= 75) return '你的情绪容易写在语气和措辞里，高兴、委屈、烦躁都会比较明显。';
+            if (v >= 55) return '你会表达情绪，但不会夸张失控，细看能感受到起伏。';
+            if (v >= 35) return '你情绪表达比较适中，不会一直收着，也不会句句都很满。';
+            if (v >= 15) return '你偏克制，很多情绪会先压住，不会轻易全说出来。';
+            return '你很内敛，情绪常常藏得很深，即使在意也未必会立刻显出来。';
+          }
+          function descDiscipline(v){
+            v = cap(v);
+            if (v >= 75) return '你很有边界感和秩序感，作息、工作和自己的节奏都比较稳定，忙的时候会先顾手头的事。';
+            if (v >= 55) return '你整体算自律，做事有安排，忙碌时会自然表现出分寸感和节奏感。';
+            if (v >= 35) return '你既有计划的一面，也有随性的时候，取决于当下状态。';
+            if (v >= 15) return '你偏随性，容易一边聊一边做别的，不是那种时时都很有秩序的人。';
+            return '你很随心，边界和计划感都弱，不要把自己演得像严格到分钟表一样。';
+          }
+          function descDependency(v){
+            v = cap(v);
+            if (v >= 75) return '你很在意陪伴、回应和情感连结，想念、占有欲、黏人感都会更明显。';
+            if (v >= 55) return '你对亲近关系有依恋感，被忽略时会在意，也会想要被回应。';
+            if (v >= 35) return '你既有独立的一面，也会在某些时刻想靠近和确认关系。';
+            if (v >= 15) return '你比较独立，不会轻易索取陪伴，也不太会把依赖感摆得很明。';
+            return '你很独立克制，不要随便表现得过分黏人、撒娇或离不开对方。';
+          }
+          function descResilience(v){
+            v = cap(v);
+            if (v >= 75) return '你情绪恢复力很强，有别扭和挫败也通常能较快缓过来，不会长期陷在同一处。';
+            if (v >= 55) return '你大体能自我消化情绪，低落不会拖得太久。';
+            if (v >= 35) return '你恢复速度普通，得看事情轻重和当时的关系氛围。';
+            if (v >= 15) return '你受影响后恢复偏慢，情绪余波会留一阵，不会一下子就像没事。';
+            return '你很容易被情绪和关系牵动，受伤或失落后不可能立刻轻快如常。';
+          }
+          var lines = [
+            '【性格五维（这是你长期稳定的人格底色，不只是界面数据，你必须真正按这个性格活着和说话）】',
+            '社交主动：' + level(p.socialDrive) + '（' + cap(p.socialDrive) + '/100）——' + descSocial(p.socialDrive),
+            '情绪外显：' + level(p.emotionDisplay) + '（' + cap(p.emotionDisplay) + '/100）——' + descEmotion(p.emotionDisplay),
+            '自律程度：' + level(p.discipline) + '（' + cap(p.discipline) + '/100）——' + descDiscipline(p.discipline),
+            '依赖倾向：' + level(p.dependency) + '（' + cap(p.dependency) + '/100）——' + descDependency(p.dependency),
+            '情绪弹性：' + level(p.resilience) + '（' + cap(p.resilience) + '/100）——' + descResilience(p.resilience),
+            '这些五维会长期影响你说话的主动性、热度、情绪显露方式、忙时回消息的感觉、依赖感和闹别扭后的恢复速度。',
+            '当前心情会让你短暂波动，但不能推翻上面这些长期人格。不要复述这些数值本身，要把它们自然表现在措辞、语气、节奏和反应里。'
+          ];
+          if (opts && opts.concise) return lines.slice(0, 6).join('\n');
+          return lines.join('\n');
         }catch(e){ return ''; }
       }
 
@@ -20584,6 +20667,14 @@ function bindPageScroll(){
                 if (!s3 || !s3.attrs) return;
                 var p3 = s3.personality || {};
 
+                // 每日保底：只补线上消息，不依赖当前正在看哪种模式
+                _ensureDailyOnlineProactive(npcId).then(function(inserted){
+                  if (!inserted) return;
+                  if (state.chatTarget === npcId && state.app === 'chatDetail'){
+                    try{ renderChatDetail(npcId); }catch(e){}
+                  }
+                }).catch(function(){});
+
                 // 触发条件：孤独感高 + 精力充足 + 合理时间
                 var h4 = new Date().getHours();
                 var dep3 = (p3.dependency != null) ? p3.dependency : 50;
@@ -20605,42 +20696,22 @@ function bindPageScroll(){
                     // 前台路径：直接调 PhoneAI 生成
                     var db4 = loadContactsDB();
                     var npc4 = findContactById(db4, nId) || { name: String(nId) };
-                    var charEx4 = _loadCharExtra(nId);
-                    var recentLogs4 = [];
+                    var fgText = null;
                     try{
-                      var lg4 = loadLogs();
-                      var raw4 = (lg4.map && lg4.map[String(nId)]) || [];
-                      recentLogs4 = raw4.slice(-8).map(function(m){ return (m.role==='me'?'用户':'角色') + '：' + String(m.text||'').slice(0,60); });
+                      if (typeof LifeEngine !== 'undefined' && LifeEngine && typeof LifeEngine._generateAIMsg === 'function')
+                        fgText = await LifeEngine._generateAIMsg(nId, 'social', '在忙碌里忽然想起了你', sSnap, { mode:'online', kind:'random', atTs: Date.now() });
                     }catch(e){}
+                    if (!fgText) fgText = _getOnlineFallbackText(nId, 'random', Date.now());
 
-                    var sysPr = '你正在扮演「' + (npc4.name||nId) + '」。\n' +
-                      (npc4.profile || npc4.description || charEx4.profile || '').slice(0,300) + '\n' +
-                      '【当前状态】有点想用户，决定主动找他/她说几句。心情：' + (sSnap.moodText||'平静') + '。\n' +
-                      '【要求】发一条简短自然的消息，1-2句，像真实发消息，不要加引号，直接输出。' +
-                      (recentLogs4.length ? '\n【最近对话】\n' + recentLogs4.join('\n') : '');
-
-                    var r4 = await PhoneAI.chat({
-                      system: sysPr,
-                      messages: [{ role:'user', content:'（请直接输出那条消息）' }],
-                      temperature: 0.9, maxTokens: 80, timeout: 20
-                    });
-                    if (!r4 || !r4.ok || !r4.data) return;
-                    var fgText = String(r4.data).trim().replace(/^["「『【]|["」』】]$/g,'').slice(0,120);
-                    if (!fgText) return;
-
-                    // 写入聊天记录
-                    var ts5 = Date.now();
-                    var lg5 = loadLogs();
-                    lg5.map ||= {};
-                    var id5 = String(nId);
-                    lg5.map[id5] ||= [];
-                    lg5.map[id5].push({ role:'them', text:fgText, t:ts5, fromLife:true });
-                    if (lg5.map[id5].length > 200) lg5.map[id5] = lg5.map[id5].slice(-200);
-                    saveLogs(lg5);
+                    // 写入聊天记录（伪装成稍早发出的线上消息）
+                    var inserted5 = _insertOnlineProactiveMessage(nId, fgText, { kind:'random' });
+                    if (!inserted5) return;
+                    var ts5 = inserted5.ts;
+                    fgText = inserted5.text;
 
                     // 更新 thread 未读
                     bumpThread(nId, { lastMsg:fgText.slice(0,30)+(fgText.length>30?'…':''), lastTime:ts5, unread:(function(){
-                      var th5=loadThreads(); var t5=th5.list.find(function(x){return String(x.id)===String(nId);}); return t5?(t5.unread||0)+1:1;
+                      var th5=loadThreads(); var t5=th5.list.find(function(x){return String(x.id)===String(nId);}); return t5?(t5.unread||0):1;
                     })() });
 
                     // 如果当前在看这个聊天，刷新
@@ -20662,7 +20733,7 @@ function bindPageScroll(){
                     }
 
                     LifeEngine.getLifeLog && _phSave && (function(){
-                      try{ var lk='lifelog_'+String(nId); var ll=_phLoad(lk,[]); if(!Array.isArray(ll))ll=[]; ll.push({time:ts5,icon:'💬',label:'主动找你说话',key:'social'}); if(ll.length>60)ll=ll.slice(ll.length-60); _phSave(lk,ll); }catch(e){}
+                      try{ var pm=_loadProactiveMeta(nId); pm.lastOnlineRandomAt=Date.now(); pm.lastOnlinePushAt=Date.now(); _saveProactiveMeta(nId, pm); }catch(e){}
                     })();
 
                   }catch(e){ console.warn('[LifePush] fg generate error:', e); }
@@ -20679,6 +20750,218 @@ function bindPageScroll(){
 // ============================================================
 // ★★★ Phase 3-5 系统：线下模式 + 分支 + 时间线总结 ★★★
 // ============================================================
+
+
+function _dayKey(ts){
+  var d = new Date(ts || Date.now());
+  var y = d.getFullYear();
+  var m = String(d.getMonth()+1).padStart(2,'0');
+  var dd = String(d.getDate()).padStart(2,'0');
+  return y + '-' + m + '-' + dd;
+}
+function _weekdayCN(d){ return ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()] || '周?'; }
+function _clockHM(ts){
+  var d = new Date(ts || Date.now());
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+function _timePhaseLabel(h){
+  if (h >= 0 && h < 5) return '深夜';
+  if (h < 8) return '清晨';
+  if (h < 11) return '上午';
+  if (h < 14) return '中午';
+  if (h < 18) return '下午';
+  if (h < 22) return '晚上';
+  return '夜里';
+}
+function _getScheduleSlotDetailAt(schedule, hour){
+  schedule = Array.isArray(schedule) ? schedule : [];
+  for (var i = 0; i < schedule.length; i++){
+    var sl = schedule[i];
+    if (!sl) continue;
+    var sh = Number(sl.hour || 0), eh = Number(sl.endHour || 0);
+    var inSlot = eh <= sh ? (hour >= sh || hour < eh) : (hour >= sh && hour < eh);
+    if (inSlot) return sl;
+  }
+  return null;
+}
+function _getNextScheduleSlotDetail(schedule, hour){
+  schedule = Array.isArray(schedule) ? schedule : [];
+  if (!schedule.length) return null;
+  for (var i = 0; i < schedule.length; i++){
+    var sl = schedule[i];
+    if (!sl) continue;
+    var sh = Number(sl.hour || 0);
+    if (sh > hour) return sl;
+  }
+  return schedule[0] || null;
+}
+function _getScheduleTemporalMeta(npcId, atTs){
+  var ts = atTs || Date.now();
+  var d = new Date(ts);
+  var h = d.getHours();
+  var s = _loadCharState(npcId) || {};
+  var schedule = (typeof _getSchedule === 'function') ? _getSchedule(s) : (Array.isArray(s.schedule) ? s.schedule : []);
+  var slot = _getScheduleSlotDetailAt(schedule, h);
+  var nextSlot = _getNextScheduleSlotDetail(schedule, h);
+  var slotTag = slot && slot.tag ? slot.tag : (schedule.length && typeof _getScheduleTagAtHour === 'function' ? _getScheduleTagAtHour(schedule, h) : 'free');
+  var slotLabel = slot && slot.activity ? slot.activity : '';
+  var advice = '像正常聊天一样回复。';
+  if (slotTag === 'work') advice = '你现在更像在工作或学习中，回复应有忙里偷闲感，可以简短、分段、偶尔过一会儿才接一句。';
+  else if (slotTag === 'rest') advice = h < 7 ? '你现在更像在睡觉或半睡半醒，不要显得一直很闲；若回复，应带一点困意、迷糊或醒后补回消息的感觉。' : '你现在更像在休息，回复会更松一点，但不该像整天在线。';
+  else if (slotTag === 'eat') advice = '你现在大概率在吃饭或刚吃饭，回复可以自然带一点餐间空隙感。';
+  else if (slotTag === 'exercise') advice = '你现在更像在运动或刚运动完，回复可以更短，偶尔带一点气息未稳的感觉。';
+  else if (slotTag === 'social') advice = '你现在在社交时段，聊天相对自然放松，但也不要像旁若无人地长篇大论。';
+  else if (slotTag === 'wake') advice = h < 10 ? '你现在更像刚起床/在准备出门，回复应有新一天开始的感觉。' : '你现在在整理状态或准备切换事情，回复可以短一点。';
+  else if (slotTag === 'free') advice = '你现在相对有空，聊天可以自然一点，但仍要保持角色自己的节奏。';
+  return {
+    ts: ts,
+    date: d,
+    hour: h,
+    minute: d.getMinutes(),
+    weekday: _weekdayCN(d),
+    timeText: _clockHM(ts),
+    phase: _timePhaseLabel(h),
+    slot: slot,
+    slotTag: slotTag || 'free',
+    slotLabel: slotLabel,
+    nextSlot: nextSlot,
+    advice: advice
+  };
+}
+function _buildTemporalPromptBlock(npcId, mode, atTs){
+  try{
+    var meta = _getScheduleTemporalMeta(npcId, atTs || Date.now());
+    var d = meta.date;
+    var lines = [
+      '【当前时间与现实推进（必须严格参考）】',
+      '现在是 ' + d.getFullYear() + '年' + (d.getMonth()+1) + '月' + d.getDate() + '日 ' + meta.weekday + ' ' + meta.timeText + '，属于' + meta.phase + '。',
+      '你必须以这个“现在”为准来聊天，不要把当前时刻错当成昨晚、凌晨或上一轮对话发生时的旧时间。若现在已经是第二天，就要自然带出“新的一天”的感觉。'
+    ];
+    if (meta.slotLabel && meta.slot){
+      lines.push('你此刻的作息：' + meta.slotLabel + '（' + Number(meta.slot.hour||0) + ':00–' + Number(meta.slot.endHour||0) + ':00）。');
+    }
+    if (meta.nextSlot && meta.nextSlot !== meta.slot && meta.nextSlot.activity){
+      lines.push('你的下一时段：' + meta.nextSlot.activity + '（' + Number(meta.nextSlot.hour||0) + ':00–' + Number(meta.nextSlot.endHour||0) + ':00）。');
+    }
+    lines.push('当前更合理的聊天状态：' + meta.advice);
+    if (String(mode||'online') === 'online'){
+      lines.push('这是手机线上聊天。若你此刻在工作、休息、吃饭、出门或准备睡觉，回复里要自然体现“在那个时段里偷空回消息”的感觉，不要像全天候挂在线上。');
+    }else{
+      lines.push('这是线下互动。环境感、动作和现场感应当服从现在这个时间点与作息，而不是停留在上一轮旧场景。');
+    }
+    return lines.join('\n');
+  }catch(e){ return ''; }
+}
+function _loadProactiveMeta(npcId){
+  return _phLoad('proactive_meta_' + String(npcId), {
+    lastOnlineDailyDate: '',
+    lastOnlinePushAt: 0,
+    lastOnlineRandomAt: 0,
+    lastInsertedAt: 0
+  });
+}
+function _saveProactiveMeta(npcId, data){ _phSave('proactive_meta_' + String(npcId), data || {}); }
+var _onlineDailyPushLocks = {};
+function _pickFakeOnlinePushTs(npcId, kind, branchId){
+  var now = Date.now();
+  var branch = branchId || (typeof _getActiveBranch === 'function' ? _getActiveBranch(npcId) : 'main');
+  var raw = _safeArr(getLog(npcId));
+  var lastTs = 0;
+  for (var i = 0; i < raw.length; i++){
+    var m = raw[i] || {};
+    var mm = String(m.mode||'online') === 'offline' ? 'offline' : 'online';
+    var mb = m.branch || 'main';
+    if (mm !== 'online' || mb !== branch) continue;
+    var mt = Number(m.t || 0);
+    if (mt > lastTs) lastTs = mt;
+  }
+  var backMin = kind === 'daily' ? _randomBetween(25, 180) : _randomBetween(3, 15);
+  var candidate = now - backMin * 60000 - _randomBetween(0, 90) * 1000;
+  var minTs = lastTs ? (lastTs + 5 * 60000) : (now - 8 * 3600000);
+  var maxTs = now - 2 * 60000;
+  if (candidate < minTs) candidate = minTs + _randomBetween(30, 180) * 1000;
+  if (candidate > maxTs) candidate = maxTs;
+  if (candidate <= 0) candidate = now - 60000;
+  return candidate;
+}
+function _getOnlineFallbackText(npcId, kind, atTs){
+  var meta = _getScheduleTemporalMeta(npcId, atTs || Date.now());
+  var tag = meta.slotTag || 'free';
+  var pool = [];
+  if (tag === 'work') pool = ['刚忙完一点，来找你说句话。', '我还在忙，不过刚好想到你了。', '偷空看一眼手机，顺手来找你。'];
+  else if (tag === 'rest') pool = meta.hour < 7 ? ['刚醒了一下，看到你就想来留句话。', '睡前或醒来时想起你了。'] : ['我在休息，刚好想到你。', '刚闲下来一点，就来找你了。'];
+  else if (tag === 'eat') pool = ['我在吃饭，顺手来和你说一句。', '刚吃着东西，突然想起你。'];
+  else if (tag === 'exercise') pool = ['我刚歇一下，就先来找你。', '现在有点忙着动来动去，不过还是想和你说句。'];
+  else pool = kind === 'daily' ? ['今天忽然想起你了。', '刚刚想到你，就来给你留句话。', '我今天一直想着要不要来找你。'] : ['突然想到你。', '刚刚想起你了。', '在吗，顺手来找你。'];
+  return pool[Math.floor(Math.random() * pool.length)] || '刚刚想起你了。';
+}
+function _insertOnlineProactiveMessage(npcId, text, opts){
+  try{
+    var branch = (opts && opts.branch) || (typeof _getActiveBranch === 'function' ? _getActiveBranch(npcId) : 'main');
+    var kind = (opts && opts.kind) || 'random';
+    var now = Date.now();
+    var ts = (opts && opts.ts) ? Number(opts.ts) : _pickFakeOnlinePushTs(npcId, kind, branch);
+    var finalText = String(text || '').trim() || _getOnlineFallbackText(npcId, kind, ts);
+    var lg = loadLogs();
+    lg.map ||= {};
+    var id = String(npcId);
+    lg.map[id] ||= [];
+    lg.map[id].push({ role:'them', text:finalText, t:ts, fromLife:true, mode:'online', branch:branch, insertedAt:now, proactiveKind:kind });
+    lg.map[id].sort(function(a,b){ return Number(a.t||0) - Number(b.t||0); });
+    if (lg.map[id].length > 200) lg.map[id] = lg.map[id].slice(-200);
+    saveLogs(lg);
+    var th = loadThreads();
+    var thr = th.list.find(function(x){ return String(x.id) === String(npcId); });
+    if (thr){
+      thr.unread = (thr.unread || 0) + 1;
+      thr.lastMsg = finalText.slice(0,30) + (finalText.length > 30 ? '…' : '');
+      thr.lastTime = Math.max(Number(thr.lastTime || 0), Number(ts || 0));
+      saveThreads(th);
+    }
+    try{ _writeLifeLog(npcId, { time:ts, icon:'💬', label: kind === 'daily' ? '今天主动来找你' : '主动找你说话', key:'social' }); }catch(e){}
+    try{
+      var meta = _loadProactiveMeta(npcId);
+      meta.lastOnlinePushAt = now;
+      if (kind === 'random') meta.lastOnlineRandomAt = now;
+      meta.lastInsertedAt = now;
+      _saveProactiveMeta(npcId, meta);
+    }catch(e){}
+    return { npcId:npcId, text:finalText, ts:ts, branch:branch, kind:kind };
+  }catch(e){ console.warn('[LifePush] insert online proactive error:', e); return null; }
+}
+async function _ensureDailyOnlineProactive(npcId){
+  try{
+    var ce = _loadCharExtra(npcId);
+    if (ce.enableLifePush === false) return null;
+    var now = Date.now();
+    var h = new Date(now).getHours();
+    if (h < 10 || h > 22) return null;
+    var meta0 = _loadProactiveMeta(npcId);
+    var today = _dayKey(now);
+    if (meta0.lastOnlineDailyDate === today) return null;
+    if (_onlineDailyPushLocks[npcId]) return null;
+    _onlineDailyPushLocks[npcId] = 1;
+    try{
+      var s = _loadCharState(npcId);
+      if (!s || !s.attrs) return null;
+      var aiText = null;
+      if (typeof LifeEngine !== 'undefined' && LifeEngine && typeof LifeEngine._generateAIMsg === 'function'){
+        try{ aiText = await LifeEngine._generateAIMsg(npcId, 'daily_online', '在今天的间隙里想起了你', s, { mode:'online', kind:'daily', atTs: now }); }catch(e){}
+      }
+      if (!aiText) aiText = _getOnlineFallbackText(npcId, 'daily', now);
+      var inserted = _insertOnlineProactiveMessage(npcId, aiText, { kind:'daily' });
+      if (!inserted) return null;
+      var meta = _loadProactiveMeta(npcId);
+      meta.lastOnlineDailyDate = today;
+      meta.lastOnlinePushAt = now;
+      meta.lastInsertedAt = now;
+      _saveProactiveMeta(npcId, meta);
+      return inserted;
+    }finally{
+      delete _onlineDailyPushLocks[npcId];
+    }
+  }catch(e){ console.warn('[LifePush] ensure daily online proactive error:', e); return null; }
+}
 
 // ========== Phase 3A：聊天模式管理（online/offline） ==========
 var _chatModes = {}; // 缓存：contactId → 'online'|'offline'
