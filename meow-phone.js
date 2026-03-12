@@ -22344,12 +22344,22 @@ function _syncSummaryFromTimeline(npcId, mode){
 function _getTimelinePendingRange(npcId, mode, maxChunk){
   var targetMode = _normChatMode(mode || _getChatMode(npcId));
   var log = _getLogForModeBranch(npcId, targetMode);
+  // 如果过滤后的日志为空，尝试用全量日志作为 fallback
+  if (log.length === 0){
+    try{
+      var fullLog = getLog(npcId);
+      if (fullLog && fullLog.length > 0){
+        console.warn('[Timeline] 过滤后日志为空但全量日志有', fullLog.length, '条，使用全量日志');
+        log = fullLog;
+      }
+    }catch(e){}
+  }
   var tl = _loadTimeline(npcId);
   var bucket = _getTimelineModeState(tl, targetMode, true);
   var lastEnd = bucket.entries.length > 0 ? bucket.entries[bucket.entries.length - 1].range[1] + 1 : 0;
+  console.log('[Timeline] pendingRange: logLen='+log.length+', entries='+bucket.entries.length+', lastEnd='+lastEnd+', mode='+targetMode);
   if (lastEnd >= log.length) return null;
   var endIdx = log.length - 1;
-  // 如果指定了 maxChunk，分批返回
   if (maxChunk && maxChunk > 0 && (endIdx - lastEnd + 1) > maxChunk){
     endIdx = lastEnd + maxChunk - 1;
   }
@@ -22511,7 +22521,7 @@ ${todoHint}
     return null;
   }
 }
-// ========== Phase 5C：时间线 UI（V2 重写：队列+分批+待办+编辑+删除）==========
+// ========== Phase 5C：时间线 UI（V3：事件委托 + 清除全部 + 调试）==========
 function _openTimelineViewer(npcId){
   var viewMode = _normChatMode(_getChatMode(npcId));
   var isGenerating = false;
@@ -22523,23 +22533,21 @@ function _openTimelineViewer(npcId){
     return _safeArr((_getTimelineModeState(tl, viewMode, true) || {}).entries);
   }
   function _getChunkSize(){
-    try{
-      var ce = _loadCharExtra(npcId);
-      return Math.max(5, ce.autoSumEvery || 20);
-    }catch(e){ return 20; }
+    try{ var ce = _loadCharExtra(npcId); return Math.max(5, ce.autoSumEvery || 20); }catch(e){ return 20; }
   }
   function _getPendingInfo(){
     var chunkSize = _getChunkSize();
     var targetMode = _normChatMode(viewMode);
     var log = _getLogForModeBranch(npcId, targetMode);
+    // fallback 全量日志
+    if(log.length === 0){ try{ var fl = getLog(npcId); if(fl && fl.length > 0) log = fl; }catch(e){} }
     var tl = _loadTimeline(npcId);
     var bucket = _getTimelineModeState(tl, targetMode, true);
     var lastEnd = bucket.entries.length > 0 ? bucket.entries[bucket.entries.length - 1].range[1] + 1 : 0;
     var remaining = Math.max(0, log.length - lastEnd);
-    return { remaining: remaining, chunkSize: chunkSize, lastEnd: lastEnd, logLength: log.length };
+    return { remaining:remaining, chunkSize:chunkSize, lastEnd:lastEnd, logLength:log.length };
   }
 
-  // ---- 重建 displayText ----
   function _rebuildEntryDisplay(entry){
     if (!entry || !entry.structured) return;
     var s = entry.structured;
@@ -22554,13 +22562,12 @@ function _openTimelineViewer(npcId){
     if (entry.userEdited) entry.userEdited = null;
   }
 
-  // ---- 渲染待办列表 ----
   function renderTodos(entries){
     var allTodos = [];
     entries.forEach(function(e, eIdx){
       if (e.structured && e.structured.todos){
         e.structured.todos.forEach(function(t, tIdx){
-          allTodos.push({ entryIdx:eIdx, todoIdx:tIdx, text:t.text||'', done:!!t.done, entryId:e.id });
+          allTodos.push({ entryIdx:eIdx, todoIdx:tIdx, text:t.text||'', done:!!t.done });
         });
       }
     });
@@ -22580,7 +22587,6 @@ function _openTimelineViewer(npcId){
     return html;
   }
 
-  // ---- 渲染条目列表 ----
   function renderEntries(){
     var entries = _currentEntries();
     if (!entries.length) return '<div style="text-align:center;padding:20px;color:rgba(20,24,28,.4);font-size:12px;">暂无' + _modeLabel(viewMode) + '<br>点击下方"生成总结"即可开始累积</div>';
@@ -22623,8 +22629,7 @@ function _openTimelineViewer(npcId){
     if (!isGenerating) return '';
     return '<div data-el="tlProgress" style="margin:6px 0;padding:8px 10px;background:rgba(7,193,96,.06);border-radius:8px;border:1px solid rgba(7,193,96,.15);">'
       + '<div style="font-size:11px;color:rgba(7,193,96,.8);">⏳ 正在生成总结…</div>'
-      + '<div data-el="tlProgressText" style="font-size:10px;color:rgba(20,24,28,.35);margin-top:2px;"></div>'
-      + '</div>';
+      + '<div data-el="tlProgressText" style="font-size:10px;color:rgba(20,24,28,.35);margin-top:2px;"></div></div>';
   }
   function renderBody(){
     var entries = _currentEntries();
@@ -22635,11 +22640,12 @@ function _openTimelineViewer(npcId){
       + renderTodos(entries)
       + renderGenProgress()
       + '<div data-el="tlEntries" style="max-height:42vh;overflow-y:auto;margin:6px 0;">' + renderEntries() + '</div>'
-      + '<div style="margin-top:8px;display:flex;gap:6px;">'
-      + '<button data-el="tlGenerate" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;'+(isGenerating?'opacity:.5;':'')+'">✨ 生成总结</button>'
-      + (isGenerating ? '<button data-el="tlAbort" style="padding:10px 12px;border-radius:10px;border:1px solid rgba(220,53,69,.3);background:rgba(220,53,69,.06);color:#c9302c;font-size:12px;cursor:pointer;">停止</button>' : '')
-      + '<button data-el="tlClose" style="padding:10px 16px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">关闭</button>'
-      + '</div>';
+      + '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">'
+      + '<button data-act="tlGenerate" style="flex:1;min-width:100px;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;'+(isGenerating?'opacity:.5;':'')+'">✨ 生成总结</button>'
+      + (isGenerating ? '<button data-act="tlAbort" style="padding:10px 12px;border-radius:10px;border:1px solid rgba(220,53,69,.3);background:rgba(220,53,69,.06);color:#c9302c;font-size:12px;cursor:pointer;">停止</button>' : '')
+      + '<button data-act="tlClose" style="padding:10px 16px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">关闭</button>'
+      + '</div>'
+      + (entries.length > 0 ? '<div style="margin-top:6px;text-align:center;"><button data-act="tlClearAll" style="font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid rgba(220,53,69,.15);background:transparent;color:rgba(220,53,69,.5);cursor:pointer;">🗑️ 清除全部总结（重新开始）</button></div>' : '');
   }
 
   var inner = '<div style="font-size:14px;font-weight:600;margin-bottom:4px;">📋 时间线总结</div>'
@@ -22650,113 +22656,145 @@ function _openTimelineViewer(npcId){
   function refresh(){
     var rootEl = ov.querySelector('[data-el="tlRoot"]');
     if (rootEl) rootEl.innerHTML = renderBody();
-    bindEvents();
   }
   function updateProgressText(text){
     var el = ov.querySelector('[data-el="tlProgressText"]');
     if (el) el.textContent = text;
   }
 
-  // ---- 编辑覆盖层（替代 prompt()）----
+  // ---- 编辑弹层 ----
   function showEditOverlay(idx){
     var tl = _loadTimeline(npcId);
     var bucket = _getTimelineModeState(tl, viewMode, true);
     var entry = bucket.entries[idx];
     if (!entry) return;
     var curText = entry.userEdited || entry.displayText || '';
-    var editOv = document.createElement('div');
+    var editOv = doc.createElement('div');
     editOv.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;';
-    editOv.innerHTML = '<div style="width:min(90vw,380px);max-height:80vh;background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;">'
+    editOv.innerHTML = '<div style="width:min(90vw,380px);max-height:80vh;background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;" data-el="editModal">'
       + '<div style="font-size:13px;font-weight:600;">编辑时间线条目 #'+(entry.range[0]+1)+'~'+(entry.range[1]+1)+'</div>'
       + '<textarea data-el="editTA" style="width:100%;height:200px;border:1px solid rgba(0,0,0,.12);border-radius:8px;padding:8px;font-size:12px;line-height:1.6;resize:vertical;box-sizing:border-box;">'+esc(curText)+'</textarea>'
       + '<div style="display:flex;gap:6px;justify-content:flex-end;">'
-      + '<button data-el="editCancel" style="padding:6px 14px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;font-size:12px;cursor:pointer;">取消</button>'
-      + '<button data-el="editSave" style="padding:6px 14px;border-radius:8px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:12px;cursor:pointer;">保存</button>'
+      + '<button data-act="editCancel" style="padding:6px 14px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;font-size:12px;cursor:pointer;">取消</button>'
+      + '<button data-act="editSave" data-editidx="'+idx+'" style="padding:6px 14px;border-radius:8px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:12px;cursor:pointer;">保存</button>'
       + '</div></div>';
-    document.body.appendChild(editOv);
+    (root || document.body).appendChild(editOv);
     var ta = editOv.querySelector('[data-el="editTA"]');
     if (ta) ta.focus();
-    editOv.querySelector('[data-el="editCancel"]').onclick = function(){ editOv.remove(); };
-    editOv.querySelector('[data-el="editSave"]').onclick = function(){
-      var newText = ta.value;
-      var tl2 = _loadTimeline(npcId);
-      var bucket2 = _getTimelineModeState(tl2, viewMode, true);
-      if (bucket2.entries[idx]){
-        bucket2.entries[idx].userEdited = newText;
-        _saveTimeline(npcId, tl2);
-        _syncSummaryFromTimeline(npcId, viewMode);
+    editOv.addEventListener('click', function(ev){
+      var target = ev.target;
+      if (target === editOv){ editOv.remove(); return; }
+      // 找最近的 data-act
+      var actEl = target.closest ? target.closest('[data-act]') : null;
+      if (!actEl) return;
+      var act = actEl.getAttribute('data-act');
+      if (act === 'editCancel'){ editOv.remove(); }
+      if (act === 'editSave'){
+        var newText = editOv.querySelector('[data-el="editTA"]').value;
+        var tl2 = _loadTimeline(npcId);
+        var bucket2 = _getTimelineModeState(tl2, viewMode, true);
+        var editIdx = parseInt(actEl.getAttribute('data-editidx'));
+        if (bucket2.entries[editIdx]){
+          bucket2.entries[editIdx].userEdited = newText;
+          _saveTimeline(npcId, tl2);
+          _syncSummaryFromTimeline(npcId, viewMode);
+        }
+        editOv.remove();
+        refresh();
       }
-      editOv.remove();
-      refresh();
-    };
+    });
   }
 
-  // ---- 事件绑定（全部用 onclick 避免重复绑定）----
-  function bindEvents(){
-    // 条目编辑
-    ov.querySelectorAll('[data-act="tlEdit"]').forEach(function(btn){
-      btn.onclick = function(){ showEditOverlay(parseInt(this.getAttribute('data-tlidx'))); };
-    });
-    // 条目删除
-    ov.querySelectorAll('[data-act="tlDel"]').forEach(function(btn){
-      btn.onclick = function(){
-        var idx = parseInt(this.getAttribute('data-tlidx'));
-        if (!confirm('确定删除这条时间线记录？删除后不可恢复。')) return;
-        var tl = _loadTimeline(npcId);
-        var bucket = _getTimelineModeState(tl, viewMode, true);
-        if (idx >= 0 && idx < bucket.entries.length){
-          bucket.entries.splice(idx, 1);
-          _saveTimeline(npcId, tl);
-          _syncSummaryFromTimeline(npcId, viewMode);
-          try{ toast('已删除'); }catch(e){}
-        }
-        refresh();
-      };
-    });
-    // 模式切换
-    ov.querySelectorAll('[data-act="tlSwitchMode"]').forEach(function(btn){
-      btn.onclick = function(){ viewMode = _normChatMode(this.getAttribute('data-tlmode')); refresh(); };
-    });
-    // 待办切换完成
-    ov.querySelectorAll('[data-act="todoToggle"]').forEach(function(btn){
-      btn.onclick = function(){
-        var eIdx = parseInt(this.getAttribute('data-eidx'));
-        var tIdx = parseInt(this.getAttribute('data-tidx'));
-        var tl = _loadTimeline(npcId);
-        var bucket = _getTimelineModeState(tl, viewMode, true);
-        var entry = bucket.entries[eIdx];
-        if (entry && entry.structured && entry.structured.todos && entry.structured.todos[tIdx]){
-          entry.structured.todos[tIdx].done = !entry.structured.todos[tIdx].done;
-          _rebuildEntryDisplay(entry);
-          _saveTimeline(npcId, tl);
-          _syncSummaryFromTimeline(npcId, viewMode);
-        }
-        refresh();
-      };
-    });
-    // 待办编辑
-    ov.querySelectorAll('[data-act="todoEdit"]').forEach(function(btn){
-      btn.onclick = function(){
-        var eIdx = parseInt(this.getAttribute('data-eidx'));
-        var tIdx = parseInt(this.getAttribute('data-tidx'));
-        var tl = _loadTimeline(npcId);
-        var bucket = _getTimelineModeState(tl, viewMode, true);
-        var entry = bucket.entries[eIdx];
-        if (entry && entry.structured && entry.structured.todos && entry.structured.todos[tIdx]){
-          var newText = prompt('修改待办内容：', entry.structured.todos[tIdx].text || '');
-          if (newText === null) return;
-          if (newText.trim() === ''){ entry.structured.todos.splice(tIdx, 1); }
-          else { entry.structured.todos[tIdx].text = newText.trim(); }
-          _rebuildEntryDisplay(entry);
-          _saveTimeline(npcId, tl);
-          _syncSummaryFromTimeline(npcId, viewMode);
-        }
-        refresh();
-      };
-    });
-    // 添加待办
-    var addBtn = ov.querySelector('[data-act="todoAdd"]');
-    if (addBtn) addBtn.onclick = function(){
+  // ======== 核心：事件委托 ========
+  // 只在 ov 上绑定一次 click，根据 data-act 分派
+  ov.addEventListener('click', function(ev){
+    var target = ev.target;
+    // 找到最近的 data-act 元素
+    var actEl = target;
+    while(actEl && actEl !== ov){
+      if (actEl.getAttribute && actEl.getAttribute('data-act')) break;
+      // 也检查 data-el 按钮
+      if (actEl.getAttribute && actEl.getAttribute('data-el')) break;
+      actEl = actEl.parentElement;
+    }
+    if (!actEl || actEl === ov) return;
+
+    var act = actEl.getAttribute('data-act') || '';
+    var el = actEl.getAttribute('data-el') || '';
+
+    // ---- 删除条目 ----
+    if (act === 'tlDel'){
+      ev.stopPropagation();
+      var idx = parseInt(actEl.getAttribute('data-tlidx'));
+      console.log('[Timeline] 删除条目 idx=' + idx);
+      if (isNaN(idx)){ console.warn('[Timeline] 无效idx'); return; }
+      if (!confirm('确定删除这条时间线记录？')) return;
+      var tl = _loadTimeline(npcId);
+      var bucket = _getTimelineModeState(tl, viewMode, true);
+      console.log('[Timeline] 当前 entries 数:', bucket.entries.length);
+      if (idx >= 0 && idx < bucket.entries.length){
+        bucket.entries.splice(idx, 1);
+        _saveTimeline(npcId, tl);
+        _syncSummaryFromTimeline(npcId, viewMode);
+        console.log('[Timeline] 删除成功，剩余:', bucket.entries.length);
+        try{ toast('已删除'); }catch(e){}
+      } else {
+        console.warn('[Timeline] idx 超出范围:', idx, '/', bucket.entries.length);
+      }
+      refresh();
+      return;
+    }
+    // ---- 编辑条目 ----
+    if (act === 'tlEdit'){
+      ev.stopPropagation();
+      showEditOverlay(parseInt(actEl.getAttribute('data-tlidx')));
+      return;
+    }
+    // ---- 模式切换 ----
+    if (act === 'tlSwitchMode'){
+      viewMode = _normChatMode(actEl.getAttribute('data-tlmode'));
+      refresh();
+      return;
+    }
+    // ---- 待办切换 ----
+    if (act === 'todoToggle'){
+      ev.stopPropagation();
+      var eIdx = parseInt(actEl.getAttribute('data-eidx'));
+      var tIdx = parseInt(actEl.getAttribute('data-tidx'));
+      var tl = _loadTimeline(npcId);
+      var bucket = _getTimelineModeState(tl, viewMode, true);
+      var entry = bucket.entries[eIdx];
+      if (entry && entry.structured && entry.structured.todos && entry.structured.todos[tIdx]){
+        entry.structured.todos[tIdx].done = !entry.structured.todos[tIdx].done;
+        _rebuildEntryDisplay(entry);
+        _saveTimeline(npcId, tl);
+        _syncSummaryFromTimeline(npcId, viewMode);
+      }
+      refresh();
+      return;
+    }
+    // ---- 待办编辑 ----
+    if (act === 'todoEdit'){
+      ev.stopPropagation();
+      var eIdx2 = parseInt(actEl.getAttribute('data-eidx'));
+      var tIdx2 = parseInt(actEl.getAttribute('data-tidx'));
+      var tl = _loadTimeline(npcId);
+      var bucket = _getTimelineModeState(tl, viewMode, true);
+      var entry = bucket.entries[eIdx2];
+      if (entry && entry.structured && entry.structured.todos && entry.structured.todos[tIdx2]){
+        var newText = prompt('修改待办内容：', entry.structured.todos[tIdx2].text || '');
+        if (newText === null) return;
+        if (newText.trim() === ''){ entry.structured.todos.splice(tIdx2, 1); }
+        else { entry.structured.todos[tIdx2].text = newText.trim(); }
+        _rebuildEntryDisplay(entry);
+        _saveTimeline(npcId, tl);
+        _syncSummaryFromTimeline(npcId, viewMode);
+      }
+      refresh();
+      return;
+    }
+    // ---- 添加待办 ----
+    if (act === 'todoAdd'){
       var newText = prompt('新增待办事项：');
       if (!newText || !newText.trim()) return;
       var tl = _loadTimeline(npcId);
@@ -22770,10 +22808,10 @@ function _openTimelineViewer(npcId){
       _saveTimeline(npcId, tl);
       _syncSummaryFromTimeline(npcId, viewMode);
       refresh();
-    };
-    // 分批大小保存
-    var chunkSaveBtn = ov.querySelector('[data-act="chunkSave"]');
-    if (chunkSaveBtn) chunkSaveBtn.onclick = function(){
+      return;
+    }
+    // ---- 保存分批大小 ----
+    if (act === 'chunkSave'){
       var input = ov.querySelector('[data-el="chunkInput"]');
       if (!input) return;
       var val = Math.max(5, Math.min(200, parseInt(input.value) || 20));
@@ -22782,59 +22820,79 @@ function _openTimelineViewer(npcId){
       _saveCharExtra(npcId, ce);
       try{ toast('已保存：每次总结 '+val+' 条'); }catch(e){}
       refresh();
-    };
-    // 关闭
-    var closeBtn = ov.querySelector('[data-el="tlClose"]');
-    if (closeBtn) closeBtn.onclick = function(){ _tlApiClearQueue(); genAborted = true; ov.remove(); };
-    // 停止生成
-    var abortBtn = ov.querySelector('[data-el="tlAbort"]');
-    if (abortBtn) abortBtn.onclick = function(){
+      return;
+    }
+    // ---- 清除全部总结 ----
+    if (act === 'tlClearAll'){
+      ev.stopPropagation();
+      if (!confirm('⚠️ 确定清除当前模式（'+_modeLabel(viewMode)+'）的全部总结？\n这将删除所有已生成的条目，可以重新开始总结。')) return;
+      var tl = _loadTimeline(npcId);
+      var bucket = _getTimelineModeState(tl, viewMode, true);
+      console.log('[Timeline] 清除全部 '+viewMode+'，原有 '+bucket.entries.length+' 条');
+      bucket.entries = [];
+      bucket.customPrompt = null;
+      _saveTimeline(npcId, tl);
+      _syncSummaryFromTimeline(npcId, viewMode);
+      try{ toast('已清除全部'+_modeLabel(viewMode)); }catch(e){}
+      refresh();
+      return;
+    }
+    // ---- 关闭 ----
+    if (act === 'tlClose' || el === 'tlClose'){
+      _tlApiClearQueue(); genAborted = true; ov.remove();
+      return;
+    }
+    // ---- 停止生成 ----
+    if (act === 'tlAbort' || el === 'tlAbort'){
       genAborted = true;
       _tlApiClearQueue();
       try{ PhoneAI.abort('proactive'); }catch(e){}
       isGenerating = false;
       try{ toast('已停止生成'); }catch(e){}
       refresh();
-    };
-    // 生成总结（排队+分批+自动续接）
-    var genBtn = ov.querySelector('[data-el="tlGenerate"]');
-    if (genBtn) genBtn.onclick = async function(){
+      return;
+    }
+    // ---- 生成总结 ----
+    if (act === 'tlGenerate' || el === 'tlGenerate'){
       if (isGenerating) return;
-      var chunkSize = _getChunkSize();
-      var pending = _getTimelinePendingRange(npcId, viewMode, chunkSize);
-      if (!pending){ try{ toast('没有新的未总结消息'); }catch(e){} return; }
-      isGenerating = true;
-      genAborted = false;
-      refresh();
-      var batchNo = 0;
-      while(!genAborted){
-        var p = _getTimelinePendingRange(npcId, viewMode, chunkSize);
-        if (!p) break;
-        batchNo++;
-        updateProgressText('第 '+batchNo+' 批：第 '+(p.fromIdx+1)+'~'+(p.toIdx+1)+' 条…');
-        try{
-          var entry = await _tlApiEnqueue(function(){
-            return _generateTimelineEntry(npcId, p.fromIdx, p.toIdx, viewMode);
-          });
-          if (!entry) break;
-          var rootEl = ov.querySelector('[data-el="tlRoot"]');
-          if (!rootEl) break;
-          refresh();
-          isGenerating = true;
-          if (!_getTimelinePendingRange(npcId, viewMode, chunkSize)) break;
-          await new Promise(function(r){ setTimeout(r, 500); });
-        }catch(e){
-          try{ toast('总结生成出错: '+((e&&e.message)||'')); }catch(e2){}
-          break;
+      (async function(){
+        var chunkSize = _getChunkSize();
+        var pending = _getTimelinePendingRange(npcId, viewMode, chunkSize);
+        console.log('[Timeline] 点击生成, pending=', pending);
+        if (!pending){ try{ toast('没有新的未总结消息'); }catch(e){} return; }
+        isGenerating = true;
+        genAborted = false;
+        refresh();
+        var batchNo = 0;
+        while(!genAborted){
+          var p = _getTimelinePendingRange(npcId, viewMode, chunkSize);
+          if (!p) break;
+          batchNo++;
+          updateProgressText('第 '+batchNo+' 批：第 '+(p.fromIdx+1)+'~'+(p.toIdx+1)+' 条…');
+          try{
+            var entry = await _tlApiEnqueue(function(){
+              return _generateTimelineEntry(npcId, p.fromIdx, p.toIdx, viewMode);
+            });
+            if (!entry) break;
+            var rootEl = ov.querySelector('[data-el="tlRoot"]');
+            if (!rootEl) break;
+            refresh();
+            isGenerating = true;
+            if (!_getTimelinePendingRange(npcId, viewMode, chunkSize)) break;
+            await new Promise(function(r){ setTimeout(r, 500); });
+          }catch(e){
+            try{ toast('总结生成出错: '+((e&&e.message)||'')); }catch(e2){}
+            break;
+          }
         }
-      }
-      isGenerating = false;
-      genAborted = false;
-      refresh();
-      if (batchNo > 0) try{ toast('总结生成完毕，共 '+batchNo+' 批'); }catch(e){}
-    };
-  }
-  bindEvents();
+        isGenerating = false;
+        genAborted = false;
+        refresh();
+        if (batchNo > 0) try{ toast('总结生成完毕，共 '+batchNo+' 批'); }catch(e){}
+      })();
+      return;
+    }
+  }); // end event delegation
 }
 
       return { initOnce, showFull, showMini, showPill, hide, openApp, openHome, openChat, state };
