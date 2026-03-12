@@ -1994,10 +1994,10 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 /* wxCHIco svg fill set in themed block below */
 /* wxCHIco uses accent bg with white SVG */
-/* 点赞保持红色 */
+/* 点赞跟随主题高亮色 */
 #${ID} .feedAction.liked svg.phIco,
 #${ID} .momentAction.liked svg.phIco{
-  fill:#ef4444 !important;
+  fill:var(--ph-accent, #07c160) !important;
 }
 /* 例外：底部Tab图标/发送按钮/论坛浮动发帖按钮，用自身 currentColor（便于选中态/白色图标） */
 #${ID} .wxTabBtn .ico svg.phIco{ fill: currentColor !important; }
@@ -2151,10 +2151,10 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   position:absolute; left:0; right:0; top:52px; bottom:0;
   overflow:auto;
   background:transparent;
-  scrollbar-width:thin; scrollbar-color:rgba(128,128,128,.15) transparent;
+  scrollbar-width:none; scrollbar-color:transparent transparent;
 }
-#${ID} .phAppBody::-webkit-scrollbar{ width:4px; }
-#${ID} .phAppBody::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.08); border-radius:2px; }
+#${ID} .phAppBody::-webkit-scrollbar{ width:0; display:none; }
+#${ID} .phAppBody::-webkit-scrollbar-thumb{ background:transparent; }
 /* ★ 聊天详情时禁止外层滚动+隐藏滚动条 */
 #${ID} .phAppBody.phAppBodyChat{
   overflow:hidden !important; scrollbar-width:none !important;
@@ -3426,7 +3426,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   transition:color .12s;
 }
 #${ID} .momentAction:hover{ color:var(--ph-text-sub); }
-#${ID} .momentAction.liked{ color:#ef4444; }
+#${ID} .momentAction.liked{ color:var(--ph-accent, #07c160); }
 #${ID} .momentComments{
   padding:6px 10px; margin:4px 0 0; border-radius:8px;
   background:var(--ph-glass); font-size:12px; line-height:1.6;
@@ -3484,7 +3484,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   transition:color .12s;
 }
 #${ID} .feedAction:hover{ color:var(--ph-text-sub); }
-#${ID} .feedAction.liked{ color:#ef4444; }
+#${ID} .feedAction.liked{ color:var(--ph-accent, #07c160); }
 #${ID} .feedAction.bookmarked{ color:#f59e0b; }
 #${ID} .feedComments{ margin-top:8px; padding:8px 10px; background:var(--ph-glass); border-radius:10px; }
 #${ID} .feedCommentItem{ display:flex; gap:6px; padding:4px 0; font-size:12px; line-height:1.4; }
@@ -4106,7 +4106,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   display:flex; flex-direction:column; align-items:center; gap:3px;
   color:var(--ph-text-dim); font-size:11px; padding:10px 4px; transition:color .12s;
 }
-#${ID} .forumDetailAction.liked{ color:#ef4444; }
+#${ID} .forumDetailAction.liked{ color:var(--ph-accent, #07c160); }
 #${ID} .forumDetailAction.bookmarked{ color:#f59e0b; }
 #${ID} .forumDetailAction svg{ width:20px; height:20px; fill:currentColor; }
 #${ID} .forumDetailCmtTitle{
@@ -4132,7 +4132,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   color:var(--ph-text-dim); font-size:11px; display:flex; align-items:center; gap:2px;
   align-self:flex-start; margin-top:2px; padding:3px; flex-shrink:0;
 }
-#${ID} .forumDetailCmtLike.liked{ color:#ef4444; }
+#${ID} .forumDetailCmtLike.liked{ color:var(--ph-accent, #07c160); }
 #${ID} .forumDetailCommentBar{
   position:sticky; bottom:0; display:flex; gap:8px; align-items:center;
   padding:8px 12px; background:var(--ph-glass-strong);
@@ -5286,6 +5286,16 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
               setAppBarTitle('聊天历史');
             });
             renderChatHistoryDetailPage(nid);
+            return;
+          }
+          if (act === 'wxCHDelSummary'){
+            const nid = t.getAttribute('data-chnpcid');
+            if (!nid) return;
+            // 清除该角色的总结数据
+            try{ saveChatSummary(nid, { summaryText:'', updatedAt:0 }); }catch(e){}
+            try{ toast('已删除总结'); }catch(e){}
+            const c = root.querySelector('[data-ph="chatTabContent"]');
+            if (c) renderChatHistoryPage(c);
             return;
           }
           if (act === 'wxCHDetailCopy'){
@@ -9333,10 +9343,35 @@ ${lines}
           </div>`;
 
         if (activeTab === 'moments'){
-          html += `<div class="phPlaceholder" style="padding-top:50px;">
-            <div class="phPlIcon">${_phFlatIcon('💬')}</div>
-            <div class="phPlText">暂无数据，敬请期待</div>
-          </div>`;
+          // ★ 朋友圈互动概要
+          var momData = _ensureMoments();
+          var myN = (phoneLoadSettings()&&phoneLoadSettings().phoneName)||'我';
+          var momInteractions = [];
+          _safeArr(momData.posts).forEach(function(p){
+            var myComments = _safeArr(p.comments).filter(function(c){return c.name===myN||c.name==='我';});
+            var myLiked = _safeArr(p.likes).indexOf(myN)>=0 || _safeArr(p.likes).indexOf('我')>=0;
+            var repliesTo = _safeArr(p.comments).filter(function(c){return c.replyTo===myN||c.replyTo==='我';});
+            if(myComments.length || myLiked || repliesTo.length){
+              momInteractions.push({post:p, myComments:myComments, myLiked:myLiked, repliesTo:repliesTo});
+            }
+          });
+          if(!momInteractions.length){
+            html += `<div style="padding:30px 14px;text-align:center;font-size:12px;color:rgba(20,24,28,.35);">暂无朋友圈互动记录</div>`;
+          } else {
+            html += '<div style="padding:8px 14px;">';
+            momInteractions.slice(-10).forEach(function(mi){
+              var summary = '';
+              if(mi.myLiked) summary += '你点赞了';
+              if(mi.myComments.length) summary += (summary?'，并':'你') + '评论了"'+mi.myComments[0].text.slice(0,20)+(mi.myComments[0].text.length>20?'…':'')+'"';
+              if(mi.repliesTo.length) summary += '。'+mi.repliesTo[0].name+'回复了你';
+              html += '<div style="padding:10px 0;border-bottom:1px solid rgba(0,0,0,.04);">'
+                + '<div style="font-size:12px;font-weight:500;color:rgba(20,24,28,.7);">'+esc(mi.post.name)+' 的动态</div>'
+                + '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-top:2px;">'+esc((mi.post.content||'').slice(0,40))+'</div>'
+                + '<div style="font-size:11px;color:var(--ph-accent,#07c160);margin-top:3px;">'+esc(summary)+'</div>'
+                + '</div>';
+            });
+            html += '</div>';
+          }
         } else {
           // 聊天总结 Tab — 遍历所有有过聊天的角色
           const threads = loadThreads();
@@ -9360,14 +9395,19 @@ ${lines}
               const lastMsg = thread.lastMsg ? String(thread.lastMsg).slice(0,20) : '暂无消息';
               const avatar = npc.avatar || (npc.name||'?').charAt(0);
 
-              html += `<div class="wxDiscoverItem" data-act="wxCHDetail" data-chnpcid="${esc(thread.id)}" style="padding:12px 14px;cursor:pointer;">
-                <div style="width:40px;height:40px;border-radius:10px;background:rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden;">${esc(avatar)}</div>
-                <div style="flex:1;min-width:0;margin-left:10px;">
-                  <div style="font-size:14px;font-weight:500;color:rgba(20,24,28,.88);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(npc.name||thread.name||'未知')}</div>
-                  <div style="font-size:11px;color:rgba(20,24,28,.4);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">最近：${esc(lastMsg)}</div>
-                  <div style="font-size:10px;margin-top:2px;">${statusHtml}</div>
+              html += `<div class="wxCHSwipeWrap" data-chnpcid="${esc(thread.id)}" style="position:relative;overflow:hidden;">
+                <div class="wxCHSwipeContent" style="position:relative;z-index:1;transition:transform .2s;background:var(--ph-glass,rgba(255,255,255,.9));">
+                  <div class="wxDiscoverItem" data-act="wxCHDetail" data-chnpcid="${esc(thread.id)}" style="padding:12px 14px;cursor:pointer;">
+                    <div style="width:40px;height:40px;border-radius:10px;background:rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;overflow:hidden;">${esc(avatar)}</div>
+                    <div style="flex:1;min-width:0;margin-left:10px;">
+                      <div style="font-size:14px;font-weight:500;color:rgba(20,24,28,.88);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(npc.name||thread.name||'未知')}</div>
+                      <div style="font-size:11px;color:rgba(20,24,28,.4);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">最近：${esc(lastMsg)}</div>
+                      <div style="font-size:10px;margin-top:2px;">${statusHtml}</div>
+                    </div>
+                    <div class="wxDArrow">›</div>
+                  </div>
                 </div>
-                <div class="wxDArrow">›</div>
+                <div class="wxCHSwipeBtn" data-act="wxCHDelSummary" data-chnpcid="${esc(thread.id)}" style="position:absolute;right:0;top:0;bottom:0;width:70px;display:flex;align-items:center;justify-content:center;background:rgba(20,24,28,.15);color:rgba(20,24,28,.55);font-size:12px;font-weight:600;cursor:pointer;">删除</div>
               </div>`;
             });
             html += `</div>`;
@@ -9376,6 +9416,30 @@ ${lines}
 
         html += `</div>`;
         container.innerHTML = html;
+
+        // ★ 绑定左滑删除
+        container.querySelectorAll('.wxCHSwipeWrap').forEach(function(wrap){
+          var content = wrap.querySelector('.wxCHSwipeContent');
+          if(!content) return;
+          var startX = 0, curX = 0, swiping = false;
+          content.addEventListener('touchstart', function(e){
+            startX = e.touches[0].clientX; curX = 0; swiping = true;
+          }, {passive:true});
+          content.addEventListener('touchmove', function(e){
+            if(!swiping) return;
+            var dx = e.touches[0].clientX - startX;
+            if(dx > 0) dx = 0;
+            if(dx < -80) dx = -80;
+            curX = dx;
+            content.style.transform = 'translateX('+dx+'px)';
+            content.style.transition = 'none';
+          }, {passive:true});
+          content.addEventListener('touchend', function(){
+            swiping = false;
+            content.style.transition = 'transform .2s';
+            content.style.transform = curX < -40 ? 'translateX(-70px)' : 'translateX(0)';
+          });
+        });
       }
 
       // ====== 辅助：时间距今 ======
@@ -9962,7 +10026,7 @@ ${lines}
         let html = '';
 
         // 当前人设卡片
-        html += `<div style="margin:14px;padding:16px;border-radius:14px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;">
+        html += `<div style="margin:14px;padding:16px;border-radius:14px;background:var(--ph-accent-grad, linear-gradient(135deg, var(--ph-accent, #07c160), color-mix(in srgb, var(--ph-accent, #07c160) 70%, #000)));color:#fff;">
           <div style="font-size:12px;opacity:.8;">当前人设</div>
           <div style="font-size:15px;font-weight:600;margin-top:4px;">${esc(active.id ? (list.find(p=>p.id===active.id)?.name||active.id) : '未设置')}</div>
           <div style="font-size:11px;opacity:.7;margin-top:4px;max-height:60px;overflow:hidden;white-space:pre-wrap;">${esc((active.text||'').slice(0,120))}${(active.text||'').length>120?'…':''}</div>
@@ -9997,11 +10061,11 @@ ${lines}
             const isOverride = cSettings.personaOverride === p.name || cSettings.personaOverride === p.id;
             html += `<div style="margin:0 14px 8px;padding:14px;border-radius:14px;background:var(--ph-glass-strong);border:${isCur?'2px solid var(--ph-accent)':'1px solid var(--ph-glass-border)'};">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <span style="font-size:14px;font-weight:600;color:rgba(20,24,28,.85);">${esc(p.name)} ${isCur?'<span style="color:var(--ph-accent, #07c160);font-size:11px;">✓ 当前</span>':''} ${isOverride && !isFollowChatId ? '<span style="color:#667eea;font-size:10px;">🔒 锁定</span>' : ''}</span>
+                <span style="font-size:14px;font-weight:600;color:rgba(20,24,28,.85);">${esc(p.name)} ${isCur?'<span style="color:var(--ph-accent, #07c160);font-size:11px;">✓ 当前</span>':''} ${isOverride && !isFollowChatId ? '<span style="color:var(--ph-accent);font-size:10px;">🔒 锁定</span>' : ''}</span>
                 <div style="display:flex;gap:6px;">
                   ${!isCur ? `<button data-act="personaUse" data-pidx="${i}" style="border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:11px;padding:4px 8px;border-radius:6px;cursor:pointer;">启用</button>` : ''}
-                  <button data-act="personaEdit" data-pidx="${i}" style="border:0;background:transparent;color:#3b82f6;font-size:11px;cursor:pointer;">编辑</button>
-                  <button data-act="personaDel" data-pidx="${i}" style="border:0;background:transparent;color:#ef4444;font-size:11px;cursor:pointer;">删除</button>
+                  <button data-act="personaEdit" data-pidx="${i}" style="border:0;background:transparent;color:var(--ph-accent,#07c160);font-size:11px;cursor:pointer;">编辑</button>
+                  <button data-act="personaDel" data-pidx="${i}" style="border:0;background:transparent;color:rgba(20,24,28,.4);font-size:11px;cursor:pointer;">删除</button>
                 </div>
               </div>
               <div style="font-size:12px;color:rgba(20,24,28,.5);white-space:pre-wrap;max-height:60px;overflow:hidden;">${esc((p.text||'').slice(0,150))}</div>
@@ -11780,7 +11844,7 @@ ${lines}
         h+='</div>';
         h+='<button data-act="afRunSingle" data-afapp="moments" style="width:100%;padding:10px;border:0;border-radius:10px;background:var(--ph-accent-grad);color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">✨ 立即生成朋友圈</button>';
         h+='<div style="font-weight:600;font-size:13px;color:var(--ph-text);margin:8px 0;">高级</div><textarea data-afm-ta="customPrompt" placeholder="例如：多生成一些日常生活类的动态" style="width:100%;min-height:60px;padding:8px;border-radius:10px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:12px;resize:vertical;box-sizing:border-box;">'+(mc.customPrompt||'')+'</textarea>';
-        h+='<div style="margin-top:16px;border-top:1px solid var(--ph-glass-border);padding-top:12px;"><button data-act="phClearAppData" data-appkey="moments" style="width:100%;padding:10px;border:0;border-radius:10px;background:rgba(231,76,60,.1);color:#e74c3c;font-size:13px;font-weight:600;cursor:pointer;">🗑 清空朋友圈所有动态</button></div>';
+        h+='<div style="margin-top:16px;border-top:1px solid var(--ph-glass-border);padding-top:12px;"><button data-act="phClearAppData" data-appkey="moments" style="width:100%;padding:10px;border:0;border-radius:10px;background:rgba(20,24,28,.06);color:rgba(20,24,28,.5);font-size:13px;font-weight:500;cursor:pointer;">清空朋友圈所有动态</button></div>';
         _afBindModal(_afModal('朋友圈资讯设置',h),'moments');
       }
 
@@ -12006,7 +12070,7 @@ ${lines}
         const cfg = loadMomentsCfg();
         const settings = phoneLoadSettings();
         const userName = (settings && settings.phoneName) || '原';
-        const coverBg = cfg.coverImage ? `background-image:url(${cfg.coverImage});background-size:cover;background-position:center;` : 'background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);';
+        const coverBg = cfg.coverImage ? `background-image:url(${cfg.coverImage});background-size:cover;background-position:center;` : 'background:var(--ph-accent-grad, linear-gradient(135deg, var(--ph-accent, #07c160), color-mix(in srgb, var(--ph-accent, #07c160) 60%, #000)));';
         const _meAvSrc = phoneGetAvatar('me') || cfg.avatarImage || '';
         const avatarChar = _meAvSrc ? `<img src="${esc(_meAvSrc)}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"/>` : `<span style="font-size:24px;">${esc(userName.charAt(0))}</span>`;
 
@@ -12034,8 +12098,8 @@ ${lines}
 
         // 收到点赞提示
         if(newLikes.length){
-          html += `<div style="background:#f7f7f7;border-bottom:1px solid #eee;padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:12px;color:#666;">
-            <span style="color:#e74c3c;font-size:16px;">❤️</span>
+          html += `<div style="background:rgba(0,0,0,.03);border-bottom:1px solid rgba(0,0,0,.04);padding:10px 14px;display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(20,24,28,.6);">
+            <span style="color:var(--ph-accent,#07c160);font-size:16px;">❤️</span>
             <span>${esc(newLikes.map(l=>l.from).join('、'))} 赞了你的动态</span>
           </div>`;
         }
@@ -12052,7 +12116,7 @@ ${lines}
             likesHtml = `<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:6px 10px;border-radius:6px;background:rgba(0,0,0,.04);margin-bottom:4px;">
               <span style="color:#e74c3c;font-size:12px;margin-right:2px;">❤️</span>`;
             likeArr.forEach((l,i)=>{
-              likesHtml += `<span style="font-size:12px;color:#576b95;font-weight:500;">${esc(l)}${i<likeArr.length-1?'、':''}</span>`;
+              likesHtml += `<span style="font-size:12px;color:var(--ph-accent,#07c160);font-weight:500;">${esc(l)}${i<likeArr.length-1?'、':''}</span>`;
             });
             likesHtml += '</div>';
           }
@@ -12062,10 +12126,10 @@ ${lines}
           if(cmtArr.length){
             cmtsHtml = '<div class="momentComments">';
             cmtArr.forEach((c,ci)=>{
-              const replyTo = c.replyTo ? `<span style="color:#576b95;">回复 ${esc(c.replyTo)}</span>：` : '';
+              const replyTo = c.replyTo ? `<span style="color:var(--ph-accent,#07c160);">回复 ${esc(c.replyTo)}</span>：` : '';
               cmtsHtml += `<div class="momentCmt" data-ci="${ci}" data-mid="${esc(m.id)}">
                 <span class="momentCmtName">${esc(c.name)}</span>：${replyTo}${esc(c.text)}
-                <span class="momentCmtReplyBtn" data-replyto="${esc(c.name)}" data-mid="${esc(m.id)}" style="float:right;font-size:10px;color:#576b95;cursor:pointer;padding:0 4px;">回复</span>
+                <span class="momentCmtReplyBtn" data-replyto="${esc(c.name)}" data-mid="${esc(m.id)}" style="float:right;font-size:10px;color:var(--ph-accent,#07c160);cursor:pointer;padding:0 4px;">回复</span>
               </div>`;
             });
             cmtsHtml += '</div>';
@@ -12081,7 +12145,7 @@ ${lines}
           html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
               <span style="font-size:11px;color:var(--ph-text-dim);">${ago}</span>
               <div style="display:flex;gap:6px;">
-                <button class="momentAction${iLiked?' liked':''}" data-mact="like" data-mid="${esc(m.id)}" style="background:none;border:none;color:${iLiked?'#e74c3c':'var(--ph-text-sub)'};font-size:12px;cursor:pointer;display:flex;align-items:center;gap:3px;">❤️ ${likeArr.length||''}</button>
+                <button class="momentAction${iLiked?' liked':''}" data-mact="like" data-mid="${esc(m.id)}" style="background:none;border:none;color:${iLiked?'var(--ph-accent,#07c160)':'var(--ph-text-sub)'};font-size:12px;cursor:pointer;display:flex;align-items:center;gap:3px;">❤️ ${likeArr.length||''}</button>
                 <button class="momentAction" data-mact="comment" data-mid="${esc(m.id)}" style="background:none;border:none;color:var(--ph-text-sub);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:3px;">💬 ${cmtArr.length||''}</button>
               </div>
             </div>
@@ -12303,6 +12367,9 @@ ${lines}
                 }catch(e){}
               }, delay);
             }
+
+            // ★ 其他NPC也可能参与评论/点赞（后台排队，2~5分钟后）
+            _queueNpcMomentInteractions(mid, txt, myName);
           });
         });
         // 发送评论回车
@@ -12328,6 +12395,57 @@ ${lines}
             try{ toast('已复制到剪贴板'); }catch(e){}
           });
         });
+      }
+
+      /* ========== Moments：NPC后台排队互动 ========== */
+      function _queueNpcMomentInteractions(mid, userComment, myName){
+        try{
+          const cfg = PhoneAI._getConfig();
+          if(!cfg.endpoint || !cfg.key) return;
+          const db = loadContactsDB();
+          const contacts = _safeArr(db.contacts).filter(c => c.name && c.name !== myName && c.name !== '我');
+          if(!contacts.length) return;
+          // 随机选1-2个NPC参与
+          var shuffled = contacts.slice().sort(()=>Math.random()-0.5);
+          var picked = shuffled.slice(0, Math.min(1 + Math.floor(Math.random()*2), shuffled.length));
+          picked.forEach(function(npc, i){
+            var delay = 120000 + Math.random()*180000 + i*60000; // 2~5分钟，错开
+            setTimeout(async function(){
+              try{
+                var d = _ensureMoments();
+                var post = d.posts.find(function(p){return p.id===mid;});
+                if(!post) return;
+                // 随机决定是点赞还是评论（60%评论，40%点赞）
+                if(Math.random() < 0.4){
+                  // 点赞
+                  if(!Array.isArray(post.likes)) post.likes = [];
+                  if(post.likes.indexOf(npc.name) < 0){
+                    post.likes.push(npc.name);
+                    saveMoments(d);
+                    var cont = root.querySelector('[data-ph="chatTabContent"]');
+                    if(cont) renderMoments(cont);
+                  }
+                } else {
+                  // AI生成评论
+                  var existingCmts = _safeArr(post.comments).map(function(c){return c.name+':'+c.text;}).join('; ');
+                  var prompt = '你是"'+npc.name+'"。朋友圈里"'+post.name+'"发了一条动态："'+(post.content||'').slice(0,100)+'"。已有评论：'+existingCmts+'。请以'+npc.name+'的身份写一条简短自然的评论（不超过25字，像真人朋友圈评论，可以回复某人也可以直接评论）。只输出评论文字。';
+                  var res = await PhoneAI.chat({ system:'你是朋友圈互动AI。只输出一条简短评论，不加引号不加前缀。', prompt:prompt, maxTokens:50, temperature:0.95 });
+                  if(res.ok && res.text){
+                    var d2 = _ensureMoments();
+                    var p2 = d2.posts.find(function(p){return p.id===mid;});
+                    if(p2){
+                      if(!Array.isArray(p2.comments)) p2.comments = [];
+                      p2.comments.push({name:npc.name, text:res.text.trim().slice(0,60), time:Date.now(), replyTo:''});
+                      saveMoments(d2);
+                      var cont2 = root.querySelector('[data-ph="chatTabContent"]');
+                      if(cont2) renderMoments(cont2);
+                    }
+                  }
+                }
+              }catch(e){}
+            }, delay);
+          });
+        }catch(e){}
       }
 
       /* ========== 聊天详情（NPC 私聊） ========== */
@@ -13130,13 +13248,13 @@ const npc = _wxGetChatTargetMeta(npcId);
             </div>
 
             <div class="wxCSGroup" style="margin-top:12px;">
-              <div class="wxCSItem" data-act="wxDelChat" data-npcid="${esc(contactId)}" style="color:rgba(231,76,60,.85);">
-                <div class="wxCSIco" style="background:rgba(231,76,60,.10);border-color:rgba(231,76,60,.15);">${_phFlatIcon('🗑')}</div>
-                <span class="wxCSName" style="color:rgba(231,76,60,.85);">清空聊天记录</span>
+              <div class="wxCSItem" data-act="wxDelChat" data-npcid="${esc(contactId)}">
+                <div class="wxCSIco" style="background:rgba(20,24,28,.05);border-color:rgba(20,24,28,.08);">${_phFlatIcon('🗑')}</div>
+                <span class="wxCSName" style="color:rgba(20,24,28,.55);">清空聊天记录</span>
               </div>
-              <div class="wxCSItem" data-act="wxDelFriend" data-npcid="${esc(contactId)}" style="color:#e74c3c;">
-                <div class="wxCSIco" style="background:rgba(231,76,60,.10);border-color:rgba(231,76,60,.15);">${_phFlatIcon('💔')}</div>
-                <span class="wxCSName" style="color:#e74c3c;">删除好友</span>
+              <div class="wxCSItem" data-act="wxDelFriend" data-npcid="${esc(contactId)}">
+                <div class="wxCSIco" style="background:rgba(20,24,28,.05);border-color:rgba(20,24,28,.08);">${_phFlatIcon('💔')}</div>
+                <span class="wxCSName" style="color:rgba(20,24,28,.55);">删除好友</span>
                 <span class="wxCSArrow" style="color:rgba(231,76,60,.3);">›</span>
               </div>
             </div>
@@ -15148,6 +15266,26 @@ const npc = _wxGetChatTargetMeta(npcId);
           if (summaryData && summaryData.summaryText && summaryData.summaryText.trim()){
             parts.push('【之前的对话摘要】\n' + summaryData.summaryText.trim().slice(0, 2000));
           }
+        }catch(e){}
+
+        // === 3.6 [朋友圈互动]：让AI知道朋友圈里发生的事 ===
+        try{
+          var _momD = _ensureMoments();
+          var _myN = (phoneLoadSettings()&&phoneLoadSettings().phoneName)||'我';
+          var momLines = [];
+          _safeArr(_momD.posts).slice(-8).forEach(function(p){
+            var myCmts = _safeArr(p.comments).filter(function(c){return c.name===_myN||c.name==='我';});
+            var npcCmts = _safeArr(p.comments).filter(function(c){return c.replyTo===_myN||c.replyTo==='我';});
+            var myLk = _safeArr(p.likes).indexOf(_myN)>=0||_safeArr(p.likes).indexOf('我')>=0;
+            if(myCmts.length||myLk||npcCmts.length){
+              var line = p.name+'发了动态"'+(p.content||'').slice(0,40)+'"';
+              if(myLk) line += '，用户点赞了';
+              if(myCmts.length) line += '，用户评论"'+myCmts[0].text.slice(0,30)+'"';
+              if(npcCmts.length) line += '，'+npcCmts[0].name+'回复了"'+npcCmts[0].text.slice(0,30)+'"';
+              momLines.push(line);
+            }
+          });
+          if(momLines.length) parts.push('【朋友圈互动近况】\n'+momLines.join('\n'));
         }catch(e){}
 
         // === 3.8 [酒馆聊天上下文]：从主线聊天读取最近 N 条消息 ===
