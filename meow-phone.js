@@ -12383,26 +12383,26 @@ ${lines}
 
             // AI自动回复：帖主不是"我"时，1~2分钟后回复
             if(post.name && post.name !== myName && post.name !== '我'){
-              // 帖主通过队列回复
-              _momReactionQueue.push(async function(){
+              setTimeout(async function(){
                 try{
                   var cfg2 = PhoneAI._getConfig();
                   if(!cfg2.endpoint || !cfg2.key) return;
-                  var userContent = '你是"'+post.name+'"。用户"'+myName+'"在你的朋友圈动态下评论了："'+txt+'"。请以'+post.name+'的口吻回复一条简短自然的评论（不超过30字，不用加引号）。';
-                  var res = await PhoneAI.chat({ system:'用角色口吻简短回复评论，只输出回复文字。', messages:[{role:'user',content:userContent}], maxTokens:60, temperature:0.9, channel:'proactive' });
+                  var userContent = '你是"'+post.name+'"。用户"'+myName+'"在你的朋友圈评论了："'+txt+'"。用'+post.name+'口吻回复（不超过25字，不加引号）。只输出回复。';
+                  var res = await PhoneAI.chat({ system:'只输出回复文字。', messages:[{role:'user',content:userContent}], maxTokens:50, temperature:0.9, channel:'proactive', timeout:25 });
+                  console.log('[Moments] 帖主回复:', res.ok, String(res.data||res.error||'').slice(0,50));
                   if(res.ok && res.data){
                     var d2 = _ensureMoments();
                     var p2 = d2.posts.find(function(p){return p.id===mid;});
                     if(p2){
+                      if(!Array.isArray(p2.comments)) p2.comments = [];
                       p2.comments.push({name:post.name, text:String(res.data).replace(/^["'「]|["'」]$/g,'').trim().slice(0,60), time:Date.now(), replyTo:myName});
                       saveMoments(d2);
                       _momRefreshUI();
                       try{ toast('💬 '+post.name+' 回复了你'); }catch(e){}
                     }
                   }
-                }catch(e){}
-              });
-              setTimeout(function(){ _momReactionFlush(); }, 8000 + Math.random()*12000);
+                }catch(e){ console.error('[Moments] 帖主回复错:', e); }
+              }, 8000 + Math.random()*12000);
             }
 
             // ★ 其他NPC也可能参与评论/点赞（后台排队，2~5分钟后）
@@ -12447,35 +12447,18 @@ ${lines}
 
       /* ========== Moments：NPC后台排队互动 ========== */
       // ★ 用户发新动态后，NPC自动来点赞/评论
-      // ★ 朋友圈NPC互动队列（串行，避免并发冲突）
-      var _momReactionQueue = [];
-      var _momReactionRunning = false;
-      async function _momReactionFlush(){
-        if(_momReactionRunning) return;
-        if(!_momReactionQueue.length) return;
-        _momReactionRunning = true;
-        while(_momReactionQueue.length){
-          var task = _momReactionQueue.shift();
-          try{ await task(); }catch(e){ console.error('[Moments] task error:', e); }
-          await new Promise(function(r){setTimeout(r, 2000);}); // 2秒间隔
-        }
-        _momReactionRunning = false;
-      }
-
+      // ★ 朋友圈NPC互动：即时点赞 + 一次API批量生成评论
       function _queueNpcMomentReactions(mid){
         try{
-          var cfg = PhoneAI._getConfig();
-          var hasApi = !!(cfg.endpoint && cfg.key);
           var db = loadContactsDB();
           var myN = (phoneLoadSettings()&&phoneLoadSettings().phoneName)||'我';
           var contacts = _safeArr(db.contacts).filter(function(c){return c.name && c.name!==myN && c.name!=='我';});
-          if(!contacts.length){ console.log('[Moments] 通讯录无NPC'); return; }
+          if(!contacts.length){ console.log('[Moments] 无NPC'); return; }
           var shuffled = contacts.slice().sort(function(){return Math.random()-0.5;});
-          var count = Math.min(2 + Math.floor(Math.random()*3), shuffled.length);
-          var picked = shuffled.slice(0, count);
-          console.log('[Moments] 触发互动 mid='+mid+', NPC:', picked.map(function(c){return c.name;}).join(','));
+          var picked = shuffled.slice(0, Math.min(3, shuffled.length));
+          console.log('[Moments] 互动NPC:', picked.map(function(c){return c.name;}).join(','));
 
-          // 第一步：即时点赞（不需要API）
+          // 阶段1：即时点赞（3~10秒，纯本地操作）
           picked.forEach(function(npc, i){
             setTimeout(function(){
               try{
@@ -12486,57 +12469,89 @@ ${lines}
                 if(post.likes.indexOf(npc.name) < 0){
                   post.likes.push(npc.name);
                   saveMoments(d);
-                  console.log('[Moments] '+npc.name+' 点赞了');
-                  try{ toast(npc.name+' ❤️ 赞了你'); }catch(e){}
-                  // 刷新页面
+                  console.log('[Moments] '+npc.name+' 点赞');
+                  try{ toast(npc.name+' ❤️'); }catch(e){}
                   _momRefreshUI();
                 }
-              }catch(e){}
-            }, 5000 + i * 8000 + Math.random()*5000); // 5~18秒陆续点赞
+              }catch(e){ console.error('[Moments] 点赞失败:', e); }
+            }, 3000 + i * 4000 + Math.random()*3000);
           });
 
-          // 第二步：AI评论（串行队列，用proactive通道）
-          if(hasApi){
-            picked.forEach(function(npc, i){
-              if(Math.random() > 0.75) return; // 25%的人只点赞不评论
-              _momReactionQueue.push(async function(){
-                try{
-                  var d = _ensureMoments();
-                  var post = d.posts.find(function(p){return p.id===mid;});
-                  if(!post) return;
-                  var existingCmts = _safeArr(post.comments).map(function(c){return c.name+':'+c.text;}).join('; ');
-                  var userContent = '你是"'+npc.name+'"。朋友"'+myN+'"发了朋友圈："'+(post.content||'').slice(0,80)+'"。'+(existingCmts?'已有评论：'+existingCmts+'。':'')+'以'+npc.name+'身份写一条简短评论（不超过20字，像真人），只输出评论。';
-                  var res = await PhoneAI.chat({
-                    system:'只输出一条简短朋友圈评论，不加引号前缀。',
-                    messages:[{role:'user',content:userContent}],
-                    maxTokens:40, temperature:0.95,
-                    channel:'proactive'
-                  });
-                  if(res.ok && res.data){
-                    var d2 = _ensureMoments();
-                    var p2 = d2.posts.find(function(p){return p.id===mid;});
-                    if(p2){
-                      if(!Array.isArray(p2.comments)) p2.comments = [];
-                      var txt = String(res.data).replace(/^["'「]|["'」]$/g,'').trim().slice(0,60);
-                      p2.comments.push({name:npc.name, text:txt, time:Date.now(), replyTo:''});
-                      saveMoments(d2);
-                      console.log('[Moments] '+npc.name+' 评论: '+txt.slice(0,20));
-                      try{ toast('💬 '+npc.name+': '+txt.slice(0,15)+'…'); }catch(e){}
-                      _momRefreshUI();
-                    }
-                  } else {
-                    console.log('[Moments] AI失败:', res.error);
-                  }
-                }catch(e){ console.error('[Moments] 评论出错:', e); }
-              });
-            });
-            // 延迟启动队列（等点赞先完成）
-            setTimeout(function(){ _momReactionFlush(); }, 15000 + Math.random()*10000);
-          }
-        }catch(e){ console.error('[Moments] _queueNpcMomentReactions:', e); }
+          // 阶段2：一次API调用，批量生成所有评论（15秒后）
+          setTimeout(function(){ _batchMomentComments(mid, picked, myN); }, 12000 + Math.random()*8000);
+        }catch(e){ console.error('[Moments] reactions error:', e); }
       }
 
-      // 刷新朋友圈UI（无论在哪个页面都尝试）
+      async function _batchMomentComments(mid, npcs, myN){
+        try{
+          var cfg = PhoneAI._getConfig();
+          if(!cfg.endpoint || !cfg.key){ console.log('[Moments] 无API配置'); return; }
+          var d = _ensureMoments();
+          var post = d.posts.find(function(p){return p.id===mid;});
+          if(!post){ console.log('[Moments] 帖子不存在'); return; }
+          var names = npcs.map(function(n){return n.name;});
+          var userContent = '朋友圈场景：用户"'+myN+'"发了一条动态："'+(post.content||'').slice(0,120)+'"\n\n'
+            + '以下朋友看到了这条动态，请为每人生成一条简短自然的评论（像真人朋友圈评论，每条不超过20字）。\n\n'
+            + '需要评论的人：'+names.join('、')+'\n\n'
+            + '请严格按以下JSON格式返回，不要加其他文字：\n'
+            + '[{"name":"'+names[0]+'","comment":"评论内容"}'+( names.length>1 ? ',{"name":"'+names[1]+'","comment":"评论内容"}':'')+(names.length>2?',{"name":"'+names[2]+'","comment":"评论内容"}':'')+']';
+
+          console.log('[Moments] 发送批量评论请求, NPC:', names.join(','));
+          var res = await PhoneAI.chat({
+            system: '你是朋友圈互动模拟器。根据动态内容为每个朋友生成简短、自然、有个性的评论。严格返回JSON数组，不加markdown代码块。',
+            messages: [{role:'user', content:userContent}],
+            maxTokens: 200,
+            temperature: 0.92,
+            channel: 'proactive',
+            timeout: 30
+          });
+
+          console.log('[Moments] API返回:', res.ok, String(res.data||res.error||'').slice(0,100));
+
+          if(!res.ok || !res.data){ console.log('[Moments] API失败:', res.error); return; }
+
+          // 解析JSON
+          var raw = String(res.data).trim();
+          // 清理可能的markdown代码块
+          raw = raw.replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
+          var comments = [];
+          try{ comments = JSON.parse(raw); }catch(e){
+            // 尝试提取JSON数组
+            var m = raw.match(/\[[\s\S]*\]/);
+            if(m) try{ comments = JSON.parse(m[0]); }catch(e2){}
+          }
+
+          if(!Array.isArray(comments) || !comments.length){
+            console.log('[Moments] 解析失败, raw:', raw.slice(0,200));
+            // fallback：把整段文字当作一个评论
+            if(raw.length > 2 && raw.length < 80 && names.length > 0){
+              comments = [{name:names[0], comment:raw.replace(/^["'「]|["'」]$/g,'')}];
+            } else { return; }
+          }
+
+          // 写入评论
+          var d2 = _ensureMoments();
+          var p2 = d2.posts.find(function(p){return p.id===mid;});
+          if(!p2) return;
+          if(!Array.isArray(p2.comments)) p2.comments = [];
+          var added = 0;
+          comments.forEach(function(c){
+            if(!c || !c.name || !c.comment) return;
+            var txt = String(c.comment).replace(/^["'「]|["'」]$/g,'').trim().slice(0,60);
+            if(!txt) return;
+            p2.comments.push({name:String(c.name), text:txt, time:Date.now() + added*1000, replyTo:''});
+            added++;
+            console.log('[Moments] 评论已加: '+c.name+': '+txt.slice(0,20));
+          });
+          if(added > 0){
+            saveMoments(d2);
+            _momRefreshUI();
+            try{ toast('💬 '+added+'条新评论'); }catch(e){}
+          }
+        }catch(e){ console.error('[Moments] 批量评论错误:', e); }
+      }
+
+      // 刷新朋友圈UI
       function _momRefreshUI(){
         try{
           var cont = root.querySelector('.momentsList');
@@ -12548,13 +12563,11 @@ ${lines}
       }
       function _queueNpcMomentInteractions(mid, userComment, myName){
         try{
-          var cfg = PhoneAI._getConfig();
-          if(!cfg.endpoint || !cfg.key) return;
           var db = loadContactsDB();
           var contacts = _safeArr(db.contacts).filter(function(c){return c.name && c.name!==myName && c.name!=='我';});
           if(!contacts.length) return;
           var shuffled = contacts.slice().sort(function(){return Math.random()-0.5;});
-          var picked = shuffled.slice(0, Math.min(1+Math.floor(Math.random()*2), shuffled.length));
+          var picked = shuffled.slice(0, Math.min(2, shuffled.length));
 
           // 即时点赞
           picked.forEach(function(npc, i){
@@ -12564,33 +12577,11 @@ ${lines}
               if(!post) return;
               if(!Array.isArray(post.likes)) post.likes = [];
               if(post.likes.indexOf(npc.name)<0){ post.likes.push(npc.name); saveMoments(d); _momRefreshUI(); }
-            }, 10000 + i*10000 + Math.random()*8000);
+            }, 8000 + i*6000 + Math.random()*5000);
           });
 
-          // AI评论（串行队列）
-          picked.forEach(function(npc){
-            if(Math.random() > 0.65) return;
-            _momReactionQueue.push(async function(){
-              try{
-                var d = _ensureMoments();
-                var post = d.posts.find(function(p){return p.id===mid;});
-                if(!post) return;
-                var existingCmts = _safeArr(post.comments).map(function(c){return c.name+':'+c.text;}).join('; ');
-                var userContent = '你是"'+npc.name+'"。朋友圈里"'+post.name+'"发了："'+(post.content||'').slice(0,80)+'"。已有评论：'+existingCmts+'。以'+npc.name+'身份写一条简短评论（不超过20字）。只输出评论。';
-                var res = await PhoneAI.chat({ system:'只输出一条简短评论。', messages:[{role:'user',content:userContent}], maxTokens:40, temperature:0.95, channel:'proactive' });
-                if(res.ok && res.data){
-                  var d2 = _ensureMoments();
-                  var p2 = d2.posts.find(function(p){return p.id===mid;});
-                  if(p2){
-                    if(!Array.isArray(p2.comments)) p2.comments = [];
-                    p2.comments.push({name:npc.name, text:String(res.data).replace(/^["'「]|["'」]$/g,'').trim().slice(0,60), time:Date.now(), replyTo:''});
-                    saveMoments(d2); _momRefreshUI();
-                  }
-                }
-              }catch(e){}
-            });
-          });
-          setTimeout(function(){ _momReactionFlush(); }, 20000 + Math.random()*15000);
+          // 批量评论（一次API调用）
+          setTimeout(function(){ _batchMomentComments(mid, picked, myName); }, 18000 + Math.random()*12000);
         }catch(e){}
       }
 
