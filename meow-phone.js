@@ -12452,7 +12452,7 @@ ${lines}
         try{
           var db = loadContactsDB();
           var myN = (phoneLoadSettings()&&phoneLoadSettings().phoneName)||'我';
-          var contacts = _safeArr(db.contacts).filter(function(c){return c.name && c.name!==myN && c.name!=='我';});
+          var contacts = _safeArr(db.list).filter(function(c){return c.name && c.name!==myN && c.name!=='我';});
           if(!contacts.length){ console.log('[Moments] 无NPC'); return; }
           var shuffled = contacts.slice().sort(function(){return Math.random()-0.5;});
           var picked = shuffled.slice(0, Math.min(3, shuffled.length));
@@ -12564,7 +12564,7 @@ ${lines}
       function _queueNpcMomentInteractions(mid, userComment, myName){
         try{
           var db = loadContactsDB();
-          var contacts = _safeArr(db.contacts).filter(function(c){return c.name && c.name!==myName && c.name!=='我';});
+          var contacts = _safeArr(db.list).filter(function(c){return c.name && c.name!==myName && c.name!=='我';});
           if(!contacts.length) return;
           var shuffled = contacts.slice().sort(function(){return Math.random()-0.5;});
           var picked = shuffled.slice(0, Math.min(2, shuffled.length));
