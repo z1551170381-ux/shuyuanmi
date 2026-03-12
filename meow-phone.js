@@ -2103,6 +2103,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .phAppTitle{
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   overflow:hidden; gap:0; line-height:1.25;
+  grid-column:1 / -1; padding:0 80px;
 }
 #${ID} .phAppTitleMain{
   color:var(--ph-text); font-weight:600; font-size:14px;
@@ -2139,7 +2140,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   justify-self:start;
 }
 #${ID} .phNavBtn:hover{ background:rgba(255,255,255,.08); }
-#${ID} .phAppBarSpacer{ min-width:32px; height:32px; justify-self:end; display:flex; align-items:center; justify-content:center; gap:2px; }
+#${ID} .phAppBarSpacer{ height:32px; display:flex; align-items:center; justify-content:flex-end; gap:0; position:absolute; right:8px; top:50%; transform:translateY(-50%); z-index:1; }
 #${ID} .phAppBarSpacer .phBarRBtn{ appearance:none; border:0; background:transparent; color:var(--ph-text-sub); width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; opacity:.7; transition:opacity .2s; }
 #${ID} .phAppBarSpacer .phBarRBtn:hover{ opacity:1; background:rgba(255,255,255,.1); }
 #${ID} .phAppBody{
@@ -2679,7 +2680,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   max-width:72%; display:flex; gap:8px; align-items:flex-start;
   animation:phBubbleIn .2s ease-out;
 }
-#${ID} .wxChatBubble.me{ flex-direction:row-reverse; align-self:flex-end; }
+#${ID} .wxChatBubble.me{ flex-direction:row-reverse; align-self:flex-end; margin-right:0; }
 #${ID} .wxChatBubble.them{ align-self:flex-start; }
 #${ID} .wxChatBubble .wxCBAvatar{
   width:36px; height:36px; border-radius:6px; flex-shrink:0; overflow:hidden;
@@ -3053,6 +3054,14 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .wxOfflineParagraph .rpAction{ font-style:italic; color:rgba(120,100,70,.7); }
 #${ID} .wxOfflineParagraph .rpDialog{ color:rgba(46,38,26,.95); }
 #${ID} .wxOfflineParagraph.me .rpText{ color:rgba(70,90,130,.85); }
+#${ID} .wxOfflineParagraph.me{
+  text-align:right; padding-left:20%; padding-right:0;
+  border-right:3px solid rgba(70,90,130,.25); border-left:0;
+  margin-left:auto;
+}
+#${ID} .wxOfflineParagraph.them{
+  text-align:left; padding-right:20%; padding-left:0;
+}
 #${ID} .wxSceneBanner{
   text-align:center; padding:18px 14px; margin-bottom:16px;
   border-bottom:1px solid rgba(0,0,0,.06);
@@ -12245,14 +12254,10 @@ const npc = _wxGetChatTargetMeta(npcId);
         try{
           const spacer = root.querySelector('.phAppBarSpacer');
           if (spacer) spacer.innerHTML =
-            `<button class="wxTopBtn" data-act="wxTimeline" data-npcid="${esc(contactId)}"
-              style="appearance:none;border:0;background:transparent;cursor:pointer;width:28px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;font-size:14px;opacity:.65;" title="时间线">📋</button>
-            <button class="wxTopBtn" data-act="wxBranchMgr" data-npcid="${esc(contactId)}"
-              style="appearance:none;border:0;background:transparent;cursor:pointer;width:28px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;font-size:14px;opacity:.65;" title="分支">🔀</button>
-            <button class="wxTopBtn" data-act="wxOfflineMode" data-npcid="${esc(contactId)}"
-              style="appearance:none;border:0;background:transparent;cursor:pointer;width:28px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;font-size:15px;opacity:.8;" title="${_chatMode==='offline'?'切回在线':'切到线下'}">${_chatMode==='offline'?'💬':'☕'}</button>
-            <button class="wxTopBtn" data-act="wxCharSettings" data-npcid="${esc(contactId)}"
-              style="appearance:none;border:0;background:transparent;cursor:pointer;width:28px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--ph-text);border-radius:8px;">${_phFlatIcon('➕')}</button>`;
+            `<button class="phBarRBtn" data-act="wxTimeline" data-npcid="${esc(contactId)}" title="时间线"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M17 2h-3.18C13.4.84 12.3 0 11 0c-1.3 0-2.4.84-2.82 2H5C3.9 2 3 2.9 3 4v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-6 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm5 14H7v-2h9v2zm0-4H7v-2h9v2zm0-4H7V6h9v2z"/></svg></button>
+            <button class="phBarRBtn" data-act="wxBranchMgr" data-npcid="${esc(contactId)}" title="分支"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M6 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm12 0a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2zM6 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2zM6 9v6m0 0h6c3.3 0 6-2.7 6-6V6"/></svg></button>
+            <button class="phBarRBtn" data-act="wxOfflineMode" data-npcid="${esc(contactId)}" title="${_chatMode==='offline'?'切回在线':'切到线下'}"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;">${_chatMode==='offline'?'<path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/>':'<path d="M18.36 9c.6-1.7.36-3.6-.96-4.92a4.992 4.992 0 0 0-6.72-.28c-.07.07-.14.14-.2.22A5 5 0 0 0 2 9c0 4 5 11 8 11s3.5-2.5 5-5.5c.5-1 .9-2.1 1.2-3.2A4.96 4.96 0 0 0 18.36 9z"/>'}</svg></button>
+            <button class="phBarRBtn" data-act="wxCharSettings" data-npcid="${esc(contactId)}" title="设置"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>`;
         }catch(e){}
 
         // ✅ 标题：线下模式显示场景名
@@ -22521,6 +22526,43 @@ ${todoHint}
     return null;
   }
 }
+// ========== 主题风格输入框（替代 prompt()）==========
+function _showThemedInput(title, defaultVal, onOk){
+  var inputOv = doc.createElement('div');
+  inputOv.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;';
+  inputOv.innerHTML = '<div style="width:min(88vw,320px);background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-radius:16px;padding:18px;box-shadow:0 8px 32px rgba(0,0,0,.18);">'
+    + '<div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.8);margin-bottom:10px;">'+esc(title||'输入')+'</div>'
+    + '<input data-el="thInput" type="text" value="'+esc(defaultVal||'')+'" style="width:100%;padding:10px 12px;border:1px solid rgba(0,0,0,.1);border-radius:10px;font-size:14px;outline:none;box-sizing:border-box;background:rgba(255,255,255,.9);color:rgba(20,24,28,.85);" />'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">'
+    + '<button data-act="thCancel" style="padding:8px 18px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;color:rgba(20,24,28,.6);">取消</button>'
+    + '<button data-act="thOk" style="padding:8px 18px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">确定</button>'
+    + '</div></div>';
+  (root || document.body).appendChild(inputOv);
+  var inp = inputOv.querySelector('[data-el="thInput"]');
+  if (inp) setTimeout(function(){ inp.focus(); inp.select(); }, 80);
+  inputOv.addEventListener('click', function(ev){
+    var tgt = ev.target;
+    while(tgt && tgt !== inputOv){ if(tgt.getAttribute && tgt.getAttribute('data-act')) break; tgt = tgt.parentElement; }
+    if (tgt === inputOv){ inputOv.remove(); return; }
+    var a = tgt && tgt.getAttribute ? tgt.getAttribute('data-act') : '';
+    if (a === 'thCancel'){ inputOv.remove(); return; }
+    if (a === 'thOk'){
+      var val = inp ? inp.value : '';
+      inputOv.remove();
+      if (typeof onOk === 'function') onOk(val);
+    }
+  });
+  // Enter 键确认
+  if (inp) inp.addEventListener('keydown', function(e){
+    if (e.key === 'Enter'){
+      e.preventDefault();
+      var val = inp.value;
+      inputOv.remove();
+      if (typeof onOk === 'function') onOk(val);
+    }
+  });
+}
+
 // ========== Phase 5C：时间线 UI（V4：内层委托 + 无confirm + 清除置顶）==========
 function _openTimelineViewer(npcId){
   var viewMode = _normChatMode(_getChatMode(npcId));
@@ -22584,6 +22626,8 @@ function _openTimelineViewer(npcId){
   function renderEntries(){
     var entries = _currentEntries();
     if (!entries.length) return '<div style="text-align:center;padding:20px;color:rgba(20,24,28,.4);font-size:12px;">暂无' + _modeLabel(viewMode) + '<br>点击下方"生成总结"即可开始累积</div>';
+    // 确保按消息范围升序排列（旧的在前，新的在后）
+    entries.sort(function(a, b){ return (a.range[0]||0) - (b.range[0]||0); });
     return entries.map(function(e, idx){
       var displayText = e.userEdited || e.displayText || '（无内容）';
       var isConfirming = (_pendingDeleteIdx === idx);
@@ -22764,35 +22808,36 @@ function _openTimelineViewer(npcId){
     }
     if (act === 'todoEdit'){
       var eIdx2 = parseInt(t.getAttribute('data-eidx')), tIdx2 = parseInt(t.getAttribute('data-tidx'));
-      var tl = _loadTimeline(npcId);
-      var bucket = _getTimelineModeState(tl, viewMode, true);
-      var entry = bucket.entries[eIdx2];
-      if (entry && entry.structured && entry.structured.todos && entry.structured.todos[tIdx2]){
-        var nt = prompt('修改待办：', entry.structured.todos[tIdx2].text || '');
-        if (nt === null) return;
-        if (!nt.trim()){ entry.structured.todos.splice(tIdx2, 1); }
-        else { entry.structured.todos[tIdx2].text = nt.trim(); }
-        _rebuildEntryDisplay(entry);
-        _saveTimeline(npcId, tl);
-        _syncSummaryFromTimeline(npcId, viewMode);
-      }
-      refresh();
+      _showThemedInput('修改待办', (function(){ try{ var tl=_loadTimeline(npcId); var b=_getTimelineModeState(tl,viewMode,true); return b.entries[eIdx2].structured.todos[tIdx2].text||''; }catch(e){return '';} })(), function(val){
+        var tl = _loadTimeline(npcId);
+        var bucket = _getTimelineModeState(tl, viewMode, true);
+        var entry = bucket.entries[eIdx2];
+        if (entry && entry.structured && entry.structured.todos && entry.structured.todos[tIdx2]){
+          if (!val.trim()){ entry.structured.todos.splice(tIdx2, 1); }
+          else { entry.structured.todos[tIdx2].text = val.trim(); }
+          _rebuildEntryDisplay(entry);
+          _saveTimeline(npcId, tl);
+          _syncSummaryFromTimeline(npcId, viewMode);
+        }
+        refresh();
+      });
       return;
     }
     if (act === 'todoAdd'){
-      var nt = prompt('新增待办：');
-      if (!nt || !nt.trim()) return;
-      var tl = _loadTimeline(npcId);
-      var bucket = _getTimelineModeState(tl, viewMode, true);
-      if (!bucket.entries.length){ try{ toast('请先生成总结'); }catch(e){} return; }
-      var last = bucket.entries[bucket.entries.length - 1];
-      if (!last.structured) last.structured = {};
-      if (!last.structured.todos) last.structured.todos = [];
-      last.structured.todos.push({ text:nt.trim(), done:false });
-      _rebuildEntryDisplay(last);
-      _saveTimeline(npcId, tl);
-      _syncSummaryFromTimeline(npcId, viewMode);
-      refresh();
+      _showThemedInput('新增待办', '', function(val){
+        if (!val.trim()) return;
+        var tl = _loadTimeline(npcId);
+        var bucket = _getTimelineModeState(tl, viewMode, true);
+        if (!bucket.entries.length){ try{ toast('请先生成总结'); }catch(e){} return; }
+        var last = bucket.entries[bucket.entries.length - 1];
+        if (!last.structured) last.structured = {};
+        if (!last.structured.todos) last.structured.todos = [];
+        last.structured.todos.push({ text:val.trim(), done:false });
+        _rebuildEntryDisplay(last);
+        _saveTimeline(npcId, tl);
+        _syncSummaryFromTimeline(npcId, viewMode);
+        refresh();
+      });
       return;
     }
     // ---- 分批大小 ----
