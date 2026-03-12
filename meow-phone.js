@@ -2155,6 +2155,11 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID} .phAppBody::-webkit-scrollbar{ width:4px; }
 #${ID} .phAppBody::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.08); border-radius:2px; }
+/* ★ 聊天详情时禁止外层滚动+隐藏滚动条 */
+#${ID} .phAppBody.phAppBodyChat{
+  overflow:hidden !important; scrollbar-width:none !important;
+}
+#${ID} .phAppBody.phAppBodyChat::-webkit-scrollbar{ display:none !important; width:0 !important; }
 
 /* ---------- In-Phone Modal (Moments Composer etc.) ---------- */
 #${ID} .phModalMask{
@@ -2675,9 +2680,11 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .wxChatDetailWrap{
   display:flex; flex-direction:column; height:100%;
   background:rgba(237,237,237,.55);
+  overflow:hidden;
 }
+/* ★ 聊天详情时禁止外层 phAppBody 滚动（JS 添加 phAppBodyChat 类） */
 #${ID} .wxChatMsgs{
-  flex:1; padding:10px 10px 8px 10px; display:flex; flex-direction:column; gap:10px;
+  flex:1; min-height:0; padding:10px 10px 8px 10px; display:flex; flex-direction:column; gap:10px;
   overflow-y:auto; -webkit-overflow-scrolling:touch;
   scrollbar-width:none;
 }
@@ -3050,7 +3057,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 /* === Phase 3：线下模式样式 === */
 #${ID} .wxOfflineWrap{
   background:linear-gradient(180deg, rgba(245,240,230,.98), rgba(235,228,215,.96));
-  min-height:100%; padding:16px 18px;
+  padding:16px 18px;
   scrollbar-width:none !important;
   overflow-y:auto; -webkit-overflow-scrolling:touch;
 }
@@ -7091,6 +7098,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
         state._innerStack = []; state._wxTab = 'msgs';
         try{ PhoneAI.abort(); _hideTypingIndicator(); _hideBubbleMenu(); _hideQuoteBar(); root.querySelectorAll('.wxEditMsgOverlay').forEach(function(o){o.remove();}); }catch(e){}
         try{ const sp = root.querySelector('.phAppBarSpacer'); if(sp) sp.innerHTML=''; }catch(e){}
+        try{ const ab = root.querySelector('.phAppBody'); if(ab){ ab.classList.remove('phAppBodyChat'); ab.style.overflow=''; } }catch(e){}
         setView('home');
       }
 
@@ -7127,6 +7135,8 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
         if (id !== 'settings') state._innerStack = []; // ✅ 切 app 清空子页面栈（settings 保留栈供子页导航）
         try{ PhoneAI.abort(); _hideTypingIndicator(); _hideBubbleMenu(); _hideQuoteBar(); root.querySelectorAll('.wxEditMsgOverlay').forEach(function(o){o.remove();}); }catch(e){}
         if (id === 'chats') state._wxTab = 'msgs'; // ✅ 进入聊天 app 默认 msgs tab
+        // ★ 离开聊天详情时恢复 phAppBody 滚动
+        try{ const ab = root.querySelector('.phAppBody'); if(ab){ ab.classList.remove('phAppBodyChat'); ab.style.overflow=''; } }catch(e){}
         setView('app');
         // ✅ 清空 app bar 右侧注入按钮（离开聊天 app 时不残留 +号）
         try{ const sp = root.querySelector('.phAppBarSpacer'); if(sp) sp.innerHTML=''; }catch(e){}
@@ -12602,6 +12612,9 @@ const npc = _wxGetChatTargetMeta(npcId);
       function renderChatDetail(contactId){
         const body = root.querySelector('[data-ph="appBody"]');
         if (!body) return;
+        // ★ 聊天详情：禁止外层滚动，由内部 wxChatMsgs 处理
+        body.classList.add('phAppBodyChat');
+        body.style.overflow = 'hidden';
 
         // 读 NPC 信息
         const db = loadContactsDB();
