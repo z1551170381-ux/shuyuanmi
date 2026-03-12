@@ -5536,7 +5536,9 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           if (act === 'wxCharSettings'){
             const _csNid = t.getAttribute('data-npcid')||state.chatTarget;
             state._innerStack.push(() => { state.chatTarget = _csNid; state.app = 'chatDetail'; renderChatDetail(_csNid); });
-            state.app = 'charSettings'; // ← 防止 async 回调重新渲染聊天页
+            state.app = 'charSettings';
+            // ★ 设置页需要滚动
+            try{ var _ab = root.querySelector('.phAppBody'); if(_ab){ _ab.classList.remove('phAppBodyChat'); _ab.style.overflow=''; _ab.style.overflowY='auto'; } }catch(e){}
             _renderCharSettingsPage(_csNid); return;
           }
           if (act === 'wxCSNav'){
@@ -5545,6 +5547,8 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             if (cspage === 'autoSummary') { return; }
             state._innerStack.push(() => _renderCharSettingsPage(nid));
             state.app = 'charSettings';
+            // ★ 设置子页需要滚动，移除聊天详情的 overflow:hidden
+            try{ var _ab = root.querySelector('.phAppBody'); if(_ab){ _ab.classList.remove('phAppBodyChat'); _ab.style.overflow=''; _ab.style.overflowY='auto'; } }catch(e){}
             if (cspage === 'charProfile') _renderCharProfileEdit(nid);
             else if (cspage === 'charBehavior') _renderCharBehaviorPage(nid);
             else if (cspage === 'charSchedule') _renderSchedulePage(nid);
@@ -13182,15 +13186,20 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         var schedule = (s.isKeyNPC && s.schedule && s.schedule.length) ? s.schedule : [];
 
-        // 当前时段计算
-        var nowHour = new Date().getHours();
+        // 当前时段计算（支持分钟精度）
+        var _nowD = new Date();
+        var nowHour = _nowD.getHours();
+        var nowTotalMin = _nowD.getHours() * 60 + _nowD.getMinutes();
         var currentSlotIdx = -1;
+        function _schFmtTime(h, m){ return (h<10?'0':'')+h+':'+(m<10?'0':'')+m; }
         if (schedule.length){
           for (var ci = 0; ci < schedule.length; ci++){
             var sl = schedule[ci];
-            var inSlot = sl.endHour <= sl.hour
-              ? (nowHour >= sl.hour || nowHour < sl.endHour)
-              : (nowHour >= sl.hour && nowHour < sl.endHour);
+            var slStartMin = (sl.hour||0) * 60 + (sl.startMin||0);
+            var slEndMin = (sl.endHour||0) * 60 + (sl.endMin||0);
+            var inSlot = slEndMin <= slStartMin
+              ? (nowTotalMin >= slStartMin || nowTotalMin < slEndMin)
+              : (nowTotalMin >= slStartMin && nowTotalMin < slEndMin);
             if (inSlot){ currentSlotIdx = ci; break; }
           }
         }
@@ -13199,13 +13208,15 @@ const npc = _wxGetChatTargetMeta(npcId);
         var slotListHtml = schedule.length
           ? schedule.map(function(sl, i){
               var tInfo = SCHEDULE_TAGS.find(function(t){ return t.tag === sl.tag; });
-              var icon = (tInfo && tInfo.icon) || '📋';
+              var icon = (tInfo && tInfo.icon) || '·';
               var isCurrent = (i === currentSlotIdx);
-              return `<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid rgba(0,0,0,.04);${isCurrent?'background:rgba(7,193,96,.06);':''}">
-                <span style="font-size:18px;width:24px;text-align:center;">${icon}</span>
-                <span style="font-size:12px;color:rgba(20,24,28,.45);min-width:52px;flex-shrink:0;">${sl.hour<10?'0':''}${sl.hour}:00 - ${sl.endHour<10?'0':''}${sl.endHour}:00</span>
-                <span style="font-size:13px;color:rgba(20,24,28,.85);flex:1;">${esc(sl.activity)}</span>
-                ${isCurrent ? '<span style="font-size:10px;color:#07c160;font-weight:600;background:rgba(7,193,96,.12);padding:2px 7px;border-radius:8px;">现在</span>' : ''}
+              var startTime = _schFmtTime(sl.hour||0, sl.startMin||0);
+              var endTime = _schFmtTime(sl.endHour||0, sl.endMin||0);
+              return `<div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid rgba(0,0,0,.04);${isCurrent?'background:color-mix(in srgb, var(--ph-accent,#07c160) 6%, transparent);':''}">
+                <span style="font-size:15px;width:24px;text-align:center;color:${isCurrent?'var(--ph-accent,#07c160)':'rgba(20,24,28,.35)'};">${icon}</span>
+                <span style="font-size:12px;color:rgba(20,24,28,.4);min-width:86px;flex-shrink:0;font-variant-numeric:tabular-nums;">${startTime} - ${endTime}</span>
+                <span style="font-size:13px;color:rgba(20,24,28,.82);flex:1;">${esc(sl.activity)}</span>
+                ${isCurrent ? '<span style="font-size:10px;color:var(--ph-accent,#07c160);font-weight:600;background:color-mix(in srgb, var(--ph-accent,#07c160) 12%, transparent);padding:2px 7px;border-radius:8px;">现在</span>' : ''}
               </div>`;
             }).join('')
           : `<div style="padding:24px 14px;text-align:center;font-size:13px;color:rgba(20,24,28,.35);">尚未设置作息表<br>点击"AI 生成"或"手动编辑"开始</div>`;
@@ -13237,7 +13248,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           </div>
 
           <!-- AI生成中提示 -->
-          <div data-el="schGenLoading" style="display:none;margin:10px 14px 0;padding:10px 14px;background:rgba(7,193,96,.06);border:1px solid rgba(7,193,96,.15);border-radius:11px;font-size:12px;color:#07c160;text-align:center;">
+          <div data-el="schGenLoading" style="display:none;margin:10px 14px 0;padding:10px 14px;background:color-mix(in srgb, var(--ph-accent,#07c160) 6%, transparent);border:1px solid color-mix(in srgb, var(--ph-accent,#07c160) 15%, transparent);border-radius:11px;font-size:12px;color:var(--ph-accent,#07c160);text-align:center;">
             ✦ AI 正在分析角色，生成专属作息表…
           </div>
 
@@ -13287,10 +13298,11 @@ const npc = _wxGetChatTargetMeta(npcId);
               '你是角色作息表生成器。你必须根据角色的【具体职业、爱好、性格、生活习惯】来定制作息，绝对不能输出千篇一律的通用模板。\n\n' +
               '【可用 tag】: ' + tagList + '\n\n' +
               '【格式要求】\n' +
-              '1. 返回纯 JSON 数组，每项格式：{"hour":起始小时(0-23),"endHour":结束小时(1-24),"activity":"活动描述","tag":"对应tag"}\n' +
-              '2. 覆盖完整24小时（hour=0到endHour=24），时段不重叠\n' +
+              '1. 返回纯 JSON 数组，每项格式：{"hour":起始小时(0-23),"startMin":起始分钟(0-59),"endHour":结束小时(0-24),"endMin":结束分钟(0-59),"activity":"活动描述","tag":"对应tag"}\n' +
+              '2. 覆盖完整24小时（从 0:00 到 24:00），时段不重叠不遗漏\n' +
               '3. 8-12个时段，活动描述简短（4-8字）\n' +
-              '4. 只输出 JSON，不加任何说明或 markdown 代码块\n\n' +
+              '4. 只输出 JSON，不加任何说明或 markdown 代码块\n' +
+              '5. 时间精确到分钟，例如 7:30 起床写作 {"hour":7,"startMin":30,"endHour":9,"endMin":0,...}\n\n' +
               '【关键要求 - 个性化】\n' +
               '- 仔细阅读下面的角色描述，找出角色的职业/工作内容/爱好/生活方式\n' +
               '- activity 描述必须用角色实际会做的事，例如：coser→"化妆试装"、程序员→"写代码"、学生→"上课"\n' +
@@ -13477,14 +13489,17 @@ const npc = _wxGetChatTargetMeta(npcId);
         // ---- 当前作息时段 ----
         var scheduleStatusHtml = '';
         if (s.isKeyNPC && s.schedule && s.schedule.length > 0){
-          var _ch = new Date().getHours();
+          var _ch = new Date().getHours(), _cm = new Date().getMinutes(), _ctm = _ch*60+_cm;
           for (var _si = 0; _si < s.schedule.length; _si++){
             var _sl = s.schedule[_si];
-            var _inS = _sl.endHour<=_sl.hour ? (_ch>=_sl.hour||_ch<_sl.endHour) : (_ch>=_sl.hour&&_ch<_sl.endHour);
+            var _slS = (_sl.hour||0)*60+(_sl.startMin||0), _slE = (_sl.endHour||0)*60+(_sl.endMin||0);
+            var _inS = _slE<=_slS ? (_ctm>=_slS||_ctm<_slE) : (_ctm>=_slS&&_ctm<_slE);
             if (_inS){
               var _tInfo = SCHEDULE_TAGS.find(function(tt){return tt.tag===_sl.tag;});
+              var _sT = ((_sl.hour||0)<10?'0':'')+(_sl.hour||0)+':'+((_sl.startMin||0)<10?'0':'')+(_sl.startMin||0);
+              var _eT = ((_sl.endHour||0)<10?'0':'')+(_sl.endHour||0)+':'+((_sl.endMin||0)<10?'0':'')+(_sl.endMin||0);
               scheduleStatusHtml = `<div style="margin-top:4px;padding:5px 10px;background:rgba(0,0,0,.03);border-radius:8px;font-size:11.5px;color:rgba(20,24,28,.55);display:flex;align-items:center;gap:4px;">
-                ${_phFlatIcon((_tInfo&&_tInfo.icon)||'📋')} 当前：${esc(_sl.activity)}（${_sl.hour}:00~${_sl.endHour}:00）
+                ${_phFlatIcon((_tInfo&&_tInfo.icon)||'·')} 当前：${esc(_sl.activity)}（${_sT}~${_eT}）
               </div>`;
               break;
             }
@@ -13753,12 +13768,16 @@ const npc = _wxGetChatTargetMeta(npcId);
         var schedule = (cur.schedule && cur.schedule.length > 0) ? JSON.parse(JSON.stringify(cur.schedule)) : JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
         function tagOpts(sel){ return SCHEDULE_TAGS.map(function(t){ return '<option value="'+t.tag+'"'+(t.tag===sel?' selected':'')+'>'+t.label+'</option>'; }).join(''); }
         function renderRows(){ return schedule.map(function(sl,i){
-          return `<div data-sch-idx="${i}" style="display:flex;align-items:center;gap:5px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.04);">
-            <input type="number" data-sf="hour" min="0" max="23" value="${sl.hour}" style="width:32px;font-size:12px;text-align:center;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:3px;outline:none;"/>
+          return `<div data-sch-idx="${i}" style="display:flex;align-items:center;gap:4px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.04);">
+            <input type="number" data-sf="hour" min="0" max="23" value="${sl.hour}" style="width:28px;font-size:11px;text-align:center;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:3px;outline:none;"/>
+            <span style="font-size:10px;color:rgba(20,24,28,.3);">:</span>
+            <input type="number" data-sf="startMin" min="0" max="59" value="${sl.startMin||0}" style="width:28px;font-size:11px;text-align:center;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:3px;outline:none;"/>
             <span style="font-size:10px;color:rgba(20,24,28,.3);">~</span>
-            <input type="number" data-sf="endHour" min="0" max="24" value="${sl.endHour}" style="width:32px;font-size:12px;text-align:center;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:3px;outline:none;"/>
-            <input type="text" data-sf="activity" value="${esc(sl.activity||'')}" placeholder="活动" style="flex:1;font-size:12px;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:3px 5px;outline:none;"/>
-            <select data-sf="tag" style="font-size:11px;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:2px 3px;outline:none;">${tagOpts(sl.tag)}</select>
+            <input type="number" data-sf="endHour" min="0" max="24" value="${sl.endHour}" style="width:28px;font-size:11px;text-align:center;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:3px;outline:none;"/>
+            <span style="font-size:10px;color:rgba(20,24,28,.3);">:</span>
+            <input type="number" data-sf="endMin" min="0" max="59" value="${sl.endMin||0}" style="width:28px;font-size:11px;text-align:center;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:3px;outline:none;"/>
+            <input type="text" data-sf="activity" value="${esc(sl.activity||'')}" placeholder="活动" style="flex:1;font-size:11px;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:3px 5px;outline:none;min-width:0;"/>
+            <select data-sf="tag" style="font-size:10px;border:1px solid rgba(0,0,0,.1);border-radius:6px;padding:2px 3px;outline:none;">${tagOpts(sl.tag)}</select>
             <button data-act="schDel" data-sidx="${i}" style="font-size:12px;color:rgba(0,0,0,.2);background:transparent;border:0;cursor:pointer;">✕</button>
           </div>`;
         }).join(''); }
@@ -13777,12 +13796,12 @@ const npc = _wxGetChatTargetMeta(npcId);
         function refreshOv(){ var c = ov.querySelector('[data-el="schRows"]'); if(c) c.innerHTML = renderRows();
           ov.querySelectorAll('[data-act="schDel"]').forEach(function(btn){ btn.addEventListener('click', function(){ schedule.splice(parseInt(this.getAttribute('data-sidx')), 1); refreshOv(); }); });
         } refreshOv();
-        ov.querySelector('[data-el="schAdd"]')?.addEventListener('click', function(){ var le = schedule.length>0?schedule[schedule.length-1].endHour:0; schedule.push({hour:le%24,endHour:(le+1)%25,activity:'',tag:'free'}); refreshOv(); });
+        ov.querySelector('[data-el="schAdd"]')?.addEventListener('click', function(){ var le = schedule.length>0?schedule[schedule.length-1].endHour:0; var lem = schedule.length>0?(schedule[schedule.length-1].endMin||0):0; schedule.push({hour:le%24,startMin:lem,endHour:(le+1)%25,endMin:0,activity:'',tag:'free'}); refreshOv(); });
         ov.querySelector('[data-el="schReset"]')?.addEventListener('click', function(){ schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE)); refreshOv(); });
         ov.querySelector('[data-el="schCancel"]')?.addEventListener('click', function(){ ov.remove(); });
         ov.querySelector('[data-el="schSave"]')?.addEventListener('click', function(){
           var ns = []; ov.querySelectorAll('[data-sch-idx]').forEach(function(row){
-            ns.push({ hour:parseInt((row.querySelector('[data-sf="hour"]')||{}).value)||0, endHour:parseInt((row.querySelector('[data-sf="endHour"]')||{}).value)||0,
+            ns.push({ hour:parseInt((row.querySelector('[data-sf="hour"]')||{}).value)||0, startMin:parseInt((row.querySelector('[data-sf="startMin"]')||{}).value)||0, endHour:parseInt((row.querySelector('[data-sf="endHour"]')||{}).value)||0, endMin:parseInt((row.querySelector('[data-sf="endMin"]')||{}).value)||0,
               activity:((row.querySelector('[data-sf="activity"]')||{}).value||'').trim(), tag:((row.querySelector('[data-sf="tag"]')||{}).value||'free') });
           });
           var st = _loadCharState(npcId); st.schedule = ns; st.lastCalcAt = Date.now(); _saveCharState(npcId, st);
@@ -13965,7 +13984,7 @@ const npc = _wxGetChatTargetMeta(npcId);
               <input data-el="bgUrlInput" type="text" placeholder="粘贴图片直链 URL…" style="flex:1;padding:10px 12px;border:1px solid rgba(0,0,0,.08);border-radius:12px;font-size:12px;outline:none;box-sizing:border-box;"/>
               <button data-act="wxCSBgUrl" data-npcid="${esc(contactId)}" style="padding:10px 16px;border-radius:12px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:12px;cursor:pointer;flex-shrink:0;">确认</button>
             </div>
-            ${charEx.chatBg ? '<button data-act="wxCSClearBg" data-npcid="'+esc(contactId)+'" style="width:100%;padding:12px;border-radius:12px;border:1px solid rgba(244,67,54,.15);background:rgba(244,67,54,.04);color:#f44336;font-size:13px;cursor:pointer;">🗑 移除线上背景</button>' : ''}
+            ${charEx.chatBg ? '<button data-act="wxCSClearBg" data-npcid="'+esc(contactId)+'" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.1));background:var(--ph-glass,rgba(255,255,255,.8));color:rgba(20,24,28,.55);font-size:13px;cursor:pointer;">移除线上背景</button>' : ''}
           </div>
 
           <div style="margin-top:20px;padding:14px;border-radius:14px;background:rgba(245,240,230,.6);border:1px solid rgba(200,180,140,.2);">
@@ -13982,7 +14001,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             </div>
             <div style="display:flex;gap:6px;">
               <button data-act="wxCSUploadOfflineBg" data-npcid="${esc(contactId)}" style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:#fff;font-size:12px;cursor:pointer;">📤 上传</button>
-              ${charEx.offlineBg ? '<button data-act="wxCSClearOfflineBg" data-npcid="'+esc(contactId)+'" style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(244,67,54,.15);background:rgba(244,67,54,.04);color:#f44336;font-size:12px;cursor:pointer;">🗑 移除</button>' : ''}
+              ${charEx.offlineBg ? '<button data-act="wxCSClearOfflineBg" data-npcid="'+esc(contactId)+'" style="flex:1;padding:10px;border-radius:12px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.1));background:var(--ph-glass,rgba(255,255,255,.8));color:rgba(20,24,28,.55);font-size:12px;cursor:pointer;">移除</button>' : ''}
             </div>
           </div>
           </div>
@@ -14833,17 +14852,30 @@ const npc = _wxGetChatTargetMeta(npcId);
 
       // ===== _parseAISpecialTags：解析 AI 回复里的 [发语音] [发表情:xxx:n] 标记 =====
       // 返回 { cleanText, sendVoice:bool, stickerGroup:str|null, stickerIdx:int }
+      var _lastVoiceSentAt = 0; // ★ 语音频率节流
+      var _voiceMsgCount = 0;   // ★ 自上次语音后的消息计数
       function _parseAISpecialTags(text){
         var s = String(text || '');
         var sendVoice = false;
         var stickerGroup = null;
         var stickerIdx = -1;
 
-        // 检测 [发语音]
+        // 检测 [发语音] + 频率节流
         if (/\[发语音\]/i.test(s)){
-          sendVoice = true;
+          var _now_ts = Date.now();
+          var _timeSinceLast = _now_ts - _lastVoiceSentAt;
+          // 节流：距上次语音不足60秒 或 消息计数不足5条 → 强制剥离
+          if (_timeSinceLast > 60000 && _voiceMsgCount >= 5){
+            sendVoice = true;
+            _lastVoiceSentAt = _now_ts;
+            _voiceMsgCount = 0;
+          } else {
+            // 静默剥离，不发语音
+            sendVoice = false;
+          }
           s = s.replace(/\[发语音\]/gi, '').trim();
         }
+        _voiceMsgCount++;
 
         // 检测 [发表情:群组:编号]
         var stkMatch = s.match(/\[发表情[:：]([^:：\]]+)[:：](\d+)\]/i);
@@ -15238,12 +15270,19 @@ const npc = _wxGetChatTargetMeta(npcId);
         var vaForPrompt = loadVoiceApi();
         var voiceInstructions = '';
         if (vaForPrompt && vaForPrompt.autoVoice && vaForPrompt.apiUrl && vaForPrompt.apiKey){
-          voiceInstructions = '\n\n【语音消息指令（重要）】\n' +
-            '你可以在某些时机发语音消息，方法是在消息末尾加上标记 [发语音]，例如："好久不见～ [发语音]"\n' +
-            '加了 [发语音] 标记的那条消息会被系统自动转成语音气泡，请不要每条都加——根据情绪和情境克制使用：\n' +
-            '- 适合发语音：表达强烈情绪（激动/委屈/生气后缓和）、说重要的话、撒娇时、想让对方感受语气时\n' +
-            '- 不适合：普通文字闲聊、回复简短信息时\n' +
-            '- 每次最多一条消息加 [发语音] 标记';
+          voiceInstructions = '\n\n【语音消息指令（重要 - 严格限制频率）】\n' +
+            '你可以在极少数特殊时机发语音消息，方法是在消息末尾加上标记 [发语音]，例如："好久不见～ [发语音]"\n' +
+            '★ 频率限制：每 8-10 条消息中最多只能有 1 条加 [发语音]。绝大多数消息必须是纯文字。\n' +
+            '★ 禁止连续发语音：如果上一条已经是语音，接下来 5 条内绝对不能再发。\n' +
+            '适合发语音的场景（必须满足以下条件之一才能发）：\n' +
+            '- 表达非常强烈的情绪爆发（突然激动/委屈到哭/生气后缓和）\n' +
+            '- 说出非常重要的话（告白/道歉/重大决定）\n' +
+            '- 极度撒娇且上下文气氛到位\n' +
+            '不适合发语音（以下情况绝对不加 [发语音]）：\n' +
+            '- 普通聊天、日常回复、简短回答\n' +
+            '- 讲述事情、描述场景、回答问题\n' +
+            '- 上一条消息已经是语音了\n' +
+            '违规连续发语音会导致系统故障，请严格遵守频率限制。';
         }
 
         // 读取角色/通用表情包，告知 AI 可发哪些
@@ -15674,13 +15713,13 @@ const npc = _wxGetChatTargetMeta(npcId);
 
       // ---- 作息表 tag 定义 ----
       var SCHEDULE_TAGS = [
-        { tag:'rest',     label:'睡眠', icon:'😴' },
-        { tag:'wake',     label:'起床', icon:'🌅' },
-        { tag:'eat',      label:'吃饭', icon:'🍽️' },
-        { tag:'work',     label:'工作', icon:'💼' },
-        { tag:'free',     label:'休闲', icon:'🎵' },
-        { tag:'social',   label:'社交', icon:'💬' },
-        { tag:'exercise', label:'运动', icon:'🏃' }
+        { tag:'rest',     label:'睡眠', icon:'☽' },
+        { tag:'wake',     label:'起床', icon:'○' },
+        { tag:'eat',      label:'吃饭', icon:'◇' },
+        { tag:'work',     label:'工作', icon:'■' },
+        { tag:'free',     label:'休闲', icon:'♪' },
+        { tag:'social',   label:'社交', icon:'◎' },
+        { tag:'exercise', label:'运动', icon:'△' }
       ];
 
       // ---- 默认属性变化规则（每小时变化量，按作息 tag） ----
@@ -22908,7 +22947,7 @@ function _openSceneEditor(npcId){
       ${scene.bgImage ? '<div style="width:100%;height:80px;border-radius:8px;overflow:hidden;margin-bottom:6px;border:1px solid rgba(0,0,0,.08);"><img src="'+esc(scene.bgImage)+'" style="width:100%;height:100%;object-fit:cover;"/></div>' : ''}
       <div style="display:flex;gap:6px;">
         <input data-el="sceneBgUrl" type="text" value="${esc(scene.bgImage||'')}" placeholder="粘贴背景图片链接…" style="flex:1;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;"/>
-        ${scene.bgImage ? '<button data-el="sceneBgClear" style="padding:8px 10px;border-radius:8px;border:1px solid rgba(244,67,54,.15);background:rgba(244,67,54,.04);color:#f44336;font-size:11px;cursor:pointer;flex-shrink:0;">清除</button>' : ''}
+        ${scene.bgImage ? '<button data-el="sceneBgClear" style="padding:8px 10px;border-radius:8px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.1));background:var(--ph-glass,rgba(255,255,255,.8));color:rgba(20,24,28,.55);font-size:11px;cursor:pointer;flex-shrink:0;">清除</button>' : ''}
       </div>
     </div>
     <div style="display:flex;gap:8px;">
@@ -23478,18 +23517,18 @@ function _openTimelineViewer(npcId){
       }
     });
     if (!allTodos.length) return '';
-    var h = '<div style="margin:10px 0;padding:10px 12px;background:rgba(255,248,230,.9);border-radius:10px;border:1px solid rgba(255,180,0,.15);">';
-    h += '<div style="font-size:12px;font-weight:600;color:rgba(20,24,28,.7);margin-bottom:6px;">📝 待办跟踪</div>';
+    var h = '<div style="margin:10px 0;padding:10px 12px;background:var(--ph-glass,rgba(255,255,255,.78));border-radius:10px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.06));">';
+    h += '<div style="font-size:12px;font-weight:600;color:rgba(20,24,28,.6);margin-bottom:6px;">待办跟踪</div>';
     allTodos.forEach(function(t){
-      var ds = t.done ? 'text-decoration:line-through;color:rgba(20,24,28,.3);' : 'color:rgba(20,24,28,.75);';
+      var ds = t.done ? 'text-decoration:line-through;color:rgba(20,24,28,.3);' : 'color:rgba(20,24,28,.7);';
       h += '<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:4px;padding:3px 0;">'
-        + '<button data-act="todoToggle" data-eidx="'+t.entryIdx+'" data-tidx="'+t.todoIdx+'" style="flex-shrink:0;width:20px;height:20px;border-radius:4px;border:1.5px solid '+(t.done?'var(--ph-accent,#07c160)':'rgba(0,0,0,.2)')+';background:'+(t.done?'var(--ph-accent,#07c160)':'transparent')+';cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;padding:0;">'+(t.done?'✓':'')+'</button>'
+        + '<button data-act="todoToggle" data-eidx="'+t.entryIdx+'" data-tidx="'+t.todoIdx+'" style="flex-shrink:0;width:20px;height:20px;border-radius:4px;border:1.5px solid '+(t.done?'var(--ph-accent,#07c160)':'rgba(0,0,0,.15)')+';background:'+(t.done?'var(--ph-accent,#07c160)':'transparent')+';cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;padding:0;">'+(t.done?'✓':'')+'</button>'
         + '<span style="font-size:12px;line-height:1.5;'+ds+'flex:1;">'+esc(t.text)+'</span>'
-        + '<button data-act="todoEdit" data-eidx="'+t.entryIdx+'" data-tidx="'+t.todoIdx+'" style="flex-shrink:0;font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.8);cursor:pointer;color:rgba(20,24,28,.4);">✏️</button>'
-        + '<button data-act="todoDel" data-eidx="'+t.entryIdx+'" data-tidx="'+t.todoIdx+'" style="flex-shrink:0;font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid rgba(220,53,69,.15);background:rgba(220,53,69,.04);cursor:pointer;color:#c9302c;">✕</button>'
+        + '<button data-act="todoEdit" data-eidx="'+t.entryIdx+'" data-tidx="'+t.todoIdx+'" style="flex-shrink:0;font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.8);cursor:pointer;color:rgba(20,24,28,.35);">✏️</button>'
+        + '<button data-act="todoDel" data-eidx="'+t.entryIdx+'" data-tidx="'+t.todoIdx+'" style="flex-shrink:0;font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.8);cursor:pointer;color:rgba(20,24,28,.35);">✕</button>'
         + '</div>';
     });
-    h += '<button data-act="todoAdd" style="margin-top:4px;font-size:11px;padding:4px 10px;border-radius:6px;border:1px dashed rgba(0,0,0,.12);background:transparent;cursor:pointer;color:rgba(20,24,28,.4);width:100%;">+ 添加待办</button></div>';
+    h += '<button data-act="todoAdd" style="margin-top:4px;font-size:11px;padding:4px 10px;border-radius:6px;border:1px dashed rgba(0,0,0,.1);background:transparent;cursor:pointer;color:rgba(20,24,28,.35);width:100%;">+ 添加待办</button></div>';
     return h;
   }
   function renderEntries(){
@@ -23505,18 +23544,18 @@ function _openTimelineViewer(npcId){
     return entries.map(function(e, idx){
       var displayText = e.userEdited || e.displayText || '（无内容）';
       var isConfirming = (_pendingDeleteIdx === idx);
-      return '<div data-tl-idx="'+idx+'" style="margin-bottom:10px;padding:10px 12px;background:rgba(255,255,255,.85);border-radius:10px;border:1px solid '+(isConfirming?'rgba(220,53,69,.3)':'rgba(0,0,0,.06)')+';">'
+      return '<div data-tl-idx="'+idx+'" style="margin-bottom:8px;padding:10px 12px;background:var(--ph-glass,rgba(255,255,255,.82));border-radius:10px;border:1px solid '+(isConfirming?'var(--ph-accent,rgba(200,160,80,.3))':'var(--ph-glass-border,rgba(0,0,0,.05))')+';">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
-        + '<span style="font-size:11px;color:rgba(20,24,28,.4);">#'+(e.range[0]+1)+'~'+(e.range[1]+1)+'</span>'
-        + '<span style="font-size:10px;color:rgba(20,24,28,.3);">'+(e.storyTime || new Date(e.createdAt).toLocaleString())+'</span>'
+        + '<span style="font-size:11px;color:rgba(20,24,28,.35);">#'+(e.range[0]+1)+'~'+(e.range[1]+1)+'</span>'
+        + '<span style="font-size:10px;color:rgba(20,24,28,.25);">'+(e.storyTime || new Date(e.createdAt).toLocaleString())+'</span>'
         + '</div>'
-        + '<div style="font-size:12px;color:rgba(20,24,28,.75);white-space:pre-wrap;line-height:1.6;">'+esc(displayText)+'</div>'
+        + '<div style="font-size:12px;color:rgba(20,24,28,.7);white-space:pre-wrap;line-height:1.6;">'+esc(displayText)+'</div>'
         + '<div style="margin-top:6px;display:flex;gap:4px;">'
-        + '<button data-act="tlEdit" data-tlidx="'+idx+'" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);cursor:pointer;">编辑</button>'
+        + '<button data-act="tlEdit" data-tlidx="'+idx+'" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.9);cursor:pointer;color:rgba(20,24,28,.45);">编辑</button>'
         + (isConfirming
-          ? '<button data-act="tlDelConfirm" data-tlidx="'+idx+'" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid #c9302c;background:#c9302c;color:#fff;cursor:pointer;font-weight:600;">⚠️ 确认删除</button>'
-            + '<button data-act="tlDelCancel" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);cursor:pointer;">取消</button>'
-          : '<button data-act="tlDel" data-tlidx="'+idx+'" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(220,53,69,.2);background:rgba(220,53,69,.06);color:#c9302c;cursor:pointer;">删除</button>')
+          ? '<button data-act="tlDelConfirm" data-tlidx="'+idx+'" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(20,24,28,.2);background:rgba(20,24,28,.08);color:rgba(20,24,28,.6);cursor:pointer;font-weight:600;">确认删除</button>'
+            + '<button data-act="tlDelCancel" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.9);cursor:pointer;color:rgba(20,24,28,.45);">取消</button>'
+          : '<button data-act="tlDel" data-tlidx="'+idx+'" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.9);color:rgba(20,24,28,.35);cursor:pointer;">删除</button>')
         + '</div></div>';
     }).join('');
   }
@@ -23546,24 +23585,24 @@ function _openTimelineViewer(npcId){
       + '<input data-el="chunkInput" type="number" min="5" max="200" value="'+_getChunkSize()+'" style="width:50px;padding:2px 4px;border-radius:4px;border:1px solid rgba(0,0,0,.1);font-size:11px;text-align:center;" />'
       + '<span style="font-size:10px;color:rgba(20,24,28,.4);">条消息</span>'
       + '<button data-act="chunkSave" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);cursor:pointer;">保存</button>'
-      + (entries.length > 0 ? '<button data-act="tlClearAll" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(220,53,69,.15);background:rgba(220,53,69,.04);color:rgba(220,53,69,.6);cursor:pointer;margin-left:auto;">🗑️ 清除全部</button>' : '')
+      + (entries.length > 0 ? '<button data-act="tlClearAll" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.9);color:rgba(20,24,28,.4);cursor:pointer;margin-left:auto;">清除全部</button>' : '')
       + '</div>'
       + renderTodos(entries);
     if (isGenerating){
-      h += '<div data-el="tlProgress" style="margin:6px 0;padding:8px 10px;background:rgba(7,193,96,.06);border-radius:8px;border:1px solid rgba(7,193,96,.15);">'
-        + '<div style="font-size:11px;color:rgba(7,193,96,.8);">⏳ 正在生成总结…</div>'
+      h += '<div data-el="tlProgress" style="margin:6px 0;padding:8px 10px;background:color-mix(in srgb, var(--ph-accent,#07c160) 6%, transparent);border-radius:8px;border:1px solid color-mix(in srgb, var(--ph-accent,#07c160) 12%, transparent);">'
+        + '<div style="font-size:11px;color:var(--ph-accent,#07c160);opacity:.8;">⏳ 正在生成总结…</div>'
         + '<div data-el="tlProgressText" style="font-size:10px;color:rgba(20,24,28,.35);margin-top:2px;"></div></div>';
     }
     h += '<div data-el="tlEntries" style="max-height:36vh;overflow-y:auto;margin:6px 0;">' + renderEntries() + '</div>'
       + '<div style="margin-top:8px;display:flex;gap:6px;">'
-      + '<button data-act="tlGenerate" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;'+(isGenerating?'opacity:.5;':'')+'">✨ 生成总结</button>'
-      + (isGenerating ? '<button data-act="tlAbort" style="padding:10px 12px;border-radius:10px;border:1px solid rgba(220,53,69,.3);background:rgba(220,53,69,.06);color:#c9302c;font-size:12px;cursor:pointer;">停止</button>' : '')
-      + '<button data-act="tlClose" style="padding:10px 16px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">关闭</button>'
+      + '<button data-act="tlGenerate" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;'+(isGenerating?'opacity:.5;':'')+'">生成总结</button>'
+      + (isGenerating ? '<button data-act="tlAbort" style="padding:10px 12px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);color:rgba(20,24,28,.5);font-size:12px;cursor:pointer;">停止</button>' : '')
+      + '<button data-act="tlClose" style="padding:10px 16px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;color:rgba(20,24,28,.6);">关闭</button>'
       + '</div>';
     return h;
   }
 
-  var inner = '<div style="font-size:14px;font-weight:600;margin-bottom:4px;">📋 时间线总结</div>'
+  var inner = '<div style="font-size:14px;font-weight:600;margin-bottom:4px;">时间线总结</div>'
     + '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:4px;">线上线下分开记录，切模式时会跟着切页</div>'
     + '<div data-el="tlRoot">' + renderBody() + '</div>';
   var ov = _cpShowOverlay(inner);
@@ -23769,12 +23808,12 @@ function _openTimelineViewer(npcId){
         refresh();
       } else {
         t.setAttribute('data-confirmed', '1');
-        t.style.background = '#c9302c';
-        t.style.color = '#fff';
-        t.style.borderColor = '#c9302c';
-        t.innerHTML = '⚠️ 再点一次确认清除';
+        t.style.background = 'rgba(20,24,28,.12)';
+        t.style.color = 'rgba(20,24,28,.7)';
+        t.style.borderColor = 'rgba(20,24,28,.15)';
+        t.innerHTML = '再点一次确认清除';
         // 3秒后恢复
-        setTimeout(function(){ try{ t.removeAttribute('data-confirmed'); t.style.background=''; t.style.color=''; t.style.borderColor=''; t.innerHTML='🗑️ 清除全部'; }catch(e){} }, 3000);
+        setTimeout(function(){ try{ t.removeAttribute('data-confirmed'); t.style.background=''; t.style.color=''; t.style.borderColor=''; t.innerHTML='清除全部'; }catch(e){} }, 3000);
       }
       return;
     }
