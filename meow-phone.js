@@ -1262,6 +1262,8 @@ case '🌙': return s('<path d="M12.43 2.3c-5.1.43-9.13 4.74-9.13 9.95 0 5.52 4.
 case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="1.5" opacity=".5"/><circle cx="14" cy="8" r="1" opacity=".5"/><circle cx="11" cy="14" r="1.5" opacity=".5"/><circle cx="16" cy="13" r="1" opacity=".5"/>');
         case '🏷': return s('<path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/>');
         case '📋': return s('<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>'); // 📋
+        case '🧪': return s('<path d="M9 3h6v2H9V3zm1 2v5.17l-4.66 7.03A2 2 0 0 0 7 20h10a2 2 0 0 0 1.66-2.8L14 10.17V5h-4zm1 6.83L14.2 17H9.8L13 11.83V7h-2v4.83z"/>');
+        case '📥': return s('<path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/>');
         case '↩': case '↩️': return s('<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>'); // ↩
         case '🔄': return s('<polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15"/>'); // 🔄
         case '🌐': return s('<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>'); // 🌐
@@ -4415,9 +4417,14 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
               <div style="font-size:11px;color:var(--ph-text-dim);margin-bottom:10px;">${esc(key==='me'?'我的头像':key)}</div>
               <div style="display:flex;gap:8px;">
                 <button data-avact="upload" style="flex:1;padding:10px;border-radius:14px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);cursor:pointer;font-size:12px;font-weight:500;">${_phFlatIcon('📷')} 上传图片</button>
-                ${hasCustom?('<button data-avact=\"reset\" style="flex:1;padding:10px;border-radius:14px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:#ef4444;cursor:pointer;font-size:12px;font-weight:500;">'+_phFlatIcon('🗑')+' 恢复默认</button>'):''}
+                <button data-avact="urlInput" style="flex:1;padding:10px;border-radius:14px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);cursor:pointer;font-size:12px;font-weight:500;">${_phFlatIcon('🌐')} 图片直链</button>
               </div>
-              <button data-avact="cancel" style="margin-top:10px;width:100%;padding:10px;border-radius:14px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text-dim);cursor:pointer;font-size:12px;">取消</button>
+              <div data-el="avUrlArea" style="display:none;margin-top:8px;">
+                <input data-el="avUrlInput" type="text" placeholder="https://example.com/avatar.jpg" style="width:100%;padding:8px 10px;border:1px solid var(--ph-glass-border);border-radius:10px;font-size:12px;outline:none;box-sizing:border-box;background:var(--ph-glass);color:var(--ph-text);"/>
+                <button data-avact="urlConfirm" style="margin-top:6px;width:100%;padding:8px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:12px;cursor:pointer;font-weight:500;">确认</button>
+              </div>
+              ${hasCustom?('<button data-avact=\"reset\" style="margin-top:8px;width:100%;padding:10px;border-radius:14px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:#ef4444;cursor:pointer;font-size:12px;font-weight:500;">'+_phFlatIcon('🗑')+' 恢复默认</button>'):''}
+              <button data-avact="cancel" style="margin-top:6px;width:100%;padding:10px;border-radius:14px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text-dim);cursor:pointer;font-size:12px;">取消</button>
             </div>`;
 
             overlay.appendChild(popup);
@@ -4493,6 +4500,18 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
                 }catch(e){
                   cleanup();
                 }
+              } else if (act === 'urlInput'){
+                var avUrlArea = popup.querySelector('[data-el="avUrlArea"]');
+                if (avUrlArea) avUrlArea.style.display = (avUrlArea.style.display === 'none' ? 'block' : 'none');
+              } else if (act === 'urlConfirm'){
+                var avUrlVal = (popup.querySelector('[data-el="avUrlInput"]')?.value||'').trim();
+                if (!avUrlVal){ try{toast('请输入图片链接');}catch(e){} return; }
+                try{
+                  phoneSetAvatar(key, avUrlVal);
+                  _phApplyCustomAvatars();
+                  try{toast('头像已更新（直链）');}catch(e){}
+                }catch(e){}
+                cleanup();
               } else if (act === 'reset'){
                 try{
                   phoneSetAvatar(key, '');
@@ -5784,6 +5803,16 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             setTimeout(()=>{ try{fi.remove();}catch(e){} }, 60000);
             return;
           }
+          if (act === 'wxCSBgUrl'){
+            const nid = t.getAttribute('data-npcid') || state.chatTarget;
+            const bgUrlInp = root.querySelector('[data-el="bgUrlInput"]');
+            const url = (bgUrlInp && bgUrlInp.value || '').trim();
+            if (!url){ try{toast('请输入图片链接');}catch(e){} return; }
+            const ce = _loadCharExtra(nid); ce.chatBg = url; _saveCharExtra(nid, ce);
+            try{toast('背景已设置（直链）');}catch(e){}
+            _renderChatBgSettings(nid);
+            return;
+          }
           if (act === 'wxCSPickBgAlbum'){
             const nid = t.getAttribute('data-npcid') || state.chatTarget;
             const photos = phoneLoadPhotos();
@@ -6187,6 +6216,20 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             return;
           }
           if (act === 'setWallpaper'){ triggerWallpaperUpload(t.getAttribute('data-wptarget')||'home'); return; }
+          if (act === 'setWallpaperUrl'){
+            var _wpTg = t.getAttribute('data-wptarget') || 'home';
+            var _wpUrlInp = root.querySelector('[data-el="wpUrlInput_'+_wpTg+'"]');
+            var _wpUrl = (_wpUrlInp && _wpUrlInp.value || '').trim();
+            if (!_wpUrl){ try{toast('请输入图片链接');}catch(e){} return; }
+            var cfg3 = phoneLoadSettings();
+            if (_wpTg === 'app'){ cfg3.wallpaperApp = _wpUrl; cfg3.wallpaperAppName = '直链'; }
+            else { cfg3.wallpaperHome = _wpUrl; cfg3.wallpaperHomeName = '直链'; }
+            phoneSaveSettings(cfg3); phoneApplyVisualFromSettings(cfg3);
+            var _wpBody = root.querySelector('[data-ph="appBody"]');
+            if (_wpBody) renderSettingsWallpaper(_wpBody);
+            try{toast('壁纸已设置（直链）');}catch(e){}
+            return;
+          }
           if (act === 'clearWallpaper'){ clearWallpaper(t.getAttribute('data-wptarget')||'home'); return; }
           if (act === 'pickWallpaperFromAlbum'){ pickWallpaperFromAlbum(t.getAttribute('data-wptarget')||'home'); return; }
 
@@ -9415,46 +9458,54 @@ ${lines}
         const contacts = _safeArr(db.list);
         const bindings = _safeArr(data.bindings);
 
-        let bindHtml = '';
-        bindings.forEach((b, idx) => {
-          bindHtml += `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.04);">
-            <span style="flex:1;font-size:13px;color:rgba(20,24,28,.85);">${esc(b.name||b.id)}</span>
-            <input data-bidx="${idx}" value="${esc(b.voiceId||'')}" placeholder="voiceId" style="width:100px;padding:4px 8px;border:1px solid rgba(0,0,0,.1);border-radius:6px;font-size:12px;outline:none;"/>
-            <button data-act="voiceDelBind" data-bidx="${idx}" style="appearance:none;border:0;background:transparent;color:#ef4444;font-size:14px;cursor:pointer;">✕</button>
-          </div>`;
-        });
+        let bindHtml = ''; // (legacy, now rendered inline)
 
         let html = `<div style="padding:14px;">
-          <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.85);margin-bottom:10px;">API 配置</div>
+          <div style="padding:12px 14px;background:rgba(99,102,241,.06);border-radius:12px;border:1px solid rgba(99,102,241,.12);margin-bottom:14px;">
+            <div style="font-size:12px;font-weight:600;color:rgba(20,24,28,.75);margin-bottom:4px;">💡 这是什么？</div>
+            <div style="font-size:11px;color:rgba(20,24,28,.45);line-height:1.6;">配置 TTS（文本转语音）API 后，角色回复时可以生成真实语音。通话功能也会用这个 API 让角色"说话"。<br>支持 OpenAI TTS、Fish Audio、GPT-SoVITS 等兼容接口。</div>
+          </div>
+
+          <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.85);margin-bottom:10px;">🔌 API 连接</div>
           <div style="margin-bottom:8px;">
             <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">API 地址</div>
-            <input data-el="vaUrl" value="${esc(data.apiUrl||'')}" placeholder="https://api.example.com/tts" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;"/>
+            <input data-el="vaUrl" value="${esc(data.apiUrl||'')}" placeholder="例如 https://api.fish.audio/v1/tts" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid rgba(0,0,0,.1);border-radius:10px;font-size:13px;outline:none;"/>
+            <div style="font-size:10px;color:rgba(20,24,28,.3);margin-top:3px;">API 需返回音频流（MP3/WAV），请求方式为 POST + JSON</div>
           </div>
           <div style="margin-bottom:8px;">
-            <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">API Key</div>
-            <input data-el="vaKey" value="${esc(data.apiKey||'')}" placeholder="sk-..." type="password" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;"/>
+            <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">API Key（密钥）</div>
+            <input data-el="vaKey" value="${esc(data.apiKey||'')}" placeholder="你的 API 密钥" type="password" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid rgba(0,0,0,.1);border-radius:10px;font-size:13px;outline:none;"/>
           </div>
           <div style="margin-bottom:12px;">
-            <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">默认 Voice ID / 模型名</div>
-            <input data-el="vaVoice" value="${esc(data.defaultVoiceId||'')}" placeholder="默认声音标识" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;"/>
+            <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">默认音色 ID</div>
+            <input data-el="vaVoice" value="${esc(data.defaultVoiceId||'')}" placeholder="在 TTS 服务商处获取" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid rgba(0,0,0,.1);border-radius:10px;font-size:13px;outline:none;"/>
+            <div style="font-size:10px;color:rgba(20,24,28,.3);margin-top:3px;">如果没给角色绑专属音色，就用这个默认音色。会作为 voice 和 model 字段发送</div>
           </div>
-          <button data-act="vaSaveConfig" style="width:100%;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px;">保存配置</button>
+          <button data-act="vaSaveConfig" style="width:100%;padding:12px;border-radius:12px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px;">💾 保存 API 配置</button>
 
-          <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.85);margin-bottom:8px;">角色绑定列表</div>
-          <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:8px;">为好友/角色绑定专属 voiceId</div>
-          ${bindHtml}
+          <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.85);margin-bottom:4px;">🎭 角色专属音色</div>
+          <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:10px;line-height:1.5;">每个角色可以绑定不同的音色 ID。绑定后，该角色说话/通话时会用专属音色，没绑定的角色用上面的默认音色。</div>
+
+          ${bindings.length ? bindings.map(function(b, idx){
+            return '<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;margin-bottom:6px;background:rgba(255,255,255,.8);border-radius:10px;border:1px solid rgba(0,0,0,.06);">'
+              + '<span style="font-size:13px;color:rgba(20,24,28,.82);font-weight:500;flex-shrink:0;">'+esc(b.name||b.id)+'</span>'
+              + '<input data-bidx="'+idx+'" value="'+esc(b.voiceId||'')+'" placeholder="粘贴该角色的音色 ID" style="flex:1;min-width:0;padding:6px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;outline:none;"/>'
+              + '<button data-act="voiceDelBind" data-bidx="'+idx+'" style="appearance:none;border:0;background:transparent;color:#ef4444;font-size:16px;cursor:pointer;flex-shrink:0;">✕</button>'
+              + '</div>';
+          }).join('') : '<div style="text-align:center;padding:14px;color:rgba(20,24,28,.3);font-size:12px;">还没有绑定角色<br>点下方添加</div>'}
+
           <div style="display:flex;gap:6px;margin-top:10px;">
-            <select data-el="vaBindSelect" style="flex:1;padding:8px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;">
-              <option value="">选择好友…</option>
-              ${contacts.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('')}
+            <select data-el="vaBindSelect" style="flex:1;padding:10px;border:1px solid rgba(0,0,0,.1);border-radius:10px;font-size:12px;background:#fff;">
+              <option value="">选择角色…</option>
+              ${contacts.map(c => '<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>').join('')}
             </select>
-            <button data-act="vaAddBind" style="padding:8px 14px;border-radius:8px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:12px;cursor:pointer;">添加</button>
+            <button data-act="vaAddBind" style="padding:10px 16px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:12px;cursor:pointer;font-weight:500;flex-shrink:0;">+ 添加</button>
           </div>
-          <div style="font-size:11px;color:rgba(20,24,28,.3);margin-top:12px;text-align:center;">当前仅保存配置，不执行真实播放</div>
+          <div style="font-size:10px;color:rgba(20,24,28,.3);margin-top:6px;text-align:center;">添加后填入音色 ID，再点上方「保存 API 配置」一起保存</div>
 
-          <div style="margin-top:14px;padding:12px 14px;background:rgba(255,255,255,.85);border-radius:12px;border:1px solid rgba(0,0,0,.07);">
-            <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.85);margin-bottom:4px;">🔊 AI 自动发语音消息</div>
-            <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:10px;">开启后，AI 回复将自动调用语音 API 生成语音气泡，气泡内含播放器并自动展示文字转写</div>
+          <div style="margin-top:16px;padding:12px 14px;background:rgba(255,255,255,.85);border-radius:12px;border:1px solid rgba(0,0,0,.07);">
+            <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.85);margin-bottom:4px;">🔊 AI 聊天自动语音</div>
+            <div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:10px;line-height:1.5;">开启后，AI 在聊天中回复时会自动转成语音气泡（带播放器 + 文字转写），而不是纯文字</div>
             <div style="display:flex;align-items:center;justify-content:space-between;">
               <div style="font-size:13px;color:rgba(20,24,28,.85);">AI 回复时自动发送语音</div>
               <button data-act="vaAutoVoiceToggle" style="width:44px;height:26px;border-radius:13px;border:0;cursor:pointer;position:relative;transition:background .2s;background:${data.autoVoice?'var(--ph-accent, #07c160)':'rgba(0,0,0,.15)'};">
@@ -13808,6 +13859,10 @@ const npc = _wxGetChatTargetMeta(npcId);
           <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px;">
             <button data-act="wxCSUploadBg" data-npcid="${esc(contactId)}" style="width:100%;padding:12px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:#fff;font-size:13px;cursor:pointer;">📤 从相册选取 / 上传图片</button>
             <button data-act="wxCSPickBgAlbum" data-npcid="${esc(contactId)}" style="width:100%;padding:12px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:#fff;font-size:13px;cursor:pointer;">🖼 从「壁纸」相册选取</button>
+            <div style="display:flex;gap:6px;">
+              <input data-el="bgUrlInput" type="text" placeholder="粘贴图片直链 URL…" style="flex:1;padding:10px 12px;border:1px solid rgba(0,0,0,.08);border-radius:12px;font-size:12px;outline:none;box-sizing:border-box;"/>
+              <button data-act="wxCSBgUrl" data-npcid="${esc(contactId)}" style="padding:10px 16px;border-radius:12px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:12px;cursor:pointer;flex-shrink:0;">确认</button>
+            </div>
             ${charEx.chatBg ? '<button data-act="wxCSClearBg" data-npcid="'+esc(contactId)+'" style="width:100%;padding:12px;border-radius:12px;border:1px solid rgba(244,67,54,.15);background:rgba(244,67,54,.04);color:#f44336;font-size:13px;cursor:pointer;">🗑 移除背景</button>' : ''}
           </div>
           <div style="margin-top:16px;padding:12px;border-radius:14px;background:var(--ph-glass,rgba(255,255,255,.72));border:1px solid var(--ph-glass-border,rgba(0,0,0,.08));">
@@ -20715,6 +20770,10 @@ function renderSettingsWallpaper(container){
           <button class="sWpBtn" data-act="setWallpaper" data-wptarget="${target}">${_phFlatIcon('📤')} 上传</button>
           <button class="sWpBtn" data-act="pickWallpaperFromAlbum" data-wptarget="${target}">${_phFlatIcon('🖼️')} 相册</button>
           <button class="sWpBtn" data-act="clearWallpaper" data-wptarget="${target}">${_phFlatIcon('🗑️')} 默认</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;">
+          <input data-el="wpUrlInput_${target}" type="text" placeholder="图片直链 URL…" style="flex:1;padding:7px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:11px;outline:none;box-sizing:border-box;"/>
+          <button class="sWpBtn" data-act="setWallpaperUrl" data-wptarget="${target}" style="flex-shrink:0;">${_phFlatIcon('🌐')} 确认</button>
         </div>
       </div>
     `;
