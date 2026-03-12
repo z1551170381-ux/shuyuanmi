@@ -3145,7 +3145,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .callAvatar img{ width:100%; height:100%; object-fit:cover; }
 #${ID} .callAvatarPulse{
   position:absolute; inset:-8px; border-radius:50%;
-  border:2px solid rgba(255,255,255,.15);
+  border:2px solid color-mix(in srgb, var(--ph-accent, #07c160) 30%, transparent);
   animation:callPulse 2s ease-in-out infinite;
 }
 @keyframes callPulse{
@@ -3172,7 +3172,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .callTranscriptLine{
   font-size:12px; line-height:1.55; margin-bottom:6px; animation:phBubbleIn .2s ease;
 }
-#${ID} .callTranscriptLine.me{ color:rgba(140,200,255,.85); text-align:right; }
+#${ID} .callTranscriptLine.me{ color:rgba(180,220,255,.85); text-align:right; }
 #${ID} .callTranscriptLine.them{ color:rgba(255,255,255,.75); }
 #${ID} .callTranscriptLine.sys{ color:rgba(255,255,255,.35); text-align:center; font-size:11px; font-style:italic; }
 #${ID} .callWave{
@@ -3188,7 +3188,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .callWave span:nth-child(4){ height:20px; animation-delay:.1s; }
 #${ID} .callWave span:nth-child(5){ height:10px; animation-delay:.25s; }
 #${ID} .callWave.active span{ background:var(--ph-accent, #07c160); }
-#${ID} .callWave.speaking span{ background:#ff6b6b; }
+#${ID} .callWave.speaking span{ background:var(--ph-accent, #07c160); }
 @keyframes callWaveBar{
   0%,100%{ transform:scaleY(1); }
   50%{ transform:scaleY(1.8); }
@@ -3207,7 +3207,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .callBtn.mute{ background:rgba(255,255,255,.15); color:#fff; }
 #${ID} .callBtn.mute.active{ background:rgba(255,100,100,.35); }
 #${ID} .callBtn.mode{ background:rgba(255,255,255,.15); color:#fff; font-size:13px; }
-#${ID} .callBtn.mode.active{ background:rgba(100,200,100,.25); }
+#${ID} .callBtn.mode.active{ background:color-mix(in srgb, var(--ph-accent, #07c160) 25%, transparent); }
 #${ID} .callPTT{
   margin-top:20px; width:72px; height:72px; border-radius:50%; border:3px solid rgba(255,255,255,.3);
   background:rgba(255,255,255,.1); color:rgba(255,255,255,.7); font-size:11px; font-weight:600;
@@ -3215,7 +3215,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   transition:all .15s; user-select:none; touch-action:none;
 }
 #${ID} .callPTT.recording{
-  border-color:var(--ph-accent, #07c160); background:rgba(7,193,96,.2);
+  border-color:var(--ph-accent, #07c160); background:color-mix(in srgb, var(--ph-accent, #07c160) 20%, transparent);
   color:#fff; transform:scale(1.08);
 }
 #${ID} .callVideoArea{
@@ -5871,6 +5871,44 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             const npcId = state.chatTarget;
             if (!npcId){ try{toast('请先打开一个聊天');}catch(e){} return; }
             _handleChatPlusAction(cpact, npcId);
+            return;
+          }
+          // ---- 查看通话对话记录 ----
+          if (act === 'wxViewCallTranscript'){
+            var _ctNid = state.chatTarget;
+            if (!_ctNid) return;
+            // 从聊天记录中查找最近的通话 meta
+            var _ctLog = getLog(_ctNid);
+            var _ctTs = t.getAttribute('data-callidx') || '';
+            var _ctEntry = null;
+            // 从后往前找最近的通话记录
+            for (var _ci = _ctLog.length - 1; _ci >= 0; _ci--){
+              if (_ctLog[_ci].text && _ctLog[_ci].text.indexOf('通话]') > -1){
+                if (_ctLog[_ci].callTranscript) { _ctEntry = _ctLog[_ci]; break; }
+              }
+            }
+            var _ctLines = (_ctEntry && Array.isArray(_ctEntry.callTranscript)) ? _ctEntry.callTranscript : [];
+            var _ctDb = loadContactsDB();
+            var _ctNpc = findContactById(_ctDb, _ctNid) || { name:String(_ctNid) };
+            var _ctInner = '<div style="font-size:14px;font-weight:600;margin-bottom:10px;">📞 通话记录</div>';
+            if (!_ctLines.length){
+              _ctInner += '<div style="font-size:12px;color:rgba(20,24,28,.4);text-align:center;padding:20px 0;">暂无通话对话记录</div>';
+            } else {
+              _ctInner += '<div style="max-height:50vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:4px 0;">';
+              for (var _cj = 0; _cj < _ctLines.length; _cj++){
+                var _cl = _ctLines[_cj];
+                var _cRole = _cl.role || 'sys';
+                if (_cRole === 'me'){
+                  _ctInner += '<div style="align-self:flex-end;background:var(--ph-accent,#07c160);color:#fff;padding:6px 10px;border-radius:10px 10px 4px 10px;font-size:12px;max-width:80%;line-height:1.5;">'+esc(_cl.text)+'</div>';
+                } else if (_cRole === 'them'){
+                  _ctInner += '<div style="align-self:flex-start;background:rgba(0,0,0,.06);padding:6px 10px;border-radius:10px 10px 10px 4px;font-size:12px;max-width:80%;line-height:1.5;"><span style="font-size:10px;color:rgba(20,24,28,.4);display:block;margin-bottom:2px;">'+esc(_ctNpc.name)+'</span>'+esc(_cl.text)+'</div>';
+                } else {
+                  _ctInner += '<div style="align-self:center;font-size:10px;color:rgba(20,24,28,.35);padding:4px 0;">'+esc(_cl.text)+'</div>';
+                }
+              }
+              _ctInner += '</div>';
+            }
+            _cpShowOverlay(_ctInner);
             return;
           }
           if (act === 'wxSearch'){ try{toast('搜索功能开发中…');}catch(e){} return; }
@@ -14039,7 +14077,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           </div>`;
         } else if (mt === 'videocall'){
           const callType = meta.callType || 'video';
-          contentHtml = `<div class="wxCBContent wxCBSpecial" style="padding:10px 14px;min-width:160px;">
+          contentHtml = `<div class="wxCBContent wxCBSpecial" data-act="wxViewCallTranscript" data-callidx="${ts||''}" style="padding:10px 14px;min-width:160px;cursor:pointer;">
             <div style="display:flex;align-items:center;gap:8px;">
               <div style="font-size:18px;">${callType==='video'?'📹':'📞'}</div>
               <div>
@@ -14047,6 +14085,7 @@ const npc = _wxGetChatTargetMeta(npcId);
                 <div style="font-size:10.5px;color:rgba(20,24,28,.4);">${esc(meta.duration||'通话结束')}</div>
               </div>
             </div>
+            <div style="font-size:10px;color:rgba(20,24,28,.3);margin-top:4px;text-align:center;">点击查看通话详情</div>
           </div>`;
         } else if (mt === 'tts_voice'){
           // 语音消息气泡：audio 播放器 + 下方自动展示文字转写
@@ -18268,7 +18307,11 @@ const npc = _wxGetChatTargetMeta(npcId);
         const npc = findContactById(db, npcId) || { id:npcId, name:String(npcId), avatar:String(npcId).charAt(0), profile:'' };
         // 日志中保存为带 meta 标记的文本
         const logText = meta._logText || displayText;
-        pushLog(npcId, 'me', logText);
+        // 通话记录额外保存 transcript
+        var logExtra = {};
+        if (meta && meta.callTranscript) logExtra.callTranscript = meta.callTranscript;
+        if (meta && meta.type) logExtra.metaType = meta.type;
+        pushLog(npcId, 'me', logText, logExtra);
         bumpThread(npcId, { lastMsg:displayText, lastTime:_now(), unread:0 });
         const msgs = root.querySelector('[data-ph="chatMsgs"]');
         if (msgs){
@@ -18448,33 +18491,58 @@ const npc = _wxGetChatTargetMeta(npcId);
         // ---- STT (浏览器语音识别) ----
         var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
         var sttOK = !!SpeechRec;
+        var sttFinalText = '';
+        var sttSilenceTimer = null;
 
         function startSTT(onResult){
           if(!sttOK || ended || muted) return;
           try{
+            stopSTT();
+            sttFinalText = '';
             recognition = new SpeechRec();
             recognition.lang = 'zh-CN';
-            recognition.interimResults = false;
-            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.continuous = true;
             recognition.maxAlternatives = 1;
             recognition.onresult = function(ev){
-              var txt = '';
-              for(var i=ev.resultIndex;i<ev.results.length;i++){
-                if(ev.results[i].isFinal) txt += ev.results[i][0].transcript;
+              var interim = '', final = '';
+              for(var i=0;i<ev.results.length;i++){
+                if(ev.results[i].isFinal) final += ev.results[i][0].transcript;
+                else interim += ev.results[i][0].transcript;
               }
-              txt = txt.trim();
-              if(txt && onResult) onResult(txt);
+              if(final) sttFinalText = final.trim();
+              // 收到语音就重置静默计时器（松手模式下由 stopSTT 处理）
+              if(interactionMode === 'auto' && (final || interim)){
+                if(sttSilenceTimer) clearTimeout(sttSilenceTimer);
+                sttSilenceTimer = setTimeout(function(){
+                  // 静默 1.5 秒，认为说完了
+                  var text = sttFinalText.trim();
+                  if(text && onResult){
+                    try{ recognition.abort(); }catch(e){}
+                    isRecording = false; setWave('');
+                    if(pttBtn) pttBtn.classList.remove('recording');
+                    onResult(text);
+                  }
+                }, 1500);
+              }
             };
             recognition.onerror = function(ev){
               isRecording = false; setWave('');
               if(pttBtn) pttBtn.classList.remove('recording');
-              if(ev.error==='no-speech' && interactionMode==='auto' && connected && !ended){
-                setTimeout(function(){ startAutoListen(); }, 600);
+              if(sttSilenceTimer){ clearTimeout(sttSilenceTimer); sttSilenceTimer = null; }
+              if((ev.error==='no-speech'||ev.error==='aborted') && interactionMode==='auto' && connected && !ended && !aiProcessing){
+                setTimeout(function(){ startAutoListen(); }, 800);
               }
             };
             recognition.onend = function(){
+              // PTT 模式：onend 时提交已有结果
+              if(interactionMode==='ptt' && sttFinalText.trim() && onResult){
+                var t = sttFinalText.trim(); sttFinalText = '';
+                onResult(t);
+              }
               isRecording = false; setWave('');
               if(pttBtn) pttBtn.classList.remove('recording');
+              if(sttSilenceTimer){ clearTimeout(sttSilenceTimer); sttSilenceTimer = null; }
             };
             recognition.start();
             isRecording = true; setWave('speaking');
@@ -18482,7 +18550,8 @@ const npc = _wxGetChatTargetMeta(npcId);
           }catch(e){ isRecording = false; }
         }
         function stopSTT(){
-          try{ if(recognition) recognition.stop(); }catch(e){}
+          if(sttSilenceTimer){ clearTimeout(sttSilenceTimer); sttSilenceTimer = null; }
+          try{ if(recognition){ recognition.stop(); } }catch(e){}
           isRecording = false; setWave('');
           if(pttBtn) pttBtn.classList.remove('recording');
         }
@@ -18493,6 +18562,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           addLine('me', text);
           aiProcessing = true;
           setStatus('对方思考中…'); setWave('active');
+          stopSTT(); // ★ 确保 TTS 播放前停止识别，防拾音冲突
           try{
             var recentMsgs = _getRecentMessagesForAPI(npcId, 6);
             // 追加通话中的对话
@@ -18553,7 +18623,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             aiProcessing = false;
             if(!ended){
               setStatus('通话中'); setWave('');
-              if(interactionMode==='auto' && connected) setTimeout(function(){ startAutoListen(); }, 400);
+              if(interactionMode==='auto' && connected) setTimeout(function(){ startAutoListen(); }, 800);
             }
           }
         }
@@ -18562,17 +18632,18 @@ const npc = _wxGetChatTargetMeta(npcId);
           return new Promise(function(resolve){
             if(ended){ resolve(); return; }
             try{
-              if(currentAudio){ currentAudio.pause(); currentAudio=null; }
-              currentAudio = new Audio(url);
-              currentAudio.onended = function(){ currentAudio=null; resolve(); };
-              currentAudio.onerror = function(){ currentAudio=null; resolve(); };
-              currentAudio.play().catch(function(){ resolve(); });
-            }catch(e){ resolve(); }
+              if(currentAudio){ try{currentAudio.pause();}catch(e){} currentAudio=null; }
+              var audio = new Audio(url);
+              currentAudio = audio;
+              audio.onended = function(){ if(currentAudio===audio) currentAudio=null; resolve(); };
+              audio.onerror = function(){ if(currentAudio===audio) currentAudio=null; resolve(); };
+              audio.play().catch(function(){ if(currentAudio===audio) currentAudio=null; resolve(); });
+            }catch(e){ currentAudio=null; resolve(); }
           });
         }
 
         function startAutoListen(){
-          if(ended||aiProcessing||isRecording||muted||!connected) return;
+          if(ended||aiProcessing||isRecording||muted||!connected||currentAudio) return;
           setStatus('正在听你说…');
           startSTT(function(text){ processUserSaid(text); });
         }
@@ -18590,7 +18661,15 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         // ---- PTT 按住说话 ----
         function pttDown(ev){ ev.preventDefault(); if(!connected||ended||aiProcessing||muted) return; setStatus('正在听你说…'); startSTT(function(t){ processUserSaid(t); }); }
-        function pttUp(ev){ ev.preventDefault(); stopSTT(); }
+        function pttUp(ev){
+          ev.preventDefault();
+          // 延迟 500ms 再 stop，让浏览器有时间出 finalResult
+          setTimeout(function(){
+            if(recognition && isRecording){
+              try{ recognition.stop(); }catch(e){}
+            }
+          }, 500);
+        }
         if(pttBtn){
           pttBtn.addEventListener('mousedown', pttDown);
           pttBtn.addEventListener('touchstart', pttDown, {passive:false});
@@ -18630,10 +18709,44 @@ const npc = _wxGetChatTargetMeta(npcId);
             if(timerEl) timerEl.textContent = String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
           }, 1000);
           updateModeUI();
-          // 对方先开口
+          // 对方先开口（直接调AI，不走processUserSaid以避免假的me消息）
           setTimeout(function(){
             if(ended) return;
-            processUserSaid('（用户拨打了'+(isVideo?'视频':'语音')+'通话，对方接起了电话）');
+            aiProcessing = true;
+            setStatus('对方正在说…'); setWave('active');
+            (async function(){
+              try{
+                var cdb2 = loadContactsDB();
+                var npcInfo2 = findContactById(cdb2, npcId) || {name:String(npcId)};
+                var greetResult = await PhoneAI.chat({
+                  system:'你是「'+esc(npcInfo2.name)+'」，刚接起用户打来的'+(isVideo?'视频':'语音')+'电话。用一句简短口语化的话接电话（比如"喂？怎么了~"）。不要括号动作，纯对话。',
+                  messages:[{role:'user',content:'[用户拨打了'+(isVideo?'视频':'语音')+'通话]'}],
+                  temperature:0.9, maxTokens:60, timeout:12
+                });
+                if(ended) return;
+                var greetText = '喂？';
+                if(greetResult.ok && greetResult.data){
+                  greetText = String(greetResult.data||'').replace(/<think[\s\S]*?<\/think>/gi,'').replace(/\[.*?\]/g,'').replace(/（.*?）/g,'').trim() || '喂？';
+                }
+                addLine('them', greetText);
+                setStatus('通话中');
+                var va2 = loadVoiceApi();
+                if(va2 && va2.apiUrl && va2.apiKey){
+                  setWave('active');
+                  try{
+                    var tts2 = await _callTTSApi(greetText, npcId);
+                    if(tts2.ok && !ended) await _playCallAudio(tts2.audioUrl);
+                  }catch(e){}
+                } else {
+                  await new Promise(function(r){setTimeout(r, 800);});
+                }
+              }catch(e){}
+              aiProcessing = false;
+              if(!ended){
+                setStatus('通话中'); setWave('');
+                if(interactionMode==='auto') setTimeout(function(){ startAutoListen(); }, 500);
+              }
+            })();
           }, 300);
         }, 1800 + Math.random()*1200);
 
@@ -18651,7 +18764,8 @@ const npc = _wxGetChatTargetMeta(npcId);
 
           _cpSendSpecial(npcId, '['+(isVideo?'视频':'语音')+'通话] '+durStr, {
             type:'videocall', callType:callType, duration:durStr,
-            _logText:'['+(isVideo?'视频':'语音')+'通话] '+durStr
+            _logText:'['+(isVideo?'视频':'语音')+'通话] '+durStr,
+            callTranscript: transcript.slice()
           });
 
           // 生成通话纪要
