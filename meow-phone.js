@@ -2682,21 +2682,11 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   scrollbar-width:none;
 }
 #${ID} .wxChatMsgs::-webkit-scrollbar{ width:0; display:none; }
-/* 线下模式：极细滚动条，不滚动时自动隐藏 */
+/* 线下模式：完全隐藏滚动条 */
 #${ID} .wxChatMsgs.wxOfflineWrap{
-  scrollbar-width:thin; scrollbar-color:transparent transparent;
+  scrollbar-width:none !important;
 }
-#${ID} .wxChatMsgs.wxOfflineWrap:hover{
-  scrollbar-color:rgba(0,0,0,.12) transparent;
-}
-#${ID} .wxChatMsgs.wxOfflineWrap::-webkit-scrollbar{ width:3px; display:block; }
-#${ID} .wxChatMsgs.wxOfflineWrap::-webkit-scrollbar-track{ background:transparent; }
-#${ID} .wxChatMsgs.wxOfflineWrap::-webkit-scrollbar-thumb{
-  background:transparent; border-radius:2px; transition:background .3s;
-}
-#${ID} .wxChatMsgs.wxOfflineWrap:hover::-webkit-scrollbar-thumb{
-  background:rgba(0,0,0,.12);
-}
+#${ID} .wxChatMsgs.wxOfflineWrap::-webkit-scrollbar{ width:0 !important; display:none !important; }
 #${ID} .wxChatBubble{
   max-width:72%; display:flex; gap:8px; align-items:flex-start;
   animation:phBubbleIn .2s ease-out;
@@ -3061,7 +3051,10 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .wxOfflineWrap{
   background:linear-gradient(180deg, rgba(245,240,230,.98), rgba(235,228,215,.96));
   min-height:100%; padding:16px 18px;
+  scrollbar-width:none !important;
+  overflow-y:auto; -webkit-overflow-scrolling:touch;
 }
+#${ID} .wxOfflineWrap::-webkit-scrollbar{ width:0 !important; display:none !important; }
 #${ID} .wxOfflineParagraph{
   font-size:14px; line-height:1.9; color:rgba(46,38,26,.82);
   margin-bottom:14px; text-indent:0; position:relative;
@@ -3094,20 +3087,28 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   font-size:12px; color:rgba(46,38,26,.4); margin-top:4px; line-height:1.5;
 }
 #${ID} .wxOfflineInputBar{
-  padding:10px 14px; border-top:1px solid rgba(0,0,0,.06);
-  background:rgba(245,240,230,.95); display:flex; gap:8px; align-items:flex-end;
+  padding:10px 14px; border-top:1px solid var(--ph-glass-border, rgba(0,0,0,.06));
+  background:var(--ph-glass, rgba(255,255,255,.72));
+  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  display:flex; gap:8px; align-items:flex-end; flex-shrink:0;
 }
 #${ID} .wxOfflineInputBar textarea{
-  flex:1; border:1px solid rgba(0,0,0,.08); border-radius:10px;
+  flex:1; border:1px solid var(--ph-glass-border, rgba(0,0,0,.08)); border-radius:10px;
   padding:8px 12px; font-size:13px; resize:none; outline:none;
-  background:rgba(255,255,255,.7); font-family:inherit; line-height:1.5;
-  min-height:36px; max-height:120px; color:rgba(46,38,26,.8);
+  background:var(--ph-glass, rgba(255,255,255,.6)); font-family:inherit; line-height:1.5;
+  min-height:36px; max-height:120px; color:var(--ph-text, rgba(46,38,26,.8));
+  user-select:text; -webkit-user-select:text;
+  touch-action:manipulation; -webkit-touch-callout:default;
 }
-#${ID} .wxOfflineInputBar textarea::placeholder{ color:rgba(46,38,26,.3); }
+#${ID} .wxOfflineInputBar textarea::placeholder{ color:var(--ph-text-dim, rgba(46,38,26,.3)); }
 #${ID} .wxOfflineInputBar button{
   padding:8px 14px; border-radius:10px; border:0;
   background:var(--ph-accent, #07c160); color:#fff;
   font-size:13px; font-weight:600; cursor:pointer; flex-shrink:0;
+}
+#${ID} .wxOfflineInputBar .wxOffSceneBtn{
+  padding:8px; border-radius:10px; border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));
+  background:var(--ph-glass, rgba(255,255,255,.6)); cursor:pointer; font-size:13px; flex-shrink:0;
 }
 /* === Phase 4：分支指示条 === */
 #${ID} .wxBranchBar{
@@ -6695,7 +6696,8 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           } else if (el.type === 'image'){
             const sw = Math.round((el.w||40)*scale), sh = Math.round((el.h||40)*scale);
             const br = el.cropShape==='circle' ? '50%' : (el.cropShape==='rounded' ? '12px' : '4px');
-            html += `<div class="${cls}" data-elid="${el.id}" style="left:${sx}px;top:${sy}px;width:${sw}px;height:${sh}px;"><img src="${esc(el.src||'')}" style="width:100%;height:100%;object-fit:cover;border-radius:${br};pointer-events:none;" onerror="this.style.background='var(--ph-glass-strong)';this.alt='IMG'"/>${resizeBar}</div>`;
+            const bdr = el.borderWidth ? Math.max(1,Math.round(el.borderWidth*scale))+'px solid '+(el.borderColor||'rgba(255,255,255,.5)') : 'none';
+            html += `<div class="${cls}" data-elid="${el.id}" style="left:${sx}px;top:${sy}px;width:${sw}px;height:${sh}px;"><img src="${esc(el.src||'')}" style="width:100%;height:100%;object-fit:cover;border-radius:${br};border:${bdr};box-sizing:border-box;pointer-events:none;" onerror="this.style.background='var(--ph-glass-strong)';this.alt='IMG'"/>${resizeBar}</div>`;
           } else if (el.type === 'line'){
             const sw = Math.round((el.w||60)*scale), sh = Math.max(2, Math.round((el.h||2)*scale));
             html += `<div class="${cls}" data-elid="${el.id}" style="left:${sx}px;top:${sy}px;width:${sw}px;height:${sh}px;background:var(--ph-glass-border);border-radius:1px;">${resizeBar}</div>`;
@@ -6717,11 +6719,30 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           const selEl = (wd.elements||[]).find(e=>e.id===_weState.selectedEl);
           if (selEl && selEl.type === 'image'){
             const cs = selEl.cropShape || 'default';
+            const bw = selEl.borderWidth || 0;
+            const bc = selEl.borderColor || 'rgba(255,255,255,.5)';
             html += `<div class="weSec"><div class="weSecTitle">图片裁切</div><div class="weImgCropPicker">
               <button class="weImgCropOpt${cs==='default'?' active':''}" data-wecrop="default">方角</button>
               <button class="weImgCropOpt${cs==='rounded'?' active':''}" data-wecrop="rounded">圆角</button>
               <button class="weImgCropOpt${cs==='circle'?' active':''}" data-wecrop="circle">圆形</button>
             </div></div>`;
+            html += `<div class="weSec"><div class="weSecTitle">边框</div>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
+                <span style="font-size:11px;color:rgba(20,24,28,.5);flex-shrink:0;">粗细</span>
+                <input data-el="weBorderW" type="range" min="0" max="6" step="1" value="${bw}" style="flex:1;"/>
+                <span style="font-size:11px;color:rgba(20,24,28,.6);min-width:20px;">${bw}px</span>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:6px;">
+                <span style="font-size:11px;color:rgba(20,24,28,.5);flex-shrink:0;">颜色</span>
+                <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                  <button data-webcol="rgba(255,255,255,.8)" style="width:22px;height:22px;border-radius:50%;border:2px solid ${bc==='rgba(255,255,255,.8)'?'var(--ph-accent,#07c160)':'rgba(0,0,0,.1)'};background:rgba(255,255,255,.8);cursor:pointer;"></button>
+                  <button data-webcol="rgba(0,0,0,.6)" style="width:22px;height:22px;border-radius:50%;border:2px solid ${bc==='rgba(0,0,0,.6)'?'var(--ph-accent,#07c160)':'rgba(0,0,0,.1)'};background:rgba(0,0,0,.6);cursor:pointer;"></button>
+                  <button data-webcol="rgba(255,215,0,.7)" style="width:22px;height:22px;border-radius:50%;border:2px solid ${bc==='rgba(255,215,0,.7)'?'var(--ph-accent,#07c160)':'rgba(0,0,0,.1)'};background:rgba(255,215,0,.7);cursor:pointer;"></button>
+                  <button data-webcol="rgba(99,102,241,.6)" style="width:22px;height:22px;border-radius:50%;border:2px solid ${bc==='rgba(99,102,241,.6)'?'var(--ph-accent,#07c160)':'rgba(0,0,0,.1)'};background:rgba(99,102,241,.6);cursor:pointer;"></button>
+                  <button data-webcol="rgba(244,67,54,.5)" style="width:22px;height:22px;border-radius:50%;border:2px solid ${bc==='rgba(244,67,54,.5)'?'var(--ph-accent,#07c160)':'rgba(0,0,0,.1)'};background:rgba(244,67,54,.5);cursor:pointer;"></button>
+                </div>
+              </div>
+            </div>`;
           }
         }
 
@@ -6886,6 +6907,24 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           renderWidgetEditor(container);
         }));
 
+        // image border width
+        var bwSlider = container.querySelector('[data-el="weBorderW"]');
+        if (bwSlider) bwSlider.addEventListener('input', function(){
+          if (!_weState.selectedEl) return;
+          var el = (wd.elements||[]).find(x=>x.id===_weState.selectedEl);
+          if (!el || el.type !== 'image') return;
+          el.borderWidth = parseInt(this.value) || 0;
+          renderWidgetEditor(container);
+        });
+        // image border color
+        container.querySelectorAll('[data-webcol]').forEach(b=>b.addEventListener('click',()=>{
+          if (!_weState.selectedEl) return;
+          var el = (wd.elements||[]).find(x=>x.id===_weState.selectedEl);
+          if (!el || el.type !== 'image') return;
+          el.borderColor = b.getAttribute('data-webcol');
+          renderWidgetEditor(container);
+        }));
+
         // snap
         container.querySelectorAll('[data-wesnap]').forEach(b=>b.addEventListener('click',()=>{
           if (!_weState.selectedEl) return;
@@ -7015,7 +7054,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             let inner=''; (wd.elements||[]).forEach(el=>{
               if (el.type==='text') inner+=`<div style="position:absolute;left:${el.x}px;top:${el.y}px;font-size:${el.fontSize||13}px;color:var(--ph-text);font-weight:${el.bold?'700':'400'};white-space:nowrap;">${esc(el.content||'')}</div>`;
               else if (el.type==='emoji') inner+=`<div style="position:absolute;left:${el.x}px;top:${el.y}px;font-size:${el.fontSize||22}px;">${esc(el.content||'')}</div>`;
-              else if (el.type==='image'){const br=el.cropShape==='circle'?'50%':el.cropShape==='rounded'?'12px':'4px'; inner+=`<div style="position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w||40}px;height:${el.h||40}px;"><img src="${esc(el.src||'')}" style="width:100%;height:100%;object-fit:cover;border-radius:${br};"/></div>`;}
+              else if (el.type==='image'){const br=el.cropShape==='circle'?'50%':el.cropShape==='rounded'?'12px':'4px';const bdr=el.borderWidth?el.borderWidth+'px solid '+(el.borderColor||'rgba(255,255,255,.5)'):'none'; inner+=`<div style="position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w||40}px;height:${el.h||40}px;"><img src="${esc(el.src||'')}" style="width:100%;height:100%;object-fit:cover;border-radius:${br};border:${bdr};box-sizing:border-box;"/></div>`;}
               else if (el.type==='line') inner+=`<div style="position:absolute;left:${el.x}px;top:${el.y}px;width:${el.w||60}px;height:${el.h||2}px;background:var(--ph-glass-border);border-radius:1px;"></div>`;
             });
             return `<div style="position:relative;width:100%;height:100%;min-height:60px;">${inner}</div>`;
@@ -10092,6 +10131,10 @@ ${lines}
         // 上传按钮
         html += `<div style="padding:12px 14px;">
           <button data-act="stkUpload" style="width:100%;padding:10px;border-radius:12px;border:1px dashed rgba(0,0,0,.15);background:#fff;color:rgba(20,24,28,.5);font-size:13px;cursor:pointer;">+ 上传表情图片</button>
+          <div style="display:flex;gap:6px;margin-top:6px;">
+            <input data-el="stkUrlInput" type="text" placeholder="图片直链 URL…" style="flex:1;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:10px;font-size:12px;outline:none;box-sizing:border-box;"/>
+            <button data-act="stkUrlAdd" style="padding:8px 14px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:12px;cursor:pointer;flex-shrink:0;">添加</button>
+          </div>
           <div style="font-size:10px;color:rgba(20,24,28,.3);margin-top:4px;text-align:center;">单组最多${STICKER_MAX_PER_GROUP}张，单张≤${STICKER_MAX_SIZE_KB}KB</div>
         </div>`;
 
@@ -10175,6 +10218,20 @@ ${lines}
           _safeArr(packs4[curGroup]).splice(idx, 1);
           _saveStickerPacks(packs4);
           try{toast('已删除');}catch(e){}
+          _renderStickersPage(container);
+        }));
+        // URL 添加表情
+        container.querySelectorAll('[data-act="stkUrlAdd"]').forEach(b => b.addEventListener('click',()=>{
+          var urlInp = container.querySelector('[data-el="stkUrlInput"]');
+          var url = (urlInp && urlInp.value || '').trim();
+          if (!url){ try{toast('请输入图片链接');}catch(e){} return; }
+          var packs5 = _loadStickerPacks();
+          var gArr5 = _safeArr(packs5[curGroup]);
+          if (gArr5.length >= STICKER_MAX_PER_GROUP){ try{toast('此分组已满');}catch(e){} return; }
+          gArr5.push({ data: url, name: 'url_sticker', time: Date.now() });
+          packs5[curGroup] = gArr5;
+          _saveStickerPacks(packs5);
+          try{toast('已添加');}catch(e){}
           _renderStickersPage(container);
         }));
       }
@@ -12587,11 +12644,12 @@ const npc = _wxGetChatTargetMeta(npcId);
         // 渲染骨架（根据模式切换）
         if (_chatMode === 'offline'){
           var sceneData = _loadSceneData(contactId);
+          var offlineBgStyle = sceneData.bgImage ? `background-image:url('${sceneData.bgImage}');background-size:cover;background-position:center;` : bgStyle;
           body.innerHTML = `
             <div class="wxChatDetailWrap">
-              <div class="wxChatMsgs wxOfflineWrap" data-ph="chatMsgs" style="${bgStyle}"></div>
+              <div class="wxChatMsgs wxOfflineWrap" data-ph="chatMsgs" style="${offlineBgStyle}"></div>
               <div class="wxOfflineInputBar">
-                <button data-act="wxSceneEdit" data-npcid="${esc(contactId)}" style="padding:8px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.6);cursor:pointer;font-size:13px;flex-shrink:0;">☕</button>
+                <button class="wxOffSceneBtn" data-act="wxSceneEdit" data-npcid="${esc(contactId)}">☕</button>
                 <textarea rows="1" placeholder="描述你的行动…" data-ph="chatInput" inputmode="text" enterkeyhint="send" autocomplete="off"></textarea>
                 <button data-act="wxSendChat" title="发送" style="flex-shrink:0;">发送</button>
               </div>
@@ -22777,9 +22835,18 @@ function _openSceneEditor(npcId){
       <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">地点</div>
       <input data-el="sceneLoc" value="${esc(scene.location||'')}" placeholder="如：城市里的一家安静咖啡厅" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;"/>
     </div>
-    <div style="margin-bottom:10px;">
+    <div style="margin-bottom:8px;">
       <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">场景描述（可选）</div>
       <textarea data-el="sceneDesc" rows="3" placeholder="环境描述、氛围、时间等" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;">${esc(scene.description||'')}</textarea>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">🖼 场景背景图（可选）</div>
+      <div style="font-size:10px;color:rgba(20,24,28,.3);margin-bottom:4px;">为这个场景设置专属背景图，切换场景时背景也跟着换</div>
+      ${scene.bgImage ? '<div style="width:100%;height:80px;border-radius:8px;overflow:hidden;margin-bottom:6px;border:1px solid rgba(0,0,0,.08);"><img src="'+esc(scene.bgImage)+'" style="width:100%;height:100%;object-fit:cover;"/></div>' : ''}
+      <div style="display:flex;gap:6px;">
+        <input data-el="sceneBgUrl" type="text" value="${esc(scene.bgImage||'')}" placeholder="粘贴背景图片链接…" style="flex:1;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;"/>
+        ${scene.bgImage ? '<button data-el="sceneBgClear" style="padding:8px 10px;border-radius:8px;border:1px solid rgba(244,67,54,.15);background:rgba(244,67,54,.04);color:#f44336;font-size:11px;cursor:pointer;flex-shrink:0;">清除</button>' : ''}
+      </div>
     </div>
     <div style="display:flex;gap:8px;">
       <button data-el="sceneSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
@@ -22787,11 +22854,17 @@ function _openSceneEditor(npcId){
     </div>`;
   var ov = _cpShowOverlay(inner);
   ov.querySelector('[data-el="sceneCancel"]')?.addEventListener('click', function(){ ov.remove(); });
+  ov.querySelector('[data-el="sceneBgClear"]')?.addEventListener('click', function(){
+    var bgInp = ov.querySelector('[data-el="sceneBgUrl"]');
+    if (bgInp) bgInp.value = '';
+    this.style.display = 'none';
+  });
   ov.querySelector('[data-el="sceneSave"]')?.addEventListener('click', function(){
     var newScene = {
       name: (ov.querySelector('[data-el="sceneName"]')?.value||'').trim(),
       location: (ov.querySelector('[data-el="sceneLoc"]')?.value||'').trim(),
-      description: (ov.querySelector('[data-el="sceneDesc"]')?.value||'').trim()
+      description: (ov.querySelector('[data-el="sceneDesc"]')?.value||'').trim(),
+      bgImage: (ov.querySelector('[data-el="sceneBgUrl"]')?.value||'').trim()
     };
     _saveSceneData(npcId, newScene);
     ov.remove();
@@ -22801,6 +22874,22 @@ function _openSceneEditor(npcId){
       var titleEl = root.querySelector('[data-ph="appTitle"]');
       if (titleEl && _getChatMode(npcId) === 'offline'){
         titleEl.textContent = '☕ 线下 · ' + (newScene.name || '未命名');
+      }
+    }catch(e){}
+    // 刷新线下背景
+    try{
+      var msgsEl = root.querySelector('[data-ph="chatMsgs"]');
+      if (msgsEl && newScene.bgImage){
+        msgsEl.style.backgroundImage = "url('" + newScene.bgImage + "')";
+        msgsEl.style.backgroundSize = 'cover';
+        msgsEl.style.backgroundPosition = 'center';
+      } else if (msgsEl && !newScene.bgImage){
+        var charEx2 = _loadCharExtra(npcId);
+        if (charEx2.chatBg){
+          msgsEl.style.backgroundImage = "url('" + charEx2.chatBg + "')";
+        } else {
+          msgsEl.style.backgroundImage = '';
+        }
       }
     }catch(e){}
   });
