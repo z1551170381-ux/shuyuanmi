@@ -2094,22 +2094,24 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 /* ---------- App Page ---------- */
 #${ID} .phAppBar{
   position:absolute; left:0; right:0; top:0; height:52px;
-  display:grid; grid-template-columns:44px 1fr auto; align-items:center;
-  gap:0; padding:0 8px;
+  display:flex; align-items:center;
+  padding:0 6px;
   background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
   border-bottom:1px solid rgba(255,255,255,.06);
   z-index:3;
 }
 #${ID} .phAppTitle{
+  position:absolute; left:0; right:0; top:0; bottom:0;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   overflow:hidden; gap:0; line-height:1.25;
-  grid-column:1 / -1; padding:0 80px;
+  pointer-events:none; padding:0 100px;
 }
 #${ID} .phAppTitleMain{
   color:var(--ph-text); font-weight:600; font-size:14px;
   text-align:center; letter-spacing:.2px;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   max-width:100%; transition:font-size .18s;
+  pointer-events:auto;
 }
 #${ID} .phAppSubTitle{
   display:none; align-items:center; gap:3px;
@@ -2132,16 +2134,16 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .phNavBtn{
   appearance:none; border:0; background:transparent; color:var(--ph-text);
   cursor:pointer; font-size:18px; padding:0;
-  width:32px; height:32px; border-radius:10px;
+  width:36px; height:36px; border-radius:10px;
   display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; z-index:1;
 }
 #${ID} .phNavBtn.isBack{
   font-size:22px; color:rgba(255,255,255,.96);
-  justify-self:start;
 }
 #${ID} .phNavBtn:hover{ background:rgba(255,255,255,.08); }
-#${ID} .phAppBarSpacer{ height:32px; display:flex; align-items:center; justify-content:flex-end; gap:0; position:absolute; right:8px; top:50%; transform:translateY(-50%); z-index:1; }
-#${ID} .phAppBarSpacer .phBarRBtn{ appearance:none; border:0; background:transparent; color:var(--ph-text-sub); width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; opacity:.7; transition:opacity .2s; }
+#${ID} .phAppBarSpacer{ height:36px; display:flex; align-items:center; justify-content:flex-end; gap:0; margin-left:auto; flex-shrink:0; z-index:1; }
+#${ID} .phAppBarSpacer .phBarRBtn{ appearance:none; border:0; background:transparent; color:var(--ph-text-sub); width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; opacity:.65; transition:opacity .2s; }
 #${ID} .phAppBarSpacer .phBarRBtn:hover{ opacity:1; background:rgba(255,255,255,.1); }
 #${ID} .phAppBody{
   position:absolute; left:0; right:0; top:52px; bottom:0;
@@ -2673,14 +2675,14 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   background:rgba(237,237,237,.55);
 }
 #${ID} .wxChatMsgs{
-  flex:1; padding:10px 12px 8px; display:flex; flex-direction:column; gap:10px;
+  flex:1; padding:10px 10px 8px 10px; display:flex; flex-direction:column; gap:10px;
   overflow-y:auto; -webkit-overflow-scrolling:touch;
 }
 #${ID} .wxChatBubble{
   max-width:72%; display:flex; gap:8px; align-items:flex-start;
   animation:phBubbleIn .2s ease-out;
 }
-#${ID} .wxChatBubble.me{ flex-direction:row-reverse; align-self:flex-end; margin-right:0; }
+#${ID} .wxChatBubble.me{ flex-direction:row-reverse; align-self:flex-end; }
 #${ID} .wxChatBubble.them{ align-self:flex-start; }
 #${ID} .wxChatBubble .wxCBAvatar{
   width:36px; height:36px; border-radius:6px; flex-shrink:0; overflow:hidden;
@@ -12257,7 +12259,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             `<button class="phBarRBtn" data-act="wxTimeline" data-npcid="${esc(contactId)}" title="时间线"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M17 2h-3.18C13.4.84 12.3 0 11 0c-1.3 0-2.4.84-2.82 2H5C3.9 2 3 2.9 3 4v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-6 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm5 14H7v-2h9v2zm0-4H7v-2h9v2zm0-4H7V6h9v2z"/></svg></button>
             <button class="phBarRBtn" data-act="wxBranchMgr" data-npcid="${esc(contactId)}" title="分支"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M6 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm12 0a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2zM6 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm0 2a1 1 0 1 1 0 2 1 1 0 0 1 0-2zM6 9v6m0 0h6c3.3 0 6-2.7 6-6V6"/></svg></button>
             <button class="phBarRBtn" data-act="wxOfflineMode" data-npcid="${esc(contactId)}" title="${_chatMode==='offline'?'切回在线':'切到线下'}"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;">${_chatMode==='offline'?'<path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/>':'<path d="M18.36 9c.6-1.7.36-3.6-.96-4.92a4.992 4.992 0 0 0-6.72-.28c-.07.07-.14.14-.2.22A5 5 0 0 0 2 9c0 4 5 11 8 11s3.5-2.5 5-5.5c.5-1 .9-2.1 1.2-3.2A4.96 4.96 0 0 0 18.36 9z"/>'}</svg></button>
-            <button class="phBarRBtn" data-act="wxCharSettings" data-npcid="${esc(contactId)}" title="设置"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg></button>`;
+            <button class="phBarRBtn" data-act="wxCharSettings" data-npcid="${esc(contactId)}" title="设置"><svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>`;
         }catch(e){}
 
         // ✅ 标题：线下模式显示场景名
@@ -12265,7 +12267,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           try{
             var scene = _loadSceneData(contactId);
             var titleEl2 = root.querySelector('[data-ph="appTitle"]');
-            if (titleEl2) titleEl2.textContent = '☕ 线下 · ' + (scene.name || '未命名');
+            if (titleEl2) titleEl2.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ph-accent,#07c160);margin-right:4px;vertical-align:middle;"></span>线下 · ' + esc(scene.name || '未命名');
           }catch(e){}
         }
 
