@@ -3118,6 +3118,123 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   font-size:10px; padding:2px 8px; border-radius:4px;
   border:1px solid rgba(0,0,0,.08); background:rgba(255,255,255,.8); cursor:pointer;
 }
+
+/* === 语音/视频通话 UI === */
+#${ID} .callOverlay{
+  position:absolute; inset:0; z-index:9999;
+  display:flex; flex-direction:column; align-items:center;
+  animation:wxCPFadeIn .25s ease;
+}
+#${ID} .callOverlay.voice-call{
+  background:linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  justify-content:center;
+}
+#${ID} .callOverlay.video-call{
+  background:#000; justify-content:flex-start;
+}
+#${ID} .callAvatarWrap{
+  position:relative; width:96px; height:96px; margin-bottom:16px;
+}
+#${ID} .callAvatar{
+  width:96px; height:96px; border-radius:50%; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  font-size:42px; color:#fff;
+  background:rgba(255,255,255,.12); border:2px solid rgba(255,255,255,.2);
+  box-shadow:0 4px 24px rgba(0,0,0,.3);
+}
+#${ID} .callAvatar img{ width:100%; height:100%; object-fit:cover; }
+#${ID} .callAvatarPulse{
+  position:absolute; inset:-8px; border-radius:50%;
+  border:2px solid rgba(255,255,255,.15);
+  animation:callPulse 2s ease-in-out infinite;
+}
+@keyframes callPulse{
+  0%,100%{ transform:scale(1); opacity:.6; }
+  50%{ transform:scale(1.08); opacity:.2; }
+}
+#${ID} .callAvatarBreath{
+  animation:callBreath 3.5s ease-in-out infinite;
+}
+@keyframes callBreath{
+  0%,100%{ transform:scale(1) translateY(0); }
+  50%{ transform:scale(1.02) translateY(-2px); }
+}
+#${ID} .callName{ font-size:18px; font-weight:600; color:#fff; margin-bottom:4px; }
+#${ID} .callStatus{ font-size:12px; color:rgba(255,255,255,.5); margin-bottom:4px; }
+#${ID} .callTimer{ font-size:14px; color:rgba(255,255,255,.7); font-variant-numeric:tabular-nums; min-height:20px; }
+#${ID} .callTranscript{
+  width:85%; max-height:120px; overflow-y:auto; margin-top:16px;
+  padding:12px 14px; border-radius:14px;
+  background:rgba(255,255,255,.08); backdrop-filter:blur(8px);
+  scrollbar-width:none;
+}
+#${ID} .callTranscript::-webkit-scrollbar{ display:none; }
+#${ID} .callTranscriptLine{
+  font-size:12px; line-height:1.55; margin-bottom:6px; animation:phBubbleIn .2s ease;
+}
+#${ID} .callTranscriptLine.me{ color:rgba(140,200,255,.85); text-align:right; }
+#${ID} .callTranscriptLine.them{ color:rgba(255,255,255,.75); }
+#${ID} .callTranscriptLine.sys{ color:rgba(255,255,255,.35); text-align:center; font-size:11px; font-style:italic; }
+#${ID} .callWave{
+  display:flex; align-items:center; gap:3px; height:24px; margin-top:12px;
+}
+#${ID} .callWave span{
+  width:3px; border-radius:2px; background:rgba(255,255,255,.45);
+  animation:callWaveBar 1.2s ease-in-out infinite;
+}
+#${ID} .callWave span:nth-child(1){ height:8px; animation-delay:0s; }
+#${ID} .callWave span:nth-child(2){ height:16px; animation-delay:.15s; }
+#${ID} .callWave span:nth-child(3){ height:12px; animation-delay:.3s; }
+#${ID} .callWave span:nth-child(4){ height:20px; animation-delay:.1s; }
+#${ID} .callWave span:nth-child(5){ height:10px; animation-delay:.25s; }
+#${ID} .callWave.active span{ background:var(--ph-accent, #07c160); }
+#${ID} .callWave.speaking span{ background:#ff6b6b; }
+@keyframes callWaveBar{
+  0%,100%{ transform:scaleY(1); }
+  50%{ transform:scaleY(1.8); }
+}
+#${ID} .callBtnRow{
+  display:flex; gap:20px; align-items:center; margin-top:32px;
+}
+#${ID} .callBtn{
+  width:52px; height:52px; border-radius:50%; border:none;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; cursor:pointer; transition:transform .1s, opacity .1s;
+  box-shadow:0 4px 12px rgba(0,0,0,.25);
+}
+#${ID} .callBtn:active{ transform:scale(.9); }
+#${ID} .callBtn.hangup{ background:#e74c3c; color:#fff; width:60px; height:60px; font-size:22px; }
+#${ID} .callBtn.mute{ background:rgba(255,255,255,.15); color:#fff; }
+#${ID} .callBtn.mute.active{ background:rgba(255,100,100,.35); }
+#${ID} .callBtn.mode{ background:rgba(255,255,255,.15); color:#fff; font-size:13px; }
+#${ID} .callBtn.mode.active{ background:rgba(100,200,100,.25); }
+#${ID} .callPTT{
+  margin-top:20px; width:72px; height:72px; border-radius:50%; border:3px solid rgba(255,255,255,.3);
+  background:rgba(255,255,255,.1); color:rgba(255,255,255,.7); font-size:11px; font-weight:600;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; text-align:center;
+  transition:all .15s; user-select:none; touch-action:none;
+}
+#${ID} .callPTT.recording{
+  border-color:var(--ph-accent, #07c160); background:rgba(7,193,96,.2);
+  color:#fff; transform:scale(1.08);
+}
+#${ID} .callVideoArea{
+  flex:1; width:100%; position:relative; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(145deg, #1a1a2e, #0f3460);
+}
+#${ID} .callVideoAvatar{
+  width:140px; height:140px; border-radius:50%; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  font-size:64px; color:#fff;
+  background:rgba(255,255,255,.08); border:2px solid rgba(255,255,255,.12);
+  box-shadow:0 8px 32px rgba(0,0,0,.3);
+}
+#${ID} .callVideoAvatar img{ width:100%; height:100%; object-fit:cover; }
+#${ID} .callVideoBottom{
+  width:100%; padding:16px 20px 24px; background:linear-gradient(transparent, rgba(0,0,0,.6));
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+}
 /* offline mode fold */
 #${ID} .wxOfflineFold{
   text-align:center; padding:8px; font-size:11px; color:rgba(20,24,28,.35);
@@ -18224,7 +18341,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         fi.click();
       }
 
-      // ====== 3. 视频通话：模拟通话 UI ======
+      // ====== 3. 语音/视频通话：完整双向语音系统 ======
       function _cpVideoCall(npcId){
         const db = loadContactsDB();
         const npc = findContactById(db, npcId) || { id:npcId, name:String(npcId) };
@@ -18248,47 +18365,340 @@ const npc = _wxGetChatTargetMeta(npcId);
       }
 
       function _cpStartCall(npcId, npc, callType){
-        const startTime = Date.now();
-        const ov = doc.createElement('div');
-        ov.className = 'wxCPOverlay';
-        ov.style.cssText = 'position:absolute;inset:0;z-index:9999;background:linear-gradient(135deg,#1a1a2e,#16213e);display:flex;flex-direction:column;align-items:center;justify-content:center;';
-        ov.innerHTML = `
-          <div style="font-size:48px;margin-bottom:12px;">${npc.avatar||npc.name.charAt(0)}</div>
-          <div style="font-size:16px;color:#fff;font-weight:600;">${esc(npc.name)}</div>
-          <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:4px;" data-el="callStatus">正在呼叫…</div>
-          <div style="font-size:14px;color:rgba(255,255,255,.7);margin-top:8px;" data-el="callTimer" style="display:none;"></div>
-          <button data-act="cpCallEnd" style="margin-top:40px;width:56px;height:56px;border-radius:50%;background:#e74c3c;border:none;color:#fff;font-size:22px;cursor:pointer;">📞</button>
-        `;
+        var startTime = Date.now();
+        var avatarSrc = phoneGetAvatar(npcId);
+        var avatarHtml = avatarSrc
+          ? '<img src="'+avatarSrc+'" style="width:100%;height:100%;object-fit:cover;"/>'
+          : esc(npc.avatar || npc.name.charAt(0));
+        var isVideo = callType === 'video';
+
+        var ov = doc.createElement('div');
+        ov.className = 'callOverlay ' + (isVideo ? 'video-call' : 'voice-call');
+
+        if (isVideo){
+          ov.innerHTML =
+            '<div class="callVideoArea">'
+            + '<div class="callVideoAvatar callAvatarBreath">' + avatarHtml + '</div>'
+            + '<div style="position:absolute;top:14px;left:14px;">'
+            +   '<div class="callName" style="font-size:15px;">' + esc(npc.name) + '</div>'
+            +   '<div class="callStatus" data-el="callStatus">正在呼叫…</div>'
+            +   '<div class="callTimer" data-el="callTimer"></div>'
+            + '</div>'
+            + '<div style="position:absolute;top:14px;right:14px;width:80px;height:106px;border-radius:12px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:24px;color:rgba(255,255,255,.3);">👤</div>'
+            + '</div>'
+            + '<div class="callVideoBottom">'
+            +   '<div class="callTranscript" data-el="callTranscript"></div>'
+            +   '<div class="callWave" data-el="callWave"><span></span><span></span><span></span><span></span><span></span></div>'
+            +   '<div class="callBtnRow">'
+            +     '<button class="callBtn mute" data-el="btnMute" title="静音">🔇</button>'
+            +     '<button class="callBtn mode" data-el="btnMode" title="切换模式">🎙</button>'
+            +     '<button class="callBtn hangup" data-el="btnHangup" title="挂断">📞</button>'
+            +   '</div>'
+            +   '<div class="callPTT" data-el="btnPTT">按住<br>说话</div>'
+            + '</div>';
+        } else {
+          ov.innerHTML =
+            '<div class="callAvatarWrap">'
+            + '<div class="callAvatarPulse"></div>'
+            + '<div class="callAvatar callAvatarBreath">' + avatarHtml + '</div>'
+            + '</div>'
+            + '<div class="callName">' + esc(npc.name) + '</div>'
+            + '<div class="callStatus" data-el="callStatus">正在呼叫…</div>'
+            + '<div class="callTimer" data-el="callTimer"></div>'
+            + '<div class="callWave" data-el="callWave"><span></span><span></span><span></span><span></span><span></span></div>'
+            + '<div class="callTranscript" data-el="callTranscript"></div>'
+            + '<div class="callBtnRow">'
+            +   '<button class="callBtn mute" data-el="btnMute" title="静音">🔇</button>'
+            +   '<button class="callBtn mode" data-el="btnMode" title="切换模式">🎙</button>'
+            +   '<button class="callBtn hangup" data-el="btnHangup" title="挂断">📞</button>'
+            + '</div>'
+            + '<div class="callPTT" data-el="btnPTT">按住<br>说话</div>';
+        }
         root.appendChild(ov);
 
-        const statusEl = ov.querySelector('[data-el="callStatus"]');
-        const timerEl = ov.querySelector('[data-el="callTimer"]');
-        let connected = false;
-        let timerInt = null;
+        // ---- 状态变量 ----
+        var connected = false, ended = false, muted = false;
+        var interactionMode = 'ptt'; // 'ptt' | 'auto'
+        var timerInt = null, connectTime = 0;
+        var recognition = null, isRecording = false;
+        var currentAudio = null, aiProcessing = false;
+        var transcript = [];
 
-        // 模拟接通
-        const connectDelay = setTimeout(()=>{
-          connected = true;
-          if (statusEl) statusEl.textContent = '通话中';
-          timerInt = setInterval(()=>{
-            const sec = Math.floor((Date.now() - startTime - 2000) / 1000);
-            const mm = String(Math.floor(sec/60)).padStart(2,'0');
-            const ss = String(sec%60).padStart(2,'0');
-            if (timerEl) timerEl.textContent = `${mm}:${ss}`;
-          }, 1000);
-        }, 2000);
+        var statusEl = ov.querySelector('[data-el="callStatus"]');
+        var timerEl = ov.querySelector('[data-el="callTimer"]');
+        var transcriptEl = ov.querySelector('[data-el="callTranscript"]');
+        var waveEl = ov.querySelector('[data-el="callWave"]');
+        var pttBtn = ov.querySelector('[data-el="btnPTT"]');
+        var muteBtn = ov.querySelector('[data-el="btnMute"]');
+        var modeBtn = ov.querySelector('[data-el="btnMode"]');
+        var hangupBtn = ov.querySelector('[data-el="btnHangup"]');
 
-        ov.querySelector('[data-act="cpCallEnd"]').addEventListener('click', ()=>{
-          clearTimeout(connectDelay);
-          if (timerInt) clearInterval(timerInt);
-          const dur = connected ? Math.floor((Date.now() - startTime - 2000)/1000) : 0;
-          const durStr = connected ? `${Math.floor(dur/60)}:${String(dur%60).padStart(2,'0')}` : '未接通';
-          ov.remove();
-          _cpSendSpecial(npcId, `[${callType==='video'?'视频':'语音'}通话] ${durStr}`, {
-            type:'videocall', callType, duration:durStr, _logText:`[${callType==='video'?'视频':'语音'}通话] ${durStr}`
+        function setStatus(t){ if(statusEl) statusEl.textContent = t; }
+        function setWave(c){ if(waveEl) waveEl.className = 'callWave'+(c?' '+c:''); }
+        function addLine(role, text){
+          transcript.push({role:role, text:text});
+          if(!transcriptEl) return;
+          var d = doc.createElement('div');
+          d.className = 'callTranscriptLine ' + role;
+          d.textContent = (role==='me'?'🗣 ':'') + text;
+          transcriptEl.appendChild(d);
+          transcriptEl.scrollTop = transcriptEl.scrollHeight;
+        }
+
+        // ---- STT (浏览器语音识别) ----
+        var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        var sttOK = !!SpeechRec;
+
+        function startSTT(onResult){
+          if(!sttOK || ended || muted) return;
+          try{
+            recognition = new SpeechRec();
+            recognition.lang = 'zh-CN';
+            recognition.interimResults = false;
+            recognition.continuous = false;
+            recognition.maxAlternatives = 1;
+            recognition.onresult = function(ev){
+              var txt = '';
+              for(var i=ev.resultIndex;i<ev.results.length;i++){
+                if(ev.results[i].isFinal) txt += ev.results[i][0].transcript;
+              }
+              txt = txt.trim();
+              if(txt && onResult) onResult(txt);
+            };
+            recognition.onerror = function(ev){
+              isRecording = false; setWave('');
+              if(pttBtn) pttBtn.classList.remove('recording');
+              if(ev.error==='no-speech' && interactionMode==='auto' && connected && !ended){
+                setTimeout(function(){ startAutoListen(); }, 600);
+              }
+            };
+            recognition.onend = function(){
+              isRecording = false; setWave('');
+              if(pttBtn) pttBtn.classList.remove('recording');
+            };
+            recognition.start();
+            isRecording = true; setWave('speaking');
+            if(pttBtn) pttBtn.classList.add('recording');
+          }catch(e){ isRecording = false; }
+        }
+        function stopSTT(){
+          try{ if(recognition) recognition.stop(); }catch(e){}
+          isRecording = false; setWave('');
+          if(pttBtn) pttBtn.classList.remove('recording');
+        }
+
+        // ---- AI 回复 + TTS 播放 ----
+        async function processUserSaid(text){
+          if(!text || ended || aiProcessing) return;
+          addLine('me', text);
+          aiProcessing = true;
+          setStatus('对方思考中…'); setWave('active');
+          try{
+            var recentMsgs = _getRecentMessagesForAPI(npcId, 6);
+            // 追加通话中的对话
+            for(var ti=0; ti<transcript.length; ti++){
+              var tt = transcript[ti];
+              if(tt.role==='me') recentMsgs.push({role:'user',content:tt.text});
+              else if(tt.role==='them') recentMsgs.push({role:'assistant',content:tt.text});
+            }
+
+            var cdb = loadContactsDB();
+            var npcInfo = findContactById(cdb, npcId) || {name:String(npcId),profile:''};
+            var bhv = (typeof _loadCharBehavior==='function') ? _loadCharBehavior(npcId) : {};
+
+            var sysP = '你正在和用户进行'+(isVideo?'视频':'语音')+'通话。你扮演的是「'+esc(npcInfo.name)+'」。'
+              + (npcInfo.profile ? '\n角色简介：'+npcInfo.profile.slice(0,200) : '')
+              + (bhv.wearing ? '\n当前穿着：'+bhv.wearing : '')
+              + (bhv.doing ? '\n正在做：'+bhv.doing : '')
+              + '\n\n【通话回复要求】'
+              + '\n像真实通话一样自然口语化，每次1~3句简短回复。'
+              + '\n可以用语气词（嗯、啊、哈哈），不要用括号动作描述，不要用表情符号。'
+              + '\n直接说话，不加标记或前缀。';
+
+            var result = await PhoneAI.chat({
+              system: sysP,
+              messages: recentMsgs.slice(-12),
+              temperature: 0.88, maxTokens: 150, timeout: 20
+            });
+
+            if(ended) return;
+            if(result.ok && result.data){
+              var reply = String(result.data||'').trim()
+                .replace(/<thinking>[\s\S]*?<\/thinking>/gi,'')
+                .replace(/<think>[\s\S]*?<\/think>/gi,'')
+                .replace(/\[.*?\]/g,'').replace(/（.*?）/g,'').trim();
+              if(!reply) reply = '嗯…';
+
+              addLine('them', reply);
+              setStatus('通话中');
+
+              // TTS
+              var va = loadVoiceApi();
+              if(va && va.apiUrl && va.apiKey){
+                setWave('active');
+                try{
+                  var ttsR = await _callTTSApi(reply, npcId);
+                  if(ttsR.ok && !ended) await _playCallAudio(ttsR.audioUrl);
+                }catch(e){}
+              } else {
+                setWave('active');
+                await new Promise(function(r){ setTimeout(r, Math.min(3000, reply.length*120+500)); });
+              }
+            } else {
+              addLine('sys', '（连接不稳定…）');
+            }
+          }catch(e){
+            if(!ended) addLine('sys', '（信号不好…）');
+          }finally{
+            aiProcessing = false;
+            if(!ended){
+              setStatus('通话中'); setWave('');
+              if(interactionMode==='auto' && connected) setTimeout(function(){ startAutoListen(); }, 400);
+            }
+          }
+        }
+
+        function _playCallAudio(url){
+          return new Promise(function(resolve){
+            if(ended){ resolve(); return; }
+            try{
+              if(currentAudio){ currentAudio.pause(); currentAudio=null; }
+              currentAudio = new Audio(url);
+              currentAudio.onended = function(){ currentAudio=null; resolve(); };
+              currentAudio.onerror = function(){ currentAudio=null; resolve(); };
+              currentAudio.play().catch(function(){ resolve(); });
+            }catch(e){ resolve(); }
           });
+        }
+
+        function startAutoListen(){
+          if(ended||aiProcessing||isRecording||muted||!connected) return;
+          setStatus('正在听你说…');
+          startSTT(function(text){ processUserSaid(text); });
+        }
+
+        // ---- 模式切换 UI ----
+        function updateModeUI(){
+          if(interactionMode==='ptt'){
+            if(pttBtn) pttBtn.style.display='flex';
+            if(modeBtn){ modeBtn.innerHTML='🎙'; modeBtn.classList.remove('active'); }
+          } else {
+            if(pttBtn) pttBtn.style.display='none';
+            if(modeBtn){ modeBtn.innerHTML='🔄'; modeBtn.classList.add('active'); }
+          }
+        }
+
+        // ---- PTT 按住说话 ----
+        function pttDown(ev){ ev.preventDefault(); if(!connected||ended||aiProcessing||muted) return; setStatus('正在听你说…'); startSTT(function(t){ processUserSaid(t); }); }
+        function pttUp(ev){ ev.preventDefault(); stopSTT(); }
+        if(pttBtn){
+          pttBtn.addEventListener('mousedown', pttDown);
+          pttBtn.addEventListener('touchstart', pttDown, {passive:false});
+          pttBtn.addEventListener('mouseup', pttUp);
+          pttBtn.addEventListener('mouseleave', pttUp);
+          pttBtn.addEventListener('touchend', pttUp);
+          pttBtn.addEventListener('touchcancel', pttUp);
+        }
+
+        // ---- 按钮事件 ----
+        if(modeBtn) modeBtn.addEventListener('click', function(){
+          if(!connected||ended) return;
+          if(interactionMode==='ptt'){
+            interactionMode='auto'; stopSTT(); updateModeUI();
+            if(!aiProcessing) startAutoListen();
+          } else {
+            interactionMode='ptt'; stopSTT(); updateModeUI(); setStatus('通话中');
+          }
         });
+        if(muteBtn) muteBtn.addEventListener('click', function(){
+          muted=!muted;
+          muteBtn.classList.toggle('active', muted);
+          muteBtn.textContent = muted ? '🔈' : '🔇';
+          if(muted){ stopSTT(); setStatus('已静音'); }
+          else { setStatus('通话中'); if(interactionMode==='auto'&&!aiProcessing) startAutoListen(); }
+        });
+
+        // ---- 模拟接通 ----
+        var connectDelay = setTimeout(function(){
+          if(ended) return;
+          connected = true; connectTime = Date.now();
+          setStatus('通话中');
+          addLine('sys', '通话已接通');
+          if(!sttOK) addLine('sys', '浏览器不支持语音识别');
+          timerInt = setInterval(function(){
+            var s = Math.floor((Date.now()-connectTime)/1000);
+            if(timerEl) timerEl.textContent = String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+          }, 1000);
+          updateModeUI();
+          // 对方先开口
+          setTimeout(function(){
+            if(ended) return;
+            processUserSaid('（用户拨打了'+(isVideo?'视频':'语音')+'通话，对方接起了电话）');
+          }, 300);
+        }, 1800 + Math.random()*1200);
+
+        // ---- 挂断 ----
+        function doHangup(){
+          if(ended) return; ended = true;
+          clearTimeout(connectDelay);
+          if(timerInt) clearInterval(timerInt);
+          stopSTT();
+          if(currentAudio){ try{currentAudio.pause();}catch(e){} currentAudio=null; }
+          try{ PhoneAI.abort(); }catch(e){}
+
+          var dur = connected ? Math.floor((Date.now()-connectTime)/1000) : 0;
+          var durStr = connected ? Math.floor(dur/60)+':'+String(dur%60).padStart(2,'0') : '未接通';
+
+          _cpSendSpecial(npcId, '['+(isVideo?'视频':'语音')+'通话] '+durStr, {
+            type:'videocall', callType:callType, duration:durStr,
+            _logText:'['+(isVideo?'视频':'语音')+'通话] '+durStr
+          });
+
+          // 生成通话纪要
+          if(connected && transcript.filter(function(t){return t.role!=='sys';}).length >= 2){
+            _generateCallSummary(npcId, npc, callType, durStr, transcript);
+          }
+          ov.remove();
+        }
+        if(hangupBtn) hangupBtn.addEventListener('click', doHangup);
+        updateModeUI();
       }
+
+      // ---- 通话纪要生成 ----
+      async function _generateCallSummary(npcId, npc, callType, durStr, transcript){
+        try{
+          var dialogText = transcript.filter(function(t){return t.role!=='sys';}).map(function(t){
+            return (t.role==='me'?'用户':npc.name)+': '+t.text;
+          }).join('\n');
+          if(!dialogText.trim()) return;
+
+          var result = await PhoneAI.chat({
+            system: '你是一个通话记录员。请用第三人称视角简洁总结这通'+(callType==='video'?'视频':'语音')+'通话内容，包括双方聊了什么、重要信息、情绪氛围。2-4句话，不要列表格式。',
+            messages: [{ role:'user', content:'通话时长：'+durStr+'\n通话内容：\n'+dialogText.slice(0,2000) }],
+            temperature: 0.5, maxTokens: 200, channel: 'proactive', timeout: 30
+          });
+
+          if(result.ok && result.data){
+            var summary = String(result.data||'').trim()
+              .replace(/<thinking>[\s\S]*?<\/thinking>/gi,'')
+              .replace(/<think>[\s\S]*?<\/think>/gi,'').trim();
+            if(summary){
+              pushLog(npcId, 'system', '📞 通话纪要：'+summary, {type:'call_summary', callType:callType, duration:durStr});
+              var msgsEl = root.querySelector('[data-ph="chatMsgs"]');
+              if(msgsEl){
+                var sumDiv = doc.createElement('div');
+                sumDiv.className = 'wxCBTime';
+                sumDiv.style.cssText = 'background:rgba(0,0,0,.03);border-radius:10px;padding:8px 12px;margin:4px 10px;font-size:11px;color:rgba(20,24,28,.55);line-height:1.55;text-align:left;';
+                sumDiv.textContent = '📞 通话纪要：'+summary;
+                msgsEl.appendChild(sumDiv);
+                requestAnimationFrame(function(){ msgsEl.scrollTop = msgsEl.scrollHeight; });
+              }
+            }
+          }
+        }catch(e){}
+      }
+
+
 
       // ====== 4. 位置：模拟发送虚拟位置 ======
       function _cpLocation(npcId){
