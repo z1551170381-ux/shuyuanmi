@@ -5018,6 +5018,92 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           if (act === 'wxCreateGroupConfirm'){ _confirmCreateGroup(); return; }
           if (act === 'wxCreateGroupCancel'){ root.querySelectorAll('.wxConfirmOverlay').forEach(o=>o.remove()); return; }
           if (act === 'wxPinChat'){ _togglePinChat(t.getAttribute('data-npcid')); return; }
+          // ---- 聊天记录 JSON 导出 ----
+          if (act === 'wxExportChatLog'){
+            var _expNid = t.getAttribute('data-npcid') || state.chatTarget;
+            try{
+              var _expLogs = loadLogs();
+              var _expArr = _safeArr(_expLogs.map && _expLogs.map[String(_expNid)]);
+              if (!_expArr.length){ try{toast('该角色暂无聊天记录');}catch(e){} return; }
+              var _expDb = loadContactsDB();
+              var _expNpc = findContactById(_expDb, _expNid) || { name:String(_expNid) };
+              var _expData = {
+                v:1,
+                exportedAt: Date.now(),
+                npcId: _expNid,
+                npcName: _expNpc.name || '',
+                totalMessages: _expArr.length,
+                messages: _expArr
+              };
+              var _expJson = JSON.stringify(_expData, null, 2);
+              var _expBlob = new Blob([_expJson], {type:'application/json'});
+              var _expUrl = URL.createObjectURL(_expBlob);
+              var _expA = doc.createElement('a');
+              _expA.href = _expUrl;
+              _expA.download = 'chat_' + String(_expNpc.name||_expNid).replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g,'_') + '_' + new Date().toISOString().slice(0,10) + '.json';
+              doc.body.appendChild(_expA); _expA.click();
+              setTimeout(function(){ doc.body.removeChild(_expA); URL.revokeObjectURL(_expUrl); }, 200);
+              try{toast('已导出 ' + _expArr.length + ' 条消息');}catch(e){}
+            }catch(e){ try{toast('导出失败: '+e.message);}catch(e2){} }
+            return;
+          }
+          // ---- 聊天记录 JSON 导入 ----
+          if (act === 'wxImportChatLog'){
+            var _impNid = t.getAttribute('data-npcid') || state.chatTarget;
+            var _impFi = doc.createElement('input');
+            _impFi.type = 'file'; _impFi.accept = '.json,application/json'; _impFi.style.display = 'none';
+            _impFi.addEventListener('change', function(){
+              var file = _impFi.files && _impFi.files[0];
+              if (!file) return;
+              var reader = new FileReader();
+              reader.onload = function(){
+                try{
+                  var data = JSON.parse(reader.result);
+                  var msgs = Array.isArray(data.messages) ? data.messages : (Array.isArray(data) ? data : null);
+                  if (!msgs || !msgs.length){ try{toast('文件中没有找到消息数据');}catch(e){} return; }
+                  // 弹确认框
+                  var _impInner = '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">📥 导入聊天记录</div>'
+                    + '<div style="font-size:12px;color:rgba(20,24,28,.6);line-height:1.6;margin-bottom:12px;">'
+                    + '文件包含 <b>' + msgs.length + '</b> 条消息'
+                    + (data.npcName ? '（角色：' + esc(data.npcName) + '）' : '')
+                    + '<br>请选择导入方式：</div>'
+                    + '<div style="display:flex;flex-direction:column;gap:8px;">'
+                    + '<button data-act="wxImportMerge" style="padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.92);font-size:13px;cursor:pointer;color:rgba(20,24,28,.72);text-align:left;">🔀 <b>合并</b><br><span style="font-size:11px;color:rgba(20,24,28,.4);">追加到现有记录末尾，不丢失已有消息</span></button>'
+                    + '<button data-act="wxImportReplace" style="padding:10px;border-radius:10px;border:1px solid rgba(220,53,69,.15);background:rgba(220,53,69,.04);font-size:13px;cursor:pointer;color:rgba(220,53,69,.8);text-align:left;">🔄 <b>覆盖</b><br><span style="font-size:11px;color:rgba(220,53,69,.4);">清空现有记录，用文件内容替换</span></button>'
+                    + '<button data-act="wxImportCancel" style="padding:8px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.92);font-size:12px;cursor:pointer;color:rgba(20,24,28,.45);text-align:center;">取消</button>'
+                    + '</div>';
+                  var _impOv = _cpShowOverlay(_impInner);
+                  _impOv.addEventListener('click', function(ev2){
+                    var t2 = ev2.target;
+                    while(t2 && t2 !== _impOv){ if(t2.getAttribute && t2.getAttribute('data-act')) break; t2 = t2.parentElement; }
+                    if (!t2 || t2 === _impOv) return;
+                    var a2 = t2.getAttribute('data-act');
+                    if (a2 === 'wxImportCancel'){ _impOv.remove(); return; }
+                    if (a2 === 'wxImportMerge' || a2 === 'wxImportReplace'){
+                      var logs2 = loadLogs();
+                      logs2.map ||= {};
+                      var nidStr = String(_impNid);
+                      if (a2 === 'wxImportReplace'){
+                        logs2.map[nidStr] = msgs;
+                      } else {
+                        logs2.map[nidStr] = (logs2.map[nidStr] || []).concat(msgs);
+                      }
+                      saveLogs(logs2);
+                      _impOv.remove();
+                      try{toast((a2==='wxImportReplace'?'已覆盖':'已合并') + '，共 ' + logs2.map[nidStr].length + ' 条');}catch(e){}
+                      // 刷新聊天设置页
+                      _renderCharSettingsPage(_impNid);
+                    }
+                  });
+                }catch(e){ try{toast('JSON 解析失败: '+e.message);}catch(e2){} }
+              };
+              reader.readAsText(file);
+              _impFi.remove();
+            });
+            doc.body.appendChild(_impFi);
+            _impFi.click();
+            return;
+          }
           if (act === 'wxDelChat'){ _confirmDeleteChat(t.getAttribute('data-npcid')); return; }
           if (act === 'wxDelChatOk'){ _doDeleteChat(t.getAttribute('data-npcid')); return; }
           if (act === 'wxDelChatCancel'){ root.querySelectorAll('.wxConfirmOverlay').forEach(o=>o.remove()); return; }
@@ -7683,8 +7769,8 @@ function getNPCCandidatesFromRecentMainChat(){
           for (var ek in extra){ if (extra.hasOwnProperty(ek)) entry[ek] = extra[ek]; }
         }
         logs.map[id].push(entry);
-        // 控制长度（避免发烫/爆存储）
-        if (logs.map[id].length > 200) logs.map[id] = logs.map[id].slice(-200);
+        // 控制长度（安全上限，保留全部对话）
+        if (logs.map[id].length > 10000) logs.map[id] = logs.map[id].slice(-10000);
         saveLogs(logs);
       }
       function getLog(npcId){
@@ -12716,6 +12802,25 @@ const npc = _wxGetChatTargetMeta(npcId);
                 <div class="wxCSName">
                   主动消息调试
                   <div style="font-size:11px;color:rgba(20,24,28,.4);margin-top:1px;">查看每日保底、失败原因、测试按钮</div>
+                </div>
+                <div class="wxCSArrow">›</div>
+              </div>
+            </div>
+
+            <div class="wxCSGroup" style="margin-top:12px;">
+              <div class="wxCSItem" data-act="wxExportChatLog" data-npcid="${esc(contactId)}">
+                <div class="wxCSIco">${_phFlatIcon('📤')}</div>
+                <div class="wxCSName">
+                  导出聊天记录
+                  <div style="font-size:11px;color:rgba(20,24,28,.4);margin-top:1px;">导出该角色全部消息为 JSON</div>
+                </div>
+                <div class="wxCSArrow">›</div>
+              </div>
+              <div class="wxCSItem" data-act="wxImportChatLog" data-npcid="${esc(contactId)}">
+                <div class="wxCSIco">${_phFlatIcon('📥')}</div>
+                <div class="wxCSName">
+                  导入聊天记录
+                  <div style="font-size:11px;color:rgba(20,24,28,.4);margin-top:1px;">从 JSON 恢复/合并消息</div>
                 </div>
                 <div class="wxCSArrow">›</div>
               </div>
@@ -22548,7 +22653,7 @@ ${todoHint}
 // ========== 主题风格输入框（替代 prompt()）==========
 function _showThemedInput(title, defaultVal, onOk){
   var inputOv = doc.createElement('div');
-  inputOv.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;';
+  inputOv.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px;';
   inputOv.innerHTML = '<div style="width:min(88vw,320px);background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-radius:16px;padding:18px;box-shadow:0 8px 32px rgba(0,0,0,.18);">'
     + '<div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.8);margin-bottom:10px;">'+esc(title||'输入')+'</div>'
     + '<input data-el="thInput" type="text" value="'+esc(defaultVal||'')+'" style="width:100%;padding:10px 12px;border:1px solid rgba(0,0,0,.1);border-radius:10px;font-size:14px;outline:none;box-sizing:border-box;background:rgba(255,255,255,.9);color:rgba(20,24,28,.85);" />'
@@ -22736,13 +22841,13 @@ function _openTimelineViewer(npcId){
     if (!entry) return;
     var curText = entry.userEdited || entry.displayText || '';
     var editOv = doc.createElement('div');
-    editOv.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;';
-    editOv.innerHTML = '<div style="width:min(92vw,380px);max-height:80vh;background:#fff;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;">'
-      + '<div style="font-size:13px;font-weight:600;">编辑 #'+(entry.range[0]+1)+'~'+(entry.range[1]+1)+'</div>'
-      + '<textarea data-el="editTA" style="width:100%;height:200px;border:1px solid rgba(0,0,0,.12);border-radius:8px;padding:8px;font-size:12px;line-height:1.6;resize:vertical;box-sizing:border-box;">'+esc(curText)+'</textarea>'
-      + '<div style="display:flex;gap:6px;justify-content:flex-end;">'
-      + '<button data-act="editCancel" style="padding:6px 14px;border-radius:8px;border:1px solid rgba(0,0,0,.1);background:#fff;font-size:12px;cursor:pointer;">取消</button>'
-      + '<button data-act="editSave" style="padding:6px 14px;border-radius:8px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:12px;cursor:pointer;">保存</button>'
+    editOv.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px;';
+    editOv.innerHTML = '<div style="width:min(92vw,360px);max-height:78vh;background:rgba(255,255,255,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.18);">'
+      + '<div style="font-size:14px;font-weight:600;color:rgba(20,24,28,.82);">编辑 #'+(entry.range[0]+1)+'~'+(entry.range[1]+1)+'</div>'
+      + '<textarea data-el="editTA" style="width:100%;height:200px;border:1px solid rgba(0,0,0,.1);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.65;resize:vertical;box-sizing:border-box;background:rgba(255,255,255,.9);color:rgba(20,24,28,.82);font-family:inherit;outline:none;">'+esc(curText)+'</textarea>'
+      + '<div style="display:flex;gap:8px;justify-content:flex-end;">'
+      + '<button data-act="editCancel" style="padding:8px 18px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.92);font-size:13px;cursor:pointer;color:rgba(20,24,28,.6);">取消</button>'
+      + '<button data-act="editSave" style="padding:8px 18px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(7,193,96,.3);">保存</button>'
       + '</div></div>';
     doc.body.appendChild(editOv);
     var ta = editOv.querySelector('[data-el="editTA"]');
