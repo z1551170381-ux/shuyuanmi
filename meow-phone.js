@@ -12262,6 +12262,8 @@ ${lines}
             renderMoments(container);
             // ★ 触发NPC来互动（评论/点赞用户的新动态）
             _queueNpcMomentReactions(data.posts[0].id);
+            // ★ 最近聊天的NPC可能在私聊里提到朋友圈
+            _triggerMomentsChatMsg(data.posts[0].content);
           });
         }catch(e){
           try{ toast('弹窗打开失败'); }catch(_){}
@@ -12450,6 +12452,73 @@ ${lines}
         });
       }
 
+      // ★ 最近聊天的NPC看到朋友圈后在私聊里提
+      function _triggerMomentsChatMsg(postContent){
+        try{
+          var cfg = PhoneAI._getConfig();
+          if(!cfg.endpoint || !cfg.key) return;
+          var threads = loadThreads();
+          var threadList = _safeArr(threads.list);
+          if(!threadList.length) return;
+          var myN = (phoneLoadSettings()&&phoneLoadSettings().phoneName)||'我';
+
+          // 找最近聊过天的NPC（排除自己和系统）
+          var recentNpc = null;
+          var now = Date.now();
+          for(var i=0; i<threadList.length; i++){
+            var th = threadList[i];
+            if(!th.id || th.id==='我' || th.id.indexOf('sms_')===0 || th.id.indexOf('group_')===0) continue;
+            if(th.lastTime && (now - th.lastTime) < 86400000*2){ // 2天内聊过
+              recentNpc = th;
+              break;
+            }
+          }
+          if(!recentNpc) return;
+
+          // 30%概率触发（不要每次都来）
+          if(Math.random() > 0.3) return;
+
+          var npcName = recentNpc.name || recentNpc.id;
+          console.log('[Moments] 触发私聊提醒, NPC:', npcName);
+
+          // 30~60秒后发私聊消息
+          setTimeout(async function(){
+            try{
+              var userContent = '你是"'+npcName+'"，你和用户"'+myN+'"正在聊天。你发现'+myN+'刚发了一条朋友圈："'+(postContent||'').slice(0,80)+'"。\n'
+                + '请用'+npcName+'的口吻写一条私聊消息，调侃/吐槽/关心对方发朋友圈这件事（不超过25字）。\n'
+                + '参考风格：消息不回，倒是发朋友圈了~ / 又在朋友圈装文艺 / 看到你朋友圈了，大半夜不睡觉 / 你朋友圈说的啥意思\n'
+                + '只输出消息文字，不加引号。';
+              var res = await PhoneAI.chat({
+                system: '只输出一条私聊消息，不加引号前缀。',
+                messages: [{role:'user', content:userContent}],
+                maxTokens: 60, temperature: 0.92,
+                channel: 'proactive', timeout: 20
+              });
+              if(res.ok && res.data){
+                var msgText = String(res.data).replace(/^["'「]|["'」]$/g,'').replace(/^\s*\S+[:：]\s*/,'').trim().slice(0,60);
+                if(msgText){
+                  // 写入聊天记录
+                  pushLog(recentNpc.id, 'them', msgText);
+                  bumpThread(recentNpc.id, { lastMsg:msgText, lastTime:Date.now(), unread:(recentNpc.unread||0)+1 });
+                  console.log('[Moments] '+npcName+' 私聊:', msgText.slice(0,20));
+                  try{ toast('💬 '+npcName+': '+msgText.slice(0,15)); }catch(e){}
+                  // 如果正在看这个人的聊天，刷新气泡
+                  if(state.chatTarget === recentNpc.id){
+                    var msgsEl = root.querySelector('[data-ph="chatMsgs"]');
+                    if(msgsEl){
+                      var db = loadContactsDB();
+                      var npc = findContactById(db, recentNpc.id) || {id:recentNpc.id, name:npcName};
+                      _wxAppendBubble(msgsEl, npc, 'them', msgText, Date.now());
+                      requestAnimationFrame(function(){ msgsEl.scrollTop = msgsEl.scrollHeight; });
+                    }
+                  }
+                }
+              }
+            }catch(e){ console.error('[Moments] 私聊提醒错:', e); }
+          }, 30000 + Math.random()*30000); // 30~60秒
+        }catch(e){}
+      }
+
       /* ========== Moments：NPC后台排队互动 ========== */
       // ★ 用户发新动态后，NPC自动来点赞/评论
       // ★ 朋友圈NPC互动：即时点赞 + 一次API批量生成评论
@@ -12495,18 +12564,17 @@ ${lines}
           var post = d.posts.find(function(p){return p.id===mid;});
           if(!post){ console.log('[Moments] 帖子不存在'); return; }
           var names = npcs.map(function(n){return n.name;});
-          // 用简单的 name:comment 格式，比JSON更不容易被截断
+
+          // 每人单独一行的prompt，更明确
+          var exampleLines = names.map(function(n){return n+'|评论内容';}).join('\n');
           var userContent = '用户"'+myN+'"发了朋友圈："'+(post.content||'').slice(0,100)+'"\n\n'
-            + '请为以下每人各写一条简短评论（像真人朋友圈，每条不超过15字）：\n'
-            + names.join('、')+'\n\n'
-            + '格式要求（每行一个，严格按此格式）：\n'
-            + names[0]+':评论内容\n'
-            + (names.length>1 ? names[1]+':评论内容\n' : '')
-            + (names.length>2 ? names[2]+':评论内容' : '');
+            + '请为以下每个人各写一条简短评论（像真人朋友圈，每条10-20字），每行格式：名字|评论\n\n'
+            + '示例格式：\n' + exampleLines + '\n\n'
+            + '现在请输出（每行一个，用|分隔名字和评论）：';
 
           console.log('[Moments] 发送批量评论请求, NPC:', names.join(','));
           var res = await PhoneAI.chat({
-            system: '为每个朋友写一条朋友圈评论。严格按"名字:评论"格式，每行一个。不加引号、编号、多余文字。',
+            system: '为每个人写朋友圈评论。严格每行一个，格式：名字|评论。不加编号引号多余文字。',
             messages: [{role:'user', content:userContent}],
             maxTokens: 300,
             temperature: 0.92,
@@ -12517,42 +12585,60 @@ ${lines}
           console.log('[Moments] API返回:', res.ok, String(res.data||res.error||'').slice(0,200));
           if(!res.ok || !res.data){ console.log('[Moments] API失败:', res.error); return; }
 
-          // 解析 name:comment 格式（每行一个）
           var raw = String(res.data).trim();
           var comments = [];
 
-          // 先尝试JSON（万一模型返回JSON）
+          // 先尝试JSON
           try{
             var jsonMatch = raw.match(/\[[\s\S]*\]/);
             if(jsonMatch){
               var arr = JSON.parse(jsonMatch[0]);
-              if(Array.isArray(arr) && arr.length){
-                arr.forEach(function(item){
-                  if(item.name && item.comment) comments.push({name:item.name, text:item.comment});
-                });
-              }
+              if(Array.isArray(arr)) arr.forEach(function(item){
+                if(item.name && item.comment) comments.push({name:item.name, text:item.comment});
+              });
             }
           }catch(e){}
 
-          // 再尝试 name:comment 格式
+          // 尝试 name|comment 或 name:comment 或 name：comment 格式
           if(!comments.length){
+            // 先按换行分割
             var lines = raw.split(/\n/).map(function(l){return l.trim();}).filter(Boolean);
             lines.forEach(function(line){
-              // 匹配 "名字:评论" 或 "名字：评论"
-              var m = line.match(/^(.+?)[：:]\s*(.+)$/);
+              var m = line.match(/^[\d.、\-\s]*(.+?)[|｜：:]\s*(.+)$/);
               if(m){
-                var name = m[1].replace(/^[\d.、\-\s]+/,'').trim(); // 去掉编号
+                var name = m[1].trim();
                 var text = m[2].replace(/^["'「]|["'」]$/g,'').trim();
                 if(name && text && text.length < 80) comments.push({name:name, text:text});
               }
             });
           }
 
-          console.log('[Moments] 解析到', comments.length, '条评论:', comments.map(function(c){return c.name+':'+c.text.slice(0,10);}).join('; '));
+          // 如果还不够，尝试用已知NPC名字从文本中提取
+          if(comments.length < names.length){
+            names.forEach(function(n){
+              if(comments.some(function(c){return c.name===n;})) return; // 已有
+              // 在raw中找 "名字:xxx" 或 "名字|xxx" 模式
+              var patterns = [
+                new RegExp(n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[|｜：:]\\s*([^\\n|｜]+)'),
+                new RegExp(n.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*[,，]?\\s*([^\\n]{2,25})')
+              ];
+              for(var pi=0; pi<patterns.length; pi++){
+                var m = raw.match(patterns[pi]);
+                if(m && m[1]){
+                  var txt = m[1].replace(/^["'「]|["'」]$/g,'').trim();
+                  if(txt.length >= 2 && txt.length < 60){
+                    comments.push({name:n, text:txt});
+                    break;
+                  }
+                }
+              }
+            });
+          }
 
+          console.log('[Moments] 解析到', comments.length, '条评论:', comments.map(function(c){return c.name+':'+c.text.slice(0,15);}).join('; '));
           if(!comments.length){ console.log('[Moments] 解析失败, raw:', raw.slice(0,200)); return; }
 
-          // 错开时间写入评论（模拟真人逐条出现）
+          // 错开时间写入评论
           comments.forEach(function(c, i){
             setTimeout(function(){
               try{
@@ -12560,7 +12646,6 @@ ${lines}
                 var p2 = d2.posts.find(function(p){return p.id===mid;});
                 if(!p2) return;
                 if(!Array.isArray(p2.comments)) p2.comments = [];
-                // 检查是否已存在同名评论（避免重复）
                 var exists = p2.comments.some(function(ec){return ec.name===c.name && ec.text===c.text;});
                 if(exists) return;
                 p2.comments.push({name:c.name, text:c.text.slice(0,60), time:Date.now(), replyTo:''});
@@ -12569,7 +12654,7 @@ ${lines}
                 try{ toast('💬 '+c.name+': '+c.text.slice(0,12)); }catch(e){}
                 _momRefreshUI();
               }catch(e){}
-            }, i * (4000 + Math.random()*3000)); // 每条间隔4~7秒
+            }, i * (4000 + Math.random()*3000));
           });
         }catch(e){ console.error('[Moments] 批量评论错误:', e); }
       }
