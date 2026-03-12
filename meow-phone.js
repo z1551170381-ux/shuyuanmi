@@ -3060,16 +3060,8 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   padding:16px 18px;
   scrollbar-width:none !important;
   overflow-y:auto; -webkit-overflow-scrolling:touch;
-  position:relative;
 }
 #${ID} .wxOfflineWrap::-webkit-scrollbar{ width:0 !important; display:none !important; }
-/* 线下背景图层：fixed不随内容滚动 */
-#${ID} .wxOfflineBgLayer{
-  position:absolute; inset:0; z-index:0;
-  background-size:cover; background-position:center; background-repeat:no-repeat;
-  pointer-events:none;
-}
-#${ID} .wxOfflineWrap > *{ position:relative; z-index:1; }
 #${ID} .wxOfflineParagraph{
   font-size:14px; line-height:1.9; color:rgba(46,38,26,.82);
   margin-bottom:14px; text-indent:0; position:relative;
@@ -12691,11 +12683,10 @@ const npc = _wxGetChatTargetMeta(npcId);
         if (_chatMode === 'offline'){
           var sceneData = _loadSceneData(contactId);
           var offlineBgUrl = sceneData.bgImage || charEx.offlineBg || charEx.chatBg || '';
+          var offlineBgStyle = offlineBgUrl ? `background-image:url('${offlineBgUrl.replace(/'/g,"\\'")}');background-size:cover;background-position:center;` : '';
           body.innerHTML = `
             <div class="wxChatDetailWrap">
-              <div class="wxChatMsgs wxOfflineWrap" data-ph="chatMsgs">
-                ${offlineBgUrl ? '<div class="wxOfflineBgLayer" style="background-image:url(\''+offlineBgUrl.replace(/'/g,"\\'")+'\');"></div>' : ''}
-              </div>
+              <div class="wxChatMsgs wxOfflineWrap" data-ph="chatMsgs" style="${offlineBgStyle}"></div>
               <div class="wxChatInputBar wxOfflineInputBar">
                 <button class="wxChatExBtn wxOffSceneBtn" data-act="wxSceneEdit" data-npcid="${esc(contactId)}">☕</button>
                 <textarea rows="1" placeholder="描述你的行动…" data-ph="chatInput" inputmode="text" enterkeyhint="send" autocomplete="off"></textarea>
@@ -22982,17 +22973,13 @@ function _openSceneEditor(npcId){
     try{
       var msgsEl = root.querySelector('[data-ph="chatMsgs"]');
       if (msgsEl){
-        var bgLayer = msgsEl.querySelector('.wxOfflineBgLayer');
         var bgUrl = newScene.bgImage || (_loadCharExtra(npcId).offlineBg) || (_loadCharExtra(npcId).chatBg) || '';
         if (bgUrl){
-          if (!bgLayer){
-            bgLayer = doc.createElement('div');
-            bgLayer.className = 'wxOfflineBgLayer';
-            msgsEl.insertBefore(bgLayer, msgsEl.firstChild);
-          }
-          bgLayer.style.backgroundImage = "url('" + bgUrl + "')";
-        } else if (bgLayer){
-          bgLayer.remove();
+          msgsEl.style.backgroundImage = "url('" + bgUrl + "')";
+          msgsEl.style.backgroundSize = 'cover';
+          msgsEl.style.backgroundPosition = 'center';
+        } else {
+          msgsEl.style.backgroundImage = '';
         }
       }
     }catch(e){}
