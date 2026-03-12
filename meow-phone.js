@@ -12381,28 +12381,33 @@ ${lines}
             saveMoments(data);
             renderMoments(container);
 
-            // AI自动回复：帖主不是"我"时，1~2分钟后回复
-            if(post.name && post.name !== myName && post.name !== '我'){
+            // AI自动回复：被回复的人 或 帖主 回复用户
+            var replyFrom = replyTo || (post.name !== myName && post.name !== '我' ? post.name : '');
+            if(replyFrom){
+              console.log('[Moments] 触发回复, 来自:', replyFrom, ', 用户说:', txt.slice(0,20));
               setTimeout(async function(){
                 try{
                   var cfg2 = PhoneAI._getConfig();
                   if(!cfg2.endpoint || !cfg2.key) return;
-                  var userContent = '你是"'+post.name+'"。用户"'+myName+'"在你的朋友圈评论了："'+txt+'"。用'+post.name+'口吻回复（不超过25字，不加引号）。只输出回复。';
-                  var res = await PhoneAI.chat({ system:'只输出回复文字。', messages:[{role:'user',content:userContent}], maxTokens:50, temperature:0.9, channel:'proactive', timeout:25 });
-                  console.log('[Moments] 帖主回复:', res.ok, String(res.data||res.error||'').slice(0,50));
+                  var userContent = '你是"'+replyFrom+'"。用户"'+myName+'"在朋友圈'+(replyTo?'回复你':'你的动态下评论')+'："'+txt+'"。用'+replyFrom+'口吻简短回复（不超过20字，不加引号，像真人微信回复）。只输出回复文字。';
+                  var res = await PhoneAI.chat({ system:'只输出回复文字，不加引号前缀。', messages:[{role:'user',content:userContent}], maxTokens:50, temperature:0.9, channel:'proactive', timeout:25 });
+                  console.log('[Moments] 回复结果:', res.ok, String(res.data||res.error||'').slice(0,50));
                   if(res.ok && res.data){
-                    var d2 = _ensureMoments();
-                    var p2 = d2.posts.find(function(p){return p.id===mid;});
-                    if(p2){
-                      if(!Array.isArray(p2.comments)) p2.comments = [];
-                      p2.comments.push({name:post.name, text:String(res.data).replace(/^["'「]|["'」]$/g,'').trim().slice(0,60), time:Date.now(), replyTo:myName});
-                      saveMoments(d2);
-                      _momRefreshUI();
-                      try{ toast('💬 '+post.name+' 回复了你'); }catch(e){}
+                    var replyText = String(res.data).replace(/^["'「]|["'」]$/g,'').replace(/^\s*\S+[:：]\s*/,'').trim().slice(0,60);
+                    if(replyText){
+                      var d2 = _ensureMoments();
+                      var p2 = d2.posts.find(function(p){return p.id===mid;});
+                      if(p2){
+                        if(!Array.isArray(p2.comments)) p2.comments = [];
+                        p2.comments.push({name:replyFrom, text:replyText, time:Date.now(), replyTo:myName});
+                        saveMoments(d2);
+                        _momRefreshUI();
+                        try{ toast('💬 '+replyFrom+' 回复了你'); }catch(e){}
+                      }
                     }
                   }
-                }catch(e){ console.error('[Moments] 帖主回复错:', e); }
-              }, 8000 + Math.random()*12000);
+                }catch(e){ console.error('[Moments] 回复错:', e); }
+              }, 6000 + Math.random()*10000); // 6~16秒
             }
 
             // ★ 其他NPC也可能参与评论/点赞（后台排队，2~5分钟后）
@@ -12490,64 +12495,82 @@ ${lines}
           var post = d.posts.find(function(p){return p.id===mid;});
           if(!post){ console.log('[Moments] 帖子不存在'); return; }
           var names = npcs.map(function(n){return n.name;});
-          var userContent = '朋友圈场景：用户"'+myN+'"发了一条动态："'+(post.content||'').slice(0,120)+'"\n\n'
-            + '以下朋友看到了这条动态，请为每人生成一条简短自然的评论（像真人朋友圈评论，每条不超过20字）。\n\n'
-            + '需要评论的人：'+names.join('、')+'\n\n'
-            + '请严格按以下JSON格式返回，不要加其他文字：\n'
-            + '[{"name":"'+names[0]+'","comment":"评论内容"}'+( names.length>1 ? ',{"name":"'+names[1]+'","comment":"评论内容"}':'')+(names.length>2?',{"name":"'+names[2]+'","comment":"评论内容"}':'')+']';
+          // 用简单的 name:comment 格式，比JSON更不容易被截断
+          var userContent = '用户"'+myN+'"发了朋友圈："'+(post.content||'').slice(0,100)+'"\n\n'
+            + '请为以下每人各写一条简短评论（像真人朋友圈，每条不超过15字）：\n'
+            + names.join('、')+'\n\n'
+            + '格式要求（每行一个，严格按此格式）：\n'
+            + names[0]+':评论内容\n'
+            + (names.length>1 ? names[1]+':评论内容\n' : '')
+            + (names.length>2 ? names[2]+':评论内容' : '');
 
           console.log('[Moments] 发送批量评论请求, NPC:', names.join(','));
           var res = await PhoneAI.chat({
-            system: '你是朋友圈互动模拟器。根据动态内容为每个朋友生成简短、自然、有个性的评论。严格返回JSON数组，不加markdown代码块。',
+            system: '为每个朋友写一条朋友圈评论。严格按"名字:评论"格式，每行一个。不加引号、编号、多余文字。',
             messages: [{role:'user', content:userContent}],
-            maxTokens: 200,
+            maxTokens: 300,
             temperature: 0.92,
             channel: 'proactive',
             timeout: 30
           });
 
-          console.log('[Moments] API返回:', res.ok, String(res.data||res.error||'').slice(0,100));
-
+          console.log('[Moments] API返回:', res.ok, String(res.data||res.error||'').slice(0,200));
           if(!res.ok || !res.data){ console.log('[Moments] API失败:', res.error); return; }
 
-          // 解析JSON
+          // 解析 name:comment 格式（每行一个）
           var raw = String(res.data).trim();
-          // 清理可能的markdown代码块
-          raw = raw.replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
           var comments = [];
-          try{ comments = JSON.parse(raw); }catch(e){
-            // 尝试提取JSON数组
-            var m = raw.match(/\[[\s\S]*\]/);
-            if(m) try{ comments = JSON.parse(m[0]); }catch(e2){}
+
+          // 先尝试JSON（万一模型返回JSON）
+          try{
+            var jsonMatch = raw.match(/\[[\s\S]*\]/);
+            if(jsonMatch){
+              var arr = JSON.parse(jsonMatch[0]);
+              if(Array.isArray(arr) && arr.length){
+                arr.forEach(function(item){
+                  if(item.name && item.comment) comments.push({name:item.name, text:item.comment});
+                });
+              }
+            }
+          }catch(e){}
+
+          // 再尝试 name:comment 格式
+          if(!comments.length){
+            var lines = raw.split(/\n/).map(function(l){return l.trim();}).filter(Boolean);
+            lines.forEach(function(line){
+              // 匹配 "名字:评论" 或 "名字：评论"
+              var m = line.match(/^(.+?)[：:]\s*(.+)$/);
+              if(m){
+                var name = m[1].replace(/^[\d.、\-\s]+/,'').trim(); // 去掉编号
+                var text = m[2].replace(/^["'「]|["'」]$/g,'').trim();
+                if(name && text && text.length < 80) comments.push({name:name, text:text});
+              }
+            });
           }
 
-          if(!Array.isArray(comments) || !comments.length){
-            console.log('[Moments] 解析失败, raw:', raw.slice(0,200));
-            // fallback：把整段文字当作一个评论
-            if(raw.length > 2 && raw.length < 80 && names.length > 0){
-              comments = [{name:names[0], comment:raw.replace(/^["'「]|["'」]$/g,'')}];
-            } else { return; }
-          }
+          console.log('[Moments] 解析到', comments.length, '条评论:', comments.map(function(c){return c.name+':'+c.text.slice(0,10);}).join('; '));
 
-          // 写入评论
-          var d2 = _ensureMoments();
-          var p2 = d2.posts.find(function(p){return p.id===mid;});
-          if(!p2) return;
-          if(!Array.isArray(p2.comments)) p2.comments = [];
-          var added = 0;
-          comments.forEach(function(c){
-            if(!c || !c.name || !c.comment) return;
-            var txt = String(c.comment).replace(/^["'「]|["'」]$/g,'').trim().slice(0,60);
-            if(!txt) return;
-            p2.comments.push({name:String(c.name), text:txt, time:Date.now() + added*1000, replyTo:''});
-            added++;
-            console.log('[Moments] 评论已加: '+c.name+': '+txt.slice(0,20));
+          if(!comments.length){ console.log('[Moments] 解析失败, raw:', raw.slice(0,200)); return; }
+
+          // 错开时间写入评论（模拟真人逐条出现）
+          comments.forEach(function(c, i){
+            setTimeout(function(){
+              try{
+                var d2 = _ensureMoments();
+                var p2 = d2.posts.find(function(p){return p.id===mid;});
+                if(!p2) return;
+                if(!Array.isArray(p2.comments)) p2.comments = [];
+                // 检查是否已存在同名评论（避免重复）
+                var exists = p2.comments.some(function(ec){return ec.name===c.name && ec.text===c.text;});
+                if(exists) return;
+                p2.comments.push({name:c.name, text:c.text.slice(0,60), time:Date.now(), replyTo:''});
+                saveMoments(d2);
+                console.log('[Moments] '+c.name+' 评论已显示');
+                try{ toast('💬 '+c.name+': '+c.text.slice(0,12)); }catch(e){}
+                _momRefreshUI();
+              }catch(e){}
+            }, i * (4000 + Math.random()*3000)); // 每条间隔4~7秒
           });
-          if(added > 0){
-            saveMoments(d2);
-            _momRefreshUI();
-            try{ toast('💬 '+added+'条新评论'); }catch(e){}
-          }
         }catch(e){ console.error('[Moments] 批量评论错误:', e); }
       }
 
