@@ -3060,8 +3060,16 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   padding:16px 18px;
   scrollbar-width:none !important;
   overflow-y:auto; -webkit-overflow-scrolling:touch;
+  position:relative;
 }
 #${ID} .wxOfflineWrap::-webkit-scrollbar{ width:0 !important; display:none !important; }
+/* 线下背景图层：fixed不随内容滚动 */
+#${ID} .wxOfflineBgLayer{
+  position:absolute; inset:0; z-index:0;
+  background-size:cover; background-position:center; background-repeat:no-repeat;
+  pointer-events:none;
+}
+#${ID} .wxOfflineWrap > *{ position:relative; z-index:1; }
 #${ID} .wxOfflineParagraph{
   font-size:14px; line-height:1.9; color:rgba(46,38,26,.82);
   margin-bottom:14px; text-indent:0; position:relative;
@@ -3094,28 +3102,13 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   font-size:12px; color:rgba(46,38,26,.4); margin-top:4px; line-height:1.5;
 }
 #${ID} .wxOfflineInputBar{
-  padding:10px 14px; border-top:1px solid var(--ph-glass-border, rgba(0,0,0,.06));
-  background:var(--ph-glass, rgba(255,255,255,.72));
-  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
-  display:flex; gap:8px; align-items:flex-end; flex-shrink:0;
-}
-#${ID} .wxOfflineInputBar textarea{
-  flex:1; border:1px solid var(--ph-glass-border, rgba(0,0,0,.08)); border-radius:10px;
-  padding:8px 12px; font-size:13px; resize:none; outline:none;
-  background:var(--ph-glass, rgba(255,255,255,.6)); font-family:inherit; line-height:1.5;
-  min-height:36px; max-height:120px; color:var(--ph-text, rgba(46,38,26,.8));
-  user-select:text; -webkit-user-select:text;
-  touch-action:manipulation; -webkit-touch-callout:default;
-}
-#${ID} .wxOfflineInputBar textarea::placeholder{ color:var(--ph-text-dim, rgba(46,38,26,.3)); }
-#${ID} .wxOfflineInputBar button{
-  padding:8px 14px; border-radius:10px; border:0;
-  background:var(--ph-accent, #07c160); color:#fff;
-  font-size:13px; font-weight:600; cursor:pointer; flex-shrink:0;
+  /* inherits from wxChatInputBar base styles */
 }
 #${ID} .wxOfflineInputBar .wxOffSceneBtn{
-  padding:8px; border-radius:10px; border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));
-  background:var(--ph-glass, rgba(255,255,255,.6)); cursor:pointer; font-size:13px; flex-shrink:0;
+  width:32px; height:32px; border-radius:50%;
+  background:transparent; border:0; cursor:pointer; font-size:18px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  color:rgba(20,24,28,.5);
 }
 /* === Phase 4：分支指示条 === */
 #${ID} .wxBranchBar{
@@ -5850,6 +5843,41 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             const nid = t.getAttribute('data-npcid') || state.chatTarget;
             const ce = _loadCharExtra(nid); ce.chatBg = ''; _saveCharExtra(nid, ce);
             try{toast('背景已移除');}catch(e){}
+            _renderChatBgSettings(nid);
+            return;
+          }
+          // === 线下专属背景 ===
+          if (act === 'wxCSUploadOfflineBg'){
+            const nid = t.getAttribute('data-npcid') || state.chatTarget;
+            const fi = doc.createElement('input'); fi.type='file'; fi.accept='image/*'; fi.style.display='none';
+            fi.addEventListener('change', ()=>{
+              const f = fi.files && fi.files[0]; if(!f) return;
+              const reader = new FileReader();
+              reader.onload = ()=>{
+                const ce = _loadCharExtra(nid); ce.offlineBg = reader.result; _saveCharExtra(nid, ce);
+                try{toast('线下背景已设置');}catch(e){}
+                _renderChatBgSettings(nid);
+              };
+              reader.readAsDataURL(f);
+            });
+            doc.body.appendChild(fi); fi.click();
+            setTimeout(()=>{ try{fi.remove();}catch(e){} }, 60000);
+            return;
+          }
+          if (act === 'wxCSOfflineBgUrl'){
+            const nid = t.getAttribute('data-npcid') || state.chatTarget;
+            const bgUrlInp = root.querySelector('[data-el="offlineBgUrlInput"]');
+            const url = (bgUrlInp && bgUrlInp.value || '').trim();
+            if (!url){ try{toast('请输入图片链接');}catch(e){} return; }
+            const ce = _loadCharExtra(nid); ce.offlineBg = url; _saveCharExtra(nid, ce);
+            try{toast('线下背景已设置（直链）');}catch(e){}
+            _renderChatBgSettings(nid);
+            return;
+          }
+          if (act === 'wxCSClearOfflineBg'){
+            const nid = t.getAttribute('data-npcid') || state.chatTarget;
+            const ce = _loadCharExtra(nid); ce.offlineBg = ''; _saveCharExtra(nid, ce);
+            try{toast('线下背景已移除');}catch(e){}
             _renderChatBgSettings(nid);
             return;
           }
@@ -12595,6 +12623,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         return _phLoad('char_extra_'+npcId, {
           profile:'',
           chatBg:'',
+          offlineBg:'',
           autoSummary:false,
           autoSumEvery:20,
           enableLifePush:true,
@@ -12657,14 +12686,16 @@ const npc = _wxGetChatTargetMeta(npcId);
         // 渲染骨架（根据模式切换）
         if (_chatMode === 'offline'){
           var sceneData = _loadSceneData(contactId);
-          var offlineBgStyle = sceneData.bgImage ? `background-image:url('${sceneData.bgImage}');background-size:cover;background-position:center;` : bgStyle;
+          var offlineBgUrl = sceneData.bgImage || charEx.offlineBg || charEx.chatBg || '';
           body.innerHTML = `
             <div class="wxChatDetailWrap">
-              <div class="wxChatMsgs wxOfflineWrap" data-ph="chatMsgs" style="${offlineBgStyle}"></div>
-              <div class="wxOfflineInputBar">
-                <button class="wxOffSceneBtn" data-act="wxSceneEdit" data-npcid="${esc(contactId)}">☕</button>
+              <div class="wxChatMsgs wxOfflineWrap" data-ph="chatMsgs">
+                ${offlineBgUrl ? '<div class="wxOfflineBgLayer" style="background-image:url(\''+offlineBgUrl.replace(/'/g,"\\'")+'\');"></div>' : ''}
+              </div>
+              <div class="wxChatInputBar wxOfflineInputBar">
+                <button class="wxChatExBtn wxOffSceneBtn" data-act="wxSceneEdit" data-npcid="${esc(contactId)}">☕</button>
                 <textarea rows="1" placeholder="描述你的行动…" data-ph="chatInput" inputmode="text" enterkeyhint="send" autocomplete="off"></textarea>
-                <button data-act="wxSendChat" title="发送" style="flex-shrink:0;">发送</button>
+                <button class="wxChatSendBtn" data-act="wxSendChat" title="发送" style="flex-shrink:0;">发送</button>
               </div>
             </div>`;
         } else {
@@ -13920,12 +13951,12 @@ const npc = _wxGetChatTargetMeta(npcId);
         try{ const sp = root.querySelector('.phAppBarSpacer'); if(sp) sp.innerHTML=''; }catch(e){}
 
         let html = `<div style="padding:14px;">
-          <div style="font-size:11px;color:rgba(20,24,28,.42);line-height:1.6;margin-bottom:12px;">当前聊天模式：${currentMode === 'offline' ? '线下' : '线上'}。可分别设置线上/线下的 CSS 与 HTML，背景仍然共用。</div>
+          <div style="font-size:11px;color:rgba(20,24,28,.42);line-height:1.6;margin-bottom:12px;">当前聊天模式：${currentMode === 'offline' ? '线下' : '线上'}。线上线下可分别设置背景图、CSS 与 HTML。</div>
           <div style="margin-top:4px;text-align:center;">
             <div style="width:120px;height:200px;margin:0 auto;border-radius:12px;border:1px solid rgba(0,0,0,.1);overflow:hidden;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">
               ${charEx.chatBg ? '<img src="'+esc(charEx.chatBg)+'" style="width:100%;height:100%;object-fit:cover;" />' : '<span style="font-size:36px;opacity:.3;">🖼</span>'}
             </div>
-            <div style="font-size:11px;color:rgba(20,24,28,.35);margin-top:8px;">当前聊天背景预览（线上/线下共用）</div>
+            <div style="font-size:11px;color:rgba(20,24,28,.35);margin-top:8px;">线上聊天背景预览</div>
           </div>
           <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px;">
             <button data-act="wxCSUploadBg" data-npcid="${esc(contactId)}" style="width:100%;padding:12px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:#fff;font-size:13px;cursor:pointer;">📤 从相册选取 / 上传图片</button>
@@ -13934,7 +13965,26 @@ const npc = _wxGetChatTargetMeta(npcId);
               <input data-el="bgUrlInput" type="text" placeholder="粘贴图片直链 URL…" style="flex:1;padding:10px 12px;border:1px solid rgba(0,0,0,.08);border-radius:12px;font-size:12px;outline:none;box-sizing:border-box;"/>
               <button data-act="wxCSBgUrl" data-npcid="${esc(contactId)}" style="padding:10px 16px;border-radius:12px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:12px;cursor:pointer;flex-shrink:0;">确认</button>
             </div>
-            ${charEx.chatBg ? '<button data-act="wxCSClearBg" data-npcid="'+esc(contactId)+'" style="width:100%;padding:12px;border-radius:12px;border:1px solid rgba(244,67,54,.15);background:rgba(244,67,54,.04);color:#f44336;font-size:13px;cursor:pointer;">🗑 移除背景</button>' : ''}
+            ${charEx.chatBg ? '<button data-act="wxCSClearBg" data-npcid="'+esc(contactId)+'" style="width:100%;padding:12px;border-radius:12px;border:1px solid rgba(244,67,54,.15);background:rgba(244,67,54,.04);color:#f44336;font-size:13px;cursor:pointer;">🗑 移除线上背景</button>' : ''}
+          </div>
+
+          <div style="margin-top:20px;padding:14px;border-radius:14px;background:rgba(245,240,230,.6);border:1px solid rgba(200,180,140,.2);">
+            <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.82);margin-bottom:6px;">☕ 线下模式专属背景</div>
+            <div style="font-size:11px;color:rgba(20,24,28,.42);margin-bottom:8px;">如果设置了线下背景，线下模式将使用此背景而非线上的。场景编辑器里的场景背景优先级更高。</div>
+            <div style="text-align:center;margin-bottom:8px;">
+              <div style="width:120px;height:200px;margin:0 auto;border-radius:12px;border:1px solid rgba(0,0,0,.1);overflow:hidden;background:#f5f5f5;display:flex;align-items:center;justify-content:center;">
+                ${charEx.offlineBg ? '<img src="'+esc(charEx.offlineBg)+'" style="width:100%;height:100%;object-fit:cover;" />' : '<span style="font-size:28px;opacity:.3;">☕🖼</span>'}
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;margin-bottom:6px;">
+              <input data-el="offlineBgUrlInput" type="text" value="${esc(charEx.offlineBg||'')}" placeholder="粘贴线下背景图片URL…" style="flex:1;padding:10px 12px;border:1px solid rgba(0,0,0,.08);border-radius:12px;font-size:12px;outline:none;box-sizing:border-box;"/>
+              <button data-act="wxCSOfflineBgUrl" data-npcid="${esc(contactId)}" style="padding:10px 16px;border-radius:12px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:12px;cursor:pointer;flex-shrink:0;">确认</button>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button data-act="wxCSUploadOfflineBg" data-npcid="${esc(contactId)}" style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:#fff;font-size:12px;cursor:pointer;">📤 上传</button>
+              ${charEx.offlineBg ? '<button data-act="wxCSClearOfflineBg" data-npcid="'+esc(contactId)+'" style="flex:1;padding:10px;border-radius:12px;border:1px solid rgba(244,67,54,.15);background:rgba(244,67,54,.04);color:#f44336;font-size:12px;cursor:pointer;">🗑 移除</button>' : ''}
+            </div>
+          </div>
           </div>
           <div style="margin-top:16px;padding:12px;border-radius:14px;background:var(--ph-glass,rgba(255,255,255,.72));border:1px solid var(--ph-glass-border,rgba(0,0,0,.08));">
             <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.82);margin-bottom:8px;">线上美化</div>
@@ -18454,12 +18504,12 @@ const npc = _wxGetChatTargetMeta(npcId);
         root.querySelectorAll('.wxCPOverlay').forEach(o=>o.remove());
         const ov = doc.createElement('div');
         ov.className = 'wxCPOverlay';
-        ov.style.cssText = 'position:absolute;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;';
+        ov.style.cssText = 'position:absolute;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:12px;';
         ov.innerHTML = `<div class="wxCPModal" style="
           background:rgba(255,255,255,.96);backdrop-filter:blur(12px);
           border-radius:16px;width:100%;max-width:280px;padding:20px;
           box-shadow:0 8px 32px rgba(0,0,0,.18);
-          max-height:80vh;overflow-y:auto;
+          max-height:calc(100% - 48px);overflow-y:auto;
         ">${innerHtml}</div>`;
         ov.addEventListener('click', (e)=>{ if(e.target===ov) ov.remove(); });
         root.appendChild(ov);
@@ -22892,16 +22942,18 @@ function _openSceneEditor(npcId){
     // 刷新线下背景
     try{
       var msgsEl = root.querySelector('[data-ph="chatMsgs"]');
-      if (msgsEl && newScene.bgImage){
-        msgsEl.style.backgroundImage = "url('" + newScene.bgImage + "')";
-        msgsEl.style.backgroundSize = 'cover';
-        msgsEl.style.backgroundPosition = 'center';
-      } else if (msgsEl && !newScene.bgImage){
-        var charEx2 = _loadCharExtra(npcId);
-        if (charEx2.chatBg){
-          msgsEl.style.backgroundImage = "url('" + charEx2.chatBg + "')";
-        } else {
-          msgsEl.style.backgroundImage = '';
+      if (msgsEl){
+        var bgLayer = msgsEl.querySelector('.wxOfflineBgLayer');
+        var bgUrl = newScene.bgImage || (_loadCharExtra(npcId).offlineBg) || (_loadCharExtra(npcId).chatBg) || '';
+        if (bgUrl){
+          if (!bgLayer){
+            bgLayer = doc.createElement('div');
+            bgLayer.className = 'wxOfflineBgLayer';
+            msgsEl.insertBefore(bgLayer, msgsEl.firstChild);
+          }
+          bgLayer.style.backgroundImage = "url('" + bgUrl + "')";
+        } else if (bgLayer){
+          bgLayer.remove();
         }
       }
     }catch(e){}
@@ -23338,8 +23390,8 @@ ${todoHint}
 // ========== 主题风格输入框（替代 prompt()）==========
 function _showThemedInput(title, defaultVal, onOk){
   var inputOv = doc.createElement('div');
-  inputOv.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px;';
-  inputOv.innerHTML = '<div style="width:min(88vw,320px);background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-radius:16px;padding:18px;box-shadow:0 8px 32px rgba(0,0,0,.18);">'
+  inputOv.style.cssText = 'position:absolute;inset:0;z-index:99999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:12px;';
+  inputOv.innerHTML = '<div class="wxCPEditModal" style="width:100%;max-width:280px;background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-radius:16px;padding:18px;box-shadow:0 8px 32px rgba(0,0,0,.18);">'
     + '<div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.8);margin-bottom:10px;">'+esc(title||'输入')+'</div>'
     + '<input data-el="thInput" type="text" value="'+esc(defaultVal||'')+'" style="width:100%;padding:10px 12px;border:1px solid rgba(0,0,0,.1);border-radius:10px;font-size:14px;outline:none;box-sizing:border-box;background:rgba(255,255,255,.9);color:rgba(20,24,28,.85);" />'
     + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">'
@@ -23347,12 +23399,19 @@ function _showThemedInput(title, defaultVal, onOk){
     + '<button data-act="thOk" style="padding:8px 18px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">确定</button>'
     + '</div></div>';
   (root || document.body).appendChild(inputOv);
+  // prevent inner modal click from closing
+  var innerModal = inputOv.querySelector('.wxCPEditModal');
+  if (innerModal) innerModal.addEventListener('click', function(ev){ ev.stopPropagation(); });
   var inp = inputOv.querySelector('[data-el="thInput"]');
-  if (inp) setTimeout(function(){ inp.focus(); inp.select(); }, 80);
+  if (inp){
+    inp.addEventListener('mousedown', function(ev){ ev.stopPropagation(); });
+    inp.addEventListener('touchstart', function(ev){ ev.stopPropagation(); });
+    setTimeout(function(){ inp.focus(); inp.select(); }, 80);
+  }
   inputOv.addEventListener('click', function(ev){
+    if (ev.target === inputOv){ inputOv.remove(); return; }
     var tgt = ev.target;
     while(tgt && tgt !== inputOv){ if(tgt.getAttribute && tgt.getAttribute('data-act')) break; tgt = tgt.parentElement; }
-    if (tgt === inputOv){ inputOv.remove(); return; }
     var a = tgt && tgt.getAttribute ? tgt.getAttribute('data-act') : '';
     if (a === 'thCancel'){ inputOv.remove(); return; }
     if (a === 'thOk'){
@@ -23424,9 +23483,10 @@ function _openTimelineViewer(npcId){
     allTodos.forEach(function(t){
       var ds = t.done ? 'text-decoration:line-through;color:rgba(20,24,28,.3);' : 'color:rgba(20,24,28,.75);';
       h += '<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:4px;padding:3px 0;">'
-        + '<button data-act="todoToggle" data-eidx="'+t.entryIdx+'" data-tidx="'+t.todoIdx+'" style="flex-shrink:0;width:20px;height:20px;border-radius:4px;border:1.5px solid '+(t.done?'#07c160':'rgba(0,0,0,.2)')+';background:'+(t.done?'#07c160':'transparent')+';cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;padding:0;">'+(t.done?'✓':'')+'</button>'
+        + '<button data-act="todoToggle" data-eidx="'+t.entryIdx+'" data-tidx="'+t.todoIdx+'" style="flex-shrink:0;width:20px;height:20px;border-radius:4px;border:1.5px solid '+(t.done?'var(--ph-accent,#07c160)':'rgba(0,0,0,.2)')+';background:'+(t.done?'var(--ph-accent,#07c160)':'transparent')+';cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;padding:0;">'+(t.done?'✓':'')+'</button>'
         + '<span style="font-size:12px;line-height:1.5;'+ds+'flex:1;">'+esc(t.text)+'</span>'
         + '<button data-act="todoEdit" data-eidx="'+t.entryIdx+'" data-tidx="'+t.todoIdx+'" style="flex-shrink:0;font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.8);cursor:pointer;color:rgba(20,24,28,.4);">✏️</button>'
+        + '<button data-act="todoDel" data-eidx="'+t.entryIdx+'" data-tidx="'+t.todoIdx+'" style="flex-shrink:0;font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid rgba(220,53,69,.15);background:rgba(220,53,69,.04);cursor:pointer;color:#c9302c;">✕</button>'
         + '</div>';
     });
     h += '<button data-act="todoAdd" style="margin-top:4px;font-size:11px;padding:4px 10px;border-radius:6px;border:1px dashed rgba(0,0,0,.12);background:transparent;cursor:pointer;color:rgba(20,24,28,.4);width:100%;">+ 添加待办</button></div>';
@@ -23494,7 +23554,7 @@ function _openTimelineViewer(npcId){
         + '<div style="font-size:11px;color:rgba(7,193,96,.8);">⏳ 正在生成总结…</div>'
         + '<div data-el="tlProgressText" style="font-size:10px;color:rgba(20,24,28,.35);margin-top:2px;"></div></div>';
     }
-    h += '<div data-el="tlEntries" style="max-height:42vh;overflow-y:auto;margin:6px 0;">' + renderEntries() + '</div>'
+    h += '<div data-el="tlEntries" style="max-height:36vh;overflow-y:auto;margin:6px 0;">' + renderEntries() + '</div>'
       + '<div style="margin-top:8px;display:flex;gap:6px;">'
       + '<button data-act="tlGenerate" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;'+(isGenerating?'opacity:.5;':'')+'">✨ 生成总结</button>'
       + (isGenerating ? '<button data-act="tlAbort" style="padding:10px 12px;border-radius:10px;border:1px solid rgba(220,53,69,.3);background:rgba(220,53,69,.06);color:#c9302c;font-size:12px;cursor:pointer;">停止</button>' : '')
@@ -23526,21 +23586,29 @@ function _openTimelineViewer(npcId){
     if (!entry) return;
     var curText = entry.userEdited || entry.displayText || '';
     var editOv = doc.createElement('div');
-    editOv.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px;';
-    editOv.innerHTML = '<div style="width:min(92vw,360px);max-height:78vh;background:rgba(255,255,255,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.18);">'
+    editOv.style.cssText = 'position:absolute;inset:0;z-index:99999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:12px;';
+    editOv.innerHTML = '<div class="wxCPEditModal" style="width:100%;max-width:280px;max-height:calc(100% - 24px);background:rgba(255,255,255,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.18);overflow-y:auto;">'
       + '<div style="font-size:14px;font-weight:600;color:rgba(20,24,28,.82);">编辑 #'+(entry.range[0]+1)+'~'+(entry.range[1]+1)+'</div>'
-      + '<textarea data-el="editTA" style="width:100%;height:200px;border:1px solid rgba(0,0,0,.1);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.65;resize:vertical;box-sizing:border-box;background:rgba(255,255,255,.9);color:rgba(20,24,28,.82);font-family:inherit;outline:none;">'+esc(curText)+'</textarea>'
+      + '<textarea data-el="editTA" style="width:100%;height:180px;border:1px solid rgba(0,0,0,.1);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.65;resize:vertical;box-sizing:border-box;background:rgba(255,255,255,.9);color:rgba(20,24,28,.82);font-family:inherit;outline:none;">'+esc(curText)+'</textarea>'
       + '<div style="display:flex;gap:8px;justify-content:flex-end;">'
       + '<button data-act="editCancel" style="padding:8px 18px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.92);font-size:13px;cursor:pointer;color:rgba(20,24,28,.6);">取消</button>'
       + '<button data-act="editSave" style="padding:8px 18px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(7,193,96,.3);">保存</button>'
       + '</div></div>';
-    doc.body.appendChild(editOv);
+    root.appendChild(editOv);
+    // prevent click on inner modal from closing
+    var innerModal = editOv.querySelector('.wxCPEditModal');
+    if (innerModal) innerModal.addEventListener('click', function(ev){ ev.stopPropagation(); });
     var ta = editOv.querySelector('[data-el="editTA"]');
-    if (ta) setTimeout(function(){ ta.focus(); }, 100);
+    if (ta){
+      ta.addEventListener('mousedown', function(ev){ ev.stopPropagation(); });
+      ta.addEventListener('touchstart', function(ev){ ev.stopPropagation(); });
+      setTimeout(function(){ ta.focus(); }, 100);
+    }
+    // only close on backdrop click
     editOv.addEventListener('click', function(ev){
+      if (ev.target === editOv){ editOv.remove(); return; }
       var t = ev.target;
       while(t && t !== editOv){ if (t.getAttribute && t.getAttribute('data-act')) break; t = t.parentElement; }
-      if (t === editOv){ editOv.remove(); return; }
       var a = (t && t.getAttribute) ? t.getAttribute('data-act') : '';
       if (a === 'editCancel'){ editOv.remove(); return; }
       if (a === 'editSave'){
@@ -23642,6 +23710,20 @@ function _openTimelineViewer(npcId){
         }
         refresh();
       });
+      return;
+    }
+    if (act === 'todoDel'){
+      var eIdxD = parseInt(t.getAttribute('data-eidx')), tIdxD = parseInt(t.getAttribute('data-tidx'));
+      var tl = _loadTimeline(npcId);
+      var bucket = _getTimelineModeState(tl, viewMode, true);
+      var entry = bucket.entries[eIdxD];
+      if (entry && entry.structured && entry.structured.todos && entry.structured.todos[tIdxD]){
+        entry.structured.todos.splice(tIdxD, 1);
+        _rebuildEntryDisplay(entry);
+        _saveTimeline(npcId, tl);
+        _syncSummaryFromTimeline(npcId, viewMode);
+      }
+      refresh();
       return;
     }
     if (act === 'todoAdd'){
