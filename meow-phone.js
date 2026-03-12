@@ -2684,6 +2684,9 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID} .wxChatBubble.me{ flex-direction:row-reverse; align-self:flex-end; }
 #${ID} .wxChatBubble.them{ align-self:flex-start; }
+#${ID} .wxChatMsgs::-webkit-scrollbar{ width:2px; }
+#${ID} .wxChatMsgs::-webkit-scrollbar-thumb{ background:rgba(0,0,0,.1); border-radius:1px; }
+#${ID} .wxChatMsgs{ scrollbar-width:thin; scrollbar-color:rgba(0,0,0,.08) transparent; }
 #${ID} .wxChatBubble .wxCBAvatar{
   width:36px; height:36px; border-radius:6px; flex-shrink:0; overflow:hidden;
   background:var(--ph-glass-strong); border:1px solid rgba(0,0,0,.06);
@@ -3042,7 +3045,10 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .wxOfflineWrap{
   background:linear-gradient(180deg, rgba(245,240,230,.98), rgba(235,228,215,.96));
   min-height:100%; padding:16px 18px;
+  scrollbar-width:none;
 }
+#${ID} .wxOfflineWrap::-webkit-scrollbar{ width:0; }
+#${ID} .wxOfflineWrap::-webkit-scrollbar-thumb{ background:transparent; }
 #${ID} .wxOfflineParagraph{
   font-size:14px; line-height:1.9; color:rgba(46,38,26,.82);
   margin-bottom:14px; text-indent:0; position:relative;
@@ -3145,6 +3151,9 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .wxCPOverlay{ animation:wxCPFadeIn .18s ease; }
 @keyframes wxCPFadeIn{ from{opacity:0;} to{opacity:1;} }
 #${ID} .wxCPModal input:focus{ outline:none; border-color:var(--ph-accent, #07c160)!important; }
+#${ID} .wxCPModal::-webkit-scrollbar{ width:1px; }
+#${ID} .wxCPModal::-webkit-scrollbar-thumb{ background:rgba(0,0,0,.08); border-radius:1px; }
+#${ID} .wxCPModal{ scrollbar-width:none; }
 
 /* === 表情面板 === */
 #${ID} .wxStickerPanel{
@@ -18046,12 +18055,15 @@ const npc = _wxGetChatTargetMeta(npcId);
         root.querySelectorAll('.wxCPOverlay').forEach(o=>o.remove());
         const ov = doc.createElement('div');
         ov.className = 'wxCPOverlay';
-        ov.style.cssText = 'position:absolute;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:24px;';
+        ov.style.cssText = 'position:absolute;inset:0;z-index:9999;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;padding:16px;';
         ov.innerHTML = `<div class="wxCPModal" style="
-          background:rgba(255,255,255,.96);backdrop-filter:blur(12px);
-          border-radius:16px;width:100%;max-width:280px;padding:20px;
-          box-shadow:0 8px 32px rgba(0,0,0,.18);
-          max-height:80vh;overflow-y:auto;
+          background:var(--ph-glass-strong, rgba(255,255,255,.92));
+          backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+          border-radius:18px;width:100%;max-width:290px;padding:18px;
+          box-shadow:0 8px 40px rgba(0,0,0,.15), 0 0 0 1px rgba(255,255,255,.1) inset;
+          max-height:78vh;overflow-y:auto;
+          color:var(--ph-text, rgba(20,24,28,.85));
+          scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.08) transparent;
         ">${innerHtml}</div>`;
         ov.addEventListener('click', (e)=>{ if(e.target===ov) ov.remove(); });
         root.appendChild(ov);
@@ -22629,22 +22641,24 @@ function _openTimelineViewer(npcId){
     var entries = _currentEntries();
     if (!entries.length) return '<div style="text-align:center;padding:20px;color:rgba(20,24,28,.4);font-size:12px;">暂无' + _modeLabel(viewMode) + '<br>点击下方"生成总结"即可开始累积</div>';
     // 确保按消息范围升序排列（旧的在前，新的在后）
-    entries.sort(function(a, b){ return (a.range[0]||0) - (b.range[0]||0); });
-    return entries.map(function(e, idx){
+    var sorted = entries.slice().sort(function(a, b){ return (a.range[0]||0) - (b.range[0]||0); });
+    return sorted.map(function(e, idx){
+      // idx 用排序前的原始索引，确保删除/编辑操作指向正确条目
+      var origIdx = entries.indexOf(e);
       var displayText = e.userEdited || e.displayText || '（无内容）';
-      var isConfirming = (_pendingDeleteIdx === idx);
-      return '<div data-tl-idx="'+idx+'" style="margin-bottom:10px;padding:10px 12px;background:rgba(255,255,255,.85);border-radius:10px;border:1px solid '+(isConfirming?'rgba(220,53,69,.3)':'rgba(0,0,0,.06)')+';">'
+      var isConfirming = (_pendingDeleteIdx === origIdx);
+      return '<div data-tl-idx="'+origIdx+'" style="margin-bottom:10px;padding:10px 12px;background:rgba(255,255,255,.85);border-radius:10px;border:1px solid '+(isConfirming?'rgba(220,53,69,.3)':'rgba(0,0,0,.06)')+';">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
         + '<span style="font-size:11px;color:rgba(20,24,28,.4);">#'+(e.range[0]+1)+'~'+(e.range[1]+1)+'</span>'
         + '<span style="font-size:10px;color:rgba(20,24,28,.3);">'+(e.storyTime || new Date(e.createdAt).toLocaleString())+'</span>'
         + '</div>'
         + '<div style="font-size:12px;color:rgba(20,24,28,.75);white-space:pre-wrap;line-height:1.6;">'+esc(displayText)+'</div>'
         + '<div style="margin-top:6px;display:flex;gap:4px;">'
-        + '<button data-act="tlEdit" data-tlidx="'+idx+'" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);cursor:pointer;">编辑</button>'
+        + '<button data-act="tlEdit" data-tlidx="'+origIdx+'" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);cursor:pointer;">编辑</button>'
         + (isConfirming
-          ? '<button data-act="tlDelConfirm" data-tlidx="'+idx+'" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid #c9302c;background:#c9302c;color:#fff;cursor:pointer;font-weight:600;">⚠️ 确认删除</button>'
+          ? '<button data-act="tlDelConfirm" data-tlidx="'+origIdx+'" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid #c9302c;background:#c9302c;color:#fff;cursor:pointer;font-weight:600;">⚠️ 确认删除</button>'
             + '<button data-act="tlDelCancel" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);cursor:pointer;">取消</button>'
-          : '<button data-act="tlDel" data-tlidx="'+idx+'" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(220,53,69,.2);background:rgba(220,53,69,.06);color:#c9302c;cursor:pointer;">删除</button>')
+          : '<button data-act="tlDel" data-tlidx="'+origIdx+'" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(220,53,69,.2);background:rgba(220,53,69,.06);color:#c9302c;cursor:pointer;">删除</button>')
         + '</div></div>';
     }).join('');
   }
@@ -22675,11 +22689,11 @@ function _openTimelineViewer(npcId){
         + '<div style="font-size:11px;color:rgba(7,193,96,.8);">⏳ 正在生成总结…</div>'
         + '<div data-el="tlProgressText" style="font-size:10px;color:rgba(20,24,28,.35);margin-top:2px;"></div></div>';
     }
-    h += '<div data-el="tlEntries" style="max-height:42vh;overflow-y:auto;margin:6px 0;">' + renderEntries() + '</div>'
+    h += '<div data-el="tlEntries" style="max-height:42vh;overflow-y:auto;margin:6px 0;scrollbar-width:none;">' + renderEntries() + '</div>'
       + '<div style="margin-top:8px;display:flex;gap:6px;">'
       + '<button data-act="tlGenerate" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;'+(isGenerating?'opacity:.5;':'')+'">✨ 生成总结</button>'
       + (isGenerating ? '<button data-act="tlAbort" style="padding:10px 12px;border-radius:10px;border:1px solid rgba(220,53,69,.3);background:rgba(220,53,69,.06);color:#c9302c;font-size:12px;cursor:pointer;">停止</button>' : '')
-      + '<button data-act="tlClose" style="padding:10px 16px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">关闭</button>'
+      + '<button data-act="tlClose" style="padding:10px 16px;border-radius:10px;border:1px solid var(--ph-border, rgba(0,0,0,.1));background:var(--ph-glass, rgba(255,255,255,.9));color:var(--ph-text, rgba(20,24,28,.7));font-size:13px;cursor:pointer;">关闭</button>'
       + '</div>';
     return h;
   }
@@ -22697,6 +22711,11 @@ function _openTimelineViewer(npcId){
     _pendingDeleteIdx = -1;
     var rootEl = modal.querySelector('[data-el="tlRoot"]');
     if (rootEl) rootEl.innerHTML = renderBody();
+    // 自动滚动条目区到底部显示最新条目
+    try{
+      var entriesEl = modal.querySelector('[data-el="tlEntries"]');
+      if (entriesEl) entriesEl.scrollTop = entriesEl.scrollHeight;
+    }catch(e){}
   }
 
   // ---- 编辑弹层 ----
@@ -22929,6 +22948,14 @@ function _openTimelineViewer(npcId){
       return;
     }
   }); // end modal event delegation
+
+  // 打开时自动滚动到最新条目
+  setTimeout(function(){
+    try{
+      var entriesEl = modal.querySelector('[data-el="tlEntries"]');
+      if (entriesEl) entriesEl.scrollTop = entriesEl.scrollHeight;
+    }catch(e){}
+  }, 100);
 }
 
 
