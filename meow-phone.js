@@ -2149,17 +2149,21 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .phAppBarSpacer .phBarRBtn:hover{ opacity:1; background:rgba(255,255,255,.1); }
 #${ID} .phAppBody{
   position:absolute; left:0; right:0; top:52px; bottom:0;
-  overflow:auto;
+  overflow-y:auto; overflow-x:hidden;
+  -ms-overflow-style:none;
   background:transparent;
-  scrollbar-width:none; scrollbar-color:transparent transparent;
+  scrollbar-width:none;
 }
-#${ID} .phAppBody::-webkit-scrollbar{ width:0; display:none; }
-#${ID} .phAppBody::-webkit-scrollbar-thumb{ background:transparent; }
+#${ID} .phAppBody::-webkit-scrollbar{ width:0 !important; height:0 !important; display:none !important; }
+#${ID} .phAppBody::-webkit-scrollbar-thumb{ display:none !important; }
 /* ★ 聊天详情时禁止外层滚动+隐藏滚动条 */
 #${ID} .phAppBody.phAppBodyChat{
   overflow:hidden !important; scrollbar-width:none !important;
 }
 #${ID} .phAppBody.phAppBodyChat::-webkit-scrollbar{ display:none !important; width:0 !important; }
+/* ★ 全局隐藏手机内所有滚动条 */
+#${ID} *{ scrollbar-width:none; -ms-overflow-style:none; }
+#${ID} *::-webkit-scrollbar{ width:0 !important; height:0 !important; display:none !important; }
 
 /* ---------- In-Phone Modal (Moments Composer etc.) ---------- */
 #${ID} .phModalMask{
@@ -5291,11 +5295,37 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           if (act === 'wxCHDelSummary'){
             const nid = t.getAttribute('data-chnpcid');
             if (!nid) return;
-            // 清除该角色的总结数据
             try{ saveChatSummary(nid, { summaryText:'', updatedAt:0 }); }catch(e){}
             try{ toast('已删除总结'); }catch(e){}
             const c = root.querySelector('[data-ph="chatTabContent"]');
             if (c) renderChatHistoryPage(c);
+            return;
+          }
+          if (act === 'wxMomSumDel'){
+            var mid = t.getAttribute('data-mid');
+            if(!mid) return;
+            var md = _ensureMoments();
+            md.posts = _safeArr(md.posts).filter(function(p){return p.id!==mid;});
+            saveMoments(md);
+            try{toast('已删除该动态');}catch(e){}
+            var c = root.querySelector('[data-ph="chatTabContent"]');
+            if(c) renderChatHistoryPage(c);
+            return;
+          }
+          if (act === 'wxMomSumEdit'){
+            var mid = t.getAttribute('data-mid');
+            if(!mid) return;
+            var md = _ensureMoments();
+            var post = md.posts.find(function(p){return p.id===mid;});
+            if(!post) return;
+            _showThemedInput('编辑动态', post.content||'', function(val){
+              if(val===null) return;
+              var md2 = _ensureMoments();
+              var p2 = md2.posts.find(function(p){return p.id===mid;});
+              if(p2){ p2.content = val.trim(); saveMoments(md2); }
+              var c = root.querySelector('[data-ph="chatTabContent"]');
+              if(c) renderChatHistoryPage(c);
+            });
             return;
           }
           if (act === 'wxCHDetailCopy'){
@@ -9347,28 +9377,33 @@ ${lines}
           var momData = _ensureMoments();
           var myN = (phoneLoadSettings()&&phoneLoadSettings().phoneName)||'我';
           var momInteractions = [];
-          _safeArr(momData.posts).forEach(function(p){
+          _safeArr(momData.posts).forEach(function(p, pi){
             var myComments = _safeArr(p.comments).filter(function(c){return c.name===myN||c.name==='我';});
             var myLiked = _safeArr(p.likes).indexOf(myN)>=0 || _safeArr(p.likes).indexOf('我')>=0;
             var repliesTo = _safeArr(p.comments).filter(function(c){return c.replyTo===myN||c.replyTo==='我';});
             if(myComments.length || myLiked || repliesTo.length){
-              momInteractions.push({post:p, myComments:myComments, myLiked:myLiked, repliesTo:repliesTo});
+              momInteractions.push({post:p, idx:pi, myComments:myComments, myLiked:myLiked, repliesTo:repliesTo});
             }
           });
           if(!momInteractions.length){
             html += `<div style="padding:30px 14px;text-align:center;font-size:12px;color:rgba(20,24,28,.35);">暂无朋友圈互动记录</div>`;
           } else {
             html += '<div style="padding:8px 14px;">';
-            momInteractions.slice(-10).forEach(function(mi){
+            momInteractions.slice(-15).forEach(function(mi){
               var summary = '';
               if(mi.myLiked) summary += '你点赞了';
               if(mi.myComments.length) summary += (summary?'，并':'你') + '评论了"'+mi.myComments[0].text.slice(0,20)+(mi.myComments[0].text.length>20?'…':'')+'"';
-              if(mi.repliesTo.length) summary += '。'+mi.repliesTo[0].name+'回复了你';
-              html += '<div style="padding:10px 0;border-bottom:1px solid rgba(0,0,0,.04);">'
+              if(mi.repliesTo.length) summary += (summary?'。':'')+mi.repliesTo[0].name+'回复了你';
+              html += '<div style="padding:10px 0;border-bottom:1px solid rgba(0,0,0,.04);display:flex;align-items:flex-start;gap:8px;">'
+                + '<div style="flex:1;min-width:0;">'
                 + '<div style="font-size:12px;font-weight:500;color:rgba(20,24,28,.7);">'+esc(mi.post.name)+' 的动态</div>'
-                + '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-top:2px;">'+esc((mi.post.content||'').slice(0,40))+'</div>'
+                + '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc((mi.post.content||'').slice(0,50))+'</div>'
                 + '<div style="font-size:11px;color:var(--ph-accent,#07c160);margin-top:3px;">'+esc(summary)+'</div>'
-                + '</div>';
+                + '</div>'
+                + '<div style="display:flex;gap:4px;flex-shrink:0;padding-top:2px;">'
+                + '<button data-act="wxMomSumEdit" data-mid="'+esc(mi.post.id)+'" style="font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.9);cursor:pointer;color:rgba(20,24,28,.4);">编辑</button>'
+                + '<button data-act="wxMomSumDel" data-mid="'+esc(mi.post.id)+'" style="font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.9);cursor:pointer;color:rgba(20,24,28,.35);">删除</button>'
+                + '</div></div>';
             });
             html += '</div>';
           }
@@ -12224,6 +12259,8 @@ ${lines}
             saveMoments(data);
             close();
             renderMoments(container);
+            // ★ 触发NPC来互动（评论/点赞用户的新动态）
+            _queueNpcMomentReactions(data.posts[0].id);
           });
         }catch(e){
           try{ toast('弹窗打开失败'); }catch(_){}
@@ -12398,6 +12435,54 @@ ${lines}
       }
 
       /* ========== Moments：NPC后台排队互动 ========== */
+      // ★ 用户发新动态后，NPC自动来点赞/评论
+      function _queueNpcMomentReactions(mid){
+        try{
+          var cfg = PhoneAI._getConfig();
+          if(!cfg.endpoint || !cfg.key) return;
+          var db = loadContactsDB();
+          var myN = (phoneLoadSettings()&&phoneLoadSettings().phoneName)||'我';
+          var contacts = _safeArr(db.contacts).filter(function(c){return c.name && c.name!==myN && c.name!=='我';});
+          if(!contacts.length) return;
+          // 选2-4个NPC参与
+          var shuffled = contacts.slice().sort(function(){return Math.random()-0.5;});
+          var count = Math.min(2 + Math.floor(Math.random()*3), shuffled.length);
+          var picked = shuffled.slice(0, count);
+          picked.forEach(function(npc, i){
+            var delay = 30000 + Math.random()*120000 + i*45000; // 30秒~2.5分钟，错开
+            setTimeout(async function(){
+              try{
+                var d = _ensureMoments();
+                var post = d.posts.find(function(p){return p.id===mid;});
+                if(!post) return;
+                // 70%点赞+评论，30%仅点赞
+                if(!Array.isArray(post.likes)) post.likes = [];
+                if(post.likes.indexOf(npc.name) < 0) post.likes.push(npc.name);
+                if(Math.random() < 0.7){
+                  var existingCmts = _safeArr(post.comments).map(function(c){return c.name+':'+c.text;}).join('; ');
+                  var prompt = '你是"'+npc.name+'"。你的朋友"'+myN+'"在朋友圈发了："'+(post.content||'').slice(0,100)+'"。'+(existingCmts?'已有评论：'+existingCmts+'。':'')+'请以'+npc.name+'的身份写一条简短自然的评论（不超过25字，像真人朋友圈，可以调侃、关心、共鸣）。只输出评论文字。';
+                  var res = await PhoneAI.chat({ system:'你是朋友圈互动AI。只输出一条简短评论，不加引号不加前缀。', prompt:prompt, maxTokens:50, temperature:0.95 });
+                  if(res.ok && res.text){
+                    var d2 = _ensureMoments();
+                    var p2 = d2.posts.find(function(p){return p.id===mid;});
+                    if(p2){
+                      if(!Array.isArray(p2.comments)) p2.comments = [];
+                      p2.comments.push({name:npc.name, text:res.text.trim().slice(0,60), time:Date.now(), replyTo:''});
+                      saveMoments(d2);
+                    }
+                  }
+                } else {
+                  saveMoments(d);
+                }
+                var cont = root.querySelector('[data-ph="chatTabContent"]');
+                if(cont && state.app==='chatDetail') {} // 不刷新聊天页
+                else if(cont) renderMoments(cont);
+                try{ toast(npc.name+' 赞了你的动态'); }catch(e){}
+              }catch(e){}
+            }, delay);
+          });
+        }catch(e){}
+      }
       function _queueNpcMomentInteractions(mid, userComment, myName){
         try{
           const cfg = PhoneAI._getConfig();
