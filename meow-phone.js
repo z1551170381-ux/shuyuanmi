@@ -12149,7 +12149,7 @@ ${lines}
           let likesHtml = '';
           if(likeArr.length){
             likesHtml = `<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:6px 10px;border-radius:6px;background:rgba(0,0,0,.04);margin-bottom:4px;">
-              <span style="color:#e74c3c;font-size:12px;margin-right:2px;">❤️</span>`;
+              <span style="color:var(--ph-accent,#07c160);font-size:12px;margin-right:2px;">❤️</span>`;
             likeArr.forEach((l,i)=>{
               likesHtml += `<span style="font-size:12px;color:var(--ph-accent,#07c160);font-weight:500;">${esc(l)}${i<likeArr.length-1?'、':''}</span>`;
             });
@@ -12179,9 +12179,10 @@ ${lines}
           if(m.images && m.images.length) html += renderFakeImages(m.images);
           html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;">
               <span style="font-size:11px;color:var(--ph-text-dim);">${ago}</span>
-              <div style="display:flex;gap:6px;">
+              <div style="display:flex;gap:6px;align-items:center;">
                 <button class="momentAction${iLiked?' liked':''}" data-mact="like" data-mid="${esc(m.id)}" style="background:none;border:none;color:${iLiked?'var(--ph-accent,#07c160)':'var(--ph-text-sub)'};font-size:12px;cursor:pointer;display:flex;align-items:center;gap:3px;">❤️ ${likeArr.length||''}</button>
                 <button class="momentAction" data-mact="comment" data-mid="${esc(m.id)}" style="background:none;border:none;color:var(--ph-text-sub);font-size:12px;cursor:pointer;display:flex;align-items:center;gap:3px;">💬 ${cmtArr.length||''}</button>
+                <button class="momentAction" data-mact="delPost" data-mid="${esc(m.id)}" style="background:none;border:none;color:rgba(20,24,28,.2);font-size:11px;cursor:pointer;padding:2px 4px;">✕</button>
               </div>
             </div>
             ${likesHtml}
@@ -12382,22 +12383,20 @@ ${lines}
 
             // AI自动回复：帖主不是"我"时，1~2分钟后回复
             if(post.name && post.name !== myName && post.name !== '我'){
-              const delay = 60000 + Math.random()*60000; // 1~2分钟
+              const delay = 20000 + Math.random()*40000; // 20秒~1分钟
               setTimeout(async ()=>{
                 try{
                   const cfg2 = PhoneAI._getConfig();
                   if(!cfg2.endpoint || !cfg2.key) return;
-                  const prompt = `你是"${post.name}"，性格特点见角色设定。用户"${myName}"在你的朋友圈动态下评论了："${txt}"。请以${post.name}的口吻回复一条简短自然的评论（不超过30字，不用加引号，像真实聊天一样）。`;
-                  const res = await PhoneAI.chat({ system:'你是小手机朋友圈AI，请用角色口吻简短回复评论。', prompt, maxTokens:60, temperature:0.9 });
-                  if(res.ok && res.text){
+                  const userContent = `你是"${post.name}"，性格特点见角色设定。用户"${myName}"在你的朋友圈动态下评论了："${txt}"。请以${post.name}的口吻回复一条简短自然的评论（不超过30字，不用加引号，像真实聊天一样）。`;
+                  const res = await PhoneAI.chat({ system:'你是小手机朋友圈AI，请用角色口吻简短回复评论。', messages:[{role:'user',content:userContent}], maxTokens:60, temperature:0.9 });
+                  if(res.ok && res.data){
                     const d2 = _ensureMoments();
                     const p2 = d2.posts.find(p=>p.id===mid);
                     if(p2){
-                      p2.comments.push({name:post.name, text:res.text.trim().slice(0,60), time:Date.now(), replyTo:myName});
+                      p2.comments.push({name:post.name, text:String(res.data).trim().slice(0,60), time:Date.now(), replyTo:myName});
                       saveMoments(d2);
-                      // 如果朋友圈还开着就刷新
-                      const cont2 = root.querySelector('[data-ph="chatTabContent"]');
-                      if(cont2) renderMoments(cont2);
+                      try{ var cont2 = root.querySelector('.momentsList'); if(cont2 && cont2.closest('[data-ph="chatTabContent"]')) renderMoments(cont2.closest('[data-ph="chatTabContent"]')); }catch(e){}
                       try{ toast(`💬 ${post.name} 回复了你`); }catch(e){}
                     }
                   }
@@ -12418,6 +12417,17 @@ ${lines}
               const btn = container.querySelector(`[data-cmtsend="${mid}"]`);
               if (btn) btn.click();
             }
+          });
+        });
+        // 删除动态
+        container.querySelectorAll('[data-mact="delPost"]').forEach(btn=>{
+          btn.addEventListener('click',()=>{
+            const mid = btn.getAttribute('data-mid');
+            const data = _ensureMoments();
+            data.posts = _safeArr(data.posts).filter(p=>p.id!==mid);
+            saveMoments(data);
+            renderMoments(container);
+            try{toast('已删除');}catch(e){}
           });
         });
         // 发动态（小手机内弹窗，避免浏览器 prompt 跑到外层）
@@ -12444,44 +12454,49 @@ ${lines}
           var myN = (phoneLoadSettings()&&phoneLoadSettings().phoneName)||'我';
           var contacts = _safeArr(db.contacts).filter(function(c){return c.name && c.name!==myN && c.name!=='我';});
           if(!contacts.length) return;
-          // 选2-4个NPC参与
           var shuffled = contacts.slice().sort(function(){return Math.random()-0.5;});
           var count = Math.min(2 + Math.floor(Math.random()*3), shuffled.length);
           var picked = shuffled.slice(0, count);
+          console.log('[Moments] 触发NPC互动, mid='+mid+', 选了'+picked.length+'人:', picked.map(function(c){return c.name;}).join(','));
           picked.forEach(function(npc, i){
-            var delay = 30000 + Math.random()*120000 + i*45000; // 30秒~2.5分钟，错开
+            var delay = 15000 + Math.random()*60000 + i*20000; // 15秒~1.5分钟，错开
             setTimeout(async function(){
               try{
+                console.log('[Moments] NPC '+npc.name+' 开始互动');
                 var d = _ensureMoments();
                 var post = d.posts.find(function(p){return p.id===mid;});
-                if(!post) return;
-                // 70%点赞+评论，30%仅点赞
+                if(!post){ console.log('[Moments] 找不到帖子 '+mid); return; }
                 if(!Array.isArray(post.likes)) post.likes = [];
                 if(post.likes.indexOf(npc.name) < 0) post.likes.push(npc.name);
+                saveMoments(d);
+                // 70%还会评论
                 if(Math.random() < 0.7){
                   var existingCmts = _safeArr(post.comments).map(function(c){return c.name+':'+c.text;}).join('; ');
-                  var prompt = '你是"'+npc.name+'"。你的朋友"'+myN+'"在朋友圈发了："'+(post.content||'').slice(0,100)+'"。'+(existingCmts?'已有评论：'+existingCmts+'。':'')+'请以'+npc.name+'的身份写一条简短自然的评论（不超过25字，像真人朋友圈，可以调侃、关心、共鸣）。只输出评论文字。';
-                  var res = await PhoneAI.chat({ system:'你是朋友圈互动AI。只输出一条简短评论，不加引号不加前缀。', prompt:prompt, maxTokens:50, temperature:0.95 });
-                  if(res.ok && res.text){
+                  var userContent = '你是"'+npc.name+'"。你的朋友"'+myN+'"在朋友圈发了："'+(post.content||'').slice(0,100)+'"。'+(existingCmts?'已有评论：'+existingCmts+'。':'')+'请以'+npc.name+'的身份写一条简短自然的评论（不超过25字，像真人朋友圈，可以调侃、关心、共鸣）。只输出评论文字。';
+                  var res = await PhoneAI.chat({ system:'你是朋友圈互动AI。只输出一条简短评论，不加引号不加前缀。', messages:[{role:'user',content:userContent}], maxTokens:50, temperature:0.95 });
+                  if(res.ok && res.data){
                     var d2 = _ensureMoments();
                     var p2 = d2.posts.find(function(p){return p.id===mid;});
                     if(p2){
                       if(!Array.isArray(p2.comments)) p2.comments = [];
-                      p2.comments.push({name:npc.name, text:res.text.trim().slice(0,60), time:Date.now(), replyTo:''});
+                      p2.comments.push({name:npc.name, text:String(res.data).trim().slice(0,60), time:Date.now(), replyTo:''});
                       saveMoments(d2);
+                      console.log('[Moments] '+npc.name+' 评论了: '+String(res.data).trim().slice(0,30));
                     }
                   }
-                } else {
-                  saveMoments(d);
                 }
-                var cont = root.querySelector('[data-ph="chatTabContent"]');
-                if(cont && state.app==='chatDetail') {} // 不刷新聊天页
-                else if(cont) renderMoments(cont);
+                // 刷新朋友圈
+                try{
+                  var cont = root.querySelector('.momentsList');
+                  if(cont && cont.closest('[data-ph="chatTabContent"]')){
+                    renderMoments(cont.closest('[data-ph="chatTabContent"]'));
+                  }
+                }catch(e){}
                 try{ toast(npc.name+' 赞了你的动态'); }catch(e){}
-              }catch(e){}
+              }catch(e){ console.error('[Moments] NPC互动出错:', e); }
             }, delay);
           });
-        }catch(e){}
+        }catch(e){ console.error('[Moments] _queueNpcMomentReactions error:', e); }
       }
       function _queueNpcMomentInteractions(mid, userComment, myName){
         try{
@@ -12490,40 +12505,34 @@ ${lines}
           const db = loadContactsDB();
           const contacts = _safeArr(db.contacts).filter(c => c.name && c.name !== myName && c.name !== '我');
           if(!contacts.length) return;
-          // 随机选1-2个NPC参与
           var shuffled = contacts.slice().sort(()=>Math.random()-0.5);
           var picked = shuffled.slice(0, Math.min(1 + Math.floor(Math.random()*2), shuffled.length));
           picked.forEach(function(npc, i){
-            var delay = 120000 + Math.random()*180000 + i*60000; // 2~5分钟，错开
+            var delay = 60000 + Math.random()*120000 + i*40000;
             setTimeout(async function(){
               try{
                 var d = _ensureMoments();
                 var post = d.posts.find(function(p){return p.id===mid;});
                 if(!post) return;
-                // 随机决定是点赞还是评论（60%评论，40%点赞）
                 if(Math.random() < 0.4){
-                  // 点赞
                   if(!Array.isArray(post.likes)) post.likes = [];
                   if(post.likes.indexOf(npc.name) < 0){
                     post.likes.push(npc.name);
                     saveMoments(d);
-                    var cont = root.querySelector('[data-ph="chatTabContent"]');
-                    if(cont) renderMoments(cont);
+                    try{ var cont = root.querySelector('.momentsList'); if(cont && cont.closest('[data-ph="chatTabContent"]')) renderMoments(cont.closest('[data-ph="chatTabContent"]')); }catch(e){}
                   }
                 } else {
-                  // AI生成评论
                   var existingCmts = _safeArr(post.comments).map(function(c){return c.name+':'+c.text;}).join('; ');
-                  var prompt = '你是"'+npc.name+'"。朋友圈里"'+post.name+'"发了一条动态："'+(post.content||'').slice(0,100)+'"。已有评论：'+existingCmts+'。请以'+npc.name+'的身份写一条简短自然的评论（不超过25字，像真人朋友圈评论，可以回复某人也可以直接评论）。只输出评论文字。';
-                  var res = await PhoneAI.chat({ system:'你是朋友圈互动AI。只输出一条简短评论，不加引号不加前缀。', prompt:prompt, maxTokens:50, temperature:0.95 });
-                  if(res.ok && res.text){
+                  var userContent = '你是"'+npc.name+'"。朋友圈里"'+post.name+'"发了一条动态："'+(post.content||'').slice(0,100)+'"。已有评论：'+existingCmts+'。请以'+npc.name+'的身份写一条简短自然的评论（不超过25字）。只输出评论文字。';
+                  var res = await PhoneAI.chat({ system:'你是朋友圈互动AI。只输出一条简短评论，不加引号不加前缀。', messages:[{role:'user',content:userContent}], maxTokens:50, temperature:0.95 });
+                  if(res.ok && res.data){
                     var d2 = _ensureMoments();
                     var p2 = d2.posts.find(function(p){return p.id===mid;});
                     if(p2){
                       if(!Array.isArray(p2.comments)) p2.comments = [];
-                      p2.comments.push({name:npc.name, text:res.text.trim().slice(0,60), time:Date.now(), replyTo:''});
+                      p2.comments.push({name:npc.name, text:String(res.data).trim().slice(0,60), time:Date.now(), replyTo:''});
                       saveMoments(d2);
-                      var cont2 = root.querySelector('[data-ph="chatTabContent"]');
-                      if(cont2) renderMoments(cont2);
+                      try{ var cont2 = root.querySelector('.momentsList'); if(cont2 && cont2.closest('[data-ph="chatTabContent"]')) renderMoments(cont2.closest('[data-ph="chatTabContent"]')); }catch(e){}
                     }
                   }
                 }
