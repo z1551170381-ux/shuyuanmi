@@ -5384,7 +5384,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
                 }
                 const result = await PhoneAI.summarizeChat({ messages:msgs, customPrompt:existing.customPrompt||'' });
                 if (result.ok && result.data){
-                  const cfg = PhoneAI._getConfig();
+                  const cfg = PhoneAI._getConfig('background');
                   saveChatSummary(nid, {
                     summaryText: result.data, updatedAt: Date.now(), model: cfg.model||'unknown',
                     sourceMsgCount: tail.length, customPrompt: existing.customPrompt||'', autoSummarize: existing.autoSummarize||false
@@ -5758,7 +5758,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
                 const result = await PhoneAI.summarizeChat({ messages:msgs, customPrompt:customPrompt });
 
                 if (result.ok && result.data){
-                  const cfg = PhoneAI._getConfig();
+                  const cfg = PhoneAI._getConfig('background');
                   const sumData = {
                     summaryText: result.data,
                     updatedAt: Date.now(),
@@ -10381,7 +10381,7 @@ ${lines}
       function _saveApiPresets(d){
         try{ lsSet(LS_PHONE_API_PRESETS, d); }catch(e){}
         // 清除 PhoneAI URL 缓存（配置变了，需重新探测）
-        try{ if(typeof PhoneAI !== 'undefined' && PhoneAI) PhoneAI._cachedChatUrl = ''; }catch(e){}
+        try{ if(typeof PhoneAI !== 'undefined' && PhoneAI){ PhoneAI._cachedChatUrl = ''; PhoneAI._cachedBgUrl = ''; } }catch(e){}
       }
       function _newApiPreset(name){
         return { id:'ap_'+Date.now()+'_'+Math.random().toString(36).slice(2,6), name:name||'新预设', baseUrl:'', apiKey:'', model:'', extra:{}, updatedAt:Date.now() };
@@ -10416,7 +10416,31 @@ ${lines}
           html += `<div style="display:flex;gap:8px;margin-top:14px;">
             <button data-act="apiAddPreset" style="flex:1;padding:12px;border-radius:12px;border:1px solid rgba(0,0,0,.1);background:#fff;color:var(--ph-text);font-size:13px;cursor:pointer;">+ 新建预设</button>
             <button data-act="apiExportAll" style="flex:1;padding:12px;border-radius:12px;border:1px solid rgba(0,0,0,.1);background:#fff;color:var(--ph-text);font-size:13px;cursor:pointer;">导出预设</button>
-          </div></div>`;
+          </div>`;
+
+          // === 通道分配 ===
+          if (presets.length > 0){
+            var bgActiveId = data.backgroundActiveId || '';
+            var bgPresetName = '与聊天相同';
+            if (bgActiveId){ var bgP = presets.find(function(pp){ return pp.id === bgActiveId; }); if(bgP) bgPresetName = bgP.name; else bgActiveId = ''; }
+            html += `<div style="margin-top:18px;padding:14px;border-radius:14px;background:rgba(59,130,246,.04);border:1px solid rgba(59,130,246,.12);">
+              <div style="font-size:13px;font-weight:700;color:var(--ph-text);margin-bottom:10px;">🔀 通道分配</div>
+              <div style="font-size:11px;color:var(--ph-text-dim);margin-bottom:10px;line-height:1.5;">三条通道各用独立 AbortController，互不干扰。<br/>聊天和朋友圈使用「启用」的预设；总结/资讯可选用单独预设（按次计费更省）。</div>
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                <span style="font-size:12px;color:var(--ph-text);min-width:90px;font-weight:600;">💬 聊天/朋友圈</span>
+                <span style="font-size:11px;color:var(--ph-accent, #07c160);">${_esc(presets.find(function(pp){return pp.id===activeId;})?presets.find(function(pp){return pp.id===activeId;}).name:'未设置')}</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:12px;color:var(--ph-text);min-width:90px;font-weight:600;">📋 总结/资讯</span>
+                <select data-act="apiBgSelect" style="flex:1;padding:6px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;background:#fff;color:var(--ph-text);">
+                  <option value=""${!bgActiveId?' selected':''}>与聊天相同</option>
+                  ${presets.map(function(pp){ return '<option value="'+_esc(pp.id)+'"'+(pp.id===bgActiveId?' selected':'')+'>'+_esc(pp.name)+'</option>'; }).join('')}
+                </select>
+              </div>
+            </div>`;
+          }
+
+          html += `</div>`;
           container.innerHTML = html;
           _bindApiListEvents(container);
         }
@@ -10443,6 +10467,13 @@ ${lines}
             if (data.presets[idx]) _openPresetEditor(ct, idx);
           }));
           ct.querySelectorAll('[data-act="apiExportAll"]').forEach(b=>b.addEventListener('click',()=> _apiExportDialog(false)));
+          // 通道分配：总结/资讯预设选择
+          ct.querySelectorAll('[data-act="apiBgSelect"]').forEach(sel=>sel.addEventListener('change',()=>{
+            data.backgroundActiveId = sel.value || '';
+            _saveApiPresets(data);
+            try{toast(sel.value ? '总结/资讯已切换到独立预设' : '总结/资讯将使用聊天预设');}catch(e){}
+            _renderList();
+          }));
         }
 
         function _openPresetEditor(ct, idx){
@@ -12843,7 +12874,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           + '}\n生成8-15条短信，类型要多样，内容要符合世界观和角色关系。好友短信应使用通讯录中的角色名。广告短信可以搞笑有趣。';
         try{
           var result = await _tlApiEnqueue(function(){
-            return PhoneAI.chat({ system:sysPrompt, messages:[{role:'user',content:fullCtx.slice(0,4000)||'（请生成一些有趣的虚拟手机短信）'}], temperature:0.85, maxTokens:1200, channel:'proactive', timeout:60 });
+            return PhoneAI.chat({ system:sysPrompt, messages:[{role:'user',content:fullCtx.slice(0,4000)||'（请生成一些有趣的虚拟手机短信）'}], temperature:0.85, maxTokens:1200, channel:'background', timeout:60 });
           });
           if(!result.ok) return;
           var raw = String(result.data||'').replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
@@ -14838,17 +14869,21 @@ const npc = _wxGetChatTargetMeta(npcId);
       const PhoneAI = {
         _controller: null,
         _proactiveController: null,
+        _backgroundController: null,
         _requesting: false,
         _proactiveRequesting: false,
+        _backgroundRequesting: false,
         _replySeqId: 0,
 
-        _getConfig: function(){
+        _getConfig: function(channel){
           try{
             var data = _loadApiPresets();
             var presets = data.presets || [];
-            var activeId = data.activeId || '';
-            var preset = presets.find(function(p){ return p.id === activeId; });
-            // 容错：没有匹配 activeId 但有预设时，退回第一个
+            var ch = channel || 'default';
+            // background 通道使用独立的 backgroundActiveId（如果配置了的话）
+            var targetId = (ch === 'background' && data.backgroundActiveId) ? data.backgroundActiveId : (data.activeId || '');
+            var preset = presets.find(function(p){ return p.id === targetId; });
+            // 容错：没有匹配时退回第一个
             if (!preset && presets.length > 0) preset = presets[0];
             if (!preset) return { endpoint:'', key:'', model:'', maxTokens:1024 };
             return {
@@ -14862,23 +14897,25 @@ const npc = _wxGetChatTargetMeta(npcId);
           }
         },
 
-        _buildHeaders: function(){
-          var cfg = this._getConfig();
+        _buildHeaders: function(cfg){
+          if (!cfg) cfg = this._getConfig();
           var h = { 'Content-Type':'application/json' };
           if (cfg.key) h['Authorization'] = 'Bearer ' + cfg.key;
           return h;
         },
 
         _cachedChatUrl: '',  // 缓存已验证的聊天 URL
+        _cachedBgUrl: '',    // 缓存已验证的 background 通道 URL
 
         // 生成多个候选 URL（兼容不同代理路由方式）
-        _buildChatUrls: function(endpoint){
+        _buildChatUrls: function(endpoint, channel){
           var ep = String(endpoint || '').trim().replace(/\/+$/, '');
           if (!ep) return [];
           var candidates = [];
           var stripped = ep.replace(/\/v1$/i, '');
-          // 优先用缓存
-          if (this._cachedChatUrl) return [this._cachedChatUrl];
+          // 优先用缓存（按通道区分）
+          var cacheKey = (channel === 'background') ? '_cachedBgUrl' : '_cachedChatUrl';
+          if (this[cacheKey]) return [this[cacheKey]];
           if (/\/v1$/i.test(ep)){
             // 用户填了 /v1 结尾：
             candidates.push(ep + '/chat/completions');                 // https://xxx/v1/chat/completions
@@ -14897,13 +14934,14 @@ const npc = _wxGetChatTargetMeta(npcId);
         },
 
         _request: async function(opts){
-          var cfg = this._getConfig();
+          var channel = (opts && opts.channel) || 'default';
+          if (channel !== 'proactive' && channel !== 'background') channel = 'default';
+          var cfg = this._getConfig(channel);
           if (!cfg.endpoint) return { ok:false, data:null, error:'请先配置 API' };
           if (!cfg.key) return { ok:false, data:null, error:'请先配置 API 密钥' };
 
-          var channel = (opts && opts.channel === 'proactive') ? 'proactive' : 'default';
-          var ctrlKey = channel === 'proactive' ? '_proactiveController' : '_controller';
-          var reqKey = channel === 'proactive' ? '_proactiveRequesting' : '_requesting';
+          var ctrlKey = channel === 'proactive' ? '_proactiveController' : (channel === 'background' ? '_backgroundController' : '_controller');
+          var reqKey = channel === 'proactive' ? '_proactiveRequesting' : (channel === 'background' ? '_backgroundRequesting' : '_requesting');
           var prevWrap = this[ctrlKey];
           if (prevWrap && prevWrap.controller){
             try{ prevWrap.reason = 'replaced'; prevWrap.controller.abort(); }catch(e){}
@@ -14934,8 +14972,8 @@ const npc = _wxGetChatTargetMeta(npcId);
             }
 
             var bodyStr = JSON.stringify(body);
-            var headers = this._buildHeaders();
-            var urls = this._buildChatUrls(cfg.endpoint);
+            var headers = this._buildHeaders(cfg);
+            var urls = this._buildChatUrls(cfg.endpoint, channel);
             if (!urls.length) return { ok:false, data:null, error:'API 地址无效' };
 
             var lastStatus = 0;
@@ -14971,8 +15009,9 @@ const npc = _wxGetChatTargetMeta(npcId);
                   return { ok:false, data:null, error:'请求失败 ('+resp.status+')' };
                 }
 
-                // 成功！缓存这个 URL
-                this._cachedChatUrl = url;
+                // 成功！缓存这个 URL（按通道区分）
+                var cacheUrlKey = (channel === 'background') ? '_cachedBgUrl' : '_cachedChatUrl';
+                this[cacheUrlKey] = url;
                 void(0)&&console.log('[PhoneAI] ✅ 成功:', url);
 
                 var json = await resp.json();
@@ -15084,15 +15123,16 @@ const npc = _wxGetChatTargetMeta(npcId);
             messages: [{ role:'user', content: chatText.trim() }],
             temperature: 0.3,
             maxTokens: 1000,
-            timeout: 60
+            timeout: 60,
+            channel: 'background'
           };
 
           // 如果有指定模型，临时覆盖 _getConfig 的 model
           var origGetConfig = this._getConfig;
           if (overrideModel){
             var self = this;
-            this._getConfig = function(){
-              var cfg = origGetConfig.call(self);
+            this._getConfig = function(ch){
+              var cfg = origGetConfig.call(self, ch);
               cfg.model = overrideModel;
               return cfg;
             };
@@ -15142,10 +15182,10 @@ const npc = _wxGetChatTargetMeta(npcId);
           var overrideModel='';
           try{ var gs=getGlobalSummarySettings(); if(gs&&gs.defaultModel) overrideModel=gs.defaultModel.trim(); }catch(e){}
           var origGetConfig=this._getConfig;
-          if(overrideModel){ var self=this; this._getConfig=function(){ var c=origGetConfig.call(self); c.model=overrideModel; return c; }; }
+          if(overrideModel){ var self=this; this._getConfig=function(ch){ var c=origGetConfig.call(self,ch); c.model=overrideModel; return c; }; }
 
           try{
-            var result=await this._request({ system:sysPrompt, messages:[{role:'user',content:context||'（无额外上下文，请基于你的知识生成有趣的世界观资讯内容）'}], temperature:0.9, maxTokens:2048, timeout:90, channel:'proactive' });
+            var result=await this._request({ system:sysPrompt, messages:[{role:'user',content:context||'（无额外上下文，请基于你的知识生成有趣的世界观资讯内容）'}], temperature:0.9, maxTokens:2048, timeout:90, channel:'background' });
             if(!result.ok) return result;
             void(0)&&console.log('[PhoneAI.generateFeed] 原始返回:', String(result.data||'').substring(0,300));
             var parsed=_parseFeedJSON(result.data);
@@ -15158,9 +15198,9 @@ const npc = _wxGetChatTargetMeta(npcId);
         },
 
         abort: function(channel){
-          var ch = channel === 'proactive' ? 'proactive' : 'default';
-          var ctrlKey = ch === 'proactive' ? '_proactiveController' : '_controller';
-          var reqKey = ch === 'proactive' ? '_proactiveRequesting' : '_requesting';
+          var ch = (channel === 'proactive') ? 'proactive' : (channel === 'background' ? 'background' : 'default');
+          var ctrlKey = ch === 'proactive' ? '_proactiveController' : (ch === 'background' ? '_backgroundController' : '_controller');
+          var reqKey = ch === 'proactive' ? '_proactiveRequesting' : (ch === 'background' ? '_backgroundRequesting' : '_requesting');
           var wrap = this[ctrlKey];
           if (wrap && wrap.controller){
             try{ wrap.reason = 'manual'; wrap.controller.abort(); }catch(e){}
@@ -15172,7 +15212,10 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         destroy: function(){
           this.abort();
+          this.abort('proactive');
+          this.abort('background');
           this._cachedChatUrl = '';
+          this._cachedBgUrl = '';
         }
       };
 
@@ -17703,7 +17746,7 @@ const npc = _wxGetChatTargetMeta(npcId);
       // 后台静默触发自动总结：循环直到所有待总结消息处理完毕
       async function _triggerAutoSummary(npcId, mode){
         try{
-          var apiCfg = PhoneAI._getConfig();
+          var apiCfg = PhoneAI._getConfig('background');
           if (!apiCfg.endpoint || !apiCfg.key) return;
           var targetMode = _normChatMode(mode || _getChatMode(npcId));
           var ce = _loadCharExtra(npcId);
@@ -17887,8 +17930,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             if(isManual && !this._isManualRun){
               void(0)&&console.log('[AutoFeed] 手动优先：中断自动任务');
               this._aborted=true;
-              try{ PhoneAI.abort('proactive'); }catch(e){}
-              // 等一小段让旧请求清理
+              try{ PhoneAI.abort('background'); }catch(e){}
               await new Promise(function(r){ setTimeout(r, 300); });
               this._running=false;
             } else {
@@ -17899,7 +17941,7 @@ const npc = _wxGetChatTargetMeta(npcId);
 
           var cfg=getAutofeedCfg();
           if(!isManual&&cfg.cooldownUntil>Date.now()) return{ok:false,error:'cooldown'};
-          var apiCfg=PhoneAI._getConfig();
+          var apiCfg=PhoneAI._getConfig('background');
           if(!apiCfg.endpoint||!apiCfg.key){ try{toast('请先在设置中配置 API');}catch(e){} return{ok:false,error:'no_api'}; }
           if(!targets.length){ var at=cfg.autoTargets||{}; if(at.forum)targets.push('forum'); if(at.browser)targets.push('browser'); if(at.moments)targets.push('moments'); if(at.weather)targets.push('weather'); if(at.calendar)targets.push('calendar'); if(at.sms)targets.push('sms'); }
           if(!targets.length){ try{toast('没有已开启的资讯目标');}catch(e){} return{ok:false,error:'no_targets'}; }
@@ -19399,7 +19441,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           var result = await PhoneAI.chat({
             system: '你是一个通话记录员。请用第三人称视角简洁总结这通'+(callType==='video'?'视频':'语音')+'通话内容，包括双方聊了什么、重要信息、情绪氛围。2-4句话，不要列表格式。',
             messages: [{ role:'user', content:'通话时长：'+durStr+'\n通话内容：\n'+dialogText.slice(0,2000) }],
-            temperature: 0.5, maxTokens: 200, channel: 'proactive', timeout: 30
+            temperature: 0.5, maxTokens: 200, channel: 'background', timeout: 30
           });
 
           if(result.ok && result.data){
@@ -19861,7 +19903,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           + '}\n生成4-8个今日事件和2-3天的未来日程。内容要贴合角色关系和世界观。';
         try{
           var result = await _tlApiEnqueue(function(){
-            return PhoneAI.chat({ system:sysPrompt, messages:[{role:'user',content:fullCtx.slice(0,4000)||'（请根据一般都市生活生成日程）'}], temperature:0.8, maxTokens:1000, channel:'proactive', timeout:60 });
+            return PhoneAI.chat({ system:sysPrompt, messages:[{role:'user',content:fullCtx.slice(0,4000)||'（请根据一般都市生活生成日程）'}], temperature:0.8, maxTokens:1000, channel:'background', timeout:60 });
           });
           if(!result.ok) return;
           var raw = String(result.data||'').replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
@@ -20927,7 +20969,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           + '}\n生成的内容要符合世界观，有趣且实用。';
         try{
           var result = await _tlApiEnqueue(function(){
-            return PhoneAI.chat({ system:sysPrompt, messages:[{role:'user',content:ctx.slice(0,3000)||'（无额外上下文，请生成一个有趣的虚拟世界天气）'}], temperature:0.8, maxTokens:800, channel:'proactive', timeout:60 });
+            return PhoneAI.chat({ system:sysPrompt, messages:[{role:'user',content:ctx.slice(0,3000)||'（无额外上下文，请生成一个有趣的虚拟世界天气）'}], temperature:0.8, maxTokens:800, channel:'background', timeout:60 });
           });
           if(!result.ok) return;
           var raw = String(result.data||'').replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
@@ -23764,7 +23806,7 @@ ${todoHint}
       messages: [{ role:'user', content:'对话片段（第' + (fromIdx+1) + '~' + (toIdx+1) + '条）：\n' + dialogText.slice(0, 3000) }],
       temperature: 0.3,
       maxTokens: 800,
-      channel: 'proactive',
+      channel: 'background',
       timeout: 60
     });
     if (!result.ok) {
@@ -24204,7 +24246,7 @@ function _openTimelineViewer(npcId){
     // ---- 停止 ----
     if (act === 'tlAbort'){
       genAborted = true; _tlApiClearQueue();
-      try{ PhoneAI.abort('proactive'); }catch(e){}
+      try{ PhoneAI.abort('background'); }catch(e){}
       isGenerating = false;
       try{ toast('已停止'); }catch(e){}
       refresh();
