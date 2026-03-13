@@ -12383,7 +12383,7 @@ ${lines}
             saveMoments(data);
             renderMoments(container);
 
-            // AI自动回复：被回复的人 或 帖主 回复用户
+            // AI自动回复：只有被回复的那个人会回复，不触发全员互动
             var replyFrom = replyTo || (post.name !== myName && post.name !== '我' ? post.name : '');
             if(replyFrom){
               console.log('[Moments] 触发回复, 来自:', replyFrom, ', 用户说:', txt.slice(0,20));
@@ -12391,8 +12391,8 @@ ${lines}
                 try{
                   var cfg2 = PhoneAI._getConfig();
                   if(!cfg2.endpoint || !cfg2.key) return;
-                  var userContent = '你是"'+replyFrom+'"。用户"'+myName+'"在朋友圈'+(replyTo?'回复你':'你的动态下评论')+'："'+txt+'"。用'+replyFrom+'口吻简短回复（不超过20字，不加引号，像真人微信回复）。只输出回复文字。';
-                  var res = await PhoneAI.chat({ system:'只输出回复文字，不加引号前缀。', messages:[{role:'user',content:userContent}], maxTokens:50, temperature:0.9, channel:'proactive', timeout:25 });
+                  var userContent = '你是"'+replyFrom+'"。用户"'+myName+'"在朋友圈回复你说："'+txt+'"。用'+replyFrom+'口吻简短回复（不超过20字，不加引号，像真人微信回复，要针对用户说的内容回复）。只输出回复文字。';
+                  var res = await PhoneAI.chat({ system:'只输出回复文字，不加引号前缀。针对用户说的内容回复。', messages:[{role:'user',content:userContent}], maxTokens:50, temperature:0.9, channel:'proactive', timeout:25 });
                   console.log('[Moments] 回复结果:', res.ok, String(res.data||res.error||'').slice(0,50));
                   if(res.ok && res.data){
                     var replyText = String(res.data).replace(/^["'「]|["'」]$/g,'').replace(/^\s*\S+[:：]\s*/,'').trim().slice(0,60);
@@ -12409,11 +12409,8 @@ ${lines}
                     }
                   }
                 }catch(e){ console.error('[Moments] 回复错:', e); }
-              }, 6000 + Math.random()*10000); // 6~16秒
+              }, 6000 + Math.random()*10000);
             }
-
-            // ★ 其他NPC也可能参与评论/点赞（后台排队，2~5分钟后）
-            _queueNpcMomentInteractions(mid, txt, myName);
           });
         });
         // 发送评论回车
@@ -12481,7 +12478,7 @@ ${lines}
           var npcName = recentNpc.name || recentNpc.id;
           console.log('[Moments] 触发私聊提醒, NPC:', npcName);
 
-          // 30~60秒后发私聊消息
+          // 90~150秒后发私聊消息（确保批量评论已完成，不抢proactive通道）
           setTimeout(async function(){
             try{
               var userContent = '你是"'+npcName+'"，你和用户"'+myN+'"正在聊天。你发现'+myN+'刚发了一条朋友圈："'+(postContent||'').slice(0,80)+'"。\n'
@@ -12515,7 +12512,7 @@ ${lines}
                 }
               }
             }catch(e){ console.error('[Moments] 私聊提醒错:', e); }
-          }, 30000 + Math.random()*30000); // 30~60秒
+          }, 90000 + Math.random()*60000); // 90~150秒（避免与批量评论抢通道）
         }catch(e){}
       }
 
@@ -17703,7 +17700,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         saveSummaryStore(store);
       }
 
-      // 后台静默触发自动总结：直接写入当前模式的时间线总结（使用队列避免被挤掉）
+      // 后台静默触发自动总结：循环直到所有待总结消息处理完毕
       async function _triggerAutoSummary(npcId, mode){
         try{
           var apiCfg = PhoneAI._getConfig();
@@ -17711,12 +17708,36 @@ const npc = _wxGetChatTargetMeta(npcId);
           var targetMode = _normChatMode(mode || _getChatMode(npcId));
           var ce = _loadCharExtra(npcId);
           var chunkSize = Math.max(5, ce.autoSumEvery || 20);
-          var pending = _getTimelinePendingRange(npcId, targetMode, chunkSize);
-          if (!pending) return;
-          await _tlApiEnqueue(function(){
-            return _generateTimelineEntry(npcId, pending.fromIdx, pending.toIdx, targetMode, { silent:true, auto:true });
-          });
-        }catch(e){}
+          var batchCount = 0;
+          var maxBatch = 10; // 安全上限
+
+          while(batchCount < maxBatch){
+            var pending = _getTimelinePendingRange(npcId, targetMode, chunkSize);
+            if (!pending) break;
+            // 剩余不够一个完整chunk就停（除非是最后一批且剩余>=5）
+            var remaining = pending.toIdx - pending.fromIdx + 1;
+            if (remaining < Math.min(chunkSize, 5)) break;
+            console.log('[AutoSum] 批次'+(batchCount+1)+': #'+(pending.fromIdx+1)+'~'+(pending.toIdx+1)+', 剩余'+(pending.hasMore?'有更多':'无'));
+            try{
+              var entry = await _tlApiEnqueue(function(){
+                return _generateTimelineEntry(npcId, pending.fromIdx, pending.toIdx, targetMode, { silent:true, auto:true });
+              });
+              if (!entry) break;
+              batchCount++;
+              // 更新 lastAutoSumAt
+              var sumData = getChatSummary(npcId, targetMode) || {};
+              var log = _getLogForModeBranch(npcId, targetMode);
+              sumData.lastAutoSumAt = log.length;
+              saveChatSummary(npcId, sumData, targetMode);
+              // 短暂等待避免请求过密
+              await new Promise(function(r){ setTimeout(r, 1500); });
+            }catch(e){
+              console.error('[AutoSum] 出错:', e);
+              break;
+            }
+          }
+          if(batchCount > 0) console.log('[AutoSum] 完成，共'+batchCount+'批');
+        }catch(e){ console.error('[AutoSum] error:', e); }
       }
 
       function getGlobalSummarySettings(){
@@ -19728,15 +19749,10 @@ const npc = _wxGetChatTargetMeta(npcId);
           if (ce.autoSummary){
             var curMode = _normChatMode(_getChatMode(npcId));
             var everyN = Math.max(5, ce.autoSumEvery || 20);
-            var log = _getLogForModeBranch(npcId, curMode);
-            var msgCount = (log || []).filter(function(m){ return m.role !== 'system'; }).length;
-            var lastAutoSum = getChatSummary(npcId, curMode);
-            var lastCount = (lastAutoSum && lastAutoSum.lastAutoSumAt) || 0;
-            if (msgCount - lastCount >= everyN){
-              var sumData = getChatSummary(npcId, curMode) || {};
-              sumData.lastAutoSumAt = msgCount;
-              sumData.autoSummarize = true;
-              saveChatSummary(npcId, sumData, curMode);
+            // 用 _getTimelinePendingRange 检查是否有足够的未总结消息
+            var pending = _getTimelinePendingRange(npcId, curMode, everyN);
+            if (pending && (pending.toIdx - pending.fromIdx + 1) >= everyN){
+              console.log('[AutoSum] 触发: 待总结 #'+(pending.fromIdx+1)+'~'+(pending.toIdx+1));
               setTimeout(function(){
                 _triggerAutoSummary(npcId, curMode);
               }, 2000);
@@ -23804,32 +23820,28 @@ function _showThemedInput(title, defaultVal, onOk){
     + '<div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.8);margin-bottom:10px;">'+esc(title||'输入')+'</div>'
     + '<input data-el="thInput" type="text" value="'+esc(defaultVal||'')+'" style="width:100%;padding:10px 12px;border:1px solid rgba(0,0,0,.1);border-radius:10px;font-size:14px;outline:none;box-sizing:border-box;background:rgba(255,255,255,.9);color:rgba(20,24,28,.85);" />'
     + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">'
-    + '<button data-act="thCancel" style="padding:8px 18px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;color:rgba(20,24,28,.6);">取消</button>'
-    + '<button data-act="thOk" style="padding:8px 18px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">确定</button>'
+    + '<button data-el="thCancelBtn" style="padding:8px 18px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;color:rgba(20,24,28,.6);">取消</button>'
+    + '<button data-el="thOkBtn" style="padding:8px 18px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">确定</button>'
     + '</div></div>';
   (root || document.body).appendChild(inputOv);
-  // prevent inner modal click from closing
-  var innerModal = inputOv.querySelector('.wxCPEditModal');
-  if (innerModal) innerModal.addEventListener('click', function(ev){ ev.stopPropagation(); });
   var inp = inputOv.querySelector('[data-el="thInput"]');
-  if (inp){
-    inp.addEventListener('mousedown', function(ev){ ev.stopPropagation(); });
-    inp.addEventListener('touchstart', function(ev){ ev.stopPropagation(); });
-    setTimeout(function(){ inp.focus(); inp.select(); }, 80);
-  }
+  if (inp) setTimeout(function(){ inp.focus(); inp.select(); }, 80);
+  // backdrop click to close
   inputOv.addEventListener('click', function(ev){
-    if (ev.target === inputOv){ inputOv.remove(); return; }
-    var tgt = ev.target;
-    while(tgt && tgt !== inputOv){ if(tgt.getAttribute && tgt.getAttribute('data-act')) break; tgt = tgt.parentElement; }
-    var a = tgt && tgt.getAttribute ? tgt.getAttribute('data-act') : '';
-    if (a === 'thCancel'){ inputOv.remove(); return; }
-    if (a === 'thOk'){
-      var val = inp ? inp.value : '';
-      inputOv.remove();
-      if (typeof onOk === 'function') onOk(val);
-    }
+    if (ev.target === inputOv) inputOv.remove();
   });
-  // Enter 键确认
+  // cancel
+  var cancelBtn = inputOv.querySelector('[data-el="thCancelBtn"]');
+  if(cancelBtn) cancelBtn.addEventListener('click', function(ev){ ev.stopPropagation(); inputOv.remove(); });
+  // ok
+  var okBtn = inputOv.querySelector('[data-el="thOkBtn"]');
+  if(okBtn) okBtn.addEventListener('click', function(ev){
+    ev.stopPropagation();
+    var val = inp ? inp.value : '';
+    inputOv.remove();
+    if (typeof onOk === 'function') onOk(val);
+  });
+  // Enter
   if (inp) inp.addEventListener('keydown', function(e){
     if (e.key === 'Enter'){
       e.preventDefault();
@@ -24000,38 +24012,35 @@ function _openTimelineViewer(npcId){
       + '<div style="font-size:14px;font-weight:600;color:rgba(20,24,28,.82);">编辑 #'+(entry.range[0]+1)+'~'+(entry.range[1]+1)+'</div>'
       + '<textarea data-el="editTA" style="width:100%;height:180px;border:1px solid rgba(0,0,0,.1);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.65;resize:vertical;box-sizing:border-box;background:rgba(255,255,255,.9);color:rgba(20,24,28,.82);font-family:inherit;outline:none;">'+esc(curText)+'</textarea>'
       + '<div style="display:flex;gap:8px;justify-content:flex-end;">'
-      + '<button data-act="editCancel" style="padding:8px 18px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.92);font-size:13px;cursor:pointer;color:rgba(20,24,28,.6);">取消</button>'
-      + '<button data-act="editSave" style="padding:8px 18px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(7,193,96,.3);">保存</button>'
+      + '<button data-el="editCancelBtn" style="padding:8px 18px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.92);font-size:13px;cursor:pointer;color:rgba(20,24,28,.6);">取消</button>'
+      + '<button data-el="editSaveBtn" style="padding:8px 18px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(7,193,96,.3);">保存</button>'
       + '</div></div>';
     root.appendChild(editOv);
-    // prevent click on inner modal from closing
-    var innerModal = editOv.querySelector('.wxCPEditModal');
-    if (innerModal) innerModal.addEventListener('click', function(ev){ ev.stopPropagation(); });
     var ta = editOv.querySelector('[data-el="editTA"]');
-    if (ta){
-      ta.addEventListener('mousedown', function(ev){ ev.stopPropagation(); });
-      ta.addEventListener('touchstart', function(ev){ ev.stopPropagation(); });
-      setTimeout(function(){ ta.focus(); }, 100);
-    }
-    // only close on backdrop click
+    if (ta) setTimeout(function(){ ta.focus(); }, 100);
+    // backdrop click to close
     editOv.addEventListener('click', function(ev){
-      if (ev.target === editOv){ editOv.remove(); return; }
-      var t = ev.target;
-      while(t && t !== editOv){ if (t.getAttribute && t.getAttribute('data-act')) break; t = t.parentElement; }
-      var a = (t && t.getAttribute) ? t.getAttribute('data-act') : '';
-      if (a === 'editCancel'){ editOv.remove(); return; }
-      if (a === 'editSave'){
-        var newText = editOv.querySelector('[data-el="editTA"]').value;
-        var tl2 = _loadTimeline(npcId);
-        var bucket2 = _getTimelineModeState(tl2, viewMode, true);
-        if (bucket2.entries[idx]){
-          bucket2.entries[idx].userEdited = newText;
-          _saveTimeline(npcId, tl2);
-          _syncSummaryFromTimeline(npcId, viewMode);
-        }
-        editOv.remove();
-        refresh();
+      if (ev.target === editOv) editOv.remove();
+    });
+    // cancel button
+    var cancelBtn = editOv.querySelector('[data-el="editCancelBtn"]');
+    if(cancelBtn) cancelBtn.addEventListener('click', function(ev){
+      ev.stopPropagation(); editOv.remove();
+    });
+    // save button
+    var saveBtn = editOv.querySelector('[data-el="editSaveBtn"]');
+    if(saveBtn) saveBtn.addEventListener('click', function(ev){
+      ev.stopPropagation();
+      var newText = ta ? ta.value : '';
+      var tl2 = _loadTimeline(npcId);
+      var bucket2 = _getTimelineModeState(tl2, viewMode, true);
+      if (bucket2.entries[idx]){
+        bucket2.entries[idx].userEdited = newText;
+        _saveTimeline(npcId, tl2);
+        _syncSummaryFromTimeline(npcId, viewMode);
       }
+      editOv.remove();
+      refresh();
     });
   }
 
