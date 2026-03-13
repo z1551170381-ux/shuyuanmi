@@ -24539,74 +24539,89 @@ function _mapShuffle(rng, arr){
 var MAP_LANDMARK_POOL = {
   city: {
     required: [
-      { type:'townhall', icon:'townhall', emoji:'🏛️', name:['市政厅','议事堂','公告大楼','行政中心','市民广场'], tags:['official','work','bulletin','formal'],
+      { type:'townhall', emoji:'🏛️', name:['市政厅','议事堂','公告大楼','行政中心'], tags:['official','work','bulletin'],
         actions:[{id:'work',label:'找工作',cost:0,fx:{mood:-3,energy:-5}},{id:'task',label:'领任务',cost:0,fx:{mood:5}},{id:'notice',label:'看公告',cost:0,fx:{mood:2}}] },
-      { type:'cafe', icon:'cafe', emoji:'☕', name:['猫咖啡厅','晨露咖啡','树洞茶馆','月光甜品站','暖阳咖啡'], tags:['coffee','cake','cozy','cat','window'],
+      { type:'cafe', emoji:'☕', name:['猫咖啡厅','晨露咖啡','树洞茶馆','暖阳咖啡'], tags:['coffee','cozy','cat'],
         actions:[{id:'coffee',label:'喝咖啡',cost:25,fx:{mood:8,hunger:10,energy:5,money:-25}},{id:'chat',label:'聊天',cost:0,fx:{mood:10}},{id:'petcat',label:'撸猫',cost:0,fx:{mood:12}}] },
+      { type:'hospital', emoji:'🏥', name:['中心医院','仁心诊所','健康小站'], tags:['health','doctor','medicine'],
+        actions:[{id:'checkup',label:'体检',cost:50,fx:{health:20,money:-50}},{id:'rest2',label:'休息',cost:0,fx:{energy:10}},{id:'visit',label:'探望',cost:0,fx:{mood:5}}] },
     ],
     optional: [
-      { type:'bookstore', icon:'bookstore', emoji:'📚', name:['旧书阁','猫头鹰书店','风之页','纸鸢书屋','墨香居'], tags:['books','quiet','knowledge','wood'],
-        actions:[{id:'read',label:'看书',cost:0,fx:{mood:8,energy:-3}},{id:'buybook',label:'买书',cost:35,fx:{mood:10,money:-35}},{id:'browse2',label:'翻翻杂志',cost:0,fx:{mood:4}}] },
+      { type:'bookstore', emoji:'📚', name:['旧书阁','猫头鹰书店','风之页','纸鸢书屋'], tags:['books','quiet','knowledge'],
+        actions:[{id:'read',label:'看书',cost:0,fx:{mood:8,energy:-3}},{id:'buybook',label:'买书',cost:35,fx:{mood:10,money:-35}}] },
+      { type:'station', emoji:'🚉', name:['中心车站','晨光站','风铃站','柳叶站'], tags:['travel','train','busy'],
+        actions:[{id:'depart',label:'出发旅行',cost:60,fx:{mood:15,energy:-10,money:-60}},{id:'wait',label:'等人',cost:0,fx:{mood:-2}}] },
+      { type:'gym', emoji:'💪', name:['健身房','体育馆','铁人训练营','活力中心'], tags:['exercise','strong'],
+        actions:[{id:'workout',label:'锻炼',cost:20,fx:{health:15,energy:-15,mood:8,money:-20}},{id:'swim',label:'游泳',cost:15,fx:{health:10,mood:10,money:-15}}] },
     ]
   },
   commercial: {
     required: [
-      { type:'mall', icon:'mall', emoji:'🛍️', name:['中央商场','柳叶百货','星光广场','拱桥市集','虹桥商城'], tags:['shopping','clothes','gifts','crowd'],
-        actions:[{id:'shop',label:'逛街购物',cost:80,fx:{mood:12,money:-80}},{id:'movie',label:'看电影',cost:40,fx:{mood:15,energy:-3,money:-40}},{id:'browse',label:'闲逛',cost:0,fx:{mood:5,energy:-3}}] },
-      { type:'bakery', icon:'bakery', emoji:'🍞', name:['面包房','麦香坊','甜蜜烘焙屋','松饼小屋','奶油小筑'], tags:['bread','sweet','warm','baking'],
-        actions:[{id:'buy',label:'买面包',cost:18,fx:{hunger:25,mood:5,money:-18}},{id:'learn',label:'学烘焙',cost:30,fx:{mood:10,energy:-8,money:-30}},{id:'taste',label:'试吃',cost:0,fx:{hunger:8,mood:3}}] },
+      { type:'mall', emoji:'🛍️', name:['中央商场','柳叶百货','星光广场','虹桥商城'], tags:['shopping','clothes','gifts'],
+        actions:[{id:'shop',label:'逛街购物',cost:80,fx:{mood:12,money:-80}},{id:'movie',label:'看电影',cost:40,fx:{mood:15,money:-40}},{id:'browse',label:'闲逛',cost:0,fx:{mood:5}}] },
+      { type:'bakery', emoji:'🍞', name:['面包房','麦香坊','甜蜜烘焙屋','松饼小屋'], tags:['bread','sweet','warm'],
+        actions:[{id:'buy',label:'买面包',cost:18,fx:{hunger:25,mood:5,money:-18}},{id:'learn',label:'学烘焙',cost:30,fx:{mood:10,money:-30}}] },
+      { type:'restaurant', emoji:'🍽️', name:['小酒馆','一人一味','美食广场','街角食堂'], tags:['food','delicious','dinner'],
+        actions:[{id:'eat',label:'吃饭',cost:35,fx:{hunger:40,mood:10,money:-35}},{id:'treat',label:'请客',cost:70,fx:{mood:15,hunger:30,money:-70}}] },
     ],
     optional: [
-      { type:'flowershop', icon:'flowershop', emoji:'💐', name:['花语小铺','绿叶花坊','花与蝶','满庭芳','小雏菊'], tags:['flowers','fragrance','colorful','gift'],
-        actions:[{id:'buyflower',label:'买花',cost:20,fx:{mood:10,money:-20}},{id:'smell',label:'闻花香',cost:0,fx:{mood:6}},{id:'arrange',label:'学插花',cost:15,fx:{mood:8,energy:-3,money:-15}}] },
+      { type:'flowershop', emoji:'💐', name:['花语小铺','绿叶花坊','花与蝶','满庭芳'], tags:['flowers','fragrance','gift'],
+        actions:[{id:'buyflower',label:'买花',cost:20,fx:{mood:10,money:-20}},{id:'arrange',label:'学插花',cost:15,fx:{mood:8,money:-15}}] },
+      { type:'ktv', emoji:'🎤', name:['KTV','回声歌厅','星光麦克风','欢唱天地'], tags:['sing','music','fun'],
+        actions:[{id:'sing',label:'唱歌',cost:30,fx:{mood:18,energy:-10,money:-30}},{id:'duet',label:'合唱',cost:30,fx:{mood:20,money:-30}}] },
     ]
   },
   nature: {
     required: [
-      { type:'park', icon:'park', emoji:'🌳', name:['星月公园','翠竹公园','风之丘','花鹿草地','萤火公园'], tags:['trees','flowers','bench','birds','breeze'],
+      { type:'park', emoji:'🌳', name:['星月公园','翠竹公园','风之丘','花鹿草地'], tags:['trees','flowers','bench','birds'],
         actions:[{id:'walk',label:'散步',cost:0,fx:{mood:5,energy:-5}},{id:'picnic',label:'野餐',cost:30,fx:{mood:10,hunger:20,money:-30}},{id:'photo',label:'拍照留念',cost:0,fx:{mood:3}}] },
-      { type:'lake', icon:'lake', emoji:'🌙', name:['月牙湖','镜湖','星落潭','碧波湖','露珠池'], tags:['water','moon','reflection','quiet','fish'],
-        actions:[{id:'boat',label:'划船',cost:20,fx:{mood:12,energy:-8,money:-20}},{id:'fish',label:'钓鱼',cost:0,fx:{mood:8,energy:-3}},{id:'gaze',label:'发呆',cost:0,fx:{mood:5,energy:3}}] },
+      { type:'forest', emoji:'🌲', name:['迷雾林','隐秘森林','古木林','枫叶径'], tags:['trees','mysterious','mushrooms'],
+        actions:[{id:'explore',label:'探险',cost:0,fx:{mood:8,energy:-10}},{id:'gather',label:'采蘑菇',cost:0,fx:{mood:5,hunger:10}},{id:'rest',label:'林中小憩',cost:0,fx:{energy:15,mood:5}}] },
+      { type:'flower', emoji:'🌸', name:['花田','百花谷','薰衣草地','向日葵坡'], tags:['flowers','colorful','butterflies'],
+        actions:[{id:'pick',label:'摘花',cost:0,fx:{mood:8}},{id:'sketch',label:'写生',cost:0,fx:{mood:10,energy:-5}}] },
     ],
     optional: [
-      { type:'forest', icon:'forest', emoji:'🌲', name:['迷雾林','隐秘森林','古木林','枫叶径','竹林秘境'], tags:['trees','mysterious','mushrooms','path'],
-        actions:[{id:'explore',label:'探险',cost:0,fx:{mood:8,energy:-10}},{id:'gather',label:'采蘑菇',cost:0,fx:{mood:5,hunger:10}},{id:'rest',label:'林中小憩',cost:0,fx:{energy:15,mood:5}}] },
-      { type:'flower', icon:'flower', emoji:'🌸', name:['花田','百花谷','薰衣草地','向日葵坡','彩虹花圃'], tags:['flowers','colorful','butterflies','fragrance'],
-        actions:[{id:'pick',label:'摘花',cost:0,fx:{mood:8}},{id:'sketch',label:'写生',cost:0,fx:{mood:10,energy:-5}},{id:'view',label:'赏景',cost:0,fx:{mood:6}}] },
+      { type:'lake', emoji:'🌙', name:['月牙湖','镜湖','星落潭','碧波湖'], tags:['water','moon','quiet','fish'],
+        actions:[{id:'boat',label:'划船',cost:20,fx:{mood:12,energy:-8,money:-20}},{id:'fish',label:'钓鱼',cost:0,fx:{mood:8,energy:-3}}] },
     ]
   },
   residential: {
     required: [
-      { type:'village', icon:'village', emoji:'🏘️', name:['村庄广场','晨钟小镇','灯笼街','桃源村','老井巷'], tags:['houses','warm','neighbors','plaza'],
+      { type:'village', emoji:'🏘️', name:['村庄广场','晨钟小镇','灯笼街','老井巷'], tags:['houses','warm','neighbors'],
         actions:[{id:'stroll',label:'闲逛',cost:0,fx:{mood:5,energy:-3}},{id:'market',label:'跳蚤市场',cost:20,fx:{mood:8,money:-20}},{id:'sun',label:'晒太阳',cost:0,fx:{mood:6,energy:5}}] },
+      { type:'school', emoji:'🏫', name:['小学堂','蘑菇学校','星辰学园','橡果小学'], tags:['children','education','playground'],
+        actions:[{id:'visit2',label:'参观',cost:0,fx:{mood:5}},{id:'play',label:'操场玩耍',cost:0,fx:{mood:10,energy:-8}}] },
     ],
     optional: [
-      { type:'camp', icon:'camp', emoji:'🏕️', name:['露营地','星空营地','篝火谷','松林营','帐篷角'], tags:['tent','campfire','stars','marshmallow'],
-        actions:[{id:'tent',label:'搭帐篷',cost:0,fx:{mood:8,energy:-8}},{id:'roast',label:'烤棉花糖',cost:10,fx:{mood:12,hunger:8,money:-10}},{id:'stars',label:'看星星',cost:0,fx:{mood:15}}] },
+      { type:'camp', emoji:'🏕️', name:['露营地','星空营地','篝火谷','帐篷角'], tags:['tent','campfire','stars'],
+        actions:[{id:'roast',label:'烤棉花糖',cost:10,fx:{mood:12,hunger:8,money:-10}},{id:'stars',label:'看星星',cost:0,fx:{mood:15}}] },
+      { type:'playground', emoji:'🎠', name:['游乐场','旋转木马','快乐谷','彩虹乐园'], tags:['fun','rides','laughter'],
+        actions:[{id:'ride',label:'坐旋转木马',cost:15,fx:{mood:15,energy:-5,money:-15}},{id:'ferris',label:'摩天轮',cost:20,fx:{mood:18,money:-20}}] },
     ]
   },
   special: {
     required: [
-      { type:'lighthouse', icon:'lighthouse', emoji:'🔭', name:['灯塔','海角灯塔','星望台','晚风灯塔','瞭望塔'], tags:['sea','horizon','sunset','wind','letter'],
+      { type:'lighthouse', emoji:'🔭', name:['灯塔','海角灯塔','星望台','瞭望塔'], tags:['sea','horizon','sunset','wind'],
         actions:[{id:'view2',label:'看海',cost:0,fx:{mood:12,energy:3}},{id:'wish',label:'许愿',cost:0,fx:{mood:8}},{id:'letter',label:'写信',cost:0,fx:{mood:10,energy:-3}}] },
+      { type:'museum', emoji:'🎨', name:['博物馆','艺术馆','记忆陈列室','星尘美术馆'], tags:['art','history','painting'],
+        actions:[{id:'tour',label:'参观',cost:15,fx:{mood:10,energy:-5,money:-15}},{id:'paint',label:'画画',cost:0,fx:{mood:12,energy:-5}}] },
     ],
     optional: [
-      { type:'hotspring', icon:'hotspring', emoji:'♨️', name:['温泉','雾气汤','石头温泉','枫叶浴','露天汤池'], tags:['steam','relax','warm','stones'],
-        actions:[{id:'soak',label:'泡温泉',cost:40,fx:{mood:15,energy:20,health:10,money:-40}},{id:'foot',label:'泡脚',cost:15,fx:{mood:8,energy:10,money:-15}},{id:'relax',label:'发呆放松',cost:0,fx:{mood:10,energy:8}}] },
-      { type:'museum', icon:'museum', emoji:'🎨', name:['博物馆','艺术馆','记忆陈列室','时光展厅','星尘美术馆'], tags:['art','history','painting','sculpture'],
-        actions:[{id:'tour',label:'参观',cost:15,fx:{mood:10,energy:-5,money:-15}},{id:'paint',label:'画画',cost:0,fx:{mood:12,energy:-5}},{id:'sit',label:'坐着看画',cost:0,fx:{mood:8}}] },
+      { type:'hotspring', emoji:'♨️', name:['温泉','雾气汤','石头温泉','露天汤池'], tags:['steam','relax','warm'],
+        actions:[{id:'soak',label:'泡温泉',cost:40,fx:{mood:15,energy:20,health:10,money:-40}},{id:'relax',label:'发呆放松',cost:0,fx:{mood:10,energy:8}}] },
+      { type:'beach', emoji:'🏖️', name:['沙滩','贝壳湾','日落海岸','银沙滩'], tags:['sand','waves','shells','sun'],
+        actions:[{id:'swim2',label:'游泳',cost:0,fx:{mood:12,energy:-10,health:5}},{id:'sunset',label:'看日落',cost:0,fx:{mood:15}}] },
     ]
   }
 };
-
 // ---- 区域布局（5区 + 河流） ----
 // 岛屿 viewBox 500x500, 区域用百分比范围定义
 var MAP_ZONES = {
-  city:        { label:'城区',   cx:250, cy:140, rx:80, ry:60,  color:'#A09070' },
-  commercial:  { label:'商业区', cx:130, cy:260, rx:70, ry:55,  color:'#C4A060' },
-  nature:      { label:'自然区', cx:370, cy:130, rx:75, ry:65,  color:'#5A8A4A' },
-  residential: { label:'居民区', cx:320, cy:300, rx:85, ry:70,  color:'#8B7A5A' },
-  special:     { label:'海滨区', cx:180, cy:400, rx:90, ry:50,  color:'#5A8AAA' },
+  city:        { label:'城区',   cx:200, cy:180, rx:95, ry:75,  color:'#A09070', ground:'urban' },
+  commercial:  { label:'商业区', cx:350, cy:230, rx:75, ry:60,  color:'#C4A060', ground:'urban' },
+  nature:      { label:'自然区', cx:120, cy:120, rx:70, ry:60,  color:'#5A8A4A', ground:'green' },
+  residential: { label:'居民区', cx:300, cy:360, rx:85, ry:65,  color:'#8B7A5A', ground:'suburb' },
+  special:     { label:'海滨区', cx:140, cy:380, rx:80, ry:55,  color:'#5A8AAA', ground:'green' },
 };
 
 // ---- 岛屿轮廓生成（更粗犷的不规则形状） ----
@@ -24627,20 +24642,25 @@ function _mapGenIsland(rng){
   return pts;
 }
 
-// ---- 河流生成（从岛屿上方蜿蜒到下方） ----
+// ---- 河流生成（从左上蜿蜒到右下，参考城市河流） ----
 function _mapGenRiver(rng, islandPts){
   var minX=500,maxX=0,minY=500,maxY=0;
   islandPts.forEach(function(p){ minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x); minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y); });
 
-  var startX = 200 + rng()*100;
+  // 从左上到右下的对角线流向
   var points = [];
-  var segs = _mapRandInt(rng, 4, 6);
+  var segs = _mapRandInt(rng, 5, 7);
   for(var i=0;i<=segs;i++){
     var t = i/segs;
-    var x = startX + Math.sin(t*Math.PI*2 + rng()*2)*60 + (rng()-0.5)*30;
-    var y = minY + 20 + t*(maxY-minY-40);
-    x = Math.max(minX+40, Math.min(maxX-40, x));
-    points.push({x:x, y:y});
+    var baseX = minX + 30 + t*(maxX-minX-60);
+    var baseY = minY + 40 + t*(maxY-minY-80);
+    // 蜿蜒偏移
+    var wave = Math.sin(t*Math.PI*1.5 + rng()*3)*50;
+    var jitter = (rng()-0.5)*25;
+    points.push({
+      x: Math.max(minX+20, Math.min(maxX-20, baseX + wave + jitter)),
+      y: Math.max(minY+20, Math.min(maxY-20, baseY + (rng()-0.5)*15))
+    });
   }
   return points;
 }
@@ -24716,8 +24736,11 @@ function _mapGenLandmarks(rng, islandPts){
     var pool = MAP_LANDMARK_POOL[zoneId];
     if(!pool) return;
     pool.required.forEach(function(tmpl){ placeNear(zoneId, tmpl); });
+    // 放2个optional（如果有）
     if(pool.optional && pool.optional.length){
-      placeNear(zoneId, _mapPick(rng, pool.optional));
+      var shuffled = _mapShuffle(rng, pool.optional);
+      var optCount = Math.min(2, shuffled.length);
+      for(var oi=0;oi<optCount;oi++) placeNear(zoneId, shuffled[oi]);
     }
   });
 
@@ -24757,60 +24780,66 @@ function _mapGenDecorations(rng, islandPts, landmarks, river){
 
   function nearZone(x,y){
     var best='', bestD=9999;
-    for(var k in MAP_ZONES){
-      var z=MAP_ZONES[k]; var dx=x-z.cx, dy=y-z.cy;
-      var d=Math.sqrt(dx*dx+dy*dy);
-      if(d<bestD){ bestD=d; best=k; }
-    }
+    for(var k in MAP_ZONES){ var z=MAP_ZONES[k]; var d=Math.sqrt(Math.pow(x-z.cx,2)+Math.pow(y-z.cy,2)); if(d<bestD){ bestD=d; best=k; } }
     return best;
   }
-  function tooCloseToLm(tx,ty,dist){
-    return landmarks.some(function(lm){ return Math.abs(lm.x-tx)<dist && Math.abs(lm.y-ty)<dist; });
+  function tooClose(tx,ty,dist){ return landmarks.some(function(lm){ return Math.abs(lm.x-tx)<dist && Math.abs(lm.y-ty)<dist; }); }
+  function nearRiver(tx,ty){ return (river||[]).some(function(rp){ return Math.abs(rp.x-tx)<16 && Math.abs(rp.y-ty)<16; }); }
+
+  // === 城区道路网格（3横3纵）===
+  var cz = MAP_ZONES.city;
+  for(var gi=0;gi<3;gi++){
+    var gy = cz.cy - 40 + gi*40;
+    decos.push({ type:'road', x1:cz.cx-cz.rx+15, y1:gy, x2:cz.cx+cz.rx-15, y2:gy });
   }
-  function tooCloseToRiver(tx,ty){
-    return (river||[]).some(function(rp){ return Math.abs(rp.x-tx)<18 && Math.abs(rp.y-ty)<18; });
+  for(var gj=0;gj<3;gj++){
+    var gx = cz.cx - 45 + gj*45;
+    decos.push({ type:'road', x1:gx, y1:cz.cy-cz.ry+20, x2:gx, y2:cz.cy+cz.ry-20 });
   }
 
-  // 自然区密林 + 其他区域稀疏树
-  var treeCount = _mapRandInt(rng, 45, 65);
+  // === 商业区道路（2横1纵）===
+  var cmz = MAP_ZONES.commercial;
+  decos.push({ type:'road', x1:cmz.cx-cmz.rx+10, y1:cmz.cy-15, x2:cmz.cx+cmz.rx-10, y2:cmz.cy-15 });
+  decos.push({ type:'road', x1:cmz.cx-cmz.rx+10, y1:cmz.cy+20, x2:cmz.cx+cmz.rx-10, y2:cmz.cy+20 });
+  decos.push({ type:'road', x1:cmz.cx, y1:cmz.cy-cmz.ry+10, x2:cmz.cx, y2:cmz.cy+cmz.ry-10 });
+
+  // === 居民区小路 ===
+  var rz = MAP_ZONES.residential;
+  decos.push({ type:'road', x1:rz.cx-50, y1:rz.cy, x2:rz.cx+50, y2:rz.cy });
+
+  // === 区域间连接道路 ===
+  // 城区→商业区
+  decos.push({ type:'trail', x1:cz.cx+cz.rx-10, y1:cz.cy+20, cx:(cz.cx+cmz.cx)/2, cy:(cz.cy+cmz.cy)/2-15, x2:cmz.cx-cmz.rx+10, y2:cmz.cy-20 });
+  // 城区→居民区
+  decos.push({ type:'trail', x1:cz.cx+20, y1:cz.cy+cz.ry-10, cx:(cz.cx+rz.cx)/2+10, cy:(cz.cy+rz.cy)/2, x2:rz.cx-20, y2:rz.cy-rz.ry+10 });
+  // 城区→自然区
+  var nz = MAP_ZONES.nature;
+  decos.push({ type:'trail', x1:cz.cx-20, y1:cz.cy-cz.ry+10, cx:(cz.cx+nz.cx)/2, cy:(cz.cy+nz.cy)/2+10, x2:nz.cx+20, y2:nz.cy+nz.ry-10 });
+  // 商业区→海滨区
+  var sz = MAP_ZONES.special;
+  decos.push({ type:'trail', x1:cmz.cx-20, y1:cmz.cy+cmz.ry-10, cx:(cmz.cx+sz.cx)/2+10, cy:(cmz.cy+sz.cy)/2, x2:sz.cx+20, y2:sz.cy-sz.ry+10 });
+  // 居民区→海滨区
+  decos.push({ type:'trail', x1:rz.cx-30, y1:rz.cy+20, cx:(rz.cx+sz.cx)/2, cy:(rz.cy+sz.cy)/2, x2:sz.cx+30, y2:sz.cy-10 });
+
+  // === 树木（自然区密、城区极少）===
+  var treeCount = _mapRandInt(rng, 50, 70);
   for(var i=0;i<treeCount;i++){
     var tx = minX+15 + rng()*(maxX-minX-30);
     var ty = minY+15 + rng()*(maxY-minY-30);
-    if(tooCloseToLm(tx,ty,24) || tooCloseToRiver(tx,ty)) continue;
-
+    if(tooClose(tx,ty,22) || nearRiver(tx,ty)) continue;
     var zone = nearZone(tx,ty);
-    // 城区和商业区树少
-    if((zone==='city'||zone==='commercial') && rng()>0.25) continue;
-    // 居民区适中
-    if(zone==='residential' && rng()>0.5) continue;
-
-    var treeType = zone==='nature' ? (rng()<0.7?'pine':'round') : (rng()<0.4?'round':'bush');
-    var treeScale = 0.5 + rng()*0.6;
-    decos.push({ type:'tree', subType:treeType, x:tx, y:ty, scale:treeScale });
+    if(zone==='city' && rng()>0.1) continue;        // 城区几乎无树
+    if(zone==='commercial' && rng()>0.15) continue;  // 商业区极少
+    if(zone==='residential' && rng()>0.4) continue;
+    var treeType = zone==='nature' ? (rng()<0.7?'pine':'round') : (rng()<0.3?'round':'bush');
+    decos.push({ type:'tree', subType:treeType, x:tx, y:ty, scale:0.5+rng()*0.6 });
   }
 
-  // 城区道路（十字或丁字）
-  var cz = MAP_ZONES.city;
-  decos.push({ type:'road', x1:cz.cx, y1:cz.cy-50, x2:cz.cx, y2:cz.cy+50 });
-  decos.push({ type:'road', x1:cz.cx-55, y1:cz.cy, x2:cz.cx+55, y2:cz.cy });
-
-  // 商业区也有路
-  var cmz = MAP_ZONES.commercial;
-  decos.push({ type:'road', x1:cmz.cx-40, y1:cmz.cy, x2:cmz.cx+40, y2:cmz.cy });
-
-  // 连接道路（城区→居民区、城区→商业区）
-  var rz = MAP_ZONES.residential, sz = MAP_ZONES.special;
-  decos.push({ type:'trail', x1:cz.cx+30, y1:cz.cy+30, cx:(cz.cx+rz.cx)/2+15, cy:(cz.cy+rz.cy)/2, x2:rz.cx-30, y2:rz.cy-30 });
-  decos.push({ type:'trail', x1:cz.cx-30, y1:cz.cy+20, cx:(cz.cx+cmz.cx)/2, cy:(cz.cy+cmz.cy)/2-10, x2:cmz.cx+20, y2:cmz.cy-30 });
-
-  // 岩石（海边）
-  var rockCount = _mapRandInt(rng, 4, 8);
-  for(var r2=0;r2<rockCount;r2++){
+  // === 岩石（沿海边缘）===
+  for(var r2=0;r2<_mapRandInt(rng,5,9);r2++){
     var angle = rng()*Math.PI*2;
-    var rr = 170+rng()*30;
-    var rx = 250+Math.cos(angle)*rr + (rng()-0.5)*20;
-    var ry = 260+Math.sin(angle)*rr + (rng()-0.5)*20;
-    decos.push({ type:'rock', x:rx, y:ry, scale:0.6+rng()*0.8 });
+    var rr = 175+rng()*25;
+    decos.push({ type:'rock', x:250+Math.cos(angle)*rr+(rng()-0.5)*15, y:260+Math.sin(angle)*rr+(rng()-0.5)*15, scale:0.5+rng()*0.8 });
   }
 
   return decos;
@@ -24919,39 +24948,56 @@ function _mapBuildSVG(mapData){
   svg += '<defs><clipPath id="mapClip"><path d="'+islandD+'"/></clipPath></defs>';
   svg += '<g clip-path="url(#mapClip)">';
 
-  // 区域色块（柔和半透明）
+  // 区域地面（城区=浅色路面块，商业=暖色块，自然=深绿，居民=浅棕，海滨=浅蓝绿）
   for(var zk in MAP_ZONES){
     var z = MAP_ZONES[zk];
-    svg += '<ellipse cx="'+z.cx+'" cy="'+z.cy+'" rx="'+z.rx+'" ry="'+z.ry+'" fill="'+z.color+'" opacity="0.15"/>';
+    if(z.ground==='urban'){
+      // 城区/商业区：明显的浅色路面矩形区块
+      svg += '<rect x="'+(z.cx-z.rx)+'" y="'+(z.cy-z.ry)+'" width="'+(z.rx*2)+'" height="'+(z.ry*2)+'" rx="12" fill="rgba(220,210,195,0.45)"/>';
+      svg += '<rect x="'+(z.cx-z.rx+4)+'" y="'+(z.cy-z.ry+4)+'" width="'+(z.rx*2-8)+'" height="'+(z.ry*2-8)+'" rx="8" fill="rgba(235,225,210,0.3)"/>';
+    } else if(z.ground==='suburb'){
+      svg += '<rect x="'+(z.cx-z.rx)+'" y="'+(z.cy-z.ry)+'" width="'+(z.rx*2)+'" height="'+(z.ry*2)+'" rx="14" fill="rgba(180,165,140,0.2)"/>';
+    } else {
+      svg += '<ellipse cx="'+z.cx+'" cy="'+z.cy+'" rx="'+z.rx+'" ry="'+z.ry+'" fill="'+z.color+'" opacity="0.15"/>';
+    }
   }
 
-  // 装饰：道路
+  // 装饰：道路（城区道路更宽更明显）
   (mapData.decorations||[]).forEach(function(d){
     if(d.type==='road'){
-      svg += '<line x1="'+d.x1+'" y1="'+d.y1+'" x2="'+d.x2+'" y2="'+d.y2+'" stroke="'+pal.sand+'" stroke-width="6" stroke-linecap="round" opacity="0.5"/>';
-      svg += '<line x1="'+d.x1+'" y1="'+d.y1+'" x2="'+d.x2+'" y2="'+d.y2+'" stroke="rgba(255,255,255,0.3)" stroke-width="1" stroke-dasharray="4,6" stroke-linecap="round"/>';
+      svg += '<line x1="'+d.x1+'" y1="'+d.y1+'" x2="'+d.x2+'" y2="'+d.y2+'" stroke="rgba(200,190,170,0.7)" stroke-width="7" stroke-linecap="round"/>';
+      svg += '<line x1="'+d.x1+'" y1="'+d.y1+'" x2="'+d.x2+'" y2="'+d.y2+'" stroke="rgba(255,255,255,0.35)" stroke-width="1.2" stroke-dasharray="4,5" stroke-linecap="round"/>';
     }
     if(d.type==='trail'){
-      svg += '<path d="M'+d.x1+','+d.y1+' Q'+d.cx+','+d.cy+' '+d.x2+','+d.y2+'" fill="none" stroke="'+pal.sand+'" stroke-width="3.5" stroke-linecap="round" opacity="0.45"/>';
+      svg += '<path d="M'+d.x1+','+d.y1+' Q'+d.cx+','+d.cy+' '+d.x2+','+d.y2+'" fill="none" stroke="rgba(200,185,160,0.5)" stroke-width="4" stroke-linecap="round"/>';
+      svg += '<path d="M'+d.x1+','+d.y1+' Q'+d.cx+','+d.cy+' '+d.x2+','+d.y2+'" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-dasharray="3,5" stroke-linecap="round"/>';
     }
   });
 
-  // 河流
+  // 河流（宽阔自然的蓝色河流）
   if(mapData.river && mapData.river.length>1){
     var riverD = _mapRiverPath(mapData.river);
-    // 河流阴影
-    svg += '<path d="'+riverD+'" fill="none" stroke="rgba(70,130,160,0.25)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>';
+    // 河岸（最外层）
+    svg += '<path d="'+riverD+'" fill="none" stroke="rgba(60,110,140,0.15)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>';
     // 河流主体
-    svg += '<path d="'+riverD+'" fill="none" stroke="rgba(100,160,190,0.55)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>';
-    // 河流高光
-    svg += '<path d="'+riverD+'" fill="none" stroke="rgba(180,220,240,0.4)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
-    // 桥梁（河流中段放一座小桥）
-    if(mapData.river.length>=3){
-      var bridgePt = mapData.river[Math.floor(mapData.river.length/2)];
-      svg += '<rect x="'+(bridgePt.x-14)+'" y="'+(bridgePt.y-3)+'" width="28" height="6" rx="2" fill="'+pal.sand+'" stroke="rgba(120,90,60,0.4)" stroke-width="0.8"/>';
-      svg += '<rect x="'+(bridgePt.x-12)+'" y="'+(bridgePt.y-5)+'" width="2" height="8" rx="0.5" fill="rgba(120,90,60,0.5)"/>';
-      svg += '<rect x="'+(bridgePt.x+10)+'" y="'+(bridgePt.y-5)+'" width="2" height="8" rx="0.5" fill="rgba(120,90,60,0.5)"/>';
-    }
+    svg += '<path d="'+riverD+'" fill="none" stroke="rgba(90,155,185,0.5)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>';
+    // 河流内层
+    svg += '<path d="'+riverD+'" fill="none" stroke="rgba(120,180,210,0.45)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>';
+    // 高光
+    svg += '<path d="'+riverD+'" fill="none" stroke="rgba(190,230,250,0.35)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>';
+    // 桥梁（在1/3和2/3处各放一座）
+    var bIdxs = [Math.floor(mapData.river.length*0.33), Math.floor(mapData.river.length*0.66)];
+    bIdxs.forEach(function(bi){
+      if(bi>=0 && bi<mapData.river.length){
+        var bp = mapData.river[bi];
+        // 桥面
+        svg += '<rect x="'+(bp.x-16)+'" y="'+(bp.y-4)+'" width="32" height="8" rx="2.5" fill="'+pal.sand+'" stroke="rgba(110,85,55,0.35)" stroke-width="0.8"/>';
+        // 栏杆
+        svg += '<rect x="'+(bp.x-14)+'" y="'+(bp.y-6)+'" width="2" height="10" rx="0.5" fill="rgba(110,85,55,0.45)"/>';
+        svg += '<rect x="'+(bp.x+12)+'" y="'+(bp.y-6)+'" width="2" height="10" rx="0.5" fill="rgba(110,85,55,0.45)"/>';
+        svg += '<line x1="'+(bp.x-13)+'" y1="'+(bp.y-5)+'" x2="'+(bp.x+13)+'" y2="'+(bp.y-5)+'" stroke="rgba(110,85,55,0.3)" stroke-width="0.8"/>';
+      }
+    });
   }
 
   // 装饰：树木
