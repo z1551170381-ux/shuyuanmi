@@ -9728,6 +9728,21 @@ ${lines}
             if (!isNaN(idx)){ data.bindings.splice(idx,1); saveVoiceApi(data); renderVoiceApiPage(container); }
           });
         });
+        // 角色音色 ID 输入框：失焦或回车时自动保存
+        container.querySelectorAll('input[data-bidx]').forEach(inp=>{
+          function _syncBindVoice(){
+            const idx = Number(inp.getAttribute('data-bidx'));
+            if (!isNaN(idx) && data.bindings[idx]){
+              const v = (inp.value||'').trim();
+              if (data.bindings[idx].voiceId !== v){
+                data.bindings[idx].voiceId = v;
+                saveVoiceApi(data);
+              }
+            }
+          }
+          inp.addEventListener('change', _syncBindVoice);
+          inp.addEventListener('blur', _syncBindVoice);
+        });
       }
 
       // ====== 4.5 关系网（可编辑关系列表） ======
