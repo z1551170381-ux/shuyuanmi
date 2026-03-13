@@ -3792,8 +3792,8 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .mapLm:hover .mapLmLabel{ opacity:1; }
 #${ID} .mapLm .mapHomeBadge{ font-size:7px; pointer-events:none; }
 #${ID} .mapZoomBar{
-  position:absolute; left:8px; bottom:10px;
-  display:flex; flex-direction:column; gap:3px; z-index:12;
+  position:absolute; right:6px; bottom:50px;
+  display:flex; flex-direction:column; gap:3px; z-index:28;
 }
 #${ID} .mapZoomBtn{
   width:28px; height:28px; border-radius:50%; border:0;
@@ -3885,7 +3885,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .mapLogAction{ flex:1; }
 /* ===== Map Editor ===== */
 #${ID} .mapEditorBar{
-  position:absolute; bottom:0; left:0; right:0; z-index:25;
+  position:absolute; bottom:0; left:0; right:0; z-index:22;
   background:rgba(255,255,255,0.97); border-top:1px solid rgba(0,0,0,0.08);
   backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
   padding:0; transition:transform .25s ease;
@@ -6390,6 +6390,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           }
           if (act === 'afBrowserSettings'){ _openBrowserFeedSettings(); return; }
           if (act === 'afMomentsSettings'){ _openMomentsFeedSettings(); return; }
+          if (act === 'afMapSettings'){ _openMapFeedSettings(); return; }
           if (act === 'phClearAppData'){
             var appkey = t.getAttribute('data-appkey') || '';
             var labels = {forum:'论坛所有帖子', moments:'朋友圈所有动态', browser:'浏览器所有资讯', chat:'所有聊天记录和好友'};
@@ -11995,7 +11996,7 @@ ${lines}
         h+='</div>';
 
         h+='<div class="phCard" style="margin-bottom:12px;"><div style="font-weight:700;color:var(--ph-text);margin-bottom:10px;">自动更新目标</div>';
-        [{k:'forum',l:'论坛',a:true},{k:'browser',l:'浏览器',a:true},{k:'moments',l:'朋友圈',a:true},{k:'weather',l:'天气资讯',a:true},{k:'calendar',l:'日历日程',a:true},{k:'sms',l:'短信',a:true}].forEach(function(tg){
+        [{k:'forum',l:'论坛',a:true},{k:'browser',l:'浏览器',a:true},{k:'moments',l:'朋友圈',a:true},{k:'weather',l:'天气资讯',a:true},{k:'calendar',l:'日历日程',a:true},{k:'sms',l:'短信',a:true},{k:'map',l:'地图日志',a:true}].forEach(function(tg){
           h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;opacity:'+(tg.a?'1':'0.4')+';"><span style="font-size:13px;color:var(--ph-text);">'+tg.l+'</span>';
           h+=tg.a?'<button class="sToggle'+((cfg.autoTargets||{})[tg.k]?' on':'')+'" data-aftgt="'+tg.k+'" style="flex-shrink:0;"></button>':'<span style="font-size:11px;color:var(--ph-text-dim);">开发中</span>';
           h+='</div>';
@@ -12144,7 +12145,7 @@ ${lines}
       function _afDefaultCfg(){
         return { v:1, enabled:false, mode:'daily_once', intervalMin:180, dailyHour:9, tzMode:'real',
           sources:{ worldbook:true, summary:true, phoneGlobalWB:true, recentChat:false },
-          autoTargets:{ forum:true, browser:true, moments:true, shop:false, weather:false },
+          autoTargets:{ forum:true, browser:true, moments:true, map:true, shop:false, weather:false },
           lastRunAt:0, lastRunKey:'', lastError:'', cooldownUntil:0 };
       }
       function getAutofeedCfg(){ try{ const d=lsGet(LS_AUTOFEED_CFG,null); if(d&&d.v===1) return d; }catch(e){} return _afDefaultCfg(); }
@@ -18176,7 +18177,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           if(!isManual&&cfg.cooldownUntil>Date.now()) return{ok:false,error:'cooldown'};
           var apiCfg=PhoneAI._getConfig('background');
           if(!apiCfg.endpoint||!apiCfg.key){ try{toast('请先在设置中配置 API');}catch(e){} return{ok:false,error:'no_api'}; }
-          if(!targets.length){ var at=cfg.autoTargets||{}; if(at.forum)targets.push('forum'); if(at.browser)targets.push('browser'); if(at.moments)targets.push('moments'); if(at.weather)targets.push('weather'); if(at.calendar)targets.push('calendar'); if(at.sms)targets.push('sms'); }
+          if(!targets.length){ var at=cfg.autoTargets||{}; if(at.forum)targets.push('forum'); if(at.browser)targets.push('browser'); if(at.moments)targets.push('moments'); if(at.weather)targets.push('weather'); if(at.calendar)targets.push('calendar'); if(at.sms)targets.push('sms'); if(at.map)targets.push('map'); }
           if(!targets.length){ try{toast('没有已开启的资讯目标');}catch(e){} return{ok:false,error:'no_targets'}; }
 
           this._running=true; this._aborted=false; this._isManualRun=isManual;
@@ -18207,6 +18208,9 @@ const npc = _wxGetChatTargetMeta(npcId);
             }
             if(targets.indexOf('sms')>=0){
               try{ await _generateSmsData(worldCtx); }catch(e){ console.warn('[AutoFeed] 短信生成失败:', e); }
+            }
+            if(targets.indexOf('map')>=0){
+              try{ await _mapGenerateNpcLogs({isManual:false}); }catch(e){ console.warn('[AutoFeed] 地图日志生成失败:', e); }
             }
 
             cfg=getAutofeedCfg(); cfg.lastRunAt=Date.now(); cfg.lastRunKey=this._dayKey(); cfg.lastError=''; saveAutofeedCfg(cfg);
@@ -25610,6 +25614,9 @@ function renderMapApp(body){
   body.innerHTML = '';
   body.style.overflow = 'hidden';
 
+  // 右上角设置齿轮
+  try{ setAppBarRight('<button class="phBarRBtn" data-act="afMapSettings" title="地图设置">' + _phFlatIcon('⚙️') + '</button>'); }catch(e){}
+
   var wrap = doc.createElement('div');
   wrap.className = 'mapAppWrap';
 
@@ -25626,21 +25633,20 @@ function renderMapApp(body){
   mapContainer.innerHTML = _mapBuildSVG(mapData);
   wrap.appendChild(mapContainer);
 
-  // 缩放按钮
+  // 缩放按钮（挂在wrap上，z-index高于编辑面板）
   var zoomBar = doc.createElement('div');
   zoomBar.className = 'mapZoomBar';
   zoomBar.innerHTML = '<button class="mapZoomBtn" data-act="mapZoomIn">+</button>'+
     '<button class="mapZoomBtn" data-act="mapZoomOut">−</button>'+
     '<button class="mapZoomBtn" data-act="mapZoomReset" style="font-size:11px;">📍</button>'+
-    '<div style="height:4px;"></div>'+
+    '<div style="height:3px;"></div>'+
     '<button class="mapZoomBtn" data-act="mapPanUp" style="font-size:10px;">▲</button>'+
-    '<div style="display:flex;gap:2px;justify-content:center;">'+
+    '<div style="display:flex;gap:1px;justify-content:center;">'+
     '<button class="mapZoomBtn" data-act="mapPanLeft" style="font-size:10px;width:13px;height:28px;border-radius:14px 4px 4px 14px;">◀</button>'+
     '<button class="mapZoomBtn" data-act="mapPanRight" style="font-size:10px;width:13px;height:28px;border-radius:4px 14px 14px 4px;">▶</button>'+
     '</div>'+
     '<button class="mapZoomBtn" data-act="mapPanDown" style="font-size:10px;">▼</button>';
-  mapContainer.style.position = 'relative';
-  mapContainer.appendChild(zoomBar);
+  wrap.appendChild(zoomBar);
 
   // 底部工具栏
   var toolbar = doc.createElement('div');
@@ -26464,6 +26470,147 @@ _mapBuildSVG = function(mapData){
   }
   return svg;
 };
+// ---- 地图设置弹窗（参考论坛设置） ----
+function _openMapFeedSettings(){
+  var af = getAutofeedCfg();
+  var on = af.autoTargets && af.autoTargets.map;
+  var mc = _phLoad('map_settings_v1', { logCount:3, autoGenNpc:true });
+  var logData = _mapLoadLog();
+  var logCount = _safeArr(logData.logs).length;
+
+  var h = '';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><span style="font-size:13px;color:var(--ph-text);">参与自动运行</span><button class="sToggle'+(on?' on':'')+'" data-afm-tgt="map" style="flex-shrink:0;"></button></div>';
+  h += '<div style="font-weight:600;font-size:13px;color:var(--ph-text);margin-bottom:8px;">NPC 活动日志</div>';
+  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span style="font-size:12px;color:var(--ph-text-sub);">每次生成条数</span><input data-afm-val="logCount" type="number" min="1" max="10" value="'+(mc.logCount||3)+'" style="width:60px;padding:4px 8px;border-radius:8px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:12px;text-align:center;"/></div>';
+  h += '<div style="font-size:11px;color:var(--ph-text-dim);margin-bottom:10px;">当前已有 '+logCount+' 条日志</div>';
+  h += '<button data-act="mapManualGenLogs" style="width:100%;padding:10px;border:0;border-radius:10px;background:var(--ph-accent-grad);color:#fff;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">🔄 立即生成 NPC 活动日志</button>';
+  h += '<div style="font-weight:600;font-size:13px;color:var(--ph-text);margin:8px 0;">高级</div>';
+  h += '<textarea data-afm-ta="customPrompt" placeholder="自定义提示词补充（留空使用默认）" style="width:100%;min-height:50px;padding:8px;border-radius:10px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:12px;resize:vertical;box-sizing:border-box;">'+(mc.customPrompt||'')+'</textarea>';
+  h += '<div style="margin-top:16px;border-top:1px solid var(--ph-glass-border);padding-top:12px;"><button data-act="mapClearLogs" style="width:100%;padding:10px;border:0;border-radius:10px;background:rgba(231,76,60,.1);color:#e74c3c;font-size:13px;font-weight:600;cursor:pointer;">🗑 清空所有活动日志</button></div>';
+
+  var modal = _afModal('地图设置', h);
+
+  // 手动生成日志
+  modal.querySelector('[data-act="mapManualGenLogs"]')?.addEventListener('click', function(){
+    _mapGenerateNpcLogs({isManual:true});
+    modal.remove();
+    try{ toast('🗺️ 正在生成 NPC 活动日志…'); }catch(e){}
+  });
+
+  // 清空日志
+  modal.querySelector('[data-act="mapClearLogs"]')?.addEventListener('click', function(){
+    _mapSaveLog({ v:1, lastAutoGen:0, logs:[] });
+    modal.remove();
+    try{ toast('日志已清空'); }catch(e){}
+  });
+
+  // 保存设置
+  var logCountInput = modal.querySelector('[data-afm-val="logCount"]');
+  if(logCountInput) logCountInput.addEventListener('change', function(){
+    mc.logCount = parseInt(logCountInput.value) || 3;
+    _phSave('map_settings_v1', mc);
+  });
+  var promptInput = modal.querySelector('[data-afm-ta="customPrompt"]');
+  if(promptInput) promptInput.addEventListener('change', function(){
+    mc.customPrompt = promptInput.value;
+    _phSave('map_settings_v1', mc);
+  });
+
+  _afBindModal(modal, 'map');
+}
+
+// ---- NPC 活动日志生成 ----
+async function _mapGenerateNpcLogs(opts){
+  try{
+    var mapData = _mapLoad();
+    if(!mapData || !mapData.generated) return;
+    var logData = _mapLoadLog();
+    var mc = _phLoad('map_settings_v1', { logCount:3 });
+    var count = mc.logCount || 3;
+
+    // 获取联系人列表
+    var db = loadContactsDB();
+    var contacts = _safeArr(db.list).slice(0, 8); // 最多8个角色
+    if(!contacts.length) return;
+
+    // 获取地标列表
+    var lmNames = (mapData.landmarks||[]).map(function(lm){
+      return (lm.customName||lm.name) + '(' + lm.emoji + ')';
+    }).join('、');
+
+    // 时段
+    var hour = new Date().getHours();
+    var period = hour < 11 ? 'morning' : (hour < 17 ? 'afternoon' : 'evening');
+    var periodCN = { morning:'上午', afternoon:'下午', evening:'晚上' }[period];
+
+    // 构建 prompt
+    var npcList = contacts.map(function(c){
+      var s = '';
+      try{ var st = catchUpStats(c.id); if(st.attrs) s = ' 精力:'+Math.round(st.attrs.energy||0)+' 心情:'+Math.round(st.attrs.mood||0)+' 饱腹:'+Math.round(st.attrs.hunger||0); }catch(e){}
+      return (c.name||'?') + s;
+    }).join('\n');
+
+    var sysPrompt = '你是虚拟小镇「'+esc(mapData.name)+'」的生活模拟器。\n' +
+      '当前时段：'+periodCN+'\n' +
+      '小镇地标：'+lmNames+'\n' +
+      '角色列表：\n'+npcList+'\n\n' +
+      '请为其中 '+count+' 个角色各生成一条当前时段的活动日志。\n' +
+      '以 JSON 数组格式回复，每条格式：\n' +
+      '{"name":"角色名","landmark":"地标名","action":"描述（20字以内）","cost":数字}\n' +
+      '注意：action 要具体生动（如"在咖啡厅点了一杯热拿铁"），cost 为消费金额（0-50之间）。\n' +
+      '只输出 JSON 数组，不要其他内容。' +
+      (mc.customPrompt ? '\n补充要求：'+mc.customPrompt : '');
+
+    var result = await PhoneAI.generateFeed({
+      systemPrompt: sysPrompt,
+      userMessage: '请生成 '+periodCN+' 的 NPC 活动日志',
+      channel: 'background'
+    });
+
+    if(!result) return;
+
+    // 解析结果
+    var text = String(result.text || result);
+    var jsonMatch = text.match(/\[[\s\S]*\]/);
+    if(!jsonMatch) return;
+
+    var parsed = JSON.parse(jsonMatch[0]);
+    if(!Array.isArray(parsed)) return;
+
+    var now = Date.now();
+    parsed.forEach(function(item){
+      if(!item.name || !item.action) return;
+      // 找到对应角色
+      var contact = contacts.find(function(c){ return c.name === item.name; });
+      // 找到对应地标
+      var lm = (mapData.landmarks||[]).find(function(l){ return (l.customName||l.name) === item.landmark; });
+
+      logData.logs.push({
+        id: 'log_'+now+'_'+Math.random().toString(36).substr(2,4),
+        npcId: contact ? contact.id : item.name,
+        npcName: item.name,
+        landmarkId: lm ? lm.id : '',
+        time: now + Math.floor(Math.random()*60000),
+        period: period,
+        action: item.action,
+        cost: item.cost || 0,
+        statusEffect: { mood: Math.floor(Math.random()*8)+2, money: -(item.cost||0) },
+        isAuto: !(opts && opts.isManual)
+      });
+    });
+
+    // 限制日志总量
+    if(logData.logs.length > 200) logData.logs = logData.logs.slice(-200);
+    logData.lastAutoGen = now;
+    _mapSaveLog(logData);
+
+    try{ toast('🗺️ 已生成 '+parsed.length+' 条活动日志'); }catch(e){}
+  }catch(e){
+    console.error('[Map] NPC log gen error:', e);
+    try{ toast('日志生成失败: '+(e.message||'')); }catch(e2){}
+  }
+}
+
 function _buildMapPromptBlock(npcId){
   try{
     var mapData = _mapLoad();
