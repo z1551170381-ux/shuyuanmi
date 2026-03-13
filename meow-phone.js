@@ -17757,9 +17757,9 @@ const npc = _wxGetChatTargetMeta(npcId);
           while(batchCount < maxBatch){
             var pending = _getTimelinePendingRange(npcId, targetMode, chunkSize);
             if (!pending) break;
-            // 剩余不够一个完整chunk就停（除非是最后一批且剩余>=5）
+            // 剩余不够一个完整 chunkSize 就不自动总结（严格等待 N 条）
             var remaining = pending.toIdx - pending.fromIdx + 1;
-            if (remaining < Math.min(chunkSize, 5)) break;
+            if (remaining < chunkSize) break;
             console.log('[AutoSum] 批次'+(batchCount+1)+': #'+(pending.fromIdx+1)+'~'+(pending.toIdx+1)+', 剩余'+(pending.hasMore?'有更多':'无'));
             try{
               var entry = await _tlApiEnqueue(function(){
@@ -23738,6 +23738,20 @@ function _generateSourceHash(msgs){
   return 'h_' + Math.abs(hash).toString(36);
 }
 
+// 独立版本的 entry display 重建（供 _generateTimelineEntry 内部去重使用）
+function _rebuildEntryDisplayText(entry){
+  if (!entry || !entry.structured) return;
+  var s = entry.structured, display = [];
+  if (s.storyTime) display.push('⏰ ' + s.storyTime);
+  if (s.facts && s.facts.length) display.push('📋 事实：\n' + s.facts.map(function(f){ return '  · ' + f; }).join('\n'));
+  if (s.quotes && s.quotes.length) display.push('💬 原话：\n' + s.quotes.map(function(q){ return '  「' + q + '」'; }).join('\n'));
+  if (s.turning && s.turning.length) display.push('⚡ 转折：\n' + s.turning.map(function(t){ return '  · ' + t; }).join('\n'));
+  if (s.props && s.props.length) display.push('🎒 道具：' + s.props.join('、'));
+  if (s.todos && s.todos.length) display.push('📝 待办：\n' + s.todos.map(function(t){ return '  ' + (t.done ? '✅' : '☐') + ' ' + t.text; }).join('\n'));
+  entry.displayText = display.join('\n\n');
+  if (entry.userEdited) entry.userEdited = null;
+}
+
 async function _generateTimelineEntry(npcId, fromIdx, toIdx, mode, opts){
   var targetMode = _normChatMode(mode || _getChatMode(npcId));
   var log = _getLogForModeBranch(npcId, targetMode);
@@ -23821,6 +23835,42 @@ ${todoHint}
       structured = JSON.parse(raw);
     }catch(e){
       structured = { facts:[raw], quotes:[], turning:[], props:[], todos:[] };
+    }
+
+    // ===== 待办去重：与所有已有条目的 todos 对比 =====
+    if (structured.todos && structured.todos.length > 0 && tlMode.entries.length > 0){
+      // 收集所有已有待办（text 归一化后作为 key）
+      var _normTodo = function(t){ return String(t||'').replace(/\s+/g,'').toLowerCase(); };
+      var existingMap = {}; // key: normalized text → { entryIdx, todoIdx, done }
+      tlMode.entries.forEach(function(ent, eIdx){
+        if (ent.structured && ent.structured.todos){
+          ent.structured.todos.forEach(function(t, tIdx){
+            var k = _normTodo(t.text);
+            if (k) existingMap[k] = { eIdx:eIdx, tIdx:tIdx, done:!!t.done };
+          });
+        }
+      });
+      var deduped = [];
+      var updatedPrev = false;
+      structured.todos.forEach(function(newT){
+        var k = _normTodo(newT.text);
+        var existing = existingMap[k];
+        if (existing){
+          // 已存在：如果 AI 标记为 done 而旧的未 done，更新旧条目
+          if (newT.done && !existing.done){
+            try{
+              tlMode.entries[existing.eIdx].structured.todos[existing.tIdx].done = true;
+              _rebuildEntryDisplayText(tlMode.entries[existing.eIdx]);
+              updatedPrev = true;
+            }catch(e){}
+          }
+          // 不再重复添加到新条目
+        } else {
+          deduped.push(newT);
+          existingMap[k] = { eIdx:-1, tIdx:-1, done:!!newT.done }; // 防止本批次内重复
+        }
+      });
+      structured.todos = deduped;
     }
 
     var display = [];
@@ -24036,7 +24086,6 @@ function _openTimelineViewer(npcId){
   if (!modal) modal = ov; // fallback
 
   function refresh(){
-    _pendingDeleteIdx = -1;
     var rootEl = modal.querySelector('[data-el="tlRoot"]');
     if (rootEl) rootEl.innerHTML = renderBody();
   }
