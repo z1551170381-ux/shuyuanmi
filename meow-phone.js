@@ -25279,11 +25279,27 @@ function _mapShowLandmarkDetail(container, mapData, lmId, npcId){
   html += '</div>';
 
   // 动作列表
-  html += '<div class="mapDetailSection"><div class="mapDetailSectionTitle">可以做的事</div>';
+  var _wallet = loadWallet();
+  var _walletBal = _wallet.balance || 0;
+  html += '<div class="mapDetailSection"><div class="mapDetailSectionTitle">可以做的事 <span style="float:right;font-size:10px;color:rgba(20,24,28,0.35);font-weight:400;">💰 余额: $'+_walletBal+'</span></div>';
   (lm.actions||[]).forEach(function(act){
-    var costStr = act.cost > 0 ? '<span class="mapActCost">$'+act.cost+'</span>' : '<span class="mapActFree">免费</span>';
-    html += '<div class="mapActRow" data-act="mapDoAction" data-actionid="'+act.id+'" data-lmid="'+lm.id+'">';
-    html += '<span class="mapActLabel">'+esc(act.label)+'</span>'+costStr+'<span class="mapActArrow">›</span>';
+    var cantAfford = act.cost > 0 && _walletBal < act.cost;
+    var costStr = act.cost > 0
+      ? '<span class="mapActCost"'+(cantAfford?' style="color:#e74c3c;"':'')+'>$'+act.cost+'</span>'
+      : '<span class="mapActFree">免费</span>';
+    // 效果预览
+    var fxParts = [];
+    var fx2 = act.fx || {};
+    var fxNames = {mood:'心情',energy:'精力',health:'健康',hunger:'饱腹',fun:'娱乐',money:'金钱'};
+    for(var fk2 in fx2){
+      if(fk2==='money') continue;
+      var v2 = fx2[fk2];
+      if(v2>0) fxParts.push((fxNames[fk2]||fk2)+'+'+v2);
+      else if(v2<0) fxParts.push((fxNames[fk2]||fk2)+v2);
+    }
+    var fxStr = fxParts.length ? '<div style="font-size:9px;color:rgba(20,24,28,0.3);margin-top:1px;">'+fxParts.join(' ')+'</div>' : '';
+    html += '<div class="mapActRow'+(cantAfford?' cantAfford':'')+'" data-act="mapDoAction" data-actionid="'+act.id+'" data-lmid="'+lm.id+'"'+(cantAfford?' title="余额不足"':'')+' style="'+(cantAfford?'opacity:0.5;':'')+'">';
+    html += '<div style="flex:1;"><span class="mapActLabel">'+esc(act.label)+'</span>'+fxStr+'</div>'+costStr+'<span class="mapActArrow">›</span>';
     html += '</div>';
   });
   html += '</div>';
@@ -25370,30 +25386,71 @@ function _mapShowLandmarkDetail(container, mapData, lmId, npcId){
   }
 }
 
-// ---- 场景触发（复用 Phase 3B） ----
+// ---- 场景触发（复用 Phase 3B + 钱包 + 状态联动） ----
 function _mapTriggerAction(mapData, landmark, action, npcId){
   if(!npcId){
-    // 如果没有聊天对象，只做提示
     try{ toast('请先选择一个聊天对象再互动'); }catch(e){}
     return;
   }
   var displayName = landmark.customName || landmark.name;
 
-  // 氛围
+  // 获取角色名
+  var npcName = '';
+  try{
+    var db = loadContactsDB();
+    var npc = findContactById(db, npcId);
+    if(npc) npcName = npc.name || '';
+  }catch(e){}
+
+  // === 经济系统：钱包扣费 ===
+  var cost = action.cost || 0;
+  if(cost > 0){
+    var wallet = loadWallet();
+    if(wallet.balance < cost){
+      try{ toast('💰 余额不足！需要 $'+cost+'，当前 $'+wallet.balance); }catch(e){}
+      return; // 阻止行动
+    }
+    // 扣费 + 记录交易
+    walletSpend(cost, '在'+displayName+' '+action.label);
+    try{ toast('💰 -$'+cost); }catch(e){}
+  }
+
+  // === 状态效果：写入角色属性 ===
+  var fx = action.fx || {};
+  try{
+    var charState = _loadCharState(npcId);
+    if(charState && charState.attrs){
+      var attrMap = { mood:'mood', energy:'energy', health:'health', hunger:'hunger', fun:'fun', bladder:'bladder' };
+      for(var fk in fx){
+        if(fk === 'money') continue; // money 已通过钱包处理
+        var attrKey = attrMap[fk] || fk;
+        if(charState.attrs[attrKey] != null){
+          charState.attrs[attrKey] = _clampAttr(attrKey, charState.attrs[attrKey] + (fx[fk]||0));
+        }
+      }
+      charState.lastCalcAt = Date.now();
+      _saveCharState(npcId, charState);
+    }
+  }catch(e){ console.warn('[Map] status effect error:', e); }
+
+  // === 氛围描述 ===
   var tagDescMap2 = {
     trees:'周围绿树环绕', flowers:'花朵盛开', water:'水波荡漾', coffee:'空气中飘着咖啡香',
     cozy:'气氛温馨', cat:'有只猫咪在旁边打盹', stars:'头顶是漫天星空',
     sea:'能听见海浪声', wind:'微风轻拂', steam:'雾气氤氲', art:'墙上挂着画',
     quiet:'四周安静极了', campfire:'篝火在噼啪响', books:'书架上摆满了书',
-    mysterious:'有种神秘的氛围'
+    mysterious:'有种神秘的氛围', bread:'麦香扑鼻', shopping:'人来人往',
+    food:'美食飘香', sing:'音乐声不断', exercise:'充满活力', children:'有孩子的欢笑声',
+    fun:'气氛热闹', sand:'脚下是细软的沙滩', waves:'浪花拍打着岸边'
   };
-  var atmoWords = (landmark.tags||[]).slice(0,2).map(function(t){ return tagDescMap2[t]||''; }).filter(Boolean).join('，');
+  var atmoWords = (landmark.tags||[]).slice(0,3).map(function(t){ return tagDescMap2[t]||''; }).filter(Boolean).join('，');
 
-  // 构建场景数据，写入 Phase 3B 场景系统
+  // === 构建场景数据，写入 Phase 3B ===
   var sceneData = {
     name: displayName,
     location: displayName,
-    description: '你和对方来到了'+displayName+'。'+(atmoWords?atmoWords+'。':'')+'你们打算'+action.label+'。'
+    description: '你和'+(npcName||'对方')+'来到了'+displayName+'。'+(atmoWords?atmoWords+'。':'')+'你们打算'+action.label+'。'
+      + (cost>0 ? '（花费了'+cost+'金币）' : '')
   };
   _saveSceneData(npcId, sceneData);
 
@@ -25402,14 +25459,31 @@ function _mapTriggerAction(mapData, landmark, action, npcId){
   if(landmark.visits.length>50) landmark.visits = landmark.visits.slice(-50);
   _mapSave(mapData);
 
-  // 切换到线下模式（如果不是线下）
+  // 写入 NPC 活动日志
+  try{
+    var logData = _mapLoadLog();
+    logData.logs.push({
+      id: 'log_visit_'+Date.now(),
+      npcId: npcId, npcName: npcName||'???',
+      landmarkId: landmark.id,
+      time: Date.now(), period: new Date().getHours()<11?'morning':(new Date().getHours()<17?'afternoon':'evening'),
+      action: '和你一起在'+displayName+action.label,
+      cost: cost,
+      statusEffect: fx,
+      isAuto: false
+    });
+    if(logData.logs.length > 200) logData.logs = logData.logs.slice(-200);
+    _mapSaveLog(logData);
+  }catch(e){}
+
+  // 切换到线下模式
   if(_getChatMode(npcId) !== 'offline'){
     _setChatMode(npcId, 'offline');
   }
 
   // 跳转聊天
   openChat(npcId);
-  try{ toast('📍 已到达 '+displayName); }catch(e){}
+  try{ toast('📍 到达 '+displayName+(cost>0?' (-$'+cost+')':'')); }catch(e){}
 }
 
 // ---- 缩放拖拽系统 ----
@@ -26652,6 +26726,12 @@ function _buildMapPromptBlock(npcId){
         lines.push('- '+esc(l.action||'')+(lmName?' (在'+lmName+')':''));
       });
     }
+
+    // 钱包余额
+    try{
+      var w = loadWallet();
+      if(w) lines.push('用户当前金币余额：'+w.balance);
+    }catch(e){}
 
     return lines.length > 1 ? lines.join('\n') : '';
   }catch(e){ return ''; }
