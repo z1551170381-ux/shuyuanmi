@@ -76,6 +76,8 @@ const PHONE_CHAT_KEYS = {
   forum:    'forum_v1',     // forum：帖子/评论
   weather:  'weather_v1',   // weather：缓存（如果你后面接真实天气）
   drafts:   'drafts_v1',    // 各 App 草稿
+  map:      'map_v1',       // map：地图数据（岛屿+地标+用户编辑）
+  maplog:   'maplog_v1',    // map：NPC活动日志
 };
 
 // ========== Widget Data Model (组件编辑器数据层) ==========
@@ -1146,6 +1148,7 @@ function phoneApplyWallpaper(base64OrEmpty, target){
         browser:  { title:'浏览器', icon:'🌐' },
         photos:   { title:'相册',   icon:'🖼️' },
         settings: { title:'设置',   icon:'⚙️' },
+        map:      { title:'地图',   icon:'🗺️' },
       };
 
       /* ========== 工具 ========== */
@@ -1179,6 +1182,7 @@ function phoneApplyWallpaper(base64OrEmpty, target){
           case 'browser':  return s('<circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z" fill="none" stroke="currentColor" stroke-width="2"/>');
           case 'photos':   return s('<path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2zM8.5 13.5l2.5 3 3.5-4.5 4.5 6H5l3.5-4.5z"/><circle cx="8" cy="8" r="1.5"/>');
           case 'settings': return s('<path d="M19.14 12.94a7.07 7.07 0 0 0 0-1.88l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.04 7.04 0 0 0-1.63-.94l-.36-2.54A.48.48 0 0 0 13.92 2h-3.84a.48.48 0 0 0-.48.41l-.36 2.54a7.04 7.04 0 0 0-1.63.94l-2.39-.96a.49.49 0 0 0-.59.22L2.71 8.47a.49.49 0 0 0 .12.61l2.03 1.58a7.07 7.07 0 0 0 0 1.88l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54c.05.24.26.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54a7.04 7.04 0 0 0 1.63-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.03-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/>');
+          case 'map':      return s('<path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/>');
           default:         return s('<circle cx="12" cy="12" r="8"/>');
         }
       }
@@ -3762,6 +3766,119 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 @keyframes meowShake2{
   0%{ transform:rotate(-1.8deg); } 50%{ transform:rotate(1.8deg); } 100%{ transform:rotate(-1.8deg); }
 }
+/* ========== Map App ========== */
+#${ID} .mapAppWrap{
+  display:flex; flex-direction:column; height:100%; position:relative; overflow:hidden;
+  background:rgba(255,255,255,var(--phAppSolidA,0.92));
+}
+#${ID} .mapTopBar{
+  padding:10px 14px 6px; flex-shrink:0;
+  background:rgba(255,255,255,0.6);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(0,0,0,0.05);
+}
+#${ID} .mapTopTitle{ font-size:15px; font-weight:700; color:rgba(20,24,28,0.85); }
+#${ID} .mapTopNpc{ font-size:11px; color:rgba(20,24,28,0.45); margin-top:2px; }
+#${ID} .mapContainer{
+  flex:1; position:relative; overflow:hidden; touch-action:none;
+  display:flex; align-items:center; justify-content:center;
+}
+#${ID} .mapIslandSvg{ transition:transform 0.08s ease-out; will-change:transform; }
+#${ID} .mapLm:hover circle{ fill:rgba(255,255,255,1); }
+#${ID} .mapLm{ transition:transform 0.15s ease; }
+#${ID} .mapLm:hover{ transform:scale(1.15); }
+#${ID} .mapZoomBar{
+  position:absolute; right:10px; bottom:80px;
+  display:flex; flex-direction:column; gap:4px; z-index:10;
+}
+#${ID} .mapZoomBtn{
+  width:32px; height:32px; border-radius:50%; border:0;
+  background:var(--ph-glass, rgba(255,255,255,0.8));
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  font-size:16px; font-weight:600; cursor:pointer;
+  color:rgba(20,24,28,0.7); display:flex; align-items:center; justify-content:center;
+}
+#${ID} .mapZoomBtn:active{ transform:scale(0.9); }
+#${ID} .mapToolbar{
+  display:flex; gap:8px; padding:8px 14px 12px; flex-shrink:0;
+  background:rgba(255,255,255,0.6);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  border-top:1px solid rgba(0,0,0,0.05);
+}
+#${ID} .mapToolBtn{
+  flex:1; padding:8px; border-radius:10px; border:1px solid rgba(0,0,0,0.08);
+  background:var(--ph-glass, rgba(255,255,255,0.7));
+  font-size:12px; color:rgba(20,24,28,0.65); cursor:pointer;
+}
+#${ID} .mapToolBtn:active{ transform:scale(0.96); }
+/* Map Detail Overlay */
+#${ID} .mapDetailOverlay{
+  position:absolute; inset:0; z-index:20;
+  background:rgba(0,0,0,0.3);
+  display:flex; align-items:flex-end; justify-content:center;
+  animation:mapFadeIn .2s ease;
+}
+@keyframes mapFadeIn{ from{opacity:0;} to{opacity:1;} }
+#${ID} .mapDetailCard{
+  width:92%; max-height:72%; overflow-y:auto;
+  background:var(--ph-glass, rgba(255,255,255,0.92));
+  backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  border-radius:18px 18px 0 0; padding:16px;
+  box-shadow:0 -4px 24px rgba(0,0,0,0.1);
+  border:1px solid rgba(255,255,255,0.3);
+  animation:mapSlideUp .25s ease;
+  scrollbar-width:none;
+}
+#${ID} .mapDetailCard::-webkit-scrollbar{ display:none; }
+@keyframes mapSlideUp{ from{transform:translateY(40px);opacity:0;} to{transform:translateY(0);opacity:1;} }
+#${ID} .mapDetailClose{
+  position:absolute; top:12px; right:16px; font-size:16px; cursor:pointer;
+  color:rgba(20,24,28,0.4); z-index:2;
+}
+#${ID} .mapDetailHead{ text-align:center; margin-bottom:12px; }
+#${ID} .mapDetailEmoji{ font-size:36px; display:block; margin-bottom:4px; }
+#${ID} .mapDetailNameRow{ display:flex; align-items:center; justify-content:center; gap:6px; }
+#${ID} .mapDetailName{ font-size:16px; font-weight:700; color:rgba(20,24,28,0.85); }
+#${ID} .mapDetailEdit{ font-size:14px; cursor:pointer; opacity:0.5; }
+#${ID} .mapDetailEdit:hover{ opacity:1; }
+#${ID} .mapDetailAtmo{ font-size:12px; color:rgba(20,24,28,0.45); margin-top:4px; }
+#${ID} .mapDetailSection{ margin-top:12px; }
+#${ID} .mapDetailSectionTitle{
+  font-size:11px; font-weight:600; color:rgba(20,24,28,0.4);
+  text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;
+}
+#${ID} .mapActRow{
+  display:flex; align-items:center; gap:8px;
+  padding:10px 12px; margin-bottom:4px;
+  background:rgba(255,255,255,0.5); border-radius:10px;
+  border:1px solid rgba(0,0,0,0.04); cursor:pointer;
+  transition:background .15s;
+}
+#${ID} .mapActRow:hover{ background:rgba(255,255,255,0.8); }
+#${ID} .mapActRow:active{ transform:scale(0.98); }
+#${ID} .mapActLabel{ flex:1; font-size:13px; font-weight:500; color:rgba(20,24,28,0.8); }
+#${ID} .mapActCost{ font-size:12px; color:#e67e22; font-weight:600; }
+#${ID} .mapActFree{ font-size:11px; color:rgba(20,24,28,0.3); }
+#${ID} .mapActArrow{ font-size:16px; color:rgba(20,24,28,0.2); }
+#${ID} .mapNameEditInput{
+  font-size:16px; font-weight:700; text-align:center;
+  border:0; border-bottom:2px solid var(--ph-accent,#07c160);
+  background:transparent; outline:none; width:120px; color:rgba(20,24,28,0.85);
+}
+#${ID} .mapNoteInput{
+  width:100%; padding:8px 10px; border:1px solid rgba(0,0,0,0.06);
+  border-radius:8px; font-size:12px; outline:none; resize:none;
+  background:rgba(255,255,255,0.4); font-family:inherit; box-sizing:border-box;
+  color:rgba(20,24,28,0.7);
+}
+#${ID} .mapLogItem{
+  display:flex; gap:6px; align-items:baseline;
+  font-size:11px; color:rgba(20,24,28,0.5); padding:3px 0;
+}
+#${ID} .mapLogName{ font-weight:600; color:rgba(20,24,28,0.65); }
+#${ID} .mapLogTime{ color:rgba(20,24,28,0.3); font-size:10px; }
+#${ID} .mapLogAction{ flex:1; }
 /* ========== Widget Editor (follows --ph-* theme) ========== */
 #${ID} .weWrap{
   display:flex; flex-direction:column; height:100%;
@@ -4710,7 +4827,11 @@ function buildHTML(){
                 <div class="pwHd">第 2 页</div>
                 <div class="pwBd">长按桌面进入编辑模式，可拖动组件到此页。</div>
               </div>
-              <button class="phAppIcon" style="grid-column:1;grid-row:3;" data-app="themes">
+              <button class="phAppIcon" style="grid-column:1;grid-row:3;" data-app="map">
+                <span class="editDelBtn" data-edit="del">✕</span>
+                <div class="ai">${_phAppSVG('map')}</div><div class="at">地图</div>
+              </button>
+              <button class="phAppIcon" style="grid-column:2;grid-row:3;" data-app="themes">
                 <span class="editDelBtn" data-edit="del">✕</span>
                 <div class="ai">${_phAppSVG('themes')}</div><div class="at">主题</div>
               </button>
@@ -7287,6 +7408,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           case 'photos': renderPhotos(body); break;
           case 'settings': renderSettings(body); break;
           case 'themes': renderThemes(body); break;
+          case 'map': renderMapApp(body); break;
           case 'search': renderPlaceholder(body,'🔍','搜索（后续接索引）'); break;
           case 'widgetEditor': renderWidgetEditor(body); break;
           default: renderPlaceholder(body,'📦',`「${id}」开发中…`);
@@ -15599,6 +15721,12 @@ const npc = _wxGetChatTargetMeta(npcId);
             }
           });
           if(momLines.length) parts.push('【朋友圈互动近况】\n'+momLines.join('\n'));
+        }catch(e){}
+
+        // === 3.7 [地图环境]：注入当前地标和近期活动 ===
+        try{
+          var _mapBlock = _buildMapPromptBlock(npcId);
+          if(_mapBlock) parts.push(_mapBlock);
         }catch(e){}
 
         // === 3.8 [酒馆聊天上下文]：从主线聊天读取最近 N 条消息 ===
@@ -24379,6 +24507,819 @@ function _openTimelineViewer(npcId){
     }
   }); // end modal event delegation
 }
+
+
+// 🗺️==================== Map App — 随机岛屿地图 ====================
+// Phase 1: seed随机生成 + 手绘风SVG + 缩放拖拽 + 地标详情 + 场景触发
+// =====================================================================
+
+// ---- 伪随机数生成器（Mulberry32） ----
+function _mapRng(seed){
+  var s = seed | 0;
+  return function(){
+    s |= 0; s = s + 0x6D2B79F5 | 0;
+    var t = Math.imul(s ^ s >>> 15, 1 | s);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function _mapRandInt(rng, min, max){ return Math.floor(rng() * (max - min + 1)) + min; }
+function _mapPick(rng, arr){ return arr[Math.floor(rng() * arr.length)]; }
+function _mapShuffle(rng, arr){
+  var a = arr.slice();
+  for(var i=a.length-1;i>0;i--){ var j=Math.floor(rng()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+  return a;
+}
+
+// ---- 地标类型池 ----
+var MAP_LANDMARK_POOL = {
+  nature: {
+    required: [
+      { type:'park', icon:'park', emoji:'🌳', name:['星月公园','翠竹公园','风之丘','花鹿草地','萤火公园'], tags:['trees','flowers','bench','birds','breeze'],
+        actions:[{id:'walk',label:'散步',cost:0,fx:{mood:5,energy:-5}},{id:'picnic',label:'野餐',cost:30,fx:{mood:10,hunger:20,money:-30}},{id:'photo',label:'拍照留念',cost:0,fx:{mood:3}}] },
+      { type:'lake', icon:'lake', emoji:'🌙', name:['月牙湖','镜湖','星落潭','碧波湖','露珠池'], tags:['water','moon','reflection','quiet','fish'],
+        actions:[{id:'boat',label:'划船',cost:20,fx:{mood:12,energy:-8,money:-20}},{id:'fish',label:'钓鱼',cost:0,fx:{mood:8,energy:-3}},{id:'gaze',label:'发呆',cost:0,fx:{mood:5,energy:3}}] },
+    ],
+    optional: [
+      { type:'flower', icon:'flower', emoji:'🌸', name:['花田','百花谷','薰衣草地','向日葵坡','彩虹花圃'], tags:['flowers','colorful','butterflies','fragrance'],
+        actions:[{id:'pick',label:'摘花',cost:0,fx:{mood:8}},{id:'sketch',label:'写生',cost:0,fx:{mood:10,energy:-5}},{id:'view',label:'赏景',cost:0,fx:{mood:6}}] },
+      { type:'forest', icon:'forest', emoji:'🌲', name:['迷雾林','隐秘森林','古木林','枫叶径','竹林秘境'], tags:['trees','mysterious','mushrooms','path'],
+        actions:[{id:'explore',label:'探险',cost:0,fx:{mood:8,energy:-10}},{id:'gather',label:'采蘑菇',cost:0,fx:{mood:5,hunger:10}},{id:'rest',label:'林中小憩',cost:0,fx:{energy:15,mood:5}}] },
+    ]
+  },
+  commerce: {
+    required: [
+      { type:'mall', icon:'mall', emoji:'🛍️', name:['中央商场','柳叶百货','星光广场','拱桥市集','虹桥商城'], tags:['shopping','clothes','gifts','crowd'],
+        actions:[{id:'shop',label:'逛街购物',cost:80,fx:{mood:12,money:-80}},{id:'movie',label:'看电影',cost:40,fx:{mood:15,energy:-3,money:-40}},{id:'browse',label:'闲逛',cost:0,fx:{mood:5,energy:-3}}] },
+      { type:'cafe', icon:'cafe', emoji:'☕', name:['猫咖啡厅','晨露咖啡','树洞茶馆','月光甜品站','暖阳咖啡'], tags:['coffee','cake','cozy','cat','window'],
+        actions:[{id:'coffee',label:'喝咖啡',cost:25,fx:{mood:8,hunger:10,energy:5,money:-25}},{id:'chat',label:'聊天',cost:0,fx:{mood:10}},{id:'petcat',label:'撸猫',cost:0,fx:{mood:12}}] },
+    ],
+    optional: [
+      { type:'bakery', icon:'bakery', emoji:'🍞', name:['面包房','麦香坊','甜蜜烘焙屋','松饼小屋','奶油小筑'], tags:['bread','sweet','warm','baking'],
+        actions:[{id:'buy',label:'买面包',cost:18,fx:{hunger:25,mood:5,money:-18}},{id:'learn',label:'学烘焙',cost:30,fx:{mood:10,energy:-8,money:-30}},{id:'taste',label:'试吃',cost:0,fx:{hunger:8,mood:3}}] },
+      { type:'bookstore', icon:'bookstore', emoji:'📚', name:['旧书阁','猫头鹰书店','风之页','纸鸢书屋','墨香居'], tags:['books','quiet','knowledge','wood'],
+        actions:[{id:'read',label:'看书',cost:0,fx:{mood:8,energy:-3}},{id:'buybook',label:'买书',cost:35,fx:{mood:10,money:-35}},{id:'browse2',label:'翻翻杂志',cost:0,fx:{mood:4}}] },
+    ]
+  },
+  residence: {
+    required: [
+      { type:'village', icon:'village', emoji:'🏘️', name:['村庄广场','晨钟小镇','桃源村','枫叶集','灯笼街'], tags:['houses','warm','neighbors','plaza'],
+        actions:[{id:'stroll',label:'闲逛',cost:0,fx:{mood:5,energy:-3}},{id:'market',label:'跳蚤市场',cost:20,fx:{mood:8,money:-20}},{id:'sun',label:'晒太阳',cost:0,fx:{mood:6,energy:5}}] },
+    ],
+    optional: [
+      { type:'camp', icon:'camp', emoji:'🏕️', name:['露营地','星空营地','篝火谷','云端帐篷','松林营'], tags:['tent','campfire','stars','marshmallow'],
+        actions:[{id:'tent',label:'搭帐篷',cost:0,fx:{mood:8,energy:-8}},{id:'roast',label:'烤棉花糖',cost:10,fx:{mood:12,hunger:8,money:-10}},{id:'stars',label:'看星星',cost:0,fx:{mood:15}}] },
+      { type:'hotspring', icon:'hotspring', emoji:'♨️', name:['温泉','雾气汤','石头温泉','枫叶浴','露天汤池'], tags:['steam','relax','warm','stones'],
+        actions:[{id:'soak',label:'泡温泉',cost:40,fx:{mood:15,energy:20,health:10,money:-40}},{id:'foot',label:'泡脚',cost:15,fx:{mood:8,energy:10,money:-15}},{id:'relax',label:'发呆放松',cost:0,fx:{mood:10,energy:8}}] },
+    ]
+  },
+  special: {
+    required: [
+      { type:'townhall', icon:'townhall', emoji:'🏛️', name:['市政厅','议事堂','中心大楼','公告台','行政中心'], tags:['official','work','bulletin','formal'],
+        actions:[{id:'work',label:'找工作',cost:0,fx:{mood:-3,energy:-5}},{id:'task',label:'领任务',cost:0,fx:{mood:5}},{id:'notice',label:'看公告',cost:0,fx:{mood:2}}] },
+      { type:'lighthouse', icon:'lighthouse', emoji:'🔭', name:['灯塔','海角灯塔','星望台','晚风灯塔','瞭望塔'], tags:['sea','horizon','sunset','wind','letter'],
+        actions:[{id:'view2',label:'看海',cost:0,fx:{mood:12,energy:3}},{id:'wish',label:'许愿',cost:0,fx:{mood:8}},{id:'letter',label:'写信',cost:0,fx:{mood:10,energy:-3}}] },
+    ],
+    optional: [
+      { type:'museum', icon:'museum', emoji:'🎨', name:['博物馆','艺术馆','记忆陈列室','时光展厅','星尘美术馆'], tags:['art','history','painting','sculpture'],
+        actions:[{id:'tour',label:'参观',cost:15,fx:{mood:10,energy:-5,money:-15}},{id:'paint',label:'画画',cost:0,fx:{mood:12,energy:-5}},{id:'sit',label:'坐着看画',cost:0,fx:{mood:8}}] },
+    ]
+  }
+};
+
+// ---- 岛屿轮廓生成 ----
+function _mapGenIsland(rng){
+  var pts = [];
+  var n = _mapRandInt(rng, 10, 14);
+  for(var i=0;i<n;i++){
+    var angle = (i/n)*Math.PI*2;
+    var r = 160 + rng()*70 - 35;
+    var wobble = (rng()-0.5)*40;
+    r += wobble;
+    pts.push({
+      x: 250 + Math.cos(angle)*r,
+      y: 250 + Math.sin(angle)*r
+    });
+  }
+  return pts;
+}
+
+function _mapIslandPath(pts){
+  if(pts.length<3) return '';
+  var d = 'M'+pts[0].x.toFixed(1)+','+pts[0].y.toFixed(1);
+  for(var i=0;i<pts.length;i++){
+    var p0 = pts[(i-1+pts.length)%pts.length];
+    var p1 = pts[i];
+    var p2 = pts[(i+1)%pts.length];
+    var p3 = pts[(i+2)%pts.length];
+    var cp1x = p1.x + (p2.x-p0.x)/6;
+    var cp1y = p1.y + (p2.y-p0.y)/6;
+    var cp2x = p2.x - (p3.x-p1.x)/6;
+    var cp2y = p2.y - (p3.y-p1.y)/6;
+    d += ' C'+cp1x.toFixed(1)+','+cp1y.toFixed(1)+' '+cp2x.toFixed(1)+','+cp2y.toFixed(1)+' '+p2.x.toFixed(1)+','+p2.y.toFixed(1);
+  }
+  d += 'Z';
+  return d;
+}
+
+// ---- 地标放置 ----
+function _mapGenLandmarks(rng, islandPts){
+  // 计算岛屿边界
+  var minX=500,maxX=0,minY=500,maxY=0;
+  islandPts.forEach(function(p){ minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x); minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y); });
+  var cx=(minX+maxX)/2, cy=(minY+maxY)/2;
+
+  var regionBounds = {
+    nature:    { cx: cx-60, cy: cy-60 },
+    commerce:  { cx: cx+60, cy: cy+60 },
+    residence: { cx: cx+60, cy: cy-60 },
+    special:   { cx: cx-60, cy: cy+60 }
+  };
+
+  var landmarks = [];
+  var usedPositions = [];
+
+  function placeInRegion(regionId, tmpl){
+    var rb = regionBounds[regionId];
+    var attempts = 0, bx, by;
+    do {
+      bx = rb.cx + (rng()-0.5)*120;
+      by = rb.cy + (rng()-0.5)*120;
+      bx = Math.max(minX+30, Math.min(maxX-30, bx));
+      by = Math.max(minY+30, Math.min(maxY-30, by));
+      attempts++;
+    } while(attempts<20 && usedPositions.some(function(p){ return Math.abs(p.x-bx)<40 && Math.abs(p.y-by)<40; }));
+    usedPositions.push({x:bx,y:by});
+
+    var nameChoice = _mapPick(rng, tmpl.name);
+    landmarks.push({
+      id: tmpl.type+'_'+landmarks.length,
+      type: tmpl.type,
+      region: regionId,
+      name: nameChoice,
+      customName: null,
+      x: bx, y: by,
+      icon: tmpl.icon,
+      emoji: tmpl.emoji,
+      tags: tmpl.tags.slice(),
+      actions: tmpl.actions.map(function(a){ return {id:a.id,label:a.label,cost:a.cost||0,fx:Object.assign({},a.fx||{})}; }),
+      visits: [],
+      note: ''
+    });
+  }
+
+  // 每个区域：required全放 + optional随机选1个
+  ['nature','commerce','residence','special'].forEach(function(regionId){
+    var pool = MAP_LANDMARK_POOL[regionId];
+    pool.required.forEach(function(tmpl){ placeInRegion(regionId, tmpl); });
+    if(pool.optional.length){
+      var opt = _mapPick(rng, pool.optional);
+      placeInRegion(regionId, opt);
+    }
+  });
+
+  return landmarks;
+}
+
+// ---- 装饰生成（树、小路、房子） ----
+function _mapGenDecorations(rng, islandPts, landmarks){
+  var decos = [];
+  var minX=500,maxX=0,minY=500,maxY=0;
+  islandPts.forEach(function(p){ minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x); minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y); });
+
+  // 随机撒树
+  var treeCount = _mapRandInt(rng, 35, 55);
+  for(var i=0;i<treeCount;i++){
+    var tx = minX + rng()*(maxX-minX);
+    var ty = minY + rng()*(maxY-minY);
+    // 远离地标
+    var tooClose = landmarks.some(function(lm){ return Math.abs(lm.x-tx)<25 && Math.abs(lm.y-ty)<25; });
+    if(tooClose) continue;
+    var treeType = rng() < 0.6 ? 'pine' : (rng()<0.5?'round':'bush');
+    var treeScale = 0.6 + rng()*0.6;
+    decos.push({ type:'tree', subType:treeType, x:tx, y:ty, scale:treeScale });
+  }
+
+  // 小路（连接部分地标）
+  var shuffledLm = _mapShuffle(rng, landmarks);
+  for(var j=0;j<Math.min(5, shuffledLm.length-1);j++){
+    var a = shuffledLm[j], b = shuffledLm[j+1];
+    var midX = (a.x+b.x)/2 + (rng()-0.5)*40;
+    var midY = (a.y+b.y)/2 + (rng()-0.5)*40;
+    decos.push({ type:'path', x1:a.x, y1:a.y, cx:midX, cy:midY, x2:b.x, y2:b.y });
+  }
+
+  // 小房子（住宅区点缀）
+  var houseCount = _mapRandInt(rng, 4, 8);
+  var rc = { cx:(minX+maxX)/2+60, cy:(minY+maxY)/2-60 };
+  for(var h=0;h<houseCount;h++){
+    var hx = rc.cx + (rng()-0.5)*100;
+    var hy = rc.cy + (rng()-0.5)*100;
+    hx = Math.max(minX+20, Math.min(maxX-20, hx));
+    hy = Math.max(minY+20, Math.min(maxY-20, hy));
+    var tooCloseH = landmarks.some(function(lm){ return Math.abs(lm.x-hx)<22 && Math.abs(lm.y-hy)<22; });
+    if(!tooCloseH) decos.push({ type:'house', x:hx, y:hy, color: _mapPick(rng, ['#C4956A','#B8866B','#A0785A','#D4A574']) });
+  }
+
+  return decos;
+}
+
+// ---- 色板 ----
+var MAP_PALETTES = [
+  { island:'#8B9E6B', sea:'#C5CDB0', sand:'#D4C9A8', name:'莫兰迪绿' },
+  { island:'#7A9B6D', sea:'#B8C9A0', sand:'#D8CEAE', name:'森林雾' },
+  { island:'#6B8E5A', sea:'#AFBF9A', sand:'#C8BE9F', name:'深林' },
+  { island:'#8FA87A', sea:'#C9D4B8', sand:'#DDD5BE', name:'薄荷田' },
+  { island:'#7D9970', sea:'#BCC8AB', sand:'#D0C7A5', name:'青苔' },
+];
+
+// ---- 地图生成主函数 ----
+function _mapGenerate(seed){
+  var rng = _mapRng(seed);
+  var palette = _mapPick(rng, MAP_PALETTES);
+  var islandPts = _mapGenIsland(rng);
+  var landmarks = _mapGenLandmarks(rng, islandPts);
+  var decos = _mapGenDecorations(rng, islandPts, landmarks);
+
+  // 随机地图名
+  var namePool = ['柳叶岛','星月岛','梦鹿岛','云雀岛','萤火湾','晨露岛','风铃岛','蜜桃岛','琥珀岛','蘑菇岛','贝壳岛','松果岛'];
+  var mapName = _mapPick(rng, namePool);
+
+  return {
+    v: 1,
+    seed: seed,
+    name: mapName,
+    generated: true,
+    createdAt: Date.now(),
+    palette: palette,
+    islandPts: islandPts,
+    landmarks: landmarks,
+    decorations: decos,
+    viewState: { zoom:1, panX:0, panY:0 }
+  };
+}
+
+// ---- 数据存取 ----
+function _mapLoad(){
+  var raw = _phLoad(PHONE_CHAT_KEYS.map, null);
+  return raw;
+}
+function _mapSave(data){
+  _phSave(PHONE_CHAT_KEYS.map, data);
+}
+function _mapLoadLog(){
+  return _phLoad(PHONE_CHAT_KEYS.maplog, { v:1, lastAutoGen:0, logs:[] });
+}
+function _mapSaveLog(data){
+  _phSave(PHONE_CHAT_KEYS.maplog, data);
+}
+
+function _mapEnsure(){
+  var data = _mapLoad();
+  if(data && data.generated) return data;
+  var seed = Date.now() ^ Math.floor(Math.random()*999999);
+  data = _mapGenerate(seed);
+  _mapSave(data);
+  return data;
+}
+
+// ---- SVG 构建 ----
+function _mapBuildSVG(mapData){
+  var pal = mapData.palette || MAP_PALETTES[0];
+  var islandD = _mapIslandPath(mapData.islandPts);
+
+  var svg = '<svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" class="mapIslandSvg" style="width:100%;height:100%;">';
+
+  // 海水背景
+  svg += '<rect width="500" height="500" rx="16" fill="'+pal.sea+'"/>';
+
+  // 海水波纹装饰
+  svg += '<g opacity="0.3">';
+  svg += '<path d="M0,30 Q60,20 120,30 T240,30 T360,30 T480,30" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.4"/>';
+  svg += '<path d="M20,470 Q80,460 140,470 T260,470 T380,470 T500,470" fill="none" stroke="#fff" stroke-width="1.2" opacity="0.3"/>';
+  svg += '</g>';
+
+  // 沙滩边缘
+  svg += '<path d="'+islandD+'" fill="'+pal.sand+'" transform="scale(1.04) translate(-10,-10)" opacity="0.6"/>';
+
+  // 岛屿主体
+  svg += '<path id="mapIslandBody" d="'+islandD+'" fill="'+pal.island+'"/>';
+
+  // 定义裁剪区域
+  svg += '<defs><clipPath id="mapClip"><path d="'+islandD+'"/></clipPath></defs>';
+  svg += '<g clip-path="url(#mapClip)">';
+
+  // 区域色块（微透明）
+  var minX=500,maxX=0,minY=500,maxY=0;
+  mapData.islandPts.forEach(function(p){ minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x); minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y); });
+  var cx=(minX+maxX)/2, cy=(minY+maxY)/2;
+  svg += '<rect x="'+minX+'" y="'+minY+'" width="'+(cx-minX)+'" height="'+(cy-minY)+'" fill="#5A8A4A" opacity="0.15"/>';  // 自然
+  svg += '<rect x="'+cx+'" y="'+cy+'" width="'+(maxX-cx)+'" height="'+(maxY-cy)+'" fill="#C4A050" opacity="0.12"/>';  // 商业
+  svg += '<rect x="'+cx+'" y="'+minY+'" width="'+(maxX-cx)+'" height="'+(cy-minY)+'" fill="#A07850" opacity="0.1"/>';  // 住宅
+  svg += '<rect x="'+minX+'" y="'+cy+'" width="'+(cx-minX)+'" height="'+(maxY-cy)+'" fill="#5A8AAA" opacity="0.1"/>';  // 特殊
+
+  // 装饰
+  (mapData.decorations||[]).forEach(function(d){
+    if(d.type==='tree'){
+      if(d.subType==='pine'){
+        var s = d.scale||1;
+        svg += '<polygon points="'+(d.x)+','+(d.y-14*s)+' '+(d.x-6*s)+','+(d.y+4*s)+' '+(d.x+6*s)+','+(d.y+4*s)+'" fill="#3A6A2A" opacity="0.8"/>';
+        svg += '<rect x="'+(d.x-1.5)+'" y="'+(d.y+4*s)+'" width="3" height="'+(4*s)+'" fill="#6B4E3D" opacity="0.6"/>';
+      } else if(d.subType==='round'){
+        var s2 = d.scale||1;
+        svg += '<circle cx="'+d.x+'" cy="'+(d.y-4*s2)+'" r="'+(7*s2)+'" fill="#5A8A4A" opacity="0.7"/>';
+        svg += '<rect x="'+(d.x-1.2)+'" y="'+(d.y+3*s2)+'" width="2.4" height="'+(5*s2)+'" fill="#6B4E3D" opacity="0.5"/>';
+      } else {
+        svg += '<ellipse cx="'+d.x+'" cy="'+d.y+'" rx="'+(6*(d.scale||1))+'" ry="'+(4*(d.scale||1))+'" fill="#6B9E4A" opacity="0.5"/>';
+      }
+    } else if(d.type==='path'){
+      svg += '<path d="M'+d.x1+','+d.y1+' Q'+d.cx+','+d.cy+' '+d.x2+','+d.y2+'" fill="none" stroke="'+pal.sand+'" stroke-width="4" stroke-linecap="round" opacity="0.6"/>';
+    } else if(d.type==='house'){
+      svg += '<rect x="'+(d.x-5)+'" y="'+(d.y-3)+'" width="10" height="8" rx="1" fill="'+(d.color||'#C4956A')+'" opacity="0.8"/>';
+      svg += '<polygon points="'+(d.x-6)+','+(d.y-3)+' '+d.x+','+(d.y-10)+' '+(d.x+6)+','+(d.y-3)+'" fill="#E8734A" opacity="0.7"/>';
+    }
+  });
+
+  svg += '</g>'; // end clip group
+
+  // 地标图标
+  svg += '<g class="mapLandmarks">';
+  (mapData.landmarks||[]).forEach(function(lm){
+    var displayName = lm.customName || lm.name;
+    svg += '<g class="mapLm" data-lmid="'+lm.id+'" style="cursor:pointer;" transform="translate('+lm.x.toFixed(1)+','+lm.y.toFixed(1)+')">';
+    svg += '<circle r="16" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.1)" stroke-width="0.8"/>';
+    svg += '<text font-size="16" text-anchor="middle" dominant-baseline="central" style="pointer-events:none;">'+lm.emoji+'</text>';
+    svg += '<text class="mapLmLabel" y="24" font-size="8" text-anchor="middle" fill="rgba(30,30,30,0.8)" font-weight="600" style="pointer-events:none;text-shadow:0 0.5px 2px rgba(255,255,255,0.9);">'+esc(displayName)+'</text>';
+    svg += '</g>';
+  });
+  svg += '</g>';
+
+  // 地图标题
+  svg += '<text x="250" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="rgba(255,255,255,0.85)" style="text-shadow:0 1px 3px rgba(0,0,0,0.2);font-family:cursive,serif;">✦ '+esc(mapData.name)+' ✦</text>';
+
+  svg += '</svg>';
+  return svg;
+}
+
+// ---- 地标详情卡 ----
+function _mapShowLandmarkDetail(container, mapData, lmId, npcId){
+  var lm = (mapData.landmarks||[]).find(function(l){ return l.id===lmId; });
+  if(!lm) return;
+  var displayName = lm.customName || lm.name;
+
+  // 氛围描述
+  var tagDescMap = {
+    trees:'绿树成荫', flowers:'鲜花遍地', bench:'有长椅可以坐', birds:'鸟鸣啾啾',
+    water:'波光粼粼', moon:'月色倒映水中', reflection:'水面如镜', quiet:'安静祥和', fish:'能看到鱼儿游',
+    colorful:'色彩斑斓', butterflies:'蝴蝶翩翩', fragrance:'花香四溢',
+    shopping:'琳琅满目', clothes:'时装店很多', gifts:'能买到小礼物', crowd:'人来人往',
+    coffee:'咖啡飘香', cake:'甜品诱人', cozy:'温馨舒适', cat:'有可爱的猫咪', window:'靠窗位置很棒',
+    bread:'麦香扑鼻', sweet:'甜蜜的味道', warm:'暖融融的', baking:'有烘焙体验',
+    houses:'小房子错落有致', neighbors:'邻居们很友善', plaza:'广场很热闹',
+    tent:'帐篷已支好', campfire:'篝火噼啪作响', stars:'能看到满天星', marshmallow:'棉花糖',
+    sea:'海风拂面', horizon:'远方是海平线', sunset:'日落很美', wind:'海风轻拂', letter:'适合写封信',
+    official:'正式的氛围', work:'可以找到差事', bulletin:'公告栏上贴着消息', formal:'庄重肃穆',
+    art:'艺术气息浓厚', history:'历史悠久', painting:'画作精美', sculpture:'有精致雕塑',
+    steam:'雾气氤氲', relax:'非常放松', stones:'石头围砌',
+    books:'书架满满', knowledge:'充满知识',wood:'木质书架香气',
+    mysterious:'神秘幽深', mushrooms:'能看到蘑菇', path:'曲径通幽'
+  };
+  var atmo = (lm.tags||[]).slice(0,3).map(function(t){ return tagDescMap[t]||t; }).join('，');
+
+  // NPC活动日志
+  var logData = _mapLoadLog();
+  var recentLogs = _safeArr(logData.logs).filter(function(l){ return l.landmarkId===lmId; }).slice(-5).reverse();
+  var logHTML = '';
+  if(recentLogs.length){
+    logHTML = '<div class="mapDetailSection"><div class="mapDetailSectionTitle">最近来访</div>';
+    recentLogs.forEach(function(l){
+      var timeStr2 = '';
+      try{ var d=new Date(l.time); timeStr2=d.getMonth()+1+'/'+d.getDate()+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }catch(e){}
+      logHTML += '<div class="mapLogItem"><span class="mapLogName">'+esc(l.npcName||'???')+'</span><span class="mapLogTime">'+timeStr2+'</span><span class="mapLogAction">'+esc(l.action||'')+'</span></div>';
+    });
+    logHTML += '</div>';
+  }
+
+  var html = '<div class="mapDetailCard" data-lmid="'+lm.id+'">';
+  html += '<div class="mapDetailClose" data-act="mapDetailClose">✕</div>';
+  html += '<div class="mapDetailHead">';
+  html += '<span class="mapDetailEmoji">'+lm.emoji+'</span>';
+  html += '<div class="mapDetailNameRow"><span class="mapDetailName" data-el="mapLmName">'+esc(displayName)+'</span><span class="mapDetailEdit" data-act="mapEditName" title="编辑名称">✏️</span></div>';
+  html += '<div class="mapDetailAtmo">'+esc(atmo)+'</div>';
+  html += '</div>';
+
+  // 动作列表
+  html += '<div class="mapDetailSection"><div class="mapDetailSectionTitle">可以做的事</div>';
+  (lm.actions||[]).forEach(function(act){
+    var costStr = act.cost > 0 ? '<span class="mapActCost">$'+act.cost+'</span>' : '<span class="mapActFree">免费</span>';
+    html += '<div class="mapActRow" data-act="mapDoAction" data-actionid="'+act.id+'" data-lmid="'+lm.id+'">';
+    html += '<span class="mapActLabel">'+esc(act.label)+'</span>'+costStr+'<span class="mapActArrow">›</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  html += logHTML;
+
+  // 备注
+  html += '<div class="mapDetailSection">';
+  html += '<div class="mapDetailSectionTitle">我的备注</div>';
+  html += '<textarea class="mapNoteInput" data-el="mapNote" placeholder="记录你的故事…" rows="2">'+esc(lm.note||'')+'</textarea>';
+  html += '</div>';
+
+  html += '</div>';
+
+  // 移除旧卡片
+  var old = container.querySelector('.mapDetailCard');
+  if(old) old.remove();
+
+  var wrap = doc.createElement('div');
+  wrap.className = 'mapDetailOverlay';
+  wrap.innerHTML = html;
+  container.appendChild(wrap);
+
+  // 事件
+  wrap.addEventListener('click', function(ev){
+    var tgt = ev.target;
+    if(tgt.classList.contains('mapDetailOverlay') || tgt.hasAttribute('data-act') && tgt.getAttribute('data-act')==='mapDetailClose'){
+      wrap.remove(); return;
+    }
+    var closeBtn = tgt.closest('[data-act="mapDetailClose"]');
+    if(closeBtn){ wrap.remove(); return; }
+
+    // 编辑名称
+    if(tgt.closest('[data-act="mapEditName"]')){
+      var nameEl = wrap.querySelector('[data-el="mapLmName"]');
+      if(!nameEl) return;
+      var cur = lm.customName || lm.name;
+      var inp = doc.createElement('input');
+      inp.className = 'mapNameEditInput';
+      inp.value = cur;
+      inp.maxLength = 20;
+      nameEl.replaceWith(inp);
+      inp.focus();
+      inp.select();
+      inp.addEventListener('blur', function(){
+        var val = inp.value.trim();
+        if(val && val !== lm.name){
+          lm.customName = val;
+        } else {
+          lm.customName = null;
+        }
+        _mapSave(mapData);
+        // 刷新卡片
+        wrap.remove();
+        _mapShowLandmarkDetail(container, mapData, lmId, npcId);
+      });
+      inp.addEventListener('keydown', function(e2){ if(e2.key==='Enter') inp.blur(); });
+      return;
+    }
+
+    // 执行动作
+    var actRow = tgt.closest('[data-act="mapDoAction"]');
+    if(actRow){
+      var actionId = actRow.getAttribute('data-actionid');
+      var action = (lm.actions||[]).find(function(a){ return a.id===actionId; });
+      if(!action) return;
+      _mapTriggerAction(mapData, lm, action, npcId);
+      wrap.remove();
+      return;
+    }
+  });
+
+  // 备注自动保存
+  var noteEl = wrap.querySelector('[data-el="mapNote"]');
+  if(noteEl){
+    noteEl.addEventListener('change', function(){
+      lm.note = noteEl.value.trim();
+      _mapSave(mapData);
+    });
+    noteEl.addEventListener('blur', function(){
+      lm.note = noteEl.value.trim();
+      _mapSave(mapData);
+    });
+  }
+}
+
+// ---- 场景触发（复用 Phase 3B） ----
+function _mapTriggerAction(mapData, landmark, action, npcId){
+  if(!npcId){
+    // 如果没有聊天对象，只做提示
+    try{ toast('请先选择一个聊天对象再互动'); }catch(e){}
+    return;
+  }
+  var displayName = landmark.customName || landmark.name;
+
+  // 氛围
+  var tagDescMap2 = {
+    trees:'周围绿树环绕', flowers:'花朵盛开', water:'水波荡漾', coffee:'空气中飘着咖啡香',
+    cozy:'气氛温馨', cat:'有只猫咪在旁边打盹', stars:'头顶是漫天星空',
+    sea:'能听见海浪声', wind:'微风轻拂', steam:'雾气氤氲', art:'墙上挂着画',
+    quiet:'四周安静极了', campfire:'篝火在噼啪响', books:'书架上摆满了书',
+    mysterious:'有种神秘的氛围'
+  };
+  var atmoWords = (landmark.tags||[]).slice(0,2).map(function(t){ return tagDescMap2[t]||''; }).filter(Boolean).join('，');
+
+  // 构建场景数据，写入 Phase 3B 场景系统
+  var sceneData = {
+    name: displayName,
+    location: displayName,
+    description: '你和对方来到了'+displayName+'。'+(atmoWords?atmoWords+'。':'')+'你们打算'+action.label+'。'
+  };
+  _saveSceneData(npcId, sceneData);
+
+  // 记录访问
+  landmark.visits.push({ npcId:npcId, time:Date.now(), actionId:action.id });
+  if(landmark.visits.length>50) landmark.visits = landmark.visits.slice(-50);
+  _mapSave(mapData);
+
+  // 切换到线下模式（如果不是线下）
+  if(_getChatMode(npcId) !== 'offline'){
+    _setChatMode(npcId, 'offline');
+  }
+
+  // 跳转聊天
+  openChat(npcId);
+  try{ toast('📍 已到达 '+displayName); }catch(e){}
+}
+
+// ---- 缩放拖拽系统 ----
+function _mapInitGestures(wrapEl, mapData){
+  var zoom = mapData.viewState.zoom || 1;
+  var panX = mapData.viewState.panX || 0;
+  var panY = mapData.viewState.panY || 0;
+  var isPanning = false;
+  var lastX = 0, lastY = 0;
+  var lastDist = 0;
+  var moveThreshold = 5;
+  var movedTotal = 0;
+  var startX = 0, startY = 0;
+
+  var svgEl = wrapEl.querySelector('.mapIslandSvg');
+  if(!svgEl) return;
+
+  function apply(){
+    zoom = Math.max(0.7, Math.min(3, zoom));
+    var maxP = 150 * zoom;
+    panX = Math.max(-maxP, Math.min(maxP, panX));
+    panY = Math.max(-maxP, Math.min(maxP, panY));
+    svgEl.style.transform = 'translate('+panX+'px,'+panY+'px) scale('+zoom+')';
+    svgEl.style.transformOrigin = 'center center';
+  }
+  apply();
+
+  function save(){
+    mapData.viewState.zoom = zoom;
+    mapData.viewState.panX = panX;
+    mapData.viewState.panY = panY;
+    _mapSave(mapData);
+  }
+
+  // 触摸事件
+  wrapEl.addEventListener('touchstart', function(e){
+    if(e.touches.length===1){
+      isPanning = true;
+      lastX = e.touches[0].clientX;
+      lastY = e.touches[0].clientY;
+      startX = lastX; startY = lastY;
+      movedTotal = 0;
+    } else if(e.touches.length===2){
+      lastDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    }
+  }, {passive:true});
+
+  wrapEl.addEventListener('touchmove', function(e){
+    if(e.touches.length===1 && isPanning){
+      var dx = e.touches[0].clientX - lastX;
+      var dy = e.touches[0].clientY - lastY;
+      panX += dx; panY += dy;
+      lastX = e.touches[0].clientX;
+      lastY = e.touches[0].clientY;
+      movedTotal += Math.abs(dx)+Math.abs(dy);
+      apply();
+    } else if(e.touches.length===2){
+      var dist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+      if(lastDist>0){
+        zoom *= dist/lastDist;
+        apply();
+      }
+      lastDist = dist;
+    }
+    if(zoom!==1 || panX!==0 || panY!==0) e.preventDefault();
+  }, {passive:false});
+
+  wrapEl.addEventListener('touchend', function(e){
+    isPanning = false;
+    lastDist = 0;
+    save();
+    // 点击检测
+    if(movedTotal < moveThreshold && e.changedTouches && e.changedTouches.length){
+      var touch = e.changedTouches[0];
+      var el = doc.elementFromPoint(touch.clientX, touch.clientY);
+      if(el){
+        var lmG = el.closest('.mapLm');
+        if(lmG){
+          var lmId = lmG.getAttribute('data-lmid');
+          if(lmId) wrapEl.dispatchEvent(new CustomEvent('maplmtap', {detail:{lmId:lmId}}));
+        }
+      }
+    }
+  }, {passive:true});
+
+  // 鼠标事件
+  var mouseDown = false;
+  wrapEl.addEventListener('mousedown', function(e){
+    mouseDown = true; isPanning = true;
+    lastX = e.clientX; lastY = e.clientY;
+    startX = lastX; startY = lastY;
+    movedTotal = 0;
+  });
+  wrapEl.addEventListener('mousemove', function(e){
+    if(!mouseDown) return;
+    var dx = e.clientX-lastX, dy = e.clientY-lastY;
+    panX += dx; panY += dy;
+    lastX = e.clientX; lastY = e.clientY;
+    movedTotal += Math.abs(dx)+Math.abs(dy);
+    apply();
+  });
+  wrapEl.addEventListener('mouseup', function(e){
+    mouseDown = false; isPanning = false; save();
+    if(movedTotal < moveThreshold){
+      var el = doc.elementFromPoint(e.clientX, e.clientY);
+      if(el){
+        var lmG = el.closest('.mapLm');
+        if(lmG){
+          var lmId = lmG.getAttribute('data-lmid');
+          if(lmId) wrapEl.dispatchEvent(new CustomEvent('maplmtap', {detail:{lmId:lmId}}));
+        }
+      }
+    }
+  });
+
+  // 滚轮缩放
+  wrapEl.addEventListener('wheel', function(e){
+    e.preventDefault();
+    zoom += e.deltaY < 0 ? 0.15 : -0.15;
+    apply(); save();
+  }, {passive:false});
+
+  // 返回控制接口
+  return {
+    zoomIn: function(){ zoom += 0.3; apply(); save(); },
+    zoomOut: function(){ zoom -= 0.3; apply(); save(); },
+    reset: function(){ zoom=1; panX=0; panY=0; apply(); save(); }
+  };
+}
+
+// ---- 渲染地图 App 主页面 ----
+function renderMapApp(body){
+  var mapData = _mapEnsure();
+  var npcId = state.chatTarget || null;
+
+  // 查找当前聊天对象名称
+  var npcName = '';
+  if(npcId){
+    try{
+      var db = loadContactsDB();
+      var npc = findContactById(db, npcId);
+      if(npc) npcName = npc.name || '';
+    }catch(e){}
+  }
+
+  body.innerHTML = '';
+  body.style.overflow = 'hidden';
+
+  var wrap = doc.createElement('div');
+  wrap.className = 'mapAppWrap';
+
+  // 顶部信息栏
+  var topBar = doc.createElement('div');
+  topBar.className = 'mapTopBar';
+  topBar.innerHTML = '<div class="mapTopTitle">'+esc(mapData.name)+'</div>'+
+    (npcName ? '<div class="mapTopNpc">👤 与 '+esc(npcName)+' 同行</div>' : '<div class="mapTopNpc" style="opacity:0.4">选择聊天对象后可互动</div>');
+  wrap.appendChild(topBar);
+
+  // 地图容器
+  var mapContainer = doc.createElement('div');
+  mapContainer.className = 'mapContainer';
+  mapContainer.innerHTML = _mapBuildSVG(mapData);
+  wrap.appendChild(mapContainer);
+
+  // 缩放按钮
+  var zoomBar = doc.createElement('div');
+  zoomBar.className = 'mapZoomBar';
+  zoomBar.innerHTML = '<button class="mapZoomBtn" data-act="mapZoomIn">+</button>'+
+    '<button class="mapZoomBtn" data-act="mapZoomOut">−</button>'+
+    '<button class="mapZoomBtn" data-act="mapZoomReset">📍</button>';
+  wrap.appendChild(zoomBar);
+
+  // 底部工具栏
+  var toolbar = doc.createElement('div');
+  toolbar.className = 'mapToolbar';
+  toolbar.innerHTML = '<button class="mapToolBtn" data-act="mapRegenerate">🔄 重新生成</button>'+
+    '<button class="mapToolBtn" data-act="mapEditMapName">✏️ 改名</button>';
+  wrap.appendChild(toolbar);
+
+  body.appendChild(wrap);
+
+  // 初始化手势
+  var gestureCtrl = _mapInitGestures(mapContainer, mapData);
+
+  // 地标点击事件
+  mapContainer.addEventListener('maplmtap', function(ev){
+    var lmId = ev.detail && ev.detail.lmId;
+    if(lmId) _mapShowLandmarkDetail(wrap, mapData, lmId, npcId);
+  });
+
+  // 缩放按钮事件
+  zoomBar.addEventListener('click', function(ev){
+    var act2 = ev.target.getAttribute('data-act');
+    if(!act2) return;
+    if(act2==='mapZoomIn' && gestureCtrl) gestureCtrl.zoomIn();
+    if(act2==='mapZoomOut' && gestureCtrl) gestureCtrl.zoomOut();
+    if(act2==='mapZoomReset' && gestureCtrl) gestureCtrl.reset();
+  });
+
+  // 工具栏事件
+  toolbar.addEventListener('click', function(ev){
+    var act2 = ev.target.closest('[data-act]');
+    if(!act2) return;
+    var a = act2.getAttribute('data-act');
+    if(a==='mapRegenerate'){
+      var newSeed = Date.now() ^ Math.floor(Math.random()*999999);
+      var newMap = _mapGenerate(newSeed);
+      _mapSave(newMap);
+      renderMapApp(body);
+      try{ toast('🗺️ 已生成新地图: '+newMap.name); }catch(e){}
+    }
+    if(a==='mapEditMapName'){
+      var inner2 = '<div style="padding:4px 0;"><div style="font-size:14px;font-weight:600;margin-bottom:8px;">编辑地图名称</div>'+
+        '<input data-el="mapNameInput" value="'+esc(mapData.name)+'" maxlength="12" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;"/>'+
+        '<div style="display:flex;gap:8px;margin-top:10px;">'+
+        '<button data-el="mapNameSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>'+
+        '<button data-el="mapNameCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button>'+
+        '</div></div>';
+      var ov2 = _cpShowOverlay(inner2);
+      ov2.querySelector('[data-el="mapNameCancel"]')?.addEventListener('click', function(){ ov2.remove(); });
+      ov2.querySelector('[data-el="mapNameSave"]')?.addEventListener('click', function(){
+        var val = (ov2.querySelector('[data-el="mapNameInput"]')||{}).value;
+        if(val && val.trim()){
+          mapData.name = val.trim();
+          _mapSave(mapData);
+          ov2.remove();
+          renderMapApp(body);
+        }
+      });
+    }
+  });
+}
+
+// ---- buildSystemPrompt 地图上下文注入 ----
+function _buildMapPromptBlock(npcId){
+  try{
+    var mapData = _mapLoad();
+    if(!mapData || !mapData.generated) return '';
+    var lines = ['【地图环境：'+esc(mapData.name)+'】'];
+
+    // 当前场景（如果从地图触发了线下场景）
+    var scene = _loadSceneData(npcId);
+    if(scene && scene.name){
+      var lm = (mapData.landmarks||[]).find(function(l){ return (l.customName||l.name)===scene.name; });
+      if(lm){
+        lines.push('当前所在地标：'+scene.name+'（'+lm.emoji+'）');
+        if(lm.tags) lines.push('环境氛围：'+lm.tags.slice(0,3).join('、'));
+      }
+    }
+
+    // 最近去过的地标
+    var allVisits = [];
+    (mapData.landmarks||[]).forEach(function(lm2){
+      (lm2.visits||[]).forEach(function(v){
+        if(v.npcId===npcId) allVisits.push({ name:lm2.customName||lm2.name, time:v.time, actionId:v.actionId });
+      });
+    });
+    allVisits.sort(function(a,b){ return b.time-a.time; });
+    var recent = allVisits.slice(0,3);
+    if(recent.length){
+      lines.push('最近去过：'+recent.map(function(r){ return r.name; }).join('、'));
+    }
+
+    // NPC活动日志
+    var logData = _mapLoadLog();
+    var npcLogs = _safeArr(logData.logs).filter(function(l){ return l.npcId===npcId; }).slice(-3).reverse();
+    if(npcLogs.length){
+      lines.push('角色近期活动：');
+      npcLogs.forEach(function(l){
+        var lmName = '';
+        var lm3 = (mapData.landmarks||[]).find(function(m){ return m.id===l.landmarkId; });
+        if(lm3) lmName = lm3.customName || lm3.name;
+        lines.push('- '+esc(l.action||'')+(lmName?' (在'+lmName+')':''));
+      });
+    }
+
+    return lines.length > 1 ? lines.join('\n') : '';
+  }catch(e){ return ''; }
+}
+// 🗺️==================== Map App END ====================
 
 
       return { initOnce, showFull, showMini, showPill, hide, openApp, openHome, openChat, state };
