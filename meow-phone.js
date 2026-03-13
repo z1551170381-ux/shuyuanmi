@@ -23599,6 +23599,9 @@ function _openSceneEditor(npcId){
   var inner = `
     <div style="font-size:14px;font-weight:600;margin-bottom:8px;">☕ 场景设置</div>
     <div style="margin-bottom:8px;">
+      <button data-el="sceneFromMap" style="width:100%;padding:9px;border-radius:10px;border:1px solid rgba(7,193,96,.2);background:rgba(7,193,96,.06);font-size:12px;color:var(--ph-accent,#07c160);cursor:pointer;font-weight:500;">📍 从地图选地标</button>
+    </div>
+    <div style="margin-bottom:8px;">
       <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">场景名称</div>
       <input data-el="sceneName" value="${esc(scene.name||'')}" placeholder="如：咖啡厅、家中客厅" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;"/>
     </div>
@@ -23625,6 +23628,51 @@ function _openSceneEditor(npcId){
     </div>`;
   var ov = _cpShowOverlay(inner);
   ov.querySelector('[data-el="sceneCancel"]')?.addEventListener('click', function(){ ov.remove(); });
+
+  // 从地图选地标
+  ov.querySelector('[data-el="sceneFromMap"]')?.addEventListener('click', function(){
+    try{
+      var mapData = _mapLoad();
+      if(!mapData || !mapData.landmarks || !mapData.landmarks.length){
+        toast('地图还没有生成，请先打开地图 App'); return;
+      }
+      // 构建地标列表弹窗
+      var lmH = '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">📍 选择地标</div>';
+      lmH += '<div style="max-height:250px;overflow-y:auto;scrollbar-width:none;">';
+      mapData.landmarks.forEach(function(lm){
+        var dn = lm.customName || lm.name;
+        lmH += '<div class="mapActRow" data-act="pickMapLm" data-lmid="'+lm.id+'" style="padding:8px 12px;margin-bottom:3px;">';
+        lmH += '<span style="font-size:18px;margin-right:8px;">'+lm.emoji+'</span>';
+        lmH += '<span class="mapActLabel">'+esc(dn)+'</span><span class="mapActArrow">›</span></div>';
+      });
+      lmH += '</div>';
+      lmH += '<button data-act="pickMapCancel" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:#fff;font-size:13px;cursor:pointer;margin-top:8px;">取消</button>';
+      var lmOv = _cpShowOverlay(lmH);
+      lmOv.addEventListener('click', function(ev2){
+        var tgt2 = ev2.target.closest('[data-act]');
+        if(!tgt2) return;
+        if(tgt2.getAttribute('data-act')==='pickMapCancel'){ lmOv.remove(); return; }
+        if(tgt2.getAttribute('data-act')==='pickMapLm'){
+          var lmId = tgt2.getAttribute('data-lmid');
+          var lm2 = mapData.landmarks.find(function(l){ return l.id===lmId; });
+          if(!lm2){ lmOv.remove(); return; }
+          var dn2 = lm2.customName || lm2.name;
+          // 自动填入场景编辑器
+          var nameInp = ov.querySelector('[data-el="sceneName"]');
+          var locInp = ov.querySelector('[data-el="sceneLoc"]');
+          var descInp = ov.querySelector('[data-el="sceneDesc"]');
+          if(nameInp) nameInp.value = dn2;
+          if(locInp) locInp.value = dn2;
+          // 用tags生成描述
+          var tagDesc3 = {trees:'绿树环绕',flowers:'鲜花盛开',coffee:'咖啡飘香',cozy:'氛围温馨',sea:'海风轻拂',quiet:'安静祥和',art:'充满艺术气息',books:'书香满溢',campfire:'篝火温暖',stars:'星空璀璨',food:'美食飘香',sing:'音乐萦绕',exercise:'充满活力',fun:'热闹非凡',steam:'雾气缭绕',sand:'细沙柔软',water:'水波荡漾'};
+          var descWords = (lm2.tags||[]).slice(0,3).map(function(t){ return tagDesc3[t]||''; }).filter(Boolean).join('，');
+          if(descInp) descInp.value = dn2+'，'+(descWords||'一个有趣的地方')+'。';
+          lmOv.remove();
+          try{ toast('已选择「'+dn2+'」'); }catch(e){}
+        }
+      });
+    }catch(e){ try{toast('读取地图失败');}catch(e2){} }
+  });
   ov.querySelector('[data-el="sceneBgClear"]')?.addEventListener('click', function(){
     var bgInp = ov.querySelector('[data-el="sceneBgUrl"]');
     if (bgInp) bgInp.value = '';
@@ -25389,9 +25437,103 @@ function _mapShowLandmarkDetail(container, mapData, lmId, npcId){
 // ---- 场景触发（复用 Phase 3B + 钱包 + 状态联动） ----
 function _mapTriggerAction(mapData, landmark, action, npcId){
   if(!npcId){
-    try{ toast('请先选择一个聊天对象再互动'); }catch(e){}
+    // 弹出选择器：选好友同行 or 独自前往
+    _mapShowCompanionPicker(mapData, landmark, action);
     return;
   }
+  _mapDoTrigger(mapData, landmark, action, npcId);
+}
+
+function _mapShowCompanionPicker(mapData, landmark, action){
+  var displayName = landmark.customName || landmark.name;
+  var db = loadContactsDB();
+  var contacts = _safeArr(db.list);
+
+  var h = '<div style="font-size:14px;font-weight:600;margin-bottom:6px;">📍 前往 '+esc(displayName)+'</div>';
+  h += '<div style="font-size:12px;color:rgba(20,24,28,.45);margin-bottom:12px;">'+esc(action.label)+(action.cost>0?' · $'+action.cost:'')+'</div>';
+
+  // 独自前往
+  h += '<div class="mapActRow" data-act="mapPickAlone" style="margin-bottom:8px;">';
+  h += '<span class="mapActLabel">🚶 独自前往</span><span class="mapActArrow">›</span></div>';
+
+  // 好友列表
+  if(contacts.length){
+    h += '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:6px;">选择同行的好友</div>';
+    contacts.forEach(function(c){
+      var avatar = c.avatar ? (c.avatar.length>2 ? '<img src="'+esc(c.avatar)+'" style="width:28px;height:28px;border-radius:50%;object-fit:cover;"/>' : '<span style="width:28px;height:28px;border-radius:50%;background:var(--ph-accent,#07c160);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;">'+esc(c.avatar)+'</span>') : '<span style="width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center;font-size:12px;">'+esc((c.name||'?').charAt(0))+'</span>';
+      h += '<div class="mapActRow" data-act="mapPickFriend" data-npcid="'+esc(c.id)+'" style="padding:8px 12px;">';
+      h += '<div style="flex-shrink:0;">'+avatar+'</div>';
+      h += '<span class="mapActLabel" style="margin-left:8px;">'+esc(c.name||'???')+'</span><span class="mapActArrow">›</span></div>';
+    });
+  } else {
+    h += '<div style="font-size:12px;color:rgba(20,24,28,.3);text-align:center;padding:16px;">通讯录为空，先添加好友吧</div>';
+  }
+
+  h += '<div style="margin-top:8px;"><button data-act="mapPickCancel" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button></div>';
+
+  var ov = _cpShowOverlay(h);
+  ov.addEventListener('click', function(ev){
+    var tgt = ev.target.closest('[data-act]');
+    if(!tgt) return;
+    var act2 = tgt.getAttribute('data-act');
+
+    if(act2 === 'mapPickCancel'){ ov.remove(); return; }
+
+    if(act2 === 'mapPickAlone'){
+      ov.remove();
+      _mapDoTriggerSolo(mapData, landmark, action);
+      return;
+    }
+
+    if(act2 === 'mapPickFriend'){
+      var pickId = tgt.getAttribute('data-npcid');
+      if(pickId){
+        ov.remove();
+        _mapDoTrigger(mapData, landmark, action, pickId);
+      }
+      return;
+    }
+  });
+}
+
+// ---- 独自前往（不开聊天，只设场景+扣费+记日志） ----
+function _mapDoTriggerSolo(mapData, landmark, action){
+  var displayName = landmark.customName || landmark.name;
+  var cost = action.cost || 0;
+
+  if(cost > 0){
+    var wallet = loadWallet();
+    if(wallet.balance < cost){
+      try{ toast('💰 余额不足！需要 $'+cost); }catch(e){}
+      return;
+    }
+    walletSpend(cost, '独自在'+displayName+' '+action.label);
+  }
+
+  // 记录访问
+  landmark.visits.push({ npcId:'me', time:Date.now(), actionId:action.id });
+  if(landmark.visits.length>50) landmark.visits = landmark.visits.slice(-50);
+  _mapSave(mapData);
+
+  // 记录日志
+  try{
+    var logData = _mapLoadLog();
+    logData.logs.push({
+      id:'log_solo_'+Date.now(), npcId:'me', npcName:'我',
+      landmarkId:landmark.id, time:Date.now(),
+      period:new Date().getHours()<11?'morning':(new Date().getHours()<17?'afternoon':'evening'),
+      action:'独自在'+displayName+action.label,
+      cost:cost, statusEffect:action.fx||{}, isAuto:false
+    });
+    if(logData.logs.length>200) logData.logs = logData.logs.slice(-200);
+    _mapSaveLog(logData);
+  }catch(e){}
+
+  try{ toast('📍 到达 '+displayName+(cost>0?' (-$'+cost+')':'')); }catch(e){}
+}
+
+// ---- 带好友前往 ----
+function _mapDoTrigger(mapData, landmark, action, npcId){
   var displayName = landmark.customName || landmark.name;
 
   // 获取角色名
