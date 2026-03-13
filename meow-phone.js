@@ -24755,6 +24755,45 @@ function _mapRiverPath(pts){
   return d;
 }
 
+// ---- 湖泊生成 ----
+function _mapGenLakes(rng, islandPts){
+  var lakes = [];
+  var count = _mapRandInt(rng, 1, 2);
+  var nz = MAP_ZONES.nature;
+  for(var i=0;i<count;i++){
+    var cx = nz.cx + (rng()-0.5)*nz.rx;
+    var cy = nz.cy + (rng()-0.5)*nz.ry*0.8;
+    var pts = [];
+    var n = _mapRandInt(rng, 5, 8);
+    var baseR = 15 + rng()*15;
+    for(var j=0;j<n;j++){
+      var a = (j/n)*Math.PI*2;
+      var r = baseR + (rng()-0.5)*10;
+      pts.push({ x: cx+Math.cos(a)*r, y: cy+Math.sin(a)*r*0.7 });
+    }
+    lakes.push({ points: pts });
+  }
+  return lakes;
+}
+
+function _mapLakePath(pts){
+  if(!pts||pts.length<3) return '';
+  // 使用和island一样的闭合贝塞尔
+  var d = 'M'+pts[0].x.toFixed(1)+','+pts[0].y.toFixed(1);
+  for(var i=0;i<pts.length;i++){
+    var p0 = pts[(i-1+pts.length)%pts.length];
+    var p1 = pts[i];
+    var p2 = pts[(i+1)%pts.length];
+    var p3 = pts[(i+2)%pts.length];
+    var cp1x = p1.x + (p2.x-p0.x)/6;
+    var cp1y = p1.y + (p2.y-p0.y)/6;
+    var cp2x = p2.x - (p3.x-p1.x)/6;
+    var cp2y = p2.y - (p3.y-p1.y)/6;
+    d += ' C'+cp1x.toFixed(1)+','+cp1y.toFixed(1)+' '+cp2x.toFixed(1)+','+cp2y.toFixed(1)+' '+p2.x.toFixed(1)+','+p2.y.toFixed(1);
+  }
+  return d+'Z';
+}
+
 function _mapIslandPath(pts){
   if(pts.length<3) return '';
   var d = 'M'+pts[0].x.toFixed(1)+','+pts[0].y.toFixed(1);
@@ -24943,13 +24982,14 @@ function _mapGenerate(seed){
   var river = _mapGenRiver(rng, islandPts);
   var landmarks = _mapGenLandmarks(rng, islandPts);
   var houses = _mapGenHouses(rng, islandPts);
+  var lakes = _mapGenLakes(rng, islandPts);
   var decos = _mapGenDecorations(rng, islandPts, landmarks, river);
 
   var namePool = ['柳叶岛','星月岛','梦鹿岛','云雀岛','萤火湾','晨露岛','风铃岛','蜜桃岛','琥珀岛','蘑菇岛','贝壳岛','松果岛'];
   var mapName = _mapPick(rng, namePool);
 
   return {
-    v: 2,
+    v: 3,
     seed: seed,
     name: mapName,
     generated: true,
@@ -24957,10 +24997,11 @@ function _mapGenerate(seed){
     palette: palette,
     islandPts: islandPts,
     river: river,
+    lakes: lakes,             // 湖泊列表
     landmarks: landmarks,
-    houses: houses,           // 居民区小房子列表
-    myHouseId: null,          // 玩家选的房子ID
-    npcHouses: {},            // { npcId: houseId }
+    houses: houses,
+    myHouseId: null,
+    npcHouses: {},
     decorations: decos,
     viewState: { zoom:1, panX:0, panY:0 }
   };
@@ -24987,11 +25028,19 @@ function _mapEnsure(){
     // v1→v2 升级：缺少河流/房子的旧地图重新生成
     if(!data.v || data.v < 2){
       var newData = _mapGenerate(data.seed || Date.now());
-      // 保留用户自定义
       newData.name = data.name || newData.name;
       if(data.viewState) newData.viewState = data.viewState;
       _mapSave(newData);
       return newData;
+    }
+    // v2→v3 升级：补上lakes字段
+    if(data.v < 3){
+      if(!data.lakes){
+        var rng3 = _mapRng(data.seed || Date.now());
+        data.lakes = _mapGenLakes(rng3, data.islandPts);
+      }
+      data.v = 3;
+      _mapSave(data);
     }
     return data;
   }
@@ -25084,6 +25133,19 @@ function _mapBuildSVG(mapData){
       }
     });
   }
+
+  // 湖泊
+  (mapData.lakes||[]).forEach(function(lake){
+    if(!lake.points || lake.points.length<3) return;
+    var lkD = _mapLakePath(lake.points);
+    // 湖岸
+    svg += '<path d="'+lkD+'" fill="rgba(120,175,200,0.2)" stroke="rgba(90,150,180,0.25)" stroke-width="2"/>';
+    // 湖面
+    svg += '<path d="'+lkD+'" fill="rgba(140,190,215,0.35)"/>';
+    // 高光
+    var cxL=0,cyL=0; lake.points.forEach(function(p){cxL+=p.x;cyL+=p.y;}); cxL/=lake.points.length; cyL/=lake.points.length;
+    svg += '<ellipse cx="'+cxL.toFixed(1)+'" cy="'+(cyL-3).toFixed(1)+'" rx="8" ry="3" fill="rgba(200,230,250,0.35)"/>';
+  });
 
   // 装饰：树木
   (mapData.decorations||[]).forEach(function(d){
@@ -25494,6 +25556,7 @@ function _mapInitGestures(wrapEl, mapData){
     zoomIn: function(){ zoom += 0.3; apply(); save(); },
     zoomOut: function(){ zoom -= 0.3; apply(); save(); },
     reset: function(){ zoom=1; panX=0; panY=0; apply(); save(); },
+    pan: function(dx,dy){ panX+=dx; panY+=dy; apply(); save(); },
     setEditing: function(v){ _editing = !!v; },
     reapply: function(){ apply(); },
     getZoom: function(){ return zoom; },
@@ -25551,7 +25614,14 @@ function renderMapApp(body){
   zoomBar.className = 'mapZoomBar';
   zoomBar.innerHTML = '<button class="mapZoomBtn" data-act="mapZoomIn">+</button>'+
     '<button class="mapZoomBtn" data-act="mapZoomOut">−</button>'+
-    '<button class="mapZoomBtn" data-act="mapZoomReset">📍</button>';
+    '<button class="mapZoomBtn" data-act="mapZoomReset">📍</button>'+
+    '<div style="height:6px;"></div>'+
+    '<button class="mapZoomBtn" data-act="mapPanUp" style="font-size:12px;">▲</button>'+
+    '<div style="display:flex;gap:2px;">'+
+    '<button class="mapZoomBtn" data-act="mapPanLeft" style="font-size:12px;width:15px;">◀</button>'+
+    '<button class="mapZoomBtn" data-act="mapPanRight" style="font-size:12px;width:15px;">▶</button>'+
+    '</div>'+
+    '<button class="mapZoomBtn" data-act="mapPanDown" style="font-size:12px;">▼</button>';
   wrap.appendChild(zoomBar);
 
   // 底部工具栏
@@ -25658,6 +25728,10 @@ function renderMapApp(body){
     if(act2==='mapZoomIn' && gestureCtrl) gestureCtrl.zoomIn();
     if(act2==='mapZoomOut' && gestureCtrl) gestureCtrl.zoomOut();
     if(act2==='mapZoomReset' && gestureCtrl) gestureCtrl.reset();
+    if(act2==='mapPanLeft' && gestureCtrl) gestureCtrl.pan(40,0);
+    if(act2==='mapPanRight' && gestureCtrl) gestureCtrl.pan(-40,0);
+    if(act2==='mapPanUp' && gestureCtrl) gestureCtrl.pan(0,40);
+    if(act2==='mapPanDown' && gestureCtrl) gestureCtrl.pan(0,-40);
   });
 
   // 工具栏事件
@@ -25700,7 +25774,7 @@ function renderMapApp(body){
 // ========== 地图编辑器 ==========
 function _mapOpenEditor(body, mapData, gestureCtrl){
   if(gestureCtrl) gestureCtrl.setEditing(true);
-  var edMode = { tab:'landmark', dragging:null, drawingRoad:false, drawPts:[], selectedLm:null };
+  var edMode = { tab:'landmark', terrainSub:'island', dragging:null, drawingRoad:false, drawPts:[], selectedLm:null };
 
   function svgCoord(cx, cy){
     if(gestureCtrl) return gestureCtrl.clientToSvg(cx, cy);
@@ -25723,38 +25797,72 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
 
     // 根据当前tab绘制不同的编辑控制点
     if(edMode.tab === 'terrain'){
-      // 岛屿控制点
-      (mapData.islandPts||[]).forEach(function(pt,i){
-        var c = document.createElementNS(ns,'circle');
-        c.setAttribute('cx',pt.x); c.setAttribute('cy',pt.y); c.setAttribute('r','7');
-        c.setAttribute('fill','rgba(7,193,96,0.7)'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
-        c.setAttribute('class','mapCtrlPt'); c.setAttribute('data-pttype','island'); c.setAttribute('data-ptidx',i);
-        svgEl.appendChild(c);
-      });
-      // 河流控制点
-      (mapData.river||[]).forEach(function(pt,i){
-        var c = document.createElementNS(ns,'circle');
-        c.setAttribute('cx',pt.x); c.setAttribute('cy',pt.y); c.setAttribute('r','7');
-        c.setAttribute('fill','rgba(70,150,200,0.8)'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
-        c.setAttribute('class','mapCtrlPt'); c.setAttribute('data-pttype','river'); c.setAttribute('data-ptidx',i);
-        svgEl.appendChild(c);
-      });
-      // 区域中心+边缘
-      var _edZones = _getEditZones(mapData);
-      for(var zk in _edZones){
-        var z = _edZones[zk];
-        // 中心点
-        var cc = document.createElementNS(ns,'circle');
-        cc.setAttribute('cx',z.cx); cc.setAttribute('cy',z.cy); cc.setAttribute('r','8');
-        cc.setAttribute('fill','rgba(200,150,50,0.7)'); cc.setAttribute('stroke','#fff'); cc.setAttribute('stroke-width','1.5');
-        cc.setAttribute('class','mapCtrlPt'); cc.setAttribute('data-pttype','zone-center'); cc.setAttribute('data-zone',zk);
-        svgEl.appendChild(cc);
-        // 右边缘（缩放手柄）
-        var ce = document.createElementNS(ns,'circle');
-        ce.setAttribute('cx',z.cx+z.rx); ce.setAttribute('cy',z.cy); ce.setAttribute('r','4');
-        ce.setAttribute('fill','rgba(200,150,50,0.5)'); ce.setAttribute('stroke','#fff'); ce.setAttribute('stroke-width','1');
-        ce.setAttribute('class','mapCtrlPt'); ce.setAttribute('data-pttype','zone-edge'); ce.setAttribute('data-zone',zk);
-        svgEl.appendChild(ce);
+      // 只显示当前子模式的控制点
+      if(edMode.terrainSub === 'island'){
+        (mapData.islandPts||[]).forEach(function(pt,i){
+          var c = document.createElementNS(ns,'circle');
+          c.setAttribute('cx',pt.x); c.setAttribute('cy',pt.y); c.setAttribute('r','8');
+          c.setAttribute('fill','rgba(7,193,96,0.8)'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','2');
+          c.setAttribute('class','mapCtrlPt'); c.setAttribute('data-pttype','island'); c.setAttribute('data-ptidx',i);
+          svgEl.appendChild(c);
+          // 序号标签
+          var t = document.createElementNS(ns,'text');
+          t.setAttribute('x',pt.x); t.setAttribute('y',pt.y+3); t.setAttribute('text-anchor','middle');
+          t.setAttribute('font-size','6'); t.setAttribute('fill','#fff'); t.setAttribute('style','pointer-events:none');
+          t.textContent = ''+(i+1);
+          svgEl.appendChild(t);
+        });
+      }
+      if(edMode.terrainSub === 'river'){
+        (mapData.river||[]).forEach(function(pt,i){
+          var c = document.createElementNS(ns,'circle');
+          c.setAttribute('cx',pt.x); c.setAttribute('cy',pt.y); c.setAttribute('r','8');
+          c.setAttribute('fill','rgba(70,150,200,0.85)'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','2');
+          c.setAttribute('class','mapCtrlPt');
+          svgEl.appendChild(c);
+        });
+      }
+      if(edMode.terrainSub === 'lake'){
+        (mapData.lakes||[]).forEach(function(lake,li){
+          (lake.points||[]).forEach(function(pt,pi){
+            var c = document.createElementNS(ns,'circle');
+            c.setAttribute('cx',pt.x); c.setAttribute('cy',pt.y); c.setAttribute('r','7');
+            c.setAttribute('fill','rgba(50,130,180,0.8)'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','2');
+            c.setAttribute('class','mapCtrlPt');
+            c.setAttribute('data-lakeidx',li); c.setAttribute('data-ptidx',pi);
+            svgEl.appendChild(c);
+          });
+        });
+      }
+      if(edMode.terrainSub === 'zone'){
+        var _edZones = _getEditZones(mapData);
+        for(var zk in _edZones){
+          var z = _edZones[zk];
+          // 区域范围预览（虚线椭圆）
+          var ell = document.createElementNS(ns,'ellipse');
+          ell.setAttribute('cx',z.cx); ell.setAttribute('cy',z.cy); ell.setAttribute('rx',z.rx); ell.setAttribute('ry',z.ry);
+          ell.setAttribute('fill','none'); ell.setAttribute('stroke','rgba(200,150,50,0.4)'); ell.setAttribute('stroke-width','1.5');
+          ell.setAttribute('stroke-dasharray','5,4'); ell.setAttribute('style','pointer-events:none');
+          svgEl.appendChild(ell);
+          // 中心点
+          var cc = document.createElementNS(ns,'circle');
+          cc.setAttribute('cx',z.cx); cc.setAttribute('cy',z.cy); cc.setAttribute('r','9');
+          cc.setAttribute('fill','rgba(200,150,50,0.8)'); cc.setAttribute('stroke','#fff'); cc.setAttribute('stroke-width','2');
+          cc.setAttribute('class','mapCtrlPt'); cc.setAttribute('data-pttype','zone-center'); cc.setAttribute('data-zone',zk);
+          svgEl.appendChild(cc);
+          // 标签
+          var tl = document.createElementNS(ns,'text');
+          tl.setAttribute('x',z.cx); tl.setAttribute('y',z.cy-14); tl.setAttribute('text-anchor','middle');
+          tl.setAttribute('font-size','8'); tl.setAttribute('fill','rgba(150,100,30,0.8)'); tl.setAttribute('style','pointer-events:none');
+          tl.textContent = z.label;
+          svgEl.appendChild(tl);
+          // 右边缘
+          var ce = document.createElementNS(ns,'circle');
+          ce.setAttribute('cx',z.cx+z.rx); ce.setAttribute('cy',z.cy); ce.setAttribute('r','6');
+          ce.setAttribute('fill','rgba(200,150,50,0.6)'); ce.setAttribute('stroke','#fff'); ce.setAttribute('stroke-width','1.5');
+          ce.setAttribute('class','mapCtrlPt'); ce.setAttribute('data-pttype','zone-edge'); ce.setAttribute('data-zone',zk);
+          svgEl.appendChild(ce);
+        }
       }
     }
 
@@ -25844,22 +25952,37 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
       }
       panelHtml += '</div>';
     } else if(edMode.tab === 'terrain'){
-      panelHtml += '<div class="mapEdHint">拖拽绿点=岛屿轮廓 蓝点=河流 黄点=区域位置。右侧小点=区域大小</div>';
-      panelHtml += '<div class="mapEdRow">';
-      panelHtml += '<button class="mapEdBtn" data-edact="terrainAddIslandPt">+ 岛屿点</button>';
-      panelHtml += '<button class="mapEdBtn" data-edact="terrainAddRiverPt">+ 河流点</button>';
-      panelHtml += '<button class="mapEdBtn" data-edact="terrainAddZone">+ 新区块</button>';
-      panelHtml += '<button class="mapEdBtn danger" data-edact="terrainReset">重置地形</button>';
-      panelHtml += '</div>';
-      // 区块列表
-      var zoneKeys = Object.keys(_getEditZones(mapData));
-      panelHtml += '<div class="mapEdHint" style="margin-top:6px;">当前区块：'+zoneKeys.length+'个</div>';
-      panelHtml += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
-      zoneKeys.forEach(function(zk3){
-        var z3 = _getEditZones(mapData)[zk3];
-        panelHtml += '<button class="mapEdBtn" data-edact="terrainDelZone" data-zone="'+zk3+'" style="font-size:10px;">'+esc(z3.label)+' ✕</button>';
+      // 子模式切换条
+      var tsubs = [{id:'island',label:'🏝 岛屿'},{id:'river',label:'🌊 河流'},{id:'lake',label:'💧 湖泊'},{id:'zone',label:'📍 区块'}];
+      panelHtml += '<div style="display:flex;gap:4px;margin-bottom:6px;">';
+      tsubs.forEach(function(ts){
+        panelHtml += '<button class="mapEdBtn'+(edMode.terrainSub===ts.id?' on':'')+'" data-edact="terrainSub" data-sub="'+ts.id+'" style="flex:1;font-size:10px;padding:5px 2px;">'+ts.label+'</button>';
       });
       panelHtml += '</div>';
+
+      if(edMode.terrainSub === 'island'){
+        panelHtml += '<div class="mapEdHint">拖拽绿点调整岛屿轮廓（'+((mapData.islandPts||[]).length)+'个点）</div>';
+        panelHtml += '<div class="mapEdRow"><button class="mapEdBtn" data-edact="terrainAddIslandPt">+ 加点</button><button class="mapEdBtn danger" data-edact="terrainDelLastIslandPt">- 删末尾点</button></div>';
+      } else if(edMode.terrainSub === 'river'){
+        panelHtml += '<div class="mapEdHint">拖拽蓝点调整河流路径（'+((mapData.river||[]).length)+'个点）</div>';
+        panelHtml += '<div class="mapEdRow"><button class="mapEdBtn" data-edact="terrainAddRiverPt">+ 加点</button><button class="mapEdBtn danger" data-edact="terrainDelLastRiverPt">- 删末尾点</button></div>';
+      } else if(edMode.terrainSub === 'lake'){
+        panelHtml += '<div class="mapEdHint">拖拽蓝点调整湖泊形状（共'+((mapData.lakes||[]).length)+'个湖）</div>';
+        panelHtml += '<div class="mapEdRow"><button class="mapEdBtn" data-edact="terrainAddLake">+ 新湖泊</button>';
+        if((mapData.lakes||[]).length>0) panelHtml += '<button class="mapEdBtn danger" data-edact="terrainDelLastLake">删最后一个湖</button>';
+        panelHtml += '</div>';
+      } else if(edMode.terrainSub === 'zone'){
+        var zoneKeys = Object.keys(_getEditZones(mapData));
+        panelHtml += '<div class="mapEdHint">拖拽黄点移动区块，拖右侧小点缩放（'+zoneKeys.length+'个）</div>';
+        panelHtml += '<div class="mapEdRow"><button class="mapEdBtn" data-edact="terrainAddZone">+ 新区块</button></div>';
+        panelHtml += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">';
+        zoneKeys.forEach(function(zk3){
+          var z3 = _getEditZones(mapData)[zk3];
+          panelHtml += '<button class="mapEdBtn" data-edact="terrainDelZone" data-zone="'+zk3+'" style="font-size:10px;">'+esc(z3.label)+' ✕</button>';
+        });
+        panelHtml += '</div>';
+      }
+      panelHtml += '<div class="mapEdRow" style="margin-top:6px;"><button class="mapEdBtn danger" data-edact="terrainReset" style="font-size:10px;">🔄 重置全部地形</button></div>';
     } else if(edMode.tab === 'road'){
       panelHtml += '<div class="mapEdHint">'+(edMode.drawingRoad ? '在地图上划线绘制道路，松手完成' : '点击"开始画路"后在地图上拖动绘制')+'</div>';
       panelHtml += '<div class="mapEdRow">';
@@ -25975,11 +26098,21 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
     }
 
     // === 地形操作 ===
+    if(act === 'terrainSub'){
+      edMode.terrainSub = actBtn.getAttribute('data-sub') || 'island';
+      renderEdBar(); refresh();
+      return;
+    }
     if(act === 'terrainAddIslandPt'){
       mapData.islandPts.push({ x: 250+(Math.random()-0.5)*100, y: 260+(Math.random()-0.5)*100 });
       if(!mapData.edited) mapData.edited = {};
       mapData.edited.island = true;
-      _mapSave(mapData); refresh();
+      _mapSave(mapData); renderEdBar(); refresh();
+      return;
+    }
+    if(act === 'terrainDelLastIslandPt'){
+      if(mapData.islandPts.length > 6){ mapData.islandPts.pop(); _mapSave(mapData); renderEdBar(); refresh(); }
+      else try{ toast('至少保留6个点'); }catch(e){}
       return;
     }
     if(act === 'terrainAddRiverPt'){
@@ -25987,16 +26120,39 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
       mapData.river.push({ x: last.x+(Math.random()-0.5)*40, y: last.y+30 });
       if(!mapData.edited) mapData.edited = {};
       mapData.edited.river = true;
-      _mapSave(mapData); refresh();
+      _mapSave(mapData); renderEdBar(); refresh();
+      return;
+    }
+    if(act === 'terrainDelLastRiverPt'){
+      if(mapData.river.length > 2){ mapData.river.pop(); _mapSave(mapData); renderEdBar(); refresh(); }
+      else try{ toast('至少保留2个点'); }catch(e){}
+      return;
+    }
+    if(act === 'terrainAddLake'){
+      if(!mapData.lakes) mapData.lakes = [];
+      var lkCx = 250+(Math.random()-0.5)*100, lkCy = 260+(Math.random()-0.5)*100;
+      var lkPts = [];
+      for(var lki=0;lki<6;lki++){
+        var a = (lki/6)*Math.PI*2;
+        lkPts.push({ x: lkCx+Math.cos(a)*25+Math.random()*8, y: lkCy+Math.sin(a)*18+Math.random()*8 });
+      }
+      mapData.lakes.push({ points: lkPts });
+      _mapSave(mapData); renderEdBar(); refresh();
+      try{ toast('已添加湖泊，拖拽蓝点调整形状'); }catch(e){}
+      return;
+    }
+    if(act === 'terrainDelLastLake'){
+      if(mapData.lakes && mapData.lakes.length > 0){ mapData.lakes.pop(); _mapSave(mapData); renderEdBar(); refresh(); }
       return;
     }
     if(act === 'terrainReset'){
       var rng = _mapRng(mapData.seed);
       mapData.islandPts = _mapGenIsland(rng);
       mapData.river = _mapGenRiver(rng, mapData.islandPts);
-      delete mapData.zones; // 重置区块
+      mapData.lakes = _mapGenLakes(rng, mapData.islandPts);
+      delete mapData.zones;
       if(mapData.edited){ mapData.edited.island = false; mapData.edited.river = false; }
-      _mapSave(mapData); refresh();
+      _mapSave(mapData); renderEdBar(); refresh();
       try{ toast('地形已重置'); }catch(e){}
       return;
     }
@@ -26099,33 +26255,45 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
       return true;
     }
 
-    // 地形编辑：检测控制点
+    // 地形编辑：只检测当前子模式的控制点
     if(edMode.tab === 'terrain'){
-      // 岛屿点
-      for(var ii=0;ii<(mapData.islandPts||[]).length;ii++){
-        var ip = mapData.islandPts[ii];
-        if(Math.abs(pt.x-ip.x)<20 && Math.abs(pt.y-ip.y)<20){
-          dragState = { active:true, type:'island', idx:ii }; return true;
+      if(edMode.terrainSub === 'island'){
+        for(var ii=0;ii<(mapData.islandPts||[]).length;ii++){
+          var ip = mapData.islandPts[ii];
+          if(Math.abs(pt.x-ip.x)<22 && Math.abs(pt.y-ip.y)<22){
+            dragState = { active:true, type:'island', idx:ii }; return true;
+          }
         }
       }
-      // 河流点
-      for(var ri=0;ri<(mapData.river||[]).length;ri++){
-        var rp = mapData.river[ri];
-        if(Math.abs(pt.x-rp.x)<20 && Math.abs(pt.y-rp.y)<20){
-          dragState = { active:true, type:'river', idx:ri }; return true;
+      if(edMode.terrainSub === 'river'){
+        for(var ri=0;ri<(mapData.river||[]).length;ri++){
+          var rp = mapData.river[ri];
+          if(Math.abs(pt.x-rp.x)<22 && Math.abs(pt.y-rp.y)<22){
+            dragState = { active:true, type:'river', idx:ri }; return true;
+          }
         }
       }
-      // 区域
-      var _pdZones = _getEditZones(mapData);
-      for(var zk2 in _pdZones){
-        var z2 = _pdZones[zk2];
-        // 边缘缩放
-        if(Math.abs(pt.x-(z2.cx+z2.rx))<20 && Math.abs(pt.y-z2.cy)<20){
-          dragState = { active:true, type:'zone-edge', zone:zk2, startX:pt.x }; return true;
+      if(edMode.terrainSub === 'lake'){
+        for(var lli=0;lli<(mapData.lakes||[]).length;lli++){
+          var lk = mapData.lakes[lli];
+          for(var lpi=0;lpi<(lk.points||[]).length;lpi++){
+            var lp = lk.points[lpi];
+            if(Math.abs(pt.x-lp.x)<22 && Math.abs(pt.y-lp.y)<22){
+              dragState = { active:true, type:'lake', lakeIdx:lli, idx:lpi }; return true;
+            }
+          }
         }
-        // 中心移动
-        if(Math.abs(pt.x-z2.cx)<22 && Math.abs(pt.y-z2.cy)<22){
-          dragState = { active:true, type:'zone-center', zone:zk2 }; return true;
+      }
+      if(edMode.terrainSub === 'zone'){
+        var _pdZones = _getEditZones(mapData);
+        for(var zk2 in _pdZones){
+          var z2 = _pdZones[zk2];
+          if(Math.abs(pt.x-(z2.cx+z2.rx))<20 && Math.abs(pt.y-z2.cy)<20){
+            dragState = { active:true, type:'zone-edge', zone:zk2 }; return true;
+          }
+          if(Math.abs(pt.x-z2.cx)<22 && Math.abs(pt.y-z2.cy)<22){
+            dragState = { active:true, type:'zone-center', zone:zk2 }; return true;
+          }
         }
       }
     }
@@ -26175,6 +26343,13 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
       if(zd){ zd.rx = Math.max(30, Math.abs(pt.x - zd.cx)); zd.ry = Math.max(25, zd.rx * 0.75); }
       refresh();
     }
+    if(dragState.type === 'lake'){
+      var lk2 = (mapData.lakes||[])[dragState.lakeIdx];
+      if(lk2 && lk2.points[dragState.idx]){
+        lk2.points[dragState.idx] = { x:pt.x, y:pt.y };
+        refresh();
+      }
+    }
     if(dragState.type === 'landmark'){
       mapData.landmarks[dragState.idx].x = pt.x;
       mapData.landmarks[dragState.idx].y = pt.y;
@@ -26202,7 +26377,7 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
       _mapSave(mapData); refresh();
       try{ toast('道路已绘制'); }catch(e){}
     }
-    if(dragState.type === 'island' || dragState.type === 'river' || dragState.type === 'landmark'){
+    if(dragState.type === 'island' || dragState.type === 'river' || dragState.type === 'landmark' || dragState.type === 'lake' || dragState.type === 'zone-center' || dragState.type === 'zone-edge'){
       _mapSave(mapData);
     }
     dragState.active = false;
