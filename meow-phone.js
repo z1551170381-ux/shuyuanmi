@@ -3784,9 +3784,13 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   display:flex; align-items:center; justify-content:center;
 }
 #${ID} .mapIslandSvg{ transition:transform 0.08s ease-out; will-change:transform; }
-#${ID} .mapLm:hover circle{ fill:rgba(255,255,255,1); }
-#${ID} .mapLm{ transition:transform 0.15s ease; }
-#${ID} .mapLm:hover{ transform:scale(1.15); }
+#${ID} .mapLm circle.mapLmBg{ transition:r 0.15s ease, fill 0.15s ease; }
+#${ID} .mapLm:hover circle.mapLmBg{ r:19; fill:rgba(255,255,255,1); }
+#${ID} .mapLm .mapLmEmoji{ transition:font-size 0.15s ease; }
+#${ID} .mapLm:hover .mapLmEmoji{ font-size:19px; }
+#${ID} .mapLmLabel{ transition:opacity 0.15s ease; }
+#${ID} .mapLm:hover .mapLmLabel{ opacity:1; }
+#${ID} .mapLm .mapHomeBadge{ font-size:7px; pointer-events:none; }
 #${ID} .mapZoomBar{
   position:absolute; right:10px; bottom:80px;
   display:flex; flex-direction:column; gap:4px; z-index:10;
@@ -24531,8 +24535,32 @@ function _mapShuffle(rng, arr){
   return a;
 }
 
-// ---- 地标类型池 ----
+// ---- 地标类型池（5大区：城区/商业/自然/居民/特殊） ----
 var MAP_LANDMARK_POOL = {
+  city: {
+    required: [
+      { type:'townhall', icon:'townhall', emoji:'🏛️', name:['市政厅','议事堂','公告大楼','行政中心','市民广场'], tags:['official','work','bulletin','formal'],
+        actions:[{id:'work',label:'找工作',cost:0,fx:{mood:-3,energy:-5}},{id:'task',label:'领任务',cost:0,fx:{mood:5}},{id:'notice',label:'看公告',cost:0,fx:{mood:2}}] },
+      { type:'cafe', icon:'cafe', emoji:'☕', name:['猫咖啡厅','晨露咖啡','树洞茶馆','月光甜品站','暖阳咖啡'], tags:['coffee','cake','cozy','cat','window'],
+        actions:[{id:'coffee',label:'喝咖啡',cost:25,fx:{mood:8,hunger:10,energy:5,money:-25}},{id:'chat',label:'聊天',cost:0,fx:{mood:10}},{id:'petcat',label:'撸猫',cost:0,fx:{mood:12}}] },
+    ],
+    optional: [
+      { type:'bookstore', icon:'bookstore', emoji:'📚', name:['旧书阁','猫头鹰书店','风之页','纸鸢书屋','墨香居'], tags:['books','quiet','knowledge','wood'],
+        actions:[{id:'read',label:'看书',cost:0,fx:{mood:8,energy:-3}},{id:'buybook',label:'买书',cost:35,fx:{mood:10,money:-35}},{id:'browse2',label:'翻翻杂志',cost:0,fx:{mood:4}}] },
+    ]
+  },
+  commercial: {
+    required: [
+      { type:'mall', icon:'mall', emoji:'🛍️', name:['中央商场','柳叶百货','星光广场','拱桥市集','虹桥商城'], tags:['shopping','clothes','gifts','crowd'],
+        actions:[{id:'shop',label:'逛街购物',cost:80,fx:{mood:12,money:-80}},{id:'movie',label:'看电影',cost:40,fx:{mood:15,energy:-3,money:-40}},{id:'browse',label:'闲逛',cost:0,fx:{mood:5,energy:-3}}] },
+      { type:'bakery', icon:'bakery', emoji:'🍞', name:['面包房','麦香坊','甜蜜烘焙屋','松饼小屋','奶油小筑'], tags:['bread','sweet','warm','baking'],
+        actions:[{id:'buy',label:'买面包',cost:18,fx:{hunger:25,mood:5,money:-18}},{id:'learn',label:'学烘焙',cost:30,fx:{mood:10,energy:-8,money:-30}},{id:'taste',label:'试吃',cost:0,fx:{hunger:8,mood:3}}] },
+    ],
+    optional: [
+      { type:'flowershop', icon:'flowershop', emoji:'💐', name:['花语小铺','绿叶花坊','花与蝶','满庭芳','小雏菊'], tags:['flowers','fragrance','colorful','gift'],
+        actions:[{id:'buyflower',label:'买花',cost:20,fx:{mood:10,money:-20}},{id:'smell',label:'闻花香',cost:0,fx:{mood:6}},{id:'arrange',label:'学插花',cost:15,fx:{mood:8,energy:-3,money:-15}}] },
+    ]
+  },
   nature: {
     required: [
       { type:'park', icon:'park', emoji:'🌳', name:['星月公园','翠竹公园','风之丘','花鹿草地','萤火公园'], tags:['trees','flowers','bench','birds','breeze'],
@@ -24541,67 +24569,92 @@ var MAP_LANDMARK_POOL = {
         actions:[{id:'boat',label:'划船',cost:20,fx:{mood:12,energy:-8,money:-20}},{id:'fish',label:'钓鱼',cost:0,fx:{mood:8,energy:-3}},{id:'gaze',label:'发呆',cost:0,fx:{mood:5,energy:3}}] },
     ],
     optional: [
-      { type:'flower', icon:'flower', emoji:'🌸', name:['花田','百花谷','薰衣草地','向日葵坡','彩虹花圃'], tags:['flowers','colorful','butterflies','fragrance'],
-        actions:[{id:'pick',label:'摘花',cost:0,fx:{mood:8}},{id:'sketch',label:'写生',cost:0,fx:{mood:10,energy:-5}},{id:'view',label:'赏景',cost:0,fx:{mood:6}}] },
       { type:'forest', icon:'forest', emoji:'🌲', name:['迷雾林','隐秘森林','古木林','枫叶径','竹林秘境'], tags:['trees','mysterious','mushrooms','path'],
         actions:[{id:'explore',label:'探险',cost:0,fx:{mood:8,energy:-10}},{id:'gather',label:'采蘑菇',cost:0,fx:{mood:5,hunger:10}},{id:'rest',label:'林中小憩',cost:0,fx:{energy:15,mood:5}}] },
+      { type:'flower', icon:'flower', emoji:'🌸', name:['花田','百花谷','薰衣草地','向日葵坡','彩虹花圃'], tags:['flowers','colorful','butterflies','fragrance'],
+        actions:[{id:'pick',label:'摘花',cost:0,fx:{mood:8}},{id:'sketch',label:'写生',cost:0,fx:{mood:10,energy:-5}},{id:'view',label:'赏景',cost:0,fx:{mood:6}}] },
     ]
   },
-  commerce: {
+  residential: {
     required: [
-      { type:'mall', icon:'mall', emoji:'🛍️', name:['中央商场','柳叶百货','星光广场','拱桥市集','虹桥商城'], tags:['shopping','clothes','gifts','crowd'],
-        actions:[{id:'shop',label:'逛街购物',cost:80,fx:{mood:12,money:-80}},{id:'movie',label:'看电影',cost:40,fx:{mood:15,energy:-3,money:-40}},{id:'browse',label:'闲逛',cost:0,fx:{mood:5,energy:-3}}] },
-      { type:'cafe', icon:'cafe', emoji:'☕', name:['猫咖啡厅','晨露咖啡','树洞茶馆','月光甜品站','暖阳咖啡'], tags:['coffee','cake','cozy','cat','window'],
-        actions:[{id:'coffee',label:'喝咖啡',cost:25,fx:{mood:8,hunger:10,energy:5,money:-25}},{id:'chat',label:'聊天',cost:0,fx:{mood:10}},{id:'petcat',label:'撸猫',cost:0,fx:{mood:12}}] },
-    ],
-    optional: [
-      { type:'bakery', icon:'bakery', emoji:'🍞', name:['面包房','麦香坊','甜蜜烘焙屋','松饼小屋','奶油小筑'], tags:['bread','sweet','warm','baking'],
-        actions:[{id:'buy',label:'买面包',cost:18,fx:{hunger:25,mood:5,money:-18}},{id:'learn',label:'学烘焙',cost:30,fx:{mood:10,energy:-8,money:-30}},{id:'taste',label:'试吃',cost:0,fx:{hunger:8,mood:3}}] },
-      { type:'bookstore', icon:'bookstore', emoji:'📚', name:['旧书阁','猫头鹰书店','风之页','纸鸢书屋','墨香居'], tags:['books','quiet','knowledge','wood'],
-        actions:[{id:'read',label:'看书',cost:0,fx:{mood:8,energy:-3}},{id:'buybook',label:'买书',cost:35,fx:{mood:10,money:-35}},{id:'browse2',label:'翻翻杂志',cost:0,fx:{mood:4}}] },
-    ]
-  },
-  residence: {
-    required: [
-      { type:'village', icon:'village', emoji:'🏘️', name:['村庄广场','晨钟小镇','桃源村','枫叶集','灯笼街'], tags:['houses','warm','neighbors','plaza'],
+      { type:'village', icon:'village', emoji:'🏘️', name:['村庄广场','晨钟小镇','灯笼街','桃源村','老井巷'], tags:['houses','warm','neighbors','plaza'],
         actions:[{id:'stroll',label:'闲逛',cost:0,fx:{mood:5,energy:-3}},{id:'market',label:'跳蚤市场',cost:20,fx:{mood:8,money:-20}},{id:'sun',label:'晒太阳',cost:0,fx:{mood:6,energy:5}}] },
     ],
     optional: [
-      { type:'camp', icon:'camp', emoji:'🏕️', name:['露营地','星空营地','篝火谷','云端帐篷','松林营'], tags:['tent','campfire','stars','marshmallow'],
+      { type:'camp', icon:'camp', emoji:'🏕️', name:['露营地','星空营地','篝火谷','松林营','帐篷角'], tags:['tent','campfire','stars','marshmallow'],
         actions:[{id:'tent',label:'搭帐篷',cost:0,fx:{mood:8,energy:-8}},{id:'roast',label:'烤棉花糖',cost:10,fx:{mood:12,hunger:8,money:-10}},{id:'stars',label:'看星星',cost:0,fx:{mood:15}}] },
-      { type:'hotspring', icon:'hotspring', emoji:'♨️', name:['温泉','雾气汤','石头温泉','枫叶浴','露天汤池'], tags:['steam','relax','warm','stones'],
-        actions:[{id:'soak',label:'泡温泉',cost:40,fx:{mood:15,energy:20,health:10,money:-40}},{id:'foot',label:'泡脚',cost:15,fx:{mood:8,energy:10,money:-15}},{id:'relax',label:'发呆放松',cost:0,fx:{mood:10,energy:8}}] },
     ]
   },
   special: {
     required: [
-      { type:'townhall', icon:'townhall', emoji:'🏛️', name:['市政厅','议事堂','中心大楼','公告台','行政中心'], tags:['official','work','bulletin','formal'],
-        actions:[{id:'work',label:'找工作',cost:0,fx:{mood:-3,energy:-5}},{id:'task',label:'领任务',cost:0,fx:{mood:5}},{id:'notice',label:'看公告',cost:0,fx:{mood:2}}] },
       { type:'lighthouse', icon:'lighthouse', emoji:'🔭', name:['灯塔','海角灯塔','星望台','晚风灯塔','瞭望塔'], tags:['sea','horizon','sunset','wind','letter'],
         actions:[{id:'view2',label:'看海',cost:0,fx:{mood:12,energy:3}},{id:'wish',label:'许愿',cost:0,fx:{mood:8}},{id:'letter',label:'写信',cost:0,fx:{mood:10,energy:-3}}] },
     ],
     optional: [
+      { type:'hotspring', icon:'hotspring', emoji:'♨️', name:['温泉','雾气汤','石头温泉','枫叶浴','露天汤池'], tags:['steam','relax','warm','stones'],
+        actions:[{id:'soak',label:'泡温泉',cost:40,fx:{mood:15,energy:20,health:10,money:-40}},{id:'foot',label:'泡脚',cost:15,fx:{mood:8,energy:10,money:-15}},{id:'relax',label:'发呆放松',cost:0,fx:{mood:10,energy:8}}] },
       { type:'museum', icon:'museum', emoji:'🎨', name:['博物馆','艺术馆','记忆陈列室','时光展厅','星尘美术馆'], tags:['art','history','painting','sculpture'],
         actions:[{id:'tour',label:'参观',cost:15,fx:{mood:10,energy:-5,money:-15}},{id:'paint',label:'画画',cost:0,fx:{mood:12,energy:-5}},{id:'sit',label:'坐着看画',cost:0,fx:{mood:8}}] },
     ]
   }
 };
 
-// ---- 岛屿轮廓生成 ----
+// ---- 区域布局（5区 + 河流） ----
+// 岛屿 viewBox 500x500, 区域用百分比范围定义
+var MAP_ZONES = {
+  city:        { label:'城区',   cx:250, cy:140, rx:80, ry:60,  color:'#A09070' },
+  commercial:  { label:'商业区', cx:130, cy:260, rx:70, ry:55,  color:'#C4A060' },
+  nature:      { label:'自然区', cx:370, cy:130, rx:75, ry:65,  color:'#5A8A4A' },
+  residential: { label:'居民区', cx:320, cy:300, rx:85, ry:70,  color:'#8B7A5A' },
+  special:     { label:'海滨区', cx:180, cy:400, rx:90, ry:50,  color:'#5A8AAA' },
+};
+
+// ---- 岛屿轮廓生成（更粗犷的不规则形状） ----
 function _mapGenIsland(rng){
   var pts = [];
-  var n = _mapRandInt(rng, 10, 14);
+  var n = _mapRandInt(rng, 12, 16);
   for(var i=0;i<n;i++){
     var angle = (i/n)*Math.PI*2;
-    var r = 160 + rng()*70 - 35;
-    var wobble = (rng()-0.5)*40;
-    r += wobble;
+    // 基础半径随角度变化，让形状不那么圆
+    var baseR = 180 + Math.sin(angle*2.3)*25 + Math.cos(angle*1.7)*20;
+    var wobble = (rng()-0.5)*50;
+    var r = baseR + wobble;
     pts.push({
       x: 250 + Math.cos(angle)*r,
-      y: 250 + Math.sin(angle)*r
+      y: 260 + Math.sin(angle)*r  // 中心偏下一点，上方留给标题
     });
   }
   return pts;
+}
+
+// ---- 河流生成（从岛屿上方蜿蜒到下方） ----
+function _mapGenRiver(rng, islandPts){
+  var minX=500,maxX=0,minY=500,maxY=0;
+  islandPts.forEach(function(p){ minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x); minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y); });
+
+  var startX = 200 + rng()*100;
+  var points = [];
+  var segs = _mapRandInt(rng, 4, 6);
+  for(var i=0;i<=segs;i++){
+    var t = i/segs;
+    var x = startX + Math.sin(t*Math.PI*2 + rng()*2)*60 + (rng()-0.5)*30;
+    var y = minY + 20 + t*(maxY-minY-40);
+    x = Math.max(minX+40, Math.min(maxX-40, x));
+    points.push({x:x, y:y});
+  }
+  return points;
+}
+
+function _mapRiverPath(pts){
+  if(pts.length<2) return '';
+  var d = 'M'+pts[0].x.toFixed(1)+','+pts[0].y.toFixed(1);
+  for(var i=1;i<pts.length;i++){
+    var prev = pts[i-1], cur = pts[i];
+    var cpx = (prev.x+cur.x)/2 + (i%2===0?20:-20);
+    var cpy = (prev.y+cur.y)/2;
+    d += ' Q'+cpx.toFixed(1)+','+cpy.toFixed(1)+' '+cur.x.toFixed(1)+','+cur.y.toFixed(1);
+  }
+  return d;
 }
 
 function _mapIslandPath(pts){
@@ -24622,41 +24675,31 @@ function _mapIslandPath(pts){
   return d;
 }
 
-// ---- 地标放置 ----
+// ---- 地标放置（5区 + 居民区小房子） ----
 function _mapGenLandmarks(rng, islandPts){
-  // 计算岛屿边界
   var minX=500,maxX=0,minY=500,maxY=0;
   islandPts.forEach(function(p){ minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x); minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y); });
-  var cx=(minX+maxX)/2, cy=(minY+maxY)/2;
-
-  var regionBounds = {
-    nature:    { cx: cx-60, cy: cy-60 },
-    commerce:  { cx: cx+60, cy: cy+60 },
-    residence: { cx: cx+60, cy: cy-60 },
-    special:   { cx: cx-60, cy: cy+60 }
-  };
 
   var landmarks = [];
   var usedPositions = [];
 
-  function placeInRegion(regionId, tmpl){
-    var rb = regionBounds[regionId];
+  function placeNear(zone, tmpl){
+    var z = MAP_ZONES[zone];
     var attempts = 0, bx, by;
     do {
-      bx = rb.cx + (rng()-0.5)*120;
-      by = rb.cy + (rng()-0.5)*120;
+      bx = z.cx + (rng()-0.5)*z.rx*2;
+      by = z.cy + (rng()-0.5)*z.ry*2;
       bx = Math.max(minX+30, Math.min(maxX-30, bx));
       by = Math.max(minY+30, Math.min(maxY-30, by));
       attempts++;
-    } while(attempts<20 && usedPositions.some(function(p){ return Math.abs(p.x-bx)<40 && Math.abs(p.y-by)<40; }));
+    } while(attempts<30 && usedPositions.some(function(p){ return Math.abs(p.x-bx)<38 && Math.abs(p.y-by)<38; }));
     usedPositions.push({x:bx,y:by});
 
-    var nameChoice = _mapPick(rng, tmpl.name);
     landmarks.push({
       id: tmpl.type+'_'+landmarks.length,
       type: tmpl.type,
-      region: regionId,
-      name: nameChoice,
+      region: zone,
+      name: _mapPick(rng, tmpl.name),
       customName: null,
       x: bx, y: by,
       icon: tmpl.icon,
@@ -24668,57 +24711,106 @@ function _mapGenLandmarks(rng, islandPts){
     });
   }
 
-  // 每个区域：required全放 + optional随机选1个
-  ['nature','commerce','residence','special'].forEach(function(regionId){
-    var pool = MAP_LANDMARK_POOL[regionId];
-    pool.required.forEach(function(tmpl){ placeInRegion(regionId, tmpl); });
-    if(pool.optional.length){
-      var opt = _mapPick(rng, pool.optional);
-      placeInRegion(regionId, opt);
+  // 每个区域放置地标
+  ['city','commercial','nature','residential','special'].forEach(function(zoneId){
+    var pool = MAP_LANDMARK_POOL[zoneId];
+    if(!pool) return;
+    pool.required.forEach(function(tmpl){ placeNear(zoneId, tmpl); });
+    if(pool.optional && pool.optional.length){
+      placeNear(zoneId, _mapPick(rng, pool.optional));
     }
   });
 
   return landmarks;
 }
 
-// ---- 装饰生成（树、小路、房子） ----
-function _mapGenDecorations(rng, islandPts, landmarks){
+// ---- 居民区小房子生成 ----
+function _mapGenHouses(rng, islandPts){
+  var rz = MAP_ZONES.residential;
+  var houses = [];
+  var count = _mapRandInt(rng, 6, 9);
+  var namePool = ['樱花小屋','向日葵宅','蓝莓居','松果小窝','橡果房','薄荷阁','栗子屋','蒲公英居','云雀巢'];
+  var shuffledNames = _mapShuffle(rng, namePool);
+
+  // 排成松散的网格
+  var cols = 3, startX = rz.cx - 50, startY = rz.cy - 30;
+  for(var i=0;i<count;i++){
+    var col = i % cols, row = Math.floor(i/cols);
+    var hx = startX + col*38 + (rng()-0.5)*12;
+    var hy = startY + row*35 + (rng()-0.5)*10;
+    houses.push({
+      id: 'house_'+i,
+      x: hx, y: hy,
+      name: shuffledNames[i] || ('小屋'+(i+1)),
+      color: _mapPick(rng, ['#C4956A','#B8866B','#A0785A','#D4A574','#BFA080']),
+      roofColor: _mapPick(rng, ['#E8734A','#D4654A','#C8574A','#B85A4A','#CC6644']),
+    });
+  }
+  return houses;
+}
+
+// ---- 装饰生成（区域感知：城区少树多路、自然多树、商业整齐） ----
+function _mapGenDecorations(rng, islandPts, landmarks, river){
   var decos = [];
   var minX=500,maxX=0,minY=500,maxY=0;
   islandPts.forEach(function(p){ minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x); minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y); });
 
-  // 随机撒树
-  var treeCount = _mapRandInt(rng, 35, 55);
+  function nearZone(x,y){
+    var best='', bestD=9999;
+    for(var k in MAP_ZONES){
+      var z=MAP_ZONES[k]; var dx=x-z.cx, dy=y-z.cy;
+      var d=Math.sqrt(dx*dx+dy*dy);
+      if(d<bestD){ bestD=d; best=k; }
+    }
+    return best;
+  }
+  function tooCloseToLm(tx,ty,dist){
+    return landmarks.some(function(lm){ return Math.abs(lm.x-tx)<dist && Math.abs(lm.y-ty)<dist; });
+  }
+  function tooCloseToRiver(tx,ty){
+    return (river||[]).some(function(rp){ return Math.abs(rp.x-tx)<18 && Math.abs(rp.y-ty)<18; });
+  }
+
+  // 自然区密林 + 其他区域稀疏树
+  var treeCount = _mapRandInt(rng, 45, 65);
   for(var i=0;i<treeCount;i++){
-    var tx = minX + rng()*(maxX-minX);
-    var ty = minY + rng()*(maxY-minY);
-    // 远离地标
-    var tooClose = landmarks.some(function(lm){ return Math.abs(lm.x-tx)<25 && Math.abs(lm.y-ty)<25; });
-    if(tooClose) continue;
-    var treeType = rng() < 0.6 ? 'pine' : (rng()<0.5?'round':'bush');
-    var treeScale = 0.6 + rng()*0.6;
+    var tx = minX+15 + rng()*(maxX-minX-30);
+    var ty = minY+15 + rng()*(maxY-minY-30);
+    if(tooCloseToLm(tx,ty,24) || tooCloseToRiver(tx,ty)) continue;
+
+    var zone = nearZone(tx,ty);
+    // 城区和商业区树少
+    if((zone==='city'||zone==='commercial') && rng()>0.25) continue;
+    // 居民区适中
+    if(zone==='residential' && rng()>0.5) continue;
+
+    var treeType = zone==='nature' ? (rng()<0.7?'pine':'round') : (rng()<0.4?'round':'bush');
+    var treeScale = 0.5 + rng()*0.6;
     decos.push({ type:'tree', subType:treeType, x:tx, y:ty, scale:treeScale });
   }
 
-  // 小路（连接部分地标）
-  var shuffledLm = _mapShuffle(rng, landmarks);
-  for(var j=0;j<Math.min(5, shuffledLm.length-1);j++){
-    var a = shuffledLm[j], b = shuffledLm[j+1];
-    var midX = (a.x+b.x)/2 + (rng()-0.5)*40;
-    var midY = (a.y+b.y)/2 + (rng()-0.5)*40;
-    decos.push({ type:'path', x1:a.x, y1:a.y, cx:midX, cy:midY, x2:b.x, y2:b.y });
-  }
+  // 城区道路（十字或丁字）
+  var cz = MAP_ZONES.city;
+  decos.push({ type:'road', x1:cz.cx, y1:cz.cy-50, x2:cz.cx, y2:cz.cy+50 });
+  decos.push({ type:'road', x1:cz.cx-55, y1:cz.cy, x2:cz.cx+55, y2:cz.cy });
 
-  // 小房子（住宅区点缀）
-  var houseCount = _mapRandInt(rng, 4, 8);
-  var rc = { cx:(minX+maxX)/2+60, cy:(minY+maxY)/2-60 };
-  for(var h=0;h<houseCount;h++){
-    var hx = rc.cx + (rng()-0.5)*100;
-    var hy = rc.cy + (rng()-0.5)*100;
-    hx = Math.max(minX+20, Math.min(maxX-20, hx));
-    hy = Math.max(minY+20, Math.min(maxY-20, hy));
-    var tooCloseH = landmarks.some(function(lm){ return Math.abs(lm.x-hx)<22 && Math.abs(lm.y-hy)<22; });
-    if(!tooCloseH) decos.push({ type:'house', x:hx, y:hy, color: _mapPick(rng, ['#C4956A','#B8866B','#A0785A','#D4A574']) });
+  // 商业区也有路
+  var cmz = MAP_ZONES.commercial;
+  decos.push({ type:'road', x1:cmz.cx-40, y1:cmz.cy, x2:cmz.cx+40, y2:cmz.cy });
+
+  // 连接道路（城区→居民区、城区→商业区）
+  var rz = MAP_ZONES.residential, sz = MAP_ZONES.special;
+  decos.push({ type:'trail', x1:cz.cx+30, y1:cz.cy+30, cx:(cz.cx+rz.cx)/2+15, cy:(cz.cy+rz.cy)/2, x2:rz.cx-30, y2:rz.cy-30 });
+  decos.push({ type:'trail', x1:cz.cx-30, y1:cz.cy+20, cx:(cz.cx+cmz.cx)/2, cy:(cz.cy+cmz.cy)/2-10, x2:cmz.cx+20, y2:cmz.cy-30 });
+
+  // 岩石（海边）
+  var rockCount = _mapRandInt(rng, 4, 8);
+  for(var r2=0;r2<rockCount;r2++){
+    var angle = rng()*Math.PI*2;
+    var rr = 170+rng()*30;
+    var rx = 250+Math.cos(angle)*rr + (rng()-0.5)*20;
+    var ry = 260+Math.sin(angle)*rr + (rng()-0.5)*20;
+    decos.push({ type:'rock', x:rx, y:ry, scale:0.6+rng()*0.8 });
   }
 
   return decos;
@@ -24738,22 +24830,27 @@ function _mapGenerate(seed){
   var rng = _mapRng(seed);
   var palette = _mapPick(rng, MAP_PALETTES);
   var islandPts = _mapGenIsland(rng);
+  var river = _mapGenRiver(rng, islandPts);
   var landmarks = _mapGenLandmarks(rng, islandPts);
-  var decos = _mapGenDecorations(rng, islandPts, landmarks);
+  var houses = _mapGenHouses(rng, islandPts);
+  var decos = _mapGenDecorations(rng, islandPts, landmarks, river);
 
-  // 随机地图名
   var namePool = ['柳叶岛','星月岛','梦鹿岛','云雀岛','萤火湾','晨露岛','风铃岛','蜜桃岛','琥珀岛','蘑菇岛','贝壳岛','松果岛'];
   var mapName = _mapPick(rng, namePool);
 
   return {
-    v: 1,
+    v: 2,
     seed: seed,
     name: mapName,
     generated: true,
     createdAt: Date.now(),
     palette: palette,
     islandPts: islandPts,
+    river: river,
     landmarks: landmarks,
+    houses: houses,           // 居民区小房子列表
+    myHouseId: null,          // 玩家选的房子ID
+    npcHouses: {},            // { npcId: houseId }
     decorations: decos,
     viewState: { zoom:1, panX:0, panY:0 }
   };
@@ -24776,7 +24873,18 @@ function _mapSaveLog(data){
 
 function _mapEnsure(){
   var data = _mapLoad();
-  if(data && data.generated) return data;
+  if(data && data.generated){
+    // v1→v2 升级：缺少河流/房子的旧地图重新生成
+    if(!data.v || data.v < 2){
+      var newData = _mapGenerate(data.seed || Date.now());
+      // 保留用户自定义
+      newData.name = data.name || newData.name;
+      if(data.viewState) newData.viewState = data.viewState;
+      _mapSave(newData);
+      return newData;
+    }
+    return data;
+  }
   var seed = Date.now() ^ Math.floor(Math.random()*999999);
   data = _mapGenerate(seed);
   _mapSave(data);
@@ -24788,74 +24896,138 @@ function _mapBuildSVG(mapData){
   var pal = mapData.palette || MAP_PALETTES[0];
   var islandD = _mapIslandPath(mapData.islandPts);
 
-  var svg = '<svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" class="mapIslandSvg" style="width:100%;height:100%;">';
+  var svg = '<svg viewBox="0 0 500 520" xmlns="http://www.w3.org/2000/svg" class="mapIslandSvg" style="width:100%;height:100%;">';
 
   // 海水背景
-  svg += '<rect width="500" height="500" rx="16" fill="'+pal.sea+'"/>';
+  svg += '<rect width="500" height="520" rx="16" fill="'+pal.sea+'"/>';
 
-  // 海水波纹装饰
+  // 海水波纹
   svg += '<g opacity="0.3">';
-  svg += '<path d="M0,30 Q60,20 120,30 T240,30 T360,30 T480,30" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.4"/>';
-  svg += '<path d="M20,470 Q80,460 140,470 T260,470 T380,470 T500,470" fill="none" stroke="#fff" stroke-width="1.2" opacity="0.3"/>';
+  svg += '<path d="M0,25 Q50,18 100,25 T200,25 T300,25 T400,25 T500,25" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.4"/>';
+  svg += '<path d="M20,495 Q70,488 120,495 T240,495 T360,495 T480,495" fill="none" stroke="#fff" stroke-width="1.2" opacity="0.3"/>';
+  svg += '<path d="M-20,260 Q30,253 80,260 T180,260" fill="none" stroke="#fff" stroke-width="1" opacity="0.2"/>';
+  svg += '<path d="M420,380 Q470,373 520,380" fill="none" stroke="#fff" stroke-width="1" opacity="0.2"/>';
   svg += '</g>';
 
   // 沙滩边缘
-  svg += '<path d="'+islandD+'" fill="'+pal.sand+'" transform="scale(1.04) translate(-10,-10)" opacity="0.6"/>';
+  svg += '<path d="'+islandD+'" fill="'+pal.sand+'" transform="translate(0,2) scale(1.03)" style="transform-origin:250px 260px;" opacity="0.6"/>';
 
   // 岛屿主体
   svg += '<path id="mapIslandBody" d="'+islandD+'" fill="'+pal.island+'"/>';
 
-  // 定义裁剪区域
+  // 裁剪区域
   svg += '<defs><clipPath id="mapClip"><path d="'+islandD+'"/></clipPath></defs>';
   svg += '<g clip-path="url(#mapClip)">';
 
-  // 区域色块（微透明）
-  var minX=500,maxX=0,minY=500,maxY=0;
-  mapData.islandPts.forEach(function(p){ minX=Math.min(minX,p.x); maxX=Math.max(maxX,p.x); minY=Math.min(minY,p.y); maxY=Math.max(maxY,p.y); });
-  var cx=(minX+maxX)/2, cy=(minY+maxY)/2;
-  svg += '<rect x="'+minX+'" y="'+minY+'" width="'+(cx-minX)+'" height="'+(cy-minY)+'" fill="#5A8A4A" opacity="0.15"/>';  // 自然
-  svg += '<rect x="'+cx+'" y="'+cy+'" width="'+(maxX-cx)+'" height="'+(maxY-cy)+'" fill="#C4A050" opacity="0.12"/>';  // 商业
-  svg += '<rect x="'+cx+'" y="'+minY+'" width="'+(maxX-cx)+'" height="'+(cy-minY)+'" fill="#A07850" opacity="0.1"/>';  // 住宅
-  svg += '<rect x="'+minX+'" y="'+cy+'" width="'+(cx-minX)+'" height="'+(maxY-cy)+'" fill="#5A8AAA" opacity="0.1"/>';  // 特殊
+  // 区域色块（柔和半透明）
+  for(var zk in MAP_ZONES){
+    var z = MAP_ZONES[zk];
+    svg += '<ellipse cx="'+z.cx+'" cy="'+z.cy+'" rx="'+z.rx+'" ry="'+z.ry+'" fill="'+z.color+'" opacity="0.15"/>';
+  }
 
-  // 装饰
+  // 装饰：道路
   (mapData.decorations||[]).forEach(function(d){
-    if(d.type==='tree'){
-      if(d.subType==='pine'){
-        var s = d.scale||1;
-        svg += '<polygon points="'+(d.x)+','+(d.y-14*s)+' '+(d.x-6*s)+','+(d.y+4*s)+' '+(d.x+6*s)+','+(d.y+4*s)+'" fill="#3A6A2A" opacity="0.8"/>';
-        svg += '<rect x="'+(d.x-1.5)+'" y="'+(d.y+4*s)+'" width="3" height="'+(4*s)+'" fill="#6B4E3D" opacity="0.6"/>';
-      } else if(d.subType==='round'){
-        var s2 = d.scale||1;
-        svg += '<circle cx="'+d.x+'" cy="'+(d.y-4*s2)+'" r="'+(7*s2)+'" fill="#5A8A4A" opacity="0.7"/>';
-        svg += '<rect x="'+(d.x-1.2)+'" y="'+(d.y+3*s2)+'" width="2.4" height="'+(5*s2)+'" fill="#6B4E3D" opacity="0.5"/>';
-      } else {
-        svg += '<ellipse cx="'+d.x+'" cy="'+d.y+'" rx="'+(6*(d.scale||1))+'" ry="'+(4*(d.scale||1))+'" fill="#6B9E4A" opacity="0.5"/>';
-      }
-    } else if(d.type==='path'){
-      svg += '<path d="M'+d.x1+','+d.y1+' Q'+d.cx+','+d.cy+' '+d.x2+','+d.y2+'" fill="none" stroke="'+pal.sand+'" stroke-width="4" stroke-linecap="round" opacity="0.6"/>';
-    } else if(d.type==='house'){
-      svg += '<rect x="'+(d.x-5)+'" y="'+(d.y-3)+'" width="10" height="8" rx="1" fill="'+(d.color||'#C4956A')+'" opacity="0.8"/>';
-      svg += '<polygon points="'+(d.x-6)+','+(d.y-3)+' '+d.x+','+(d.y-10)+' '+(d.x+6)+','+(d.y-3)+'" fill="#E8734A" opacity="0.7"/>';
+    if(d.type==='road'){
+      svg += '<line x1="'+d.x1+'" y1="'+d.y1+'" x2="'+d.x2+'" y2="'+d.y2+'" stroke="'+pal.sand+'" stroke-width="6" stroke-linecap="round" opacity="0.5"/>';
+      svg += '<line x1="'+d.x1+'" y1="'+d.y1+'" x2="'+d.x2+'" y2="'+d.y2+'" stroke="rgba(255,255,255,0.3)" stroke-width="1" stroke-dasharray="4,6" stroke-linecap="round"/>';
+    }
+    if(d.type==='trail'){
+      svg += '<path d="M'+d.x1+','+d.y1+' Q'+d.cx+','+d.cy+' '+d.x2+','+d.y2+'" fill="none" stroke="'+pal.sand+'" stroke-width="3.5" stroke-linecap="round" opacity="0.45"/>';
     }
   });
 
+  // 河流
+  if(mapData.river && mapData.river.length>1){
+    var riverD = _mapRiverPath(mapData.river);
+    // 河流阴影
+    svg += '<path d="'+riverD+'" fill="none" stroke="rgba(70,130,160,0.25)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>';
+    // 河流主体
+    svg += '<path d="'+riverD+'" fill="none" stroke="rgba(100,160,190,0.55)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>';
+    // 河流高光
+    svg += '<path d="'+riverD+'" fill="none" stroke="rgba(180,220,240,0.4)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>';
+    // 桥梁（河流中段放一座小桥）
+    if(mapData.river.length>=3){
+      var bridgePt = mapData.river[Math.floor(mapData.river.length/2)];
+      svg += '<rect x="'+(bridgePt.x-14)+'" y="'+(bridgePt.y-3)+'" width="28" height="6" rx="2" fill="'+pal.sand+'" stroke="rgba(120,90,60,0.4)" stroke-width="0.8"/>';
+      svg += '<rect x="'+(bridgePt.x-12)+'" y="'+(bridgePt.y-5)+'" width="2" height="8" rx="0.5" fill="rgba(120,90,60,0.5)"/>';
+      svg += '<rect x="'+(bridgePt.x+10)+'" y="'+(bridgePt.y-5)+'" width="2" height="8" rx="0.5" fill="rgba(120,90,60,0.5)"/>';
+    }
+  }
+
+  // 装饰：树木
+  (mapData.decorations||[]).forEach(function(d){
+    if(d.type==='tree'){
+      var s = d.scale||1;
+      if(d.subType==='pine'){
+        svg += '<polygon points="'+(d.x)+','+(d.y-14*s)+' '+(d.x-6*s)+','+(d.y+4*s)+' '+(d.x+6*s)+','+(d.y+4*s)+'" fill="#3A6A2A" opacity="0.75"/>';
+        svg += '<polygon points="'+(d.x)+','+(d.y-10*s)+' '+(d.x-5*s)+','+(d.y+1*s)+' '+(d.x+5*s)+','+(d.y+1*s)+'" fill="#4A7A3A" opacity="0.6"/>';
+        svg += '<rect x="'+(d.x-1.2)+'" y="'+(d.y+4*s)+'" width="2.4" height="'+(3.5*s)+'" fill="#6B4E3D" opacity="0.5"/>';
+      } else if(d.subType==='round'){
+        svg += '<circle cx="'+d.x+'" cy="'+(d.y-3*s)+'" r="'+(7*s)+'" fill="#5A8A4A" opacity="0.65"/>';
+        svg += '<circle cx="'+(d.x-2*s)+'" cy="'+(d.y-5*s)+'" r="'+(4*s)+'" fill="#6B9E5A" opacity="0.45"/>';
+        svg += '<rect x="'+(d.x-1)+'" y="'+(d.y+4*s)+'" width="2" height="'+(4*s)+'" fill="#6B4E3D" opacity="0.4"/>';
+      } else {
+        svg += '<ellipse cx="'+d.x+'" cy="'+d.y+'" rx="'+(6*s)+'" ry="'+(4*s)+'" fill="#6B9E4A" opacity="0.45"/>';
+      }
+    }
+    if(d.type==='rock'){
+      var rs = d.scale||1;
+      svg += '<ellipse cx="'+d.x+'" cy="'+d.y+'" rx="'+(8*rs)+'" ry="'+(5*rs)+'" fill="rgba(120,110,100,0.5)" rx="2"/>';
+      svg += '<ellipse cx="'+(d.x-2*rs)+'" cy="'+(d.y-1*rs)+'" rx="'+(5*rs)+'" ry="'+(3*rs)+'" fill="rgba(140,130,120,0.4)"/>';
+    }
+  });
+
+  // 居民区小房子
+  var myHId = mapData.myHouseId;
+  var npcHs = mapData.npcHouses || {};
+  (mapData.houses||[]).forEach(function(h){
+    var isMyHouse = (h.id === myHId);
+    var npcOwner = null;
+    for(var nk in npcHs){ if(npcHs[nk]===h.id) npcOwner=nk; }
+
+    // 房体
+    svg += '<g class="mapHouse" data-houseid="'+h.id+'" style="cursor:pointer;">';
+    svg += '<rect x="'+(h.x-7)+'" y="'+(h.y-4)+'" width="14" height="10" rx="1.5" fill="'+(h.color||'#C4956A')+'" opacity="0.9"/>';
+    // 屋顶
+    svg += '<polygon points="'+(h.x-9)+','+(h.y-4)+' '+h.x+','+(h.y-13)+' '+(h.x+9)+','+(h.y-4)+'" fill="'+(h.roofColor||'#E8734A')+'" opacity="0.85"/>';
+    // 门
+    svg += '<rect x="'+(h.x-2)+'" y="'+(h.y+1)+'" width="4" height="5" rx="0.8" fill="rgba(60,40,20,0.5)"/>';
+    // 窗户
+    svg += '<rect x="'+(h.x-6)+'" y="'+(h.y-2)+'" width="3" height="3" rx="0.5" fill="rgba(180,220,255,0.6)"/>';
+    svg += '<rect x="'+(h.x+3)+'" y="'+(h.y-2)+'" width="3" height="3" rx="0.5" fill="rgba(180,220,255,0.6)"/>';
+
+    // 标记：我的房子/角色房子
+    if(isMyHouse){
+      svg += '<text x="'+h.x+'" y="'+(h.y-15)+'" text-anchor="middle" font-size="8" fill="rgba(30,30,30,0.7)" font-weight="600">🏠我</text>';
+    } else if(npcOwner){
+      svg += '<text x="'+h.x+'" y="'+(h.y-15)+'" text-anchor="middle" font-size="7" fill="rgba(30,30,30,0.5)">🏠</text>';
+    }
+
+    svg += '</g>';
+  });
+
+  // 区域标签（半透明手写风）
+  for(var zk2 in MAP_ZONES){
+    var z2 = MAP_ZONES[zk2];
+    svg += '<text x="'+z2.cx+'" y="'+(z2.cy-z2.ry+8)+'" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.55)" font-weight="600" style="text-shadow:0 0.5px 2px rgba(0,0,0,0.15);letter-spacing:2px;">'+z2.label+'</text>';
+  }
+
   svg += '</g>'; // end clip group
 
-  // 地标图标
+  // 地标图标（修复hover：不在<g>上加CSS transform）
   svg += '<g class="mapLandmarks">';
   (mapData.landmarks||[]).forEach(function(lm){
     var displayName = lm.customName || lm.name;
     svg += '<g class="mapLm" data-lmid="'+lm.id+'" style="cursor:pointer;" transform="translate('+lm.x.toFixed(1)+','+lm.y.toFixed(1)+')">';
-    svg += '<circle r="16" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.1)" stroke-width="0.8"/>';
-    svg += '<text font-size="16" text-anchor="middle" dominant-baseline="central" style="pointer-events:none;">'+lm.emoji+'</text>';
+    svg += '<circle class="mapLmBg" r="16" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.1)" stroke-width="0.8"/>';
+    svg += '<text class="mapLmEmoji" font-size="16" text-anchor="middle" dominant-baseline="central" style="pointer-events:none;">'+lm.emoji+'</text>';
     svg += '<text class="mapLmLabel" y="24" font-size="8" text-anchor="middle" fill="rgba(30,30,30,0.8)" font-weight="600" style="pointer-events:none;text-shadow:0 0.5px 2px rgba(255,255,255,0.9);">'+esc(displayName)+'</text>';
     svg += '</g>';
   });
   svg += '</g>';
 
   // 地图标题
-  svg += '<text x="250" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="rgba(255,255,255,0.85)" style="text-shadow:0 1px 3px rgba(0,0,0,0.2);font-family:cursive,serif;">✦ '+esc(mapData.name)+' ✦</text>';
+  svg += '<text x="250" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="rgba(255,255,255,0.85)" style="text-shadow:0 1px 3px rgba(0,0,0,0.2);font-family:cursive,serif;letter-spacing:2px;">✦ '+esc(mapData.name)+' ✦</text>';
 
   svg += '</svg>';
   return svg;
@@ -25120,6 +25292,12 @@ function _mapInitGestures(wrapEl, mapData){
         if(lmG){
           var lmId = lmG.getAttribute('data-lmid');
           if(lmId) wrapEl.dispatchEvent(new CustomEvent('maplmtap', {detail:{lmId:lmId}}));
+        } else {
+          var hG = el.closest('.mapHouse');
+          if(hG){
+            var hId = hG.getAttribute('data-houseid');
+            if(hId) wrapEl.dispatchEvent(new CustomEvent('maphousetap', {detail:{houseId:hId}}));
+          }
         }
       }
     }
@@ -25150,6 +25328,12 @@ function _mapInitGestures(wrapEl, mapData){
         if(lmG){
           var lmId = lmG.getAttribute('data-lmid');
           if(lmId) wrapEl.dispatchEvent(new CustomEvent('maplmtap', {detail:{lmId:lmId}}));
+        } else {
+          var hG = el.closest('.mapHouse');
+          if(hG){
+            var hId = hG.getAttribute('data-houseid');
+            if(hId) wrapEl.dispatchEvent(new CustomEvent('maphousetap', {detail:{houseId:hId}}));
+          }
         }
       }
     }
@@ -25228,6 +25412,84 @@ function renderMapApp(body){
   mapContainer.addEventListener('maplmtap', function(ev){
     var lmId = ev.detail && ev.detail.lmId;
     if(lmId) _mapShowLandmarkDetail(wrap, mapData, lmId, npcId);
+  });
+
+  // 房子点击事件（选房）
+  mapContainer.addEventListener('maphousetap', function(ev){
+    var houseId = ev.detail && ev.detail.houseId;
+    if(!houseId) return;
+    var house = (mapData.houses||[]).find(function(h){ return h.id===houseId; });
+    if(!house) return;
+
+    var isMyH = (mapData.myHouseId === houseId);
+    var npcOwner = null;
+    var npcOwnerName = '';
+    for(var nk in (mapData.npcHouses||{})){ if(mapData.npcHouses[nk]===houseId){ npcOwner=nk; break; } }
+    if(npcOwner && npcId){
+      try{ var db2=loadContactsDB(); var n2=findContactById(db2,npcOwner); if(n2) npcOwnerName=n2.name||''; }catch(e){}
+    }
+
+    var statusText = isMyH ? '🏠 这是你的家！' : (npcOwner ? '🏠 '+esc(npcOwnerName||'角色')+'的家' : '这间小屋还没有主人');
+    var btns = '';
+    if(!isMyH && !npcOwner){
+      btns += '<div class="mapActRow" data-act="mapClaimMyHouse" data-houseid="'+houseId+'"><span class="mapActLabel">🏠 设为我的家</span><span class="mapActArrow">›</span></div>';
+      if(npcId){
+        btns += '<div class="mapActRow" data-act="mapClaimNpcHouse" data-houseid="'+houseId+'"><span class="mapActLabel">🏠 设为'+esc(npcName||'角色')+'的家</span><span class="mapActArrow">›</span></div>';
+      }
+    }
+    if(isMyH || npcOwner){
+      btns += '<div class="mapActRow" data-act="mapUnclaim" data-houseid="'+houseId+'"><span class="mapActLabel" style="color:rgba(200,60,60,0.7);">取消选择</span><span class="mapActArrow">›</span></div>';
+    }
+
+    var html = '<div class="mapDetailCard"><div class="mapDetailClose" data-act="mapDetailClose">✕</div>';
+    html += '<div class="mapDetailHead"><span class="mapDetailEmoji">🏡</span>';
+    html += '<div class="mapDetailName">'+esc(house.name)+'</div>';
+    html += '<div class="mapDetailAtmo">'+statusText+'</div></div>';
+    html += '<div class="mapDetailSection">'+btns+'</div></div>';
+
+    var old = wrap.querySelector('.mapDetailOverlay');
+    if(old) old.remove();
+    var overlay = doc.createElement('div');
+    overlay.className = 'mapDetailOverlay';
+    overlay.innerHTML = html;
+    wrap.appendChild(overlay);
+
+    overlay.addEventListener('click', function(ev2){
+      var tgt = ev2.target;
+      if(tgt.classList.contains('mapDetailOverlay') || tgt.closest('[data-act="mapDetailClose"]')){
+        overlay.remove(); return;
+      }
+      var actRow = tgt.closest('[data-act]');
+      if(!actRow) return;
+      var act3 = actRow.getAttribute('data-act');
+      var hid = actRow.getAttribute('data-houseid');
+
+      if(act3==='mapClaimMyHouse'){
+        mapData.myHouseId = hid;
+        _mapSave(mapData);
+        overlay.remove();
+        renderMapApp(body);
+        try{ toast('🏠 已选择「'+house.name+'」作为你的家'); }catch(e){}
+      }
+      if(act3==='mapClaimNpcHouse' && npcId){
+        if(!mapData.npcHouses) mapData.npcHouses = {};
+        // 清除该NPC旧房子
+        for(var ok in mapData.npcHouses){ if(ok===npcId) delete mapData.npcHouses[ok]; }
+        mapData.npcHouses[npcId] = hid;
+        _mapSave(mapData);
+        overlay.remove();
+        renderMapApp(body);
+        try{ toast('🏠 已选择「'+house.name+'」作为'+esc(npcName||'角色')+'的家'); }catch(e){}
+      }
+      if(act3==='mapUnclaim'){
+        if(mapData.myHouseId===hid) mapData.myHouseId = null;
+        for(var uk in (mapData.npcHouses||{})){ if(mapData.npcHouses[uk]===hid) delete mapData.npcHouses[uk]; }
+        _mapSave(mapData);
+        overlay.remove();
+        renderMapApp(body);
+        try{ toast('已取消选择'); }catch(e){}
+      }
+    });
   });
 
   // 缩放按钮事件
