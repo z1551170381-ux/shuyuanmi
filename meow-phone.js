@@ -3936,7 +3936,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .mapCtrlPt{
   cursor:grab; transition:r 0.1s;
 }
-#${ID} .mapCtrlPt:hover{ r:7; }
+#${ID} .mapCtrlPt:hover{ r:10; }
 #${ID} .mapEdDrawing .mapIslandSvg{ cursor:crosshair; }
 #${ID} .mapEdExitBtn{
   position:absolute; top:8px; right:8px; z-index:26;
@@ -24686,6 +24686,22 @@ var MAP_ZONES = {
   special:     { label:'海滨区', cx:140, cy:380, rx:80, ry:55,  color:'#5A8AAA', ground:'green' },
 };
 
+// ---- 区块数据持久化：从mapData读取（允许用户自定义） ----
+function _getEditZones(mapData){
+  if(mapData && mapData.zones) return mapData.zones;
+  // 首次：从MAP_ZONES深拷贝
+  var copy = {};
+  for(var k in MAP_ZONES) copy[k] = Object.assign({}, MAP_ZONES[k]);
+  return copy;
+}
+function _ensureEditZones(mapData){
+  if(!mapData.zones){
+    mapData.zones = {};
+    for(var k in MAP_ZONES) mapData.zones[k] = Object.assign({}, MAP_ZONES[k]);
+  }
+  return mapData.zones;
+}
+
 // ---- 岛屿轮廓生成（更粗犷的不规则形状） ----
 function _mapGenIsland(rng){
   var pts = [];
@@ -25015,8 +25031,9 @@ function _mapBuildSVG(mapData){
 
   // 区域地面（不规则blob形状，用seed控制随机旋转和变形）
   var _zRng = _mapRng(mapData.seed + 777); // 区域专用随机
-  for(var zk in MAP_ZONES){
-    var z = MAP_ZONES[zk];
+  var _editZones = _getEditZones(mapData);
+  for(var zk in _editZones){
+    var z = _editZones[zk];
     var rot = Math.floor(_zRng()*40-20); // -20°~20°随机旋转
     var skX = 0.85+_zRng()*0.3, skY = 0.85+_zRng()*0.3; // 随机拉伸
     var blobRx = z.rx * skX, blobRy = z.ry * skY;
@@ -25121,8 +25138,9 @@ function _mapBuildSVG(mapData){
   });
 
   // 区域标签（半透明手写风）
-  for(var zk2 in MAP_ZONES){
-    var z2 = MAP_ZONES[zk2];
+  var _ezLabels = _getEditZones(mapData);
+  for(var zk2 in _ezLabels){
+    var z2 = _ezLabels[zk2];
     svg += '<text x="'+z2.cx+'" y="'+(z2.cy-z2.ry+8)+'" text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.55)" font-weight="600" style="text-shadow:0 0.5px 2px rgba(0,0,0,0.15);letter-spacing:2px;">'+z2.label+'</text>';
   }
 
@@ -25339,6 +25357,7 @@ function _mapInitGestures(wrapEl, mapData){
   var moveThreshold = 5;
   var movedTotal = 0;
   var startX = 0, startY = 0;
+  var _editing = false; // 编辑模式标志
 
   var svgEl = wrapEl.querySelector('.mapIslandSvg');
   if(!svgEl) return;
@@ -25348,8 +25367,12 @@ function _mapInitGestures(wrapEl, mapData){
     var maxP = 150 * zoom;
     panX = Math.max(-maxP, Math.min(maxP, panX));
     panY = Math.max(-maxP, Math.min(maxP, panY));
-    svgEl.style.transform = 'translate('+panX+'px,'+panY+'px) scale('+zoom+')';
-    svgEl.style.transformOrigin = 'center center';
+    // 编辑模式下也要同步更新所有 .mapIslandSvg（因为 refresh 会重建）
+    var allSvg = wrapEl.querySelectorAll('.mapIslandSvg');
+    allSvg.forEach(function(s){
+      s.style.transform = 'translate('+panX+'px,'+panY+'px) scale('+zoom+')';
+      s.style.transformOrigin = 'center center';
+    });
   }
   apply();
 
@@ -25363,18 +25386,21 @@ function _mapInitGestures(wrapEl, mapData){
   // 触摸事件
   wrapEl.addEventListener('touchstart', function(e){
     if(e.touches.length===1){
+      if(_editing) return; // 编辑模式：单指给编辑器
       isPanning = true;
       lastX = e.touches[0].clientX;
       lastY = e.touches[0].clientY;
       startX = lastX; startY = lastY;
       movedTotal = 0;
     } else if(e.touches.length===2){
+      // 双指缩放始终可用
+      isPanning = false;
       lastDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
     }
   }, {passive:true});
 
   wrapEl.addEventListener('touchmove', function(e){
-    if(e.touches.length===1 && isPanning){
+    if(e.touches.length===1 && isPanning && !_editing){
       var dx = e.touches[0].clientX - lastX;
       var dy = e.touches[0].clientY - lastY;
       panX += dx; panY += dy;
@@ -25397,6 +25423,7 @@ function _mapInitGestures(wrapEl, mapData){
     isPanning = false;
     lastDist = 0;
     save();
+    if(_editing) return; // 编辑模式：不做点击检测
     // 点击检测
     if(movedTotal < moveThreshold && e.changedTouches && e.changedTouches.length){
       var touch = e.changedTouches[0];
@@ -25420,13 +25447,14 @@ function _mapInitGestures(wrapEl, mapData){
   // 鼠标事件
   var mouseDown = false;
   wrapEl.addEventListener('mousedown', function(e){
+    if(_editing) return; // 编辑模式：鼠标给编辑器
     mouseDown = true; isPanning = true;
     lastX = e.clientX; lastY = e.clientY;
     startX = lastX; startY = lastY;
     movedTotal = 0;
   });
   wrapEl.addEventListener('mousemove', function(e){
-    if(!mouseDown) return;
+    if(_editing || !mouseDown) return;
     var dx = e.clientX-lastX, dy = e.clientY-lastY;
     panX += dx; panY += dy;
     lastX = e.clientX; lastY = e.clientY;
@@ -25434,6 +25462,7 @@ function _mapInitGestures(wrapEl, mapData){
     apply();
   });
   wrapEl.addEventListener('mouseup', function(e){
+    if(_editing){ mouseDown = false; return; }
     mouseDown = false; isPanning = false; save();
     if(movedTotal < moveThreshold){
       var el = doc.elementFromPoint(e.clientX, e.clientY);
@@ -25464,7 +25493,22 @@ function _mapInitGestures(wrapEl, mapData){
   return {
     zoomIn: function(){ zoom += 0.3; apply(); save(); },
     zoomOut: function(){ zoom -= 0.3; apply(); save(); },
-    reset: function(){ zoom=1; panX=0; panY=0; apply(); save(); }
+    reset: function(){ zoom=1; panX=0; panY=0; apply(); save(); },
+    setEditing: function(v){ _editing = !!v; },
+    reapply: function(){ apply(); },
+    getZoom: function(){ return zoom; },
+    getPan: function(){ return {x:panX, y:panY}; },
+    // 客户端坐标→SVG坐标（考虑zoom+pan）
+    clientToSvg: function(cx, cy){
+      var svgNow = wrapEl.querySelector('.mapIslandSvg');
+      if(!svgNow) return {x:250,y:260};
+      var rect = svgNow.getBoundingClientRect();
+      var vbW = 500, vbH = 520;
+      return {
+        x: (cx - rect.left) / rect.width * vbW,
+        y: (cy - rect.top) / rect.height * vbH
+      };
+    }
   };
 }
 
@@ -25648,20 +25692,26 @@ function renderMapApp(body){
       });
     }
     if(a==='mapEnterEditor'){
-      _mapOpenEditor(body, mapData);
+      _mapOpenEditor(body, mapData, gestureCtrl);
     }
   });
 }
 
 // ========== 地图编辑器 ==========
-function _mapOpenEditor(body, mapData){
+function _mapOpenEditor(body, mapData, gestureCtrl){
+  if(gestureCtrl) gestureCtrl.setEditing(true);
   var edMode = { tab:'landmark', dragging:null, drawingRoad:false, drawPts:[], selectedLm:null };
 
+  function svgCoord(cx, cy){
+    if(gestureCtrl) return gestureCtrl.clientToSvg(cx, cy);
+    return {x:250,y:260};
+  }
+
   function refresh(){
-    // 重绘SVG
     var mc = body.querySelector('.mapContainer');
     if(mc){
       mc.innerHTML = _mapBuildSVG(mapData);
+      if(gestureCtrl) gestureCtrl.reapply(); // 保持缩放平移
       _drawEditorOverlay(mc);
     }
   }
@@ -25676,7 +25726,7 @@ function _mapOpenEditor(body, mapData){
       // 岛屿控制点
       (mapData.islandPts||[]).forEach(function(pt,i){
         var c = document.createElementNS(ns,'circle');
-        c.setAttribute('cx',pt.x); c.setAttribute('cy',pt.y); c.setAttribute('r','5');
+        c.setAttribute('cx',pt.x); c.setAttribute('cy',pt.y); c.setAttribute('r','7');
         c.setAttribute('fill','rgba(7,193,96,0.7)'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
         c.setAttribute('class','mapCtrlPt'); c.setAttribute('data-pttype','island'); c.setAttribute('data-ptidx',i);
         svgEl.appendChild(c);
@@ -25684,17 +25734,18 @@ function _mapOpenEditor(body, mapData){
       // 河流控制点
       (mapData.river||[]).forEach(function(pt,i){
         var c = document.createElementNS(ns,'circle');
-        c.setAttribute('cx',pt.x); c.setAttribute('cy',pt.y); c.setAttribute('r','5');
+        c.setAttribute('cx',pt.x); c.setAttribute('cy',pt.y); c.setAttribute('r','7');
         c.setAttribute('fill','rgba(70,150,200,0.8)'); c.setAttribute('stroke','#fff'); c.setAttribute('stroke-width','1.5');
         c.setAttribute('class','mapCtrlPt'); c.setAttribute('data-pttype','river'); c.setAttribute('data-ptidx',i);
         svgEl.appendChild(c);
       });
       // 区域中心+边缘
-      for(var zk in MAP_ZONES){
-        var z = MAP_ZONES[zk];
+      var _edZones = _getEditZones(mapData);
+      for(var zk in _edZones){
+        var z = _edZones[zk];
         // 中心点
         var cc = document.createElementNS(ns,'circle');
-        cc.setAttribute('cx',z.cx); cc.setAttribute('cy',z.cy); cc.setAttribute('r','6');
+        cc.setAttribute('cx',z.cx); cc.setAttribute('cy',z.cy); cc.setAttribute('r','8');
         cc.setAttribute('fill','rgba(200,150,50,0.7)'); cc.setAttribute('stroke','#fff'); cc.setAttribute('stroke-width','1.5');
         cc.setAttribute('class','mapCtrlPt'); cc.setAttribute('data-pttype','zone-center'); cc.setAttribute('data-zone',zk);
         svgEl.appendChild(cc);
@@ -25757,6 +25808,7 @@ function _mapOpenEditor(body, mapData){
   exitBtn.className = 'mapEdExitBtn';
   exitBtn.textContent = '✕ 退出编辑';
   exitBtn.addEventListener('click', function(){
+    if(gestureCtrl) gestureCtrl.setEditing(false);
     _mapSave(mapData);
     renderMapApp(body);
     try{ toast('✅ 地图已保存'); }catch(e){}
@@ -25796,7 +25848,17 @@ function _mapOpenEditor(body, mapData){
       panelHtml += '<div class="mapEdRow">';
       panelHtml += '<button class="mapEdBtn" data-edact="terrainAddIslandPt">+ 岛屿点</button>';
       panelHtml += '<button class="mapEdBtn" data-edact="terrainAddRiverPt">+ 河流点</button>';
+      panelHtml += '<button class="mapEdBtn" data-edact="terrainAddZone">+ 新区块</button>';
       panelHtml += '<button class="mapEdBtn danger" data-edact="terrainReset">重置地形</button>';
+      panelHtml += '</div>';
+      // 区块列表
+      var zoneKeys = Object.keys(_getEditZones(mapData));
+      panelHtml += '<div class="mapEdHint" style="margin-top:6px;">当前区块：'+zoneKeys.length+'个</div>';
+      panelHtml += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+      zoneKeys.forEach(function(zk3){
+        var z3 = _getEditZones(mapData)[zk3];
+        panelHtml += '<button class="mapEdBtn" data-edact="terrainDelZone" data-zone="'+zk3+'" style="font-size:10px;">'+esc(z3.label)+' ✕</button>';
+      });
       panelHtml += '</div>';
     } else if(edMode.tab === 'road'){
       panelHtml += '<div class="mapEdHint">'+(edMode.drawingRoad ? '在地图上划线绘制道路，松手完成' : '点击"开始画路"后在地图上拖动绘制')+'</div>';
@@ -25932,9 +25994,57 @@ function _mapOpenEditor(body, mapData){
       var rng = _mapRng(mapData.seed);
       mapData.islandPts = _mapGenIsland(rng);
       mapData.river = _mapGenRiver(rng, mapData.islandPts);
+      delete mapData.zones; // 重置区块
       if(mapData.edited){ mapData.edited.island = false; mapData.edited.river = false; }
       _mapSave(mapData); refresh();
       try{ toast('地形已重置'); }catch(e){}
+      return;
+    }
+
+    // === 区块操作 ===
+    if(act === 'terrainAddZone'){
+      var zoneTypes = [
+        {id:'urban',label:'城市区块',ground:'urban',color:'#A09070'},
+        {id:'green',label:'自然区块',ground:'green',color:'#7A9E7A'},
+        {id:'suburb',label:'居民区块',ground:'suburb',color:'#8B7A5A'},
+        {id:'water',label:'水域区块',ground:'green',color:'#5A8AAA'},
+      ];
+      var zHtml = '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">添加区块</div>';
+      zHtml += '<div style="margin-bottom:8px;"><input data-el="zoneName" placeholder="区块名称（如：工业区）" maxlength="10" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;"/></div>';
+      zHtml += '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:4px;">区块类型</div>';
+      zHtml += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">';
+      zoneTypes.forEach(function(zt,zi){ zHtml += '<button class="mapEdBtn'+(zi===0?' on':'')+'" data-ztidx="'+zi+'" style="font-size:11px;">'+zt.label+'</button>'; });
+      zHtml += '</div>';
+      zHtml += '<div style="display:flex;gap:8px;">';
+      zHtml += '<button data-el="zoneOk" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">添加</button>';
+      zHtml += '<button data-el="zoneCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:#fff;font-size:13px;cursor:pointer;">取消</button>';
+      zHtml += '</div>';
+      var zOv = _cpShowOverlay(zHtml);
+      var selZT = 0;
+      zOv.addEventListener('click', function(e3){
+        var ztb = e3.target.closest('[data-ztidx]');
+        if(ztb){ selZT=parseInt(ztb.getAttribute('data-ztidx')||'0'); zOv.querySelectorAll('[data-ztidx]').forEach(function(b){b.classList.remove('on');}); ztb.classList.add('on'); }
+      });
+      zOv.querySelector('[data-el="zoneCancel"]')?.addEventListener('click', function(){ zOv.remove(); });
+      zOv.querySelector('[data-el="zoneOk"]')?.addEventListener('click', function(){
+        var name = (zOv.querySelector('[data-el="zoneName"]')||{}).value || '新区块';
+        var zt = zoneTypes[selZT] || zoneTypes[0];
+        var zones = _ensureEditZones(mapData);
+        var newId = 'zone_'+Date.now();
+        zones[newId] = { label:name.trim(), cx:250, cy:260, rx:60, ry:50, color:zt.color, ground:zt.ground };
+        _mapSave(mapData); zOv.remove();
+        renderEdBar(); refresh();
+        try{ toast('已添加「'+name+'」区块，拖拽黄点定位'); }catch(e){}
+      });
+      return;
+    }
+    if(act === 'terrainDelZone'){
+      var delZone = actBtn.getAttribute('data-zone');
+      if(delZone && mapData.zones && mapData.zones[delZone]){
+        delete mapData.zones[delZone];
+        _mapSave(mapData); renderEdBar(); refresh();
+        try{ toast('区块已删除'); }catch(e){}
+      }
       return;
     }
 
@@ -25979,17 +26089,6 @@ function _mapOpenEditor(body, mapData){
   var mc = wrap.querySelector('.mapContainer');
   var dragState = { active:false, type:'', idx:0, zone:'', startX:0, startY:0 };
 
-  function svgCoord(clientX, clientY){
-    var svgEl = mc.querySelector('.mapIslandSvg');
-    if(!svgEl) return {x:250,y:260};
-    var rect = svgEl.getBoundingClientRect();
-    var vb = svgEl.viewBox.baseVal;
-    return {
-      x: (clientX - rect.left) / rect.width * (vb.width||500),
-      y: (clientY - rect.top) / rect.height * (vb.height||520)
-    };
-  }
-
   function onPointerDown(cx,cy){
     var pt = svgCoord(cx,cy);
 
@@ -26005,26 +26104,27 @@ function _mapOpenEditor(body, mapData){
       // 岛屿点
       for(var ii=0;ii<(mapData.islandPts||[]).length;ii++){
         var ip = mapData.islandPts[ii];
-        if(Math.abs(pt.x-ip.x)<12 && Math.abs(pt.y-ip.y)<12){
+        if(Math.abs(pt.x-ip.x)<20 && Math.abs(pt.y-ip.y)<20){
           dragState = { active:true, type:'island', idx:ii }; return true;
         }
       }
       // 河流点
       for(var ri=0;ri<(mapData.river||[]).length;ri++){
         var rp = mapData.river[ri];
-        if(Math.abs(pt.x-rp.x)<12 && Math.abs(pt.y-rp.y)<12){
+        if(Math.abs(pt.x-rp.x)<20 && Math.abs(pt.y-rp.y)<20){
           dragState = { active:true, type:'river', idx:ri }; return true;
         }
       }
       // 区域
-      for(var zk2 in MAP_ZONES){
-        var z2 = MAP_ZONES[zk2];
+      var _pdZones = _getEditZones(mapData);
+      for(var zk2 in _pdZones){
+        var z2 = _pdZones[zk2];
         // 边缘缩放
-        if(Math.abs(pt.x-(z2.cx+z2.rx))<12 && Math.abs(pt.y-z2.cy)<12){
+        if(Math.abs(pt.x-(z2.cx+z2.rx))<20 && Math.abs(pt.y-z2.cy)<20){
           dragState = { active:true, type:'zone-edge', zone:zk2, startX:pt.x }; return true;
         }
         // 中心移动
-        if(Math.abs(pt.x-z2.cx)<14 && Math.abs(pt.y-z2.cy)<14){
+        if(Math.abs(pt.x-z2.cx)<22 && Math.abs(pt.y-z2.cy)<22){
           dragState = { active:true, type:'zone-center', zone:zk2 }; return true;
         }
       }
@@ -26034,7 +26134,7 @@ function _mapOpenEditor(body, mapData){
     if(edMode.tab === 'landmark'){
       for(var li=0;li<(mapData.landmarks||[]).length;li++){
         var lm2 = mapData.landmarks[li];
-        if(Math.abs(pt.x-lm2.x)<20 && Math.abs(pt.y-lm2.y)<20){
+        if(Math.abs(pt.x-lm2.x)<25 && Math.abs(pt.y-lm2.y)<25){
           edMode.selectedLm = lm2.id;
           dragState = { active:true, type:'landmark', idx:li };
           renderEdBar(); refresh();
@@ -26065,14 +26165,14 @@ function _mapOpenEditor(body, mapData){
       refresh();
     }
     if(dragState.type === 'zone-center'){
-      MAP_ZONES[dragState.zone].cx = pt.x;
-      MAP_ZONES[dragState.zone].cy = pt.y;
+      var _mzC = _ensureEditZones(mapData);
+      if(_mzC[dragState.zone]){ _mzC[dragState.zone].cx = pt.x; _mzC[dragState.zone].cy = pt.y; }
       refresh();
     }
     if(dragState.type === 'zone-edge'){
-      var zd = MAP_ZONES[dragState.zone];
-      zd.rx = Math.max(30, Math.abs(pt.x - zd.cx));
-      zd.ry = Math.max(25, zd.rx * 0.75);
+      var _mzE = _ensureEditZones(mapData);
+      var zd = _mzE[dragState.zone];
+      if(zd){ zd.rx = Math.max(30, Math.abs(pt.x - zd.cx)); zd.ry = Math.max(25, zd.rx * 0.75); }
       refresh();
     }
     if(dragState.type === 'landmark'){
