@@ -3792,15 +3792,15 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .mapLm:hover .mapLmLabel{ opacity:1; }
 #${ID} .mapLm .mapHomeBadge{ font-size:7px; pointer-events:none; }
 #${ID} .mapZoomBar{
-  position:absolute; right:10px; bottom:80px;
-  display:flex; flex-direction:column; gap:4px; z-index:10;
+  position:absolute; left:8px; bottom:10px;
+  display:flex; flex-direction:column; gap:3px; z-index:12;
 }
 #${ID} .mapZoomBtn{
-  width:32px; height:32px; border-radius:50%; border:0;
-  background:var(--ph-glass, rgba(255,255,255,0.8));
+  width:28px; height:28px; border-radius:50%; border:0;
+  background:var(--ph-glass, rgba(255,255,255,0.85));
   backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
-  box-shadow:0 2px 8px rgba(0,0,0,0.1);
-  font-size:16px; font-weight:600; cursor:pointer;
+  box-shadow:0 1px 6px rgba(0,0,0,0.1);
+  font-size:14px; font-weight:600; cursor:pointer;
   color:rgba(20,24,28,0.7); display:flex; align-items:center; justify-content:center;
 }
 #${ID} .mapZoomBtn:active{ transform:scale(0.9); }
@@ -25561,15 +25561,32 @@ function _mapInitGestures(wrapEl, mapData){
     reapply: function(){ apply(); },
     getZoom: function(){ return zoom; },
     getPan: function(){ return {x:panX, y:panY}; },
-    // 客户端坐标→SVG坐标（考虑zoom+pan）
+    // 客户端坐标→SVG坐标（考虑zoom+pan+SVG宽高比信箱）
     clientToSvg: function(cx, cy){
       var svgNow = wrapEl.querySelector('.mapIslandSvg');
       if(!svgNow) return {x:250,y:260};
       var rect = svgNow.getBoundingClientRect();
       var vbW = 500, vbH = 520;
+      // SVG默认preserveAspectRatio="xMidYMid meet"，需要算实际内容区域
+      var svgAR = vbW / vbH;
+      var elemAR = rect.width / rect.height;
+      var contentW, contentH, offsetX, offsetY;
+      if(elemAR > svgAR){
+        // 元素比viewBox宽→左右留白
+        contentH = rect.height;
+        contentW = contentH * svgAR;
+        offsetX = (rect.width - contentW) / 2;
+        offsetY = 0;
+      } else {
+        // 元素比viewBox高→上下留白
+        contentW = rect.width;
+        contentH = contentW / svgAR;
+        offsetX = 0;
+        offsetY = (rect.height - contentH) / 2;
+      }
       return {
-        x: (cx - rect.left) / rect.width * vbW,
-        y: (cy - rect.top) / rect.height * vbH
+        x: (cx - rect.left - offsetX) / contentW * vbW,
+        y: (cy - rect.top - offsetY) / contentH * vbH
       };
     }
   };
@@ -25614,15 +25631,16 @@ function renderMapApp(body){
   zoomBar.className = 'mapZoomBar';
   zoomBar.innerHTML = '<button class="mapZoomBtn" data-act="mapZoomIn">+</button>'+
     '<button class="mapZoomBtn" data-act="mapZoomOut">−</button>'+
-    '<button class="mapZoomBtn" data-act="mapZoomReset">📍</button>'+
-    '<div style="height:6px;"></div>'+
-    '<button class="mapZoomBtn" data-act="mapPanUp" style="font-size:12px;">▲</button>'+
-    '<div style="display:flex;gap:2px;">'+
-    '<button class="mapZoomBtn" data-act="mapPanLeft" style="font-size:12px;width:15px;">◀</button>'+
-    '<button class="mapZoomBtn" data-act="mapPanRight" style="font-size:12px;width:15px;">▶</button>'+
+    '<button class="mapZoomBtn" data-act="mapZoomReset" style="font-size:11px;">📍</button>'+
+    '<div style="height:4px;"></div>'+
+    '<button class="mapZoomBtn" data-act="mapPanUp" style="font-size:10px;">▲</button>'+
+    '<div style="display:flex;gap:2px;justify-content:center;">'+
+    '<button class="mapZoomBtn" data-act="mapPanLeft" style="font-size:10px;width:13px;height:28px;border-radius:14px 4px 4px 14px;">◀</button>'+
+    '<button class="mapZoomBtn" data-act="mapPanRight" style="font-size:10px;width:13px;height:28px;border-radius:4px 14px 14px 4px;">▶</button>'+
     '</div>'+
-    '<button class="mapZoomBtn" data-act="mapPanDown" style="font-size:12px;">▼</button>';
-  wrap.appendChild(zoomBar);
+    '<button class="mapZoomBtn" data-act="mapPanDown" style="font-size:10px;">▼</button>';
+  mapContainer.style.position = 'relative';
+  mapContainer.appendChild(zoomBar);
 
   // 底部工具栏
   var toolbar = doc.createElement('div');
@@ -25844,7 +25862,7 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
           ell.setAttribute('fill','none'); ell.setAttribute('stroke','rgba(200,150,50,0.4)'); ell.setAttribute('stroke-width','1.5');
           ell.setAttribute('stroke-dasharray','5,4'); ell.setAttribute('style','pointer-events:none');
           svgEl.appendChild(ell);
-          // 中心点
+          // 中心点（大黄点）
           var cc = document.createElementNS(ns,'circle');
           cc.setAttribute('cx',z.cx); cc.setAttribute('cy',z.cy); cc.setAttribute('r','9');
           cc.setAttribute('fill','rgba(200,150,50,0.8)'); cc.setAttribute('stroke','#fff'); cc.setAttribute('stroke-width','2');
@@ -25856,12 +25874,18 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
           tl.setAttribute('font-size','8'); tl.setAttribute('fill','rgba(150,100,30,0.8)'); tl.setAttribute('style','pointer-events:none');
           tl.textContent = z.label;
           svgEl.appendChild(tl);
-          // 右边缘
-          var ce = document.createElementNS(ns,'circle');
-          ce.setAttribute('cx',z.cx+z.rx); ce.setAttribute('cy',z.cy); ce.setAttribute('r','6');
-          ce.setAttribute('fill','rgba(200,150,50,0.6)'); ce.setAttribute('stroke','#fff'); ce.setAttribute('stroke-width','1.5');
-          ce.setAttribute('class','mapCtrlPt'); ce.setAttribute('data-pttype','zone-edge'); ce.setAttribute('data-zone',zk);
-          svgEl.appendChild(ce);
+          // 右边缘→调rx
+          var ceR = document.createElementNS(ns,'circle');
+          ceR.setAttribute('cx',z.cx+z.rx); ceR.setAttribute('cy',z.cy); ceR.setAttribute('r','6');
+          ceR.setAttribute('fill','rgba(200,150,50,0.6)'); ceR.setAttribute('stroke','#fff'); ceR.setAttribute('stroke-width','1.5');
+          ceR.setAttribute('class','mapCtrlPt'); ceR.setAttribute('data-pttype','zone-edge-rx'); ceR.setAttribute('data-zone',zk);
+          svgEl.appendChild(ceR);
+          // 下边缘→调ry
+          var ceB = document.createElementNS(ns,'circle');
+          ceB.setAttribute('cx',z.cx); ceB.setAttribute('cy',z.cy+z.ry); ceB.setAttribute('r','6');
+          ceB.setAttribute('fill','rgba(200,150,50,0.6)'); ceB.setAttribute('stroke','#fff'); ceB.setAttribute('stroke-width','1.5');
+          ceB.setAttribute('class','mapCtrlPt'); ceB.setAttribute('data-pttype','zone-edge-ry'); ceB.setAttribute('data-zone',zk);
+          svgEl.appendChild(ceB);
         }
       }
     }
@@ -26288,9 +26312,15 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
         var _pdZones = _getEditZones(mapData);
         for(var zk2 in _pdZones){
           var z2 = _pdZones[zk2];
+          // 右边缘→rx
           if(Math.abs(pt.x-(z2.cx+z2.rx))<20 && Math.abs(pt.y-z2.cy)<20){
-            dragState = { active:true, type:'zone-edge', zone:zk2 }; return true;
+            dragState = { active:true, type:'zone-edge-rx', zone:zk2 }; return true;
           }
+          // 下边缘→ry
+          if(Math.abs(pt.x-z2.cx)<20 && Math.abs(pt.y-(z2.cy+z2.ry))<20){
+            dragState = { active:true, type:'zone-edge-ry', zone:zk2 }; return true;
+          }
+          // 中心移动
           if(Math.abs(pt.x-z2.cx)<22 && Math.abs(pt.y-z2.cy)<22){
             dragState = { active:true, type:'zone-center', zone:zk2 }; return true;
           }
@@ -26337,10 +26367,16 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
       if(_mzC[dragState.zone]){ _mzC[dragState.zone].cx = pt.x; _mzC[dragState.zone].cy = pt.y; }
       refresh();
     }
-    if(dragState.type === 'zone-edge'){
+    if(dragState.type === 'zone-edge-rx'){
       var _mzE = _ensureEditZones(mapData);
       var zd = _mzE[dragState.zone];
-      if(zd){ zd.rx = Math.max(30, Math.abs(pt.x - zd.cx)); zd.ry = Math.max(25, zd.rx * 0.75); }
+      if(zd) zd.rx = Math.max(25, Math.abs(pt.x - zd.cx));
+      refresh();
+    }
+    if(dragState.type === 'zone-edge-ry'){
+      var _mzEy = _ensureEditZones(mapData);
+      var zdy = _mzEy[dragState.zone];
+      if(zdy) zdy.ry = Math.max(20, Math.abs(pt.y - zdy.cy));
       refresh();
     }
     if(dragState.type === 'lake'){
@@ -26377,7 +26413,7 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
       _mapSave(mapData); refresh();
       try{ toast('道路已绘制'); }catch(e){}
     }
-    if(dragState.type === 'island' || dragState.type === 'river' || dragState.type === 'landmark' || dragState.type === 'lake' || dragState.type === 'zone-center' || dragState.type === 'zone-edge'){
+    if(dragState.type === 'island' || dragState.type === 'river' || dragState.type === 'landmark' || dragState.type === 'lake' || dragState.type === 'zone-center' || dragState.type === 'zone-edge-rx' || dragState.type === 'zone-edge-ry'){
       _mapSave(mapData);
     }
     dragState.active = false;
