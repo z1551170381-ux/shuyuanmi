@@ -14766,6 +14766,12 @@ const npc = _wxGetChatTargetMeta(npcId);
       async function _writeAIReply(npcId, npc, rawText, ts){
         var parsed = _parseAISpecialTags(rawText);
         var cleanText = parsed.cleanText || rawText;
+        // 二次兜底：确保没有系统标签残留在显示文本中
+        cleanText = cleanText.replace(/\[属性[:：][^\]]*\]?/gi, '')
+                             .replace(/\[状态[:：][^\]]*\]?/gi, '')
+                             .replace(/\[发语音\]/gi, '')
+                             .replace(/\[发表情[:：][^\]]*\]?/gi, '')
+                             .trim() || '…';
 
         // ★ 自动更新穿着/正在/心声/自定义条目（如果AI输出了[状态:...]标记）
         if (parsed.stateUpdate && Object.keys(parsed.stateUpdate).length > 0){
@@ -14802,7 +14808,7 @@ const npc = _wxGetChatTargetMeta(npcId);
               }
             }
             if (_changed){
-              _sAttr.moodText = _attrToMoodText(_sAttr.attrs);
+              _sAttr.moodText = _attrToMoodText(_sAttr.attrs, _sAttr.bond);
               _sAttr.lastCalcAt = Date.now(); // 更新锚点，防止 catchUp 重复算
               _saveCharState(npcId, _sAttr);
             }
@@ -15282,9 +15288,9 @@ const npc = _wxGetChatTargetMeta(npcId);
           s = s.replace(stkMatch[0], '').trim();
         }
 
-        // 检测 [状态:穿着=xxx,正在=yyy,心声=zzz,自定义标签=值]（任意组合，顺序不限）
+        // 检测 [状态:穿着=xxx,正在=yyy,心声=zzz,自定义标签=值]（任意组合，顺序不限，兼容缺失右括号）
         var stateUpdate = null;
-        var stateTagMatch = s.match(/\[状态[:：]([^\]]+)\]/i);
+        var stateTagMatch = s.match(/\[状态[:：]\s*([^\]]*?)(?:\]|$)/i);
         if (stateTagMatch){
           var stateStr = stateTagMatch[1];
           stateUpdate = {};
@@ -15313,12 +15319,12 @@ const npc = _wxGetChatTargetMeta(npcId);
           s = s.replace(stateTagMatch[0], '').trim();
         }
 
-        // ★ 检测 [属性:精力+10,饱腹+35,心情-5]
+        // ★ 检测 [属性:精力+10,饱腹+35,心情-5]（兼容缺失右括号、多余空格、不完整值）
         var attrChanges = null;
-        var attrTagMatch = s.match(/\[属性[:：]([^\]]+)\]/i);
+        var attrTagMatch = s.match(/\[属性[:：]\s*([^\]]*?)(?:\]|$)/i);
         if (attrTagMatch){
           attrChanges = {};
-          var _attrNameMap = {'精力':'energy','心情':'mood','健康':'health','饱腹':'hunger','如厕':'bladder','娱乐':'fun','孤独':'loneliness'};
+          var _attrNameMap = {'精力':'energy','心情':'mood','健康':'health','饱腹':'hunger','如厕':'bladder','娱乐':'fun','孤独':'loneliness','性欲':'libido'};
           var _attrPairs = attrTagMatch[1].split(/[,，]/);
           for (var _ai = 0; _ai < _attrPairs.length; _ai++){
             var _ap = _attrPairs[_ai].trim();
@@ -15331,8 +15337,15 @@ const npc = _wxGetChatTargetMeta(npcId);
             }
           }
           if (Object.keys(attrChanges).length === 0) attrChanges = null;
+          // 移除匹配到的标签（含可能缺失的右括号）
           s = s.replace(attrTagMatch[0], '').trim();
         }
+
+        // ★ 最终兜底：清除任何残留的系统标签片段（防止不完整标记泄漏到聊天气泡）
+        s = s.replace(/\[属性[:：][^\]]*\]?/gi, '').trim();
+        s = s.replace(/\[状态[:：][^\]]*\]?/gi, '').trim();
+        s = s.replace(/\[发语音\]/gi, '').trim();
+        s = s.replace(/\[发表情[:：][^\]]*\]?/gi, '').trim();
 
         return { cleanText: s, sendVoice: sendVoice, stickerGroup: stickerGroup, stickerIdx: stickerIdx, stateUpdate: stateUpdate, attrChanges: attrChanges };
       }
@@ -16320,7 +16333,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           cursor = new Date(cursor.getTime() + segMin * 60000);
           remaining -= segMin;
         }
-        s.moodText = _attrToMoodText(s.attrs);
+        s.moodText = _attrToMoodText(s.attrs, s.bond);
         if (s.silentUntil > 0 && now > s.silentUntil + 60000){
           s.attrs.energy = _clampAttr('energy', s.attrs.energy + 15, defs);
           if (s.silentUntil < now) s.silentReason = '';
@@ -16345,7 +16358,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         s.attrs.bladder = _clampAttr('bladder', s.attrs.bladder + m * 0.03, defs);
         if (s.attrs.bladder >= 90) s.attrs.bladder = _clampAttr('bladder', 5, defs);
         s.attrs.fun = _clampAttr('fun', s.attrs.fun - m * 0.03, defs);
-        s.moodText = _attrToMoodText(s.attrs);
+        s.moodText = _attrToMoodText(s.attrs, s.bond);
       }
 
       // ========== 【模块 B4】LifeEngine — 自主生活行为引擎 ==========
@@ -16776,11 +16789,22 @@ const npc = _wxGetChatTargetMeta(npcId);
         return 60;
       }
 
-      function _attrToMoodText(attrs){
+      function _attrToMoodText(attrs, bond){
         var m = attrs.mood || 50, e = attrs.energy || 50;
-        if (m >= 85) return '兴奋'; if (m >= 70) return '开心';
-        if (m >= 55 && e >= 40) return '平静'; if (m >= 45 && e < 30) return '疲惫';
-        if (m >= 40) return '平静'; if (m >= 30) return '委屈'; if (m >= 15) return '烦躁';
+        // 兴奋：极其稀有 — 心情和精力都必须很高（代表刚发生了特别开心的事 + 精力充沛）
+        if (m >= 96 && e >= 65) return '兴奋';
+        // 害羞：暧昧关系 + 心情不错 + 精力正常（不疲惫）
+        if (bond === '暧昧' && m >= 60 && m < 96 && e >= 35) return '害羞';
+        // 开心：心情好的常态
+        if (m >= 70) return '开心';
+        // 疲惫：精力不足时优先于平静
+        if (e < 25 && m >= 35) return '疲惫';
+        // 平静：心情中等
+        if (m >= 45) return '平静';
+        // 委屈
+        if (m >= 30) return '委屈';
+        // 烦躁
+        if (m >= 15) return '烦躁';
         return '生气';
       }
 
@@ -16820,7 +16844,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           s.attrs.mood = _clampAttr('mood', s.attrs.mood - 2, defs);
         }
 
-        s.moodText = _attrToMoodText(s.attrs);
+        s.moodText = _attrToMoodText(s.attrs, s.bond);
         if (s.silentUntil < now){
           if (s.attrs.energy < 18 || s.moodText === '生气'){
             var silMin = s.moodText === '生气' ? _randomBetween(4, 12) : _randomBetween(2, 6);
