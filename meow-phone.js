@@ -25043,24 +25043,34 @@ var HOUSE_TYPES = [
 
 // 基础家具（每个房间默认拥有）
 var FURNITURE_CATALOG = {
-  // png: base64 data URI 或 URL，pngW/pngH: 显示宽高（SVG内像素）
-  // 如果有 png 字段，渲染时优先用 <image> 而不是 SVG path
-  // 在 PS 里画好等轴家具 → 导出透明背景 PNG → 转 base64 → 粘贴到 png 字段
-  // 基础（默认拥有）
-  bed:    { emoji:'🛏️', label:'床',    cost:0,   fx:{energy:25,mood:3},   desc:'休息恢复精力', png:'', pngW:48, pngH:40 },
-  sofa:   { emoji:'🛋️', label:'沙发',  cost:0,   fx:{mood:8,energy:5},    desc:'放松一下', png:'', pngW:48, pngH:42 },
-  stove:  { emoji:'🍳', label:'灶台',  cost:0,   fx:{hunger:30,mood:5},   desc:'做饭填饱肚子', png:'', pngW:40, pngH:39 },
-  lamp:   { emoji:'💡', label:'台灯',  cost:0,   fx:{mood:3},             desc:'暖暖的光', png:'', pngW:28, pngH:18 },
-  // 高级（商场购买）
-  tv:     { emoji:'📺', label:'大电视', cost:200, fx:{fun:15,mood:8},      desc:'看剧追番', png:'', pngW:40, pngH:34 },
-  game:   { emoji:'🎮', label:'游戏机', cost:300, fx:{fun:20,mood:10},     desc:'一起打游戏', png:'', pngW:30, pngH:34 },
-  bath:   { emoji:'🛁', label:'浴缸',  cost:250, fx:{health:15,mood:12},  desc:'泡个热水澡', png:'', pngW:44, pngH:38 },
-  piano:  { emoji:'🎹', label:'钢琴',  cost:500, fx:{mood:20,energy:-5},  desc:'弹一首曲子', png:'', pngW:28, pngH:43 },
-  plant:  { emoji:'🌱', label:'盆栽',  cost:50,  fx:{mood:5},             desc:'绿意盎然', png:'', pngW:24, pngH:31 },
-  frame:  { emoji:'🖼️', label:'画框',  cost:120, fx:{mood:8},             desc:'欣赏画作', png:'', pngW:24, pngH:31 },
-  shelf:  { emoji:'📚', label:'书架',  cost:150, fx:{mood:10,energy:-3},  desc:'读一本好书', png:'', pngW:38, pngH:35 },
-  rug:    { emoji:'🧶', label:'地毯',  cost:80,  fx:{mood:6},             desc:'踩上去很舒服', png:'', pngW:48, pngH:29 },
-  bigplant:{ emoji:'🌿', label:'大盆栽', cost:180, fx:{mood:12,health:5},  desc:'热带风情大叶植物', png:'', pngW:30, pngH:45 },
+  // png字段保留兼容，新家具全部用SVG
+  piano:{emoji:'🎹',label:'钢琴',cost:500,fx:{mood:20,energy:-5},desc:'弹一首曲子',png:'',pngW:40,pngH:40},
+  bed:{emoji:'🛏️',label:'床',cost:0,fx:{energy:25,mood:3},desc:'休息恢复精力',png:'',pngW:40,pngH:40},
+  sofa:{emoji:'🛋️',label:'沙发',cost:0,fx:{mood:8,energy:5},desc:'放松一下',png:'',pngW:40,pngH:40},
+  shelf:{emoji:'📚',label:'书架',cost:150,fx:{mood:10,energy:-3},desc:'读一本好书',png:'',pngW:40,pngH:40},
+  wshelf:{emoji:'📖',label:'白色书架',cost:200,fx:{mood:12,energy:-3},desc:'整洁的书架',png:'',pngW:40,pngH:40},
+  table:{emoji:'☕',label:'茶几',cost:60,fx:{mood:4},desc:'放杯咖啡',png:'',pngW:40,pngH:40},
+  computer:{emoji:'💻',label:'电脑桌',cost:350,fx:{fun:15,mood:5},desc:'上网冲浪',png:'',pngW:40,pngH:40},
+  lamp:{emoji:'💡',label:'落地灯',cost:0,fx:{mood:3},desc:'暖暖的光',png:'',pngW:40,pngH:40},
+  fridge:{emoji:'🧊',label:'冰箱',cost:280,fx:{hunger:20,mood:3},desc:'找点吃的',png:'',pngW:40,pngH:40},
+  stove:{emoji:'🍳',label:'厨柜灶台',cost:0,fx:{hunger:30,mood:5},desc:'做饭填饱肚子',png:'',pngW:40,pngH:40},
+  frame2:{emoji:'🎨',label:'装饰画B',cost:150,fx:{mood:10},desc:'欣赏画作',png:'',pngW:40,pngH:40},
+  frame:{emoji:'🖼️',label:'装饰画A',cost:120,fx:{mood:8},desc:'欣赏画作',png:'',pngW:40,pngH:40},
+  rugheart:{emoji:'💕',label:'爱心地毯',cost:100,fx:{mood:8},desc:'满满的爱',png:'',pngW:40,pngH:40},
+  rugrect:{emoji:'🟫',label:'长方地毯',cost:90,fx:{mood:6},desc:'温暖的地毯',png:'',pngW:40,pngH:40},
+  rugsquare:{emoji:'🔲',label:'方形地毯',cost:85,fx:{mood:6},desc:'简约地毯',png:'',pngW:40,pngH:40},
+  shower:{emoji:'🚿',label:'淋浴间',cost:400,fx:{health:15,mood:10},desc:'冲个澡',png:'',pngW:40,pngH:40},
+  sink:{emoji:'🪞',label:'洗手台',cost:220,fx:{health:5,mood:5},desc:'洗漱一下',png:'',pngW:40,pngH:40},
+  toilet:{emoji:'🚽',label:'马桶',cost:0,fx:{health:3},desc:'方便一下',png:'',pngW:40,pngH:40},
+  bar:{emoji:'🍸',label:'吧台',cost:300,fx:{mood:12,fun:8},desc:'调一杯鸡尾酒',png:'',pngW:40,pngH:40},
+  window:{emoji:'🪟',label:'窗户',cost:180,fx:{mood:8},desc:'看看窗外风景',png:'',pngW:40,pngH:40},
+  rug:{emoji:'🧶',label:'圆形地毯',cost:80,fx:{mood:6},desc:'踩上去很舒服',png:'',pngW:40,pngH:40},
+  // 保留的旧家具
+  tv:{emoji:'📺',label:'电视柜',cost:200,fx:{fun:15,mood:8},desc:'看剧追番',png:'',pngW:40,pngH:32},
+  bath:{emoji:'🛁',label:'浴缸',cost:250,fx:{health:15,mood:12},desc:'泡个热水澡',png:'',pngW:46,pngH:32},
+  game:{emoji:'🎮',label:'游戏机',cost:300,fx:{fun:20,mood:10},desc:'一起打游戏',png:'',pngW:24,pngH:18},
+  plant:{emoji:'🌱',label:'小盆栽',cost:50,fx:{mood:5},desc:'绿意盎然',png:'',pngW:22,pngH:30},
+  bigplant:{emoji:'🌿',label:'大盆栽',cost:180,fx:{mood:12,health:5},desc:'热带风情大叶植物',png:'',pngW:30,pngH:45},
 };
 
 function _defaultFurniture(){
@@ -27105,287 +27115,987 @@ function _iCircleR(cx,cy,r,ox,oy,cls){
 }
 
 var _roomFurnSVG = {
+  piano: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<rect x="0" y="0" width="20" height="46" fill="rgba(130,140,120,0.10)" transform="translate(4,6) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '<g transform="translate(1,0)"><rect x="0" y="-5" width="3" height="5" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-5" width="3" height="5" class="blk-l" transform="translate(3,1.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="3" height="3" class="blk-t" transform="translate(0,-5) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(13,0)"><rect x="0" y="-5" width="3" height="5" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-5" width="3" height="5" class="blk-l" transform="translate(3,1.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="3" height="3" class="blk-t" transform="translate(0,-5) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-37,0)"><rect x="0" y="-5" width="3" height="5" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-5" width="3" height="5" class="blk-l" transform="translate(3,1.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="3" height="3" class="blk-t" transform="translate(0,-5) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-25,0)"><rect x="0" y="-5" width="3" height="5" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-5" width="3" height="5" class="blk-l" transform="translate(3,1.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="3" height="3" class="blk-t" transform="translate(0,-5) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(0,-5)">' +
+    '<rect x="0" y="-3" width="18" height="3" class="blk-r" transform="translate(-44,22) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-3" width="44" height="3" class="blk-l" transform="translate(18,9) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="18" height="44" class="blk-t" transform="translate(0,-3) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-14,-2)"><rect x="0" y="-2" width="2" height="2" class="wood-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="2" height="2" class="wood-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="2" class="wood-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-20,-2)"><rect x="0" y="-2" width="2" height="2" class="wood-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="2" height="2" class="wood-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="2" class="wood-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-26,-2)"><rect x="0" y="-2" width="2" height="2" class="wood-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="2" height="2" class="wood-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="2" class="wood-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<!-- 下琴身 w=16,d=42,h=20 ox=-1 -->' +
+    '<g transform="translate(-1,-8)">' +
+    '<rect x="0" y="-20" width="16" height="20" class="blk-r" transform="translate(-42,21) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-20" width="42" height="20" class="blk-l" transform="translate(16,8) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="16" height="42" class="blk-t" transform="translate(0,-20) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-1,-28)">' +
+    '<rect x="0" y="-28" width="16" height="28" class="blk-r" transform="translate(-42,21) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-28" width="42" height="28" class="blk-l" transform="translate(16,8) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="16" height="42" class="blk-t" transform="translate(0,-28) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,-56)">' +
+    '<rect x="0" y="-2" width="18" height="2" class="blk-r" transform="translate(-44,22) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="44" height="2" class="blk-l" transform="translate(18,9) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="18" height="44" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<!-- ★★★ 键盘组 - 整体右移16单位 ★★★ -->' +
+    '<g transform="translate(16,8)">' +
+    '<!-- 键盘底托 w=16,d=42,h=2 ox=-1 (标准盒子，和琴身一模一样) -->' +
+    '<g transform="translate(-1,-32)">' +
+    '<rect x="0" y="-2" width="16" height="2" class="blk-r" transform="translate(-42,21) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="42" height="2" class="blk-l" transform="translate(16,8) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="16" height="42" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,-34)">' +
+    '<rect x="0" y="-1" width="14" height="1" fill="#F8F6F0" stroke="#E8E5DD" stroke-width="0.5" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-1" width="40" height="1" fill="#EEEBE3" stroke="#E0DDD5" stroke-width="0.5" transform="translate(14,7) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="14" height="40" fill="#FDFCF8" stroke="#E8E5DD" stroke-width="0.4" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g opacity="0.25">' +
+    '<line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-6,-31) matrix(1,0.5,0,1,0,0)"/>' +
+    '<line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-12,-28) matrix(1,0.5,0,1,0,0)"/>' +
+    '<line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-18,-25) matrix(1,0.5,0,1,0,0)"/>' +
+    '<line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-24,-22) matrix(1,0.5,0,1,0,0)"/>' +
+    '<line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-30,-19) matrix(1,0.5,0,1,0,0)"/>' +
+    '<line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-36,-16) matrix(1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<!-- 白键顶y=-35, ox=0, 沿d偏移: translate(-d, -35+d*0.5) -->' +
+    '<g transform="translate(-4,-33)">' +
+    '<rect x="0" y="-2" width="8" height="2" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="3" height="2" class="blk-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="8" height="3" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-10,-30)">' +
+    '<rect x="0" y="-2" width="8" height="2" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="3" height="2" class="blk-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="8" height="3" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-19,-25.5)">' +
+    '<rect x="0" y="-2" width="8" height="2" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="3" height="2" class="blk-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="8" height="3" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-25,-22.5)">' +
+    '<rect x="0" y="-2" width="8" height="2" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="3" height="2" class="blk-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="8" height="3" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-34,-18)">' +
+    '<rect x="0" y="-2" width="8" height="2" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="3" height="2" class="blk-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="8" height="3" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '</g>' +
+    '<g transform="translate(4,12)">' +
+    '<rect x="0" y="-10" width="12" height="10" class="wood-r" transform="translate(-26,13) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-10" width="26" height="10" class="wood-l" transform="translate(12,6) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="12" height="26" class="wood-t" transform="translate(0,-10) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(3,2)">' +
+    '<rect x="0" y="-2" width="10" height="2" class="pnk-r" transform="translate(-24,12) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="24" height="2" class="pnk-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="10" height="24" class="pnk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '</g>';
+  },
 
-  // ========== BED (from Gemini) ==========
   bed: function(x, y, owned){
     if(!owned) return '';
-    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    s += _iShadow(60, 92, -8, 4);
-    // Headboard: w=60, d=8, h=32
-    s += _iR(60, 8, 32, 'wood', 0, 0);
-    // Frame: w=60, d=92, h=15
-    s += _iR(60, 92, 15, 'wood', -8, 4);
-    // Mattress: w=56, d=88, h=10
-    s += _iR(56, 88, 10, 'wht', -8, -9);
-    // Pillow: w=40, d=16, h=6
-    s += _iR(40, 16, 6, 'wht', -4, -13);
-    // Blanket: w=60, d=50, h=12
-    s += _iR(60, 50, 12, 'grn', -50, 10);
-    s += '</g>';
-    return s;
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<rect x="0" y="0" width="48" height="68" fill="rgba(130,140,120,0.06)" transform="translate(4,5) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '<g transform="translate(-8,-6)">' +
+    '<rect x="0" y="-40" width="64" height="40" class="df-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-40" width="3" height="40" class="df-l" transform="translate(64,32) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="64" height="3" class="df-t" transform="translate(0,-40) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-11,-25)">' +
+    '<rect x="0" y="-2" width="14" height="2" class="sh-r" transform="translate(-14,7) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="14" height="2" class="sh-l" transform="translate(14,7) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="14" height="14" class="sh-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(39,-1)">' +
+    '<rect x="0" y="-2" width="14" height="2" class="sh-r" transform="translate(-14,7) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="14" height="2" class="sh-l" transform="translate(14,7) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="14" height="14" class="sh-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-7,-23)">' +
+    '<g transform="matrix(1,0.5,-1,0.5,0,0)">' +
+    '<circle cx="0" cy="0" r="3" fill="#606060" stroke="#505050" stroke-width="0.5"/>' +
+    '</g>' +
+    '<rect x="0" y="-14" width="1" height="14" class="lm-r" transform="translate(-1,0.5) matrix(1,0.5,0,1,0,0)"/>' +
+    '<polyline points="0,-14 0,-16 -8,-16" fill="none" stroke="#606060" stroke-width="1" stroke-linecap="round" transform="translate(0,-0.5)"/>' +
+    '<polygon points="-10,-14 -6,-18 -2,-18 -4,-14" fill="#D4C9A8" stroke="#C4B998" stroke-width="0.5"/>' +
+    '</g>' +
+    '<g transform="translate(43,-4)">' +
+    '<rect x="0" y="-6" width="4" height="6" fill="#9BB0BD" stroke="#879CA9" stroke-width="0.5" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-6" width="4" height="6" fill="#879CA9" stroke="#738895" stroke-width="0.5" transform="translate(4,2) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(47,-2)">' +
+    '<rect x="0" y="-5" width="4" height="5" fill="#D4B5AF" stroke="#C4A59F" stroke-width="0.5" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-5" width="3" height="5" fill="#C4A59F" stroke="#B4958F" stroke-width="0.5" transform="translate(4,2) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,-6)">' +
+    '<rect x="0" y="-8" width="48" height="8" class="df-r" transform="translate(-68,34) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-8" width="68" height="8" class="df-l" transform="translate(48,24) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="48" height="68" class="df-t" transform="translate(0,-8) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,-14)">' +
+    '<rect x="0" y="-6" width="44" height="6" class="wm-r" transform="translate(-62,31) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-6" width="62" height="6" class="wm-l" transform="translate(44,22) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="44" height="62" class="wm-t" transform="translate(0,-6) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-20,-6)">' +
+    '<rect x="0" y="-4" width="44" height="4" class="bl-r" transform="translate(-42,21) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-4" width="42" height="4" class="bl-l" transform="translate(44,22) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="44" height="42" class="bl-t" transform="translate(0,-4) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-20,-10) matrix(1,0.5,-1,0.5,0,0)" opacity="0.15">' +
+    '<line x1="0" y1="2" x2="44" y2="2" stroke="#FFF" stroke-width="1.5"/>' +
+    '</g>' +
+    '<g transform="translate(-20,-10) matrix(1,0.5,-1,0.5,0,0)" opacity="0.08">' +
+    '<line x1="11" y1="4" x2="11" y2="42" stroke="#68788A" stroke-width="0.5"/>' +
+    '<line x1="22" y1="4" x2="22" y2="42" stroke="#68788A" stroke-width="0.5"/>' +
+    '<line x1="33" y1="4" x2="33" y2="42" stroke="#68788A" stroke-width="0.5"/>' +
+    '</g>' +
+    '<g transform="translate(2,-15)">' +
+    '<rect x="0" y="-6" width="18" height="6" class="pw-r" transform="translate(-10,5) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-6" width="10" height="6" class="pw-l" transform="translate(18,9) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="18" height="10" class="pw-t" transform="translate(0,-6) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(18,-7)">' +
+    '<rect x="0" y="-6" width="18" height="6" class="pw-r" transform="translate(-10,5) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-6" width="10" height="6" class="pw-l" transform="translate(18,9) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="18" height="10" class="pw-t" transform="translate(0,-6) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '</g>';
   },
 
-  // ========== SOFA (from Gemini) ==========
   sofa: function(x, y, owned){
     if(!owned) return '';
-    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    s += _iShadow(100, 50, 0, 0);
-    // Base frame: w=100, d=50, h=6
-    s += _iR(100, 50, 6, 'wood', 0, 0);
-    // Back cushion: w=100, d=15, h=30
-    s += _iR(100, 15, 30, 'grn', 0, -6);
-    // Left arm: w=15, d=35, h=20
-    s += _iR(15, 35, 20, 'grn', -15, 1.5);
-    // Seat cushion panels (3 segments): w=70, d=35, h=10
-    var s2 = '<g transform="translate(0,9)">';
-    // Right face with divider lines
-    s2 += '<rect x="0" y="-10" width="70" height="10" class="grn-r" transform="translate(-35, 17.5) matrix(1, 0.5, 0, 1, 0, 0)"/>';
-    s2 += '<g transform="translate(-35, 17.5) matrix(1, 0.5, 0, 1, 0, 0)"><line x1="23.33" y1="-10" x2="23.33" y2="0" stroke="#6E8066" stroke-width="0.8"/><line x1="46.66" y1="-10" x2="46.66" y2="0" stroke="#6E8066" stroke-width="0.8"/></g>';
-    s2 += '<rect x="0" y="-10" width="35" height="10" class="grn-l" transform="translate(70, 35) matrix(-1, 0.5, 0, 1, 0, 0)"/>';
-    // Top face with divider lines
-    s2 += '<rect x="0" y="0" width="70" height="35" class="grn-t" transform="translate(0, -10) matrix(1, 0.5, -1, 0.5, 0, 0)"/>';
-    s2 += '<g transform="translate(0, -10) matrix(1, 0.5, -1, 0.5, 0, 0)"><line x1="23.33" y1="0" x2="23.33" y2="35" stroke="#82967A" stroke-width="0.8"/><line x1="46.66" y1="0" x2="46.66" y2="35" stroke="#82967A" stroke-width="0.8"/></g>';
-    s2 += '</g>';
-    s += s2;
-    // Right arm: w=15, d=35, h=20
-    s += _iR(15, 35, 20, 'grn', 70, 44);
-    s += '</g>';
-    return s;
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<rect x="0" y="0" width="56" height="30" fill="rgba(130,140,120,0.08)" transform="translate(4,5) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '<g transform="translate(2,5)"><rect x="0" y="-3" width="2" height="3" class="lg-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-3" width="2" height="3" class="lg-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/></g>' +
+    '<g transform="translate(48,28)"><rect x="0" y="-3" width="2" height="3" class="lg-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-3" width="2" height="3" class="lg-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/></g>' +
+    '<g transform="translate(-24,18)"><rect x="0" y="-3" width="2" height="3" class="lg-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-3" width="2" height="3" class="lg-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/></g>' +
+    '<g transform="translate(26,41)"><rect x="0" y="-3" width="2" height="3" class="lg-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-3" width="2" height="3" class="lg-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/></g>' +
+    '<g transform="translate(0,-3)">' +
+    '<rect x="0" y="-24" width="56" height="24" class="sb-r" transform="translate(-8,4) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-24" width="8" height="24" class="sb-l" transform="translate(56,28) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="56" height="8" class="sb-t" transform="translate(0,-24) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<!-- 3. 远扶手 W=6,D=22,H=18 at(0,8)→screen(-8,1) -->' +
+    '<g transform="translate(-8,1)">' +
+    '<rect x="0" y="-18" width="6" height="18" class="sb-r" transform="translate(-22,11) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-18" width="22" height="18" class="sb-l" transform="translate(6,3) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="6" height="22" class="sb-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<!-- 4. 座垫 W=44,D=22,H=10 at(6,8)→screen(-2,4) -->' +
+    '<g transform="translate(-2,4)">' +
+    '<rect x="0" y="-10" width="44" height="10" class="sf-r" transform="translate(-22,11) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-10" width="22" height="10" class="sf-l" transform="translate(44,22) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="44" height="22" class="sf-t" transform="translate(0,-10) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(42,26)">' +
+    '<rect x="0" y="-18" width="6" height="18" class="sb-r" transform="translate(-22,11) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-18" width="22" height="18" class="sb-l" transform="translate(6,3) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="6" height="22" class="sb-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(18,-3)">' +
+    '<rect x="0" y="-2" width="20" height="2" class="bk-r" transform="translate(-18,9) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="18" height="2" class="bk-l" transform="translate(20,10) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="20" height="18" class="bk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(2,-9)">' +
+    '<rect x="0" y="-10" width="14" height="10" class="cp-r" transform="translate(-8,4) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-10" width="8" height="10" class="cp-l" transform="translate(14,7) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="14" height="8" class="cp-t" transform="translate(0,-10) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(16,-2)">' +
+    '<rect x="0" y="-10" width="14" height="10" class="cp-r" transform="translate(-8,4) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-10" width="8" height="10" class="cp-l" transform="translate(14,7) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="14" height="8" class="cp-t" transform="translate(0,-10) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '</g>';
   },
 
-  // ========== STOVE (from Gemini) ==========
+  shelf: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<rect x="0" y="0" width="10" height="40" fill="rgba(130,140,120,0.08)" transform="translate(3,4) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '<g transform="translate(8,2)">' +
+    '<rect x="0" y="-78" width="36" height="78" fill="#C8C0B4" stroke="#B8B0A4" stroke-width="0.5" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,0)">' +
+    '<rect x="0" y="-2" width="10" height="2" class="mw-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="40" height="2" class="mw-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="10" height="40" class="mw-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-5,0)"><rect x="0" y="-18" width="7" height="18" class="mb-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="4" height="18" class="mb-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="mb-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-9,2)"><rect x="0" y="-16" width="7" height="16" class="mp-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-16" width="3" height="16" class="mp-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="mp-t" transform="translate(0,-16) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-13,4)"><rect x="0" y="-18" width="7" height="18" class="mg-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="4" height="18" class="mg-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="mg-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-17,6)"><rect x="0" y="-15" width="7" height="15" class="mv-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-15" width="3" height="15" class="mv-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="mv-t" transform="translate(0,-15) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-21,8)"><rect x="0" y="-17" width="7" height="17" class="my-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-17" width="4" height="17" class="my-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="my-t" transform="translate(0,-17) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-1,-22)">' +
+    '<rect x="0" y="-2" width="10" height="2" class="mw-r" transform="translate(-36,18) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="36" height="2" class="mw-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="10" height="36" class="mw-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-6,-21.5)"><rect x="0" y="-16" width="7" height="16" class="mp-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-16" width="3" height="16" class="mp-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="mp-t" transform="translate(0,-16) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-10,-19.5)"><rect x="0" y="-18" width="7" height="18" class="mb-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="4" height="18" class="mb-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="mb-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-14,-17.5)"><rect x="0" y="-15" width="7" height="15" class="mx-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-15" width="3" height="15" class="mx-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="mx-t" transform="translate(0,-15) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-18,-15.5)"><rect x="0" y="-17" width="7" height="17" class="mg-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-17" width="4" height="17" class="mg-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="mg-t" transform="translate(0,-17) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-1,-42)">' +
+    '<rect x="0" y="-2" width="10" height="2" class="mw-r" transform="translate(-36,18) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="36" height="2" class="mw-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="10" height="36" class="mw-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-7,-41)"><rect x="0" y="-16" width="7" height="16" class="mv-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-16" width="4" height="16" class="mv-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="mv-t" transform="translate(0,-16) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-11,-39)"><rect x="0" y="-18" width="7" height="18" class="my-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="3" height="18" class="my-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="my-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-15,-37)"><rect x="0" y="-15" width="7" height="15" class="mb-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-15" width="4" height="15" class="mb-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="mb-t" transform="translate(0,-15) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-1,-62)">' +
+    '<rect x="0" y="-2" width="10" height="2" class="mw-r" transform="translate(-36,18) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="36" height="2" class="mw-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="10" height="36" class="mw-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-9,-60)"><rect x="0" y="-14" width="7" height="14" class="mp-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-14" width="3" height="14" class="mp-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="mp-t" transform="translate(0,-14) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(0,-80)">' +
+    '<rect x="0" y="-2" width="10" height="2" class="mw-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="40" height="2" class="mw-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="10" height="40" class="mw-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-38,17)">' +
+    '<rect x="0" y="-78" width="10" height="78" class="mw-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-78" width="2" height="78" class="mw-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="10" height="2" class="mw-t" transform="translate(0,-78) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '</g>';
+  },
+
+  wshelf: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<rect x="0" y="0" width="10" height="40" fill="rgba(130,140,120,0.06)" transform="translate(3,4) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '<g transform="translate(8,2)">' +
+    '<rect x="0" y="-88" width="36" height="88" fill="#E0DBD5" stroke="#D4CFC9" stroke-width="0.5" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,0)">' +
+    '<rect x="0" y="-40" width="10" height="40" class="wf-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-40" width="40" height="40" class="wf-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(10,5) matrix(-1,0.5,0,1,0,0)" opacity="0.12">' +
+    '<line x1="20" y1="-38" x2="20" y2="-2" stroke="#808080" stroke-width="0.5"/>' +
+    '<rect x="17" y="-22" width="1.5" height="4" fill="#B0B0B0" rx="0.5"/>' +
+    '<rect x="21" y="-22" width="1.5" height="4" fill="#B0B0B0" rx="0.5"/>' +
+    '</g>' +
+    '<g transform="translate(0,-40)">' +
+    '<rect x="0" y="-2" width="10" height="2" class="wf-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="40" height="2" class="wf-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="10" height="40" class="wf-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<!-- ═══ 中段书(shelf_top=-42) 小d先→大d后 ═══ -->' +
+    '<g transform="translate(-5,-40)"><rect x="0" y="-18" width="7" height="18" class="bk1-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="4" height="18" class="bk1-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="bk1-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-9,-38)"><rect x="0" y="-16" width="7" height="16" class="bk2-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-16" width="3" height="16" class="bk2-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="bk2-t" transform="translate(0,-16) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-13,-36)"><rect x="0" y="-20" width="7" height="20" class="bk3-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-20" width="4" height="20" class="bk3-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="bk3-t" transform="translate(0,-20) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-17,-34)"><rect x="0" y="-17" width="7" height="17" class="bk4-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-17" width="3" height="17" class="bk4-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="bk4-t" transform="translate(0,-17) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-21,-32)"><rect x="0" y="-18" width="7" height="18" class="bk5-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="4" height="18" class="bk5-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="bk5-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-1,-64)">' +
+    '<rect x="0" y="-2" width="10" height="2" class="wf-r" transform="translate(-36,18) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="36" height="2" class="wf-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="10" height="36" class="wf-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<!-- ═══ 上段书(shelf_top=-66) ═══ -->' +
+    '<g transform="translate(-4,-64)"><rect x="0" y="-16" width="7" height="16" class="bk3-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-16" width="3" height="16" class="bk3-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="bk3-t" transform="translate(0,-16) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-8,-62)"><rect x="0" y="-18" width="7" height="18" class="bk1-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="4" height="18" class="bk1-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="bk1-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(-12,-60)"><rect x="0" y="-15" width="7" height="15" class="bk2-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-15" width="3" height="15" class="bk2-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="bk2-t" transform="translate(0,-15) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
+    '<g transform="translate(0,-90)">' +
+    '<rect x="0" y="-2" width="10" height="2" class="wf-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="40" height="2" class="wf-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="10" height="40" class="wf-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-38,17)">' +
+    '<rect x="0" y="-88" width="10" height="88" class="wf-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-88" width="2" height="88" class="wf-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '</g>';
+  },
+
+  table: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<g transform="translate(3,5) matrix(1,0.5,-1,0.5,0,0)">' +
+    '<circle cx="0" cy="0" r="42" fill="rgba(130,140,120,0.06)"/>' +
+    '</g>' +
+    '<g transform="translate(-22,4)">' +
+    '<rect x="0" y="-26" width="3" height="26" class="lg-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-26" width="3" height="26" class="lg-l" transform="translate(3,1.5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(2,20)">' +
+    '<rect x="0" y="-26" width="3" height="26" class="lg-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-26" width="3" height="26" class="lg-l" transform="translate(3,1.5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(24,10)">' +
+    '<rect x="0" y="-26" width="3" height="26" class="lg-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-26" width="3" height="26" class="lg-l" transform="translate(3,1.5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,-26)">' +
+    '<g transform="translate(0,4) matrix(1,0.5,-1,0.5,0,0)">' +
+    '<circle cx="0" cy="0" r="34" fill="#C8C2BA" stroke="#B8B2AA" stroke-width="0.8"/>' +
+    '</g>' +
+    '<g transform="matrix(1,0.5,-1,0.5,0,0)">' +
+    '<circle cx="0" cy="0" r="34" fill="#E8E2DA" stroke="#D8D2CA" stroke-width="0.8"/>' +
+    '<circle cx="0" cy="0" r="28" fill="none" stroke="#D4CEC6" stroke-width="0.4" opacity="0.5"/>' +
+    '</g>' +
+    '</g>' +
+    '</g>';
+  },
+
+  computer: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<g transform="translate(0,0)">' +
+    '<rect x="0" y="-1" width="10" height="1" class="mtl-r" transform="translate(-8,4) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-1" width="8" height="1" class="mtl-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="10" height="8" class="mtl-t" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(1,-1)">' +
+    '<rect x="0" y="-16" width="2" height="16" class="mtl-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-16" width="2" height="16" class="mtl-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="2" height="2" class="mtl-t" transform="translate(0,-16) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(19,-26)">' +
+    '<rect x="0" y="-24" width="2" height="24" class="blk-r" transform="translate(-36,18) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-24" width="36" height="24" class="blk-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="2" height="36" class="blk-t" transform="translate(0,-24) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(19,-27)">' +
+    '<rect x="2" y="-20" width="32" height="20" fill="rgba(170,190,210,0.5)" stroke="rgba(150,170,190,0.3)" stroke-width="0.4" transform="translate(1.5,0.75) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(19,-27)" opacity="0.12">' +
+    '<rect x="4" y="-16" width="8" height="12" fill="white" transform="translate(1.5,0.75) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(12,6)">' +
+    '<rect x="0" y="-1" width="8" height="1" class="stn-r" transform="translate(-20,10) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-1" width="20" height="1" class="stn-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="8" height="20" class="stn-t" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(12,6)">' +
+    '<rect x="1" y="2" width="5" height="16" fill="rgba(80,85,90,0.25)" stroke="none" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '</g>';
+  },
+
+  lamp: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<g transform="translate(3,4) matrix(1,0.5,-1,0.5,0,0)">' +
+    '<circle cx="0" cy="0" r="16" fill="rgba(130,140,120,0.06)"/>' +
+    '</g>' +
+    '<g transform="translate(0,3) matrix(1,0.5,-1,0.5,0,0)">' +
+    '<circle cx="0" cy="0" r="14" fill="#6E767E" stroke="#545B62" stroke-width="0.8"/>' +
+    '</g>' +
+    '<g transform="matrix(1,0.5,-1,0.5,0,0)">' +
+    '<circle cx="0" cy="0" r="14" fill="#8A929B" stroke="#6E767E" stroke-width="0.8"/>' +
+    '<circle cx="0" cy="0" r="10" fill="none" stroke="#7E868F" stroke-width="0.4" opacity="0.3"/>' +
+    '</g>' +
+    '<g transform="translate(0,-3)">' +
+    '<rect x="0" y="-88" width="2" height="88" class="mt-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-88" width="2" height="88" class="mt-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,-91)">' +
+    '<path d="M -22,0 L -12,-26 L 12,-26 L 22,0 Z"' +
+    'fill="#D4B49C" stroke="#C4A48C" stroke-width="0.8" stroke-linejoin="round"/>' +
+    '<ellipse cx="0" cy="0" rx="22" ry="7" fill="#C8A88C" stroke="#B89880" stroke-width="0.6"/>' +
+    '<ellipse cx="0" cy="-26" rx="12" ry="4" fill="#DCC4AC" stroke="#CCB49C" stroke-width="0.6"/>' +
+    '</g>' +
+    '</g>';
+  },
+
+  fridge: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<rect x="0" y="0" width="36" height="30" fill="rgba(130,140,120,0.10)" transform="translate(4,5) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '<g transform="translate(0,0)">' +
+    '<rect x="0" y="-50" width="36" height="50" class="fg-r" transform="translate(-30,15) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-50" width="30" height="50" class="fg-l" transform="translate(36,18) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="36" height="30" class="fg-t" transform="translate(0,-50) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)">' +
+    '<rect x="12" y="-44" width="14" height="2" fill="#C8C4C0" stroke="#A8A4A0" stroke-width="0.5" rx="1"/>' +
+    '</g>' +
+    '<g opacity="0.12">' +
+    '<line x1="0" y1="-50" x2="0" y2="0" stroke="#708068" stroke-width="0.6" transform="translate(-8,4) matrix(1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,-50)">' +
+    '<rect x="0" y="-1" width="36" height="1" class="fd-r" transform="translate(-30,15) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-1" width="30" height="1" class="fd-l" transform="translate(36,18) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,-51)">' +
+    '<rect x="0" y="-26" width="36" height="26" class="fg-r" transform="translate(-30,15) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-26" width="30" height="26" class="fg-l" transform="translate(36,18) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="36" height="30" class="fg-t" transform="translate(0,-26) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)">' +
+    '<rect x="12" y="-57" width="14" height="2" fill="#C8C4C0" stroke="#A8A4A0" stroke-width="0.5" rx="1"/>' +
+    '</g>' +
+    '<g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)" opacity="0.55">' +
+    '<rect x="10" y="-40" width="6" height="6" fill="#D4B5AF" stroke="#C0A19B" stroke-width="0.4"/>' +
+    '</g>' +
+    '<g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)" opacity="0.5">' +
+    '<rect x="20" y="-28" width="5" height="5" fill="#9BB0BD" stroke="#879CA9" stroke-width="0.4"/>' +
+    '</g>' +
+    '<g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)" opacity="0.5">' +
+    '<rect x="14" y="-68" width="6" height="5" fill="#D4C9A8" stroke="#C0B594" stroke-width="0.4"/>' +
+    '</g>' +
+    '<g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)" opacity="0.45">' +
+    '<rect x="24" y="-16" width="5" height="5" fill="#A3B5A0" stroke="#8FA18C" stroke-width="0.4"/>' +
+    '</g>' +
+    '</g>';
+  },
+
   stove: function(x, y, owned){
     if(!owned) return '';
-    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    s += _iShadow(70, 50, 0, 0);
-    // Cabinet: w=70, d=50, h=55
-    s += _iR(70, 50, 55, 'wood', 0, 0);
-    // Cabinet door line + knobs
-    s += _iLineR(35, -50, 35, -5, -50, 25);
-    s += _iCircleR(30, -40, 1.5, -50, 25, 'wood');
-    s += _iCircleR(40, -40, 1.5, -50, 25, 'wood');
-    // Countertop: w=74, d=54, h=4
-    s += _iR(74, 54, 4, 'stn', 0, -57);
-    // Burner left: w=18, d=18, h=2
-    s += _iR(18, 18, 2, 'blk', -15, -41.5);
-    // Burner right: w=18, d=18, h=2
-    s += _iR(18, 18, 2, 'blk', 34, -32);
-    // Knobs (4 small cubes on right face)
-    s += _iR(4, 3, 4, 'wht', -41, -14.5);
-    s += _iR(4, 3, 4, 'wht', -26, -7);
-    s += _iR(4, 3, 4, 'wht', -11, 0.5);
-    s += _iR(4, 3, 4, 'wht', 4, 8);
-    // Pot on left burner: w=14, d=14, h=12
-    s += _iR(14, 14, 12, 'mtl', -15, -41.5);
-    // Pot lid: w=16, d=16, h=2
-    s += _iR(16, 16, 2, 'stn', -15, -53.5);
-    // Pot handle: w=4, d=4, h=3
-    s += _iR(4, 4, 3, 'wood', -15, -52.5);
-    s += '</g>';
-    return s;
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<rect x="0" y="0" width="100" height="20" fill="rgba(130,140,120,0.06)" transform="translate(4,5) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '<g transform="translate(0,0)">' +
+    '<rect x="0" y="-28" width="100" height="28" class="cb-r" transform="translate(-18,9) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-28" width="18" height="28" class="cb-l" transform="translate(100,50) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-18,9) matrix(1,0.5,0,1,0,0)" opacity="0.15">' +
+    '<line x1="25" y1="-26" x2="25" y2="-2" stroke="#808080" stroke-width="0.5"/>' +
+    '<line x1="50" y1="-26" x2="50" y2="-2" stroke="#808080" stroke-width="0.5"/>' +
+    '<line x1="75" y1="-26" x2="75" y2="-2" stroke="#808080" stroke-width="0.5"/>' +
+    '<rect x="10" y="-16" width="5" height="1.5" fill="#A0A0A0" rx="0.5"/>' +
+    '<rect x="35" y="-16" width="5" height="1.5" fill="#A0A0A0" rx="0.5"/>' +
+    '</g>' +
+    '<g transform="translate(-18,9) matrix(1,0.5,0,1,0,0)">' +
+    '<rect x="76" y="-26" width="23" height="24" fill="#404448" stroke="#303438" stroke-width="0.6" rx="1"/>' +
+    '<rect x="78" y="-24" width="19" height="16" fill="rgba(100,110,120,0.3)" stroke="#505458" stroke-width="0.4" rx="0.5"/>' +
+    '<rect x="84" y="-6" width="7" height="1.5" fill="#808488" rx="0.5"/>' +
+    '</g>' +
+    '<g transform="translate(-2,-28)">' +
+    '<rect x="0" y="-2" width="104" height="2" class="wt-r" transform="translate(-22,11) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="22" height="2" class="wt-l" transform="translate(104,52) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="104" height="22" class="wt-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-2,-30) matrix(1,0.5,-1,0.5,0,0)">' +
+    '<rect x="12" y="4" width="20" height="14" fill="#C8CCD0" stroke="#B8BCC0" stroke-width="0.5" rx="2"/>' +
+    '<rect x="14" y="6" width="7" height="10" fill="#B0B8C0" stroke="#A0A8B0" stroke-width="0.4" rx="1"/>' +
+    '<rect x="23" y="6" width="7" height="10" fill="#B0B8C0" stroke="#A0A8B0" stroke-width="0.4" rx="1"/>' +
+    '<rect x="18" y="2" width="3" height="3" fill="#A0A4A8" stroke="#909498" stroke-width="0.4" rx="0.5"/>' +
+    '<circle cx="50" cy="7" r="5" fill="none" stroke="#404040" stroke-width="0.8" opacity="0.3"/>' +
+    '<circle cx="50" cy="7" r="2" fill="none" stroke="#404040" stroke-width="0.5" opacity="0.3"/>' +
+    '<circle cx="66" cy="12" r="4" fill="none" stroke="#404040" stroke-width="0.8" opacity="0.3"/>' +
+    '<circle cx="66" cy="12" r="1.5" fill="none" stroke="#404040" stroke-width="0.5" opacity="0.3"/>' +
+    '</g>' +
+    '</g>';
   },
 
-  // ========== TV + STAND (from Gemini) ==========
+  frame2: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<g transform="translate(2,1) matrix(-1,0.5,0,1,0,0)">' +
+    '<rect x="10" y="-68" width="48" height="34" fill="#D4C8B8" stroke="#C4B8A8" stroke-width="1" rx="1"/>' +
+    '<rect x="13" y="-65" width="42" height="28" fill="#E8E2DA"/>' +
+    '<polygon points="13,-50 24,-60 34,-52 44,-58 55,-50 55,-37 13,-37" fill="#A4ACB0" opacity="0.5"/>' +
+    '<polygon points="13,-44 20,-54 30,-46 40,-52 55,-44 55,-37 13,-37" fill="#8C9490" opacity="0.6"/>' +
+    '<rect x="13" y="-40" width="42" height="3" fill="#B8C0A8" opacity="0.4"/>' +
+    '<circle cx="46" cy="-58" r="3" fill="#E8D8C0" opacity="0.7"/>' +
+    '<rect x="-6" y="-106" width="26" height="34" fill="#D4C8B8" stroke="#C4B8A8" stroke-width="1" rx="1"/>' +
+    '<rect x="-3" y="-103" width="20" height="28" fill="#FAF6F0"/>' +
+    '<ellipse cx="7" cy="-82" rx="5" ry="8" fill="#D4B5AF" opacity="0.6"/>' +
+    '<rect x="4" y="-90" width="6" height="2" fill="#C0A19B" opacity="0.5"/>' +
+    '<line x1="5" y1="-92" x2="3" y2="-98" stroke="#A3B5A0" stroke-width="1" opacity="0.5"/>' +
+    '<line x1="7" y1="-92" x2="7" y2="-100" stroke="#A3B5A0" stroke-width="1" opacity="0.5"/>' +
+    '<line x1="9" y1="-92" x2="11" y2="-99" stroke="#A3B5A0" stroke-width="1" opacity="0.5"/>' +
+    '<circle cx="3" cy="-99" r="2" fill="#A3B5A0" opacity="0.4"/>' +
+    '<circle cx="7" cy="-101" r="2" fill="#9BB0BD" opacity="0.4"/>' +
+    '<circle cx="11" cy="-100" r="2" fill="#D4C9A8" opacity="0.4"/>' +
+    '<rect x="42" y="-108" width="24" height="24" fill="#D4C8B8" stroke="#C4B8A8" stroke-width="1" rx="1"/>' +
+    '<rect x="45" y="-105" width="18" height="18" fill="#E8E2DA"/>' +
+    '<circle cx="54" cy="-96" r="7" fill="none" stroke="#D4B5AF" stroke-width="1.2"/>' +
+    '<circle cx="54" cy="-96" r="3.5" fill="#B5A8BD" opacity="0.5"/>' +
+    '<rect x="-6" y="-20" width="22" height="22" fill="#D4C8B8" stroke="#C4B8A8" stroke-width="1" rx="1"/>' +
+    '<rect x="-3" y="-17" width="16" height="16" fill="#FAF6F0"/>' +
+    '<rect x="-3" y="-17" width="8" height="8" fill="#9BB0BD" opacity="0.4"/>' +
+    '<rect x="5" y="-17" width="8" height="8" fill="#D4C9A8" opacity="0.4"/>' +
+    '<rect x="-3" y="-9" width="8" height="8" fill="#D4B5AF" opacity="0.4"/>' +
+    '<rect x="5" y="-9" width="8" height="8" fill="#A3B5A0" opacity="0.4"/>' +
+    '<rect x="52" y="-28" width="20" height="28" fill="#D4C8B8" stroke="#C4B8A8" stroke-width="1" rx="1"/>' +
+    '<rect x="55" y="-25" width="14" height="22" fill="#E8E2DA"/>' +
+    '<rect x="55" y="-25" width="3.5" height="22" fill="#D4B5AF" opacity="0.5"/>' +
+    '<rect x="58.5" y="-25" width="3.5" height="22" fill="#9BB0BD" opacity="0.4"/>' +
+    '<rect x="62" y="-25" width="3.5" height="22" fill="#A3B5A0" opacity="0.4"/>' +
+    '<rect x="65.5" y="-25" width="3.5" height="22" fill="#B5A8BD" opacity="0.4"/>' +
+    '</g>' +
+    '</g>';
+  },
+
+  frame: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<g transform="translate(0,0)">' +
+    '<rect x="0" y="-28" width="2" height="28" fill="#A09080" stroke="#908070" stroke-width="0.8" stroke-linejoin="round" transform="translate(-36,18) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-28" width="36" height="28" fill="#C8C0B4" stroke="#B8B0A4" stroke-width="0.8" stroke-linejoin="round" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="2" height="36" fill="#B0A090" stroke="#A09080" stroke-width="0.8" stroke-linejoin="round" transform="translate(0,-28) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(2,1) matrix(-1,0.5,0,1,0,0)">' +
+    '<rect x="2" y="-26" width="32" height="24" fill="#E8E2DA"/>' +
+    '<rect x="4" y="-24" width="14" height="10" fill="#D4B5AF" rx="1"/>' +
+    '<rect x="20" y="-24" width="12" height="8" fill="#9BB0BD" rx="1"/>' +
+    '<rect x="4" y="-12" width="10" height="8" fill="#A3B5A0" rx="1"/>' +
+    '<rect x="16" y="-14" width="16" height="10" fill="#D4C9A8" rx="1"/>' +
+    '<circle cx="10" cy="-19" r="3" fill="#B5A8BD" opacity="0.6"/>' +
+    '</g>' +
+    '</g>' +
+    '<g id="painting-2" transform="translate(300, 160)">' +
+    '<g transform="translate(0,0)">' +
+    '<rect x="0" y="-34" width="2" height="34" fill="#706050" stroke="#605040" stroke-width="0.8" stroke-linejoin="round" transform="translate(-44,22) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-34" width="44" height="34" fill="#8C7C6C" stroke="#7C6C5C" stroke-width="0.8" stroke-linejoin="round" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="2" height="44" fill="#7C6C5C" stroke="#6C5C4C" stroke-width="0.8" stroke-linejoin="round" transform="translate(0,-34) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(2,1) matrix(-1,0.5,0,1,0,0)">' +
+    '<rect x="3" y="-32" width="38" height="30" fill="#C8D4DC"/>' +
+    '<polygon points="3,-14 12,-24 22,-16 32,-22 41,-14 41,-2 3,-2" fill="#A4ACB0" opacity="0.5"/>' +
+    '<polygon points="3,-8 10,-18 20,-10 28,-16 41,-8 41,-2 3,-2" fill="#8C9490" opacity="0.6"/>' +
+    '<rect x="3" y="-6" width="38" height="4" fill="#B8C0A8" opacity="0.5"/>' +
+    '<circle cx="32" cy="-26" r="4" fill="#E8D8C0" opacity="0.7"/>' +
+    '</g>' +
+    '</g>' +
+    '<g id="painting-3" transform="translate(490, 200)">' +
+    '<g transform="translate(0,0)">' +
+    '<rect x="0" y="-28" width="2" height="28" fill="#E0D8D0" stroke="#D0C8C0" stroke-width="0.8" stroke-linejoin="round" transform="translate(-28,14) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-28" width="28" height="28" fill="#F0EBE5" stroke="#E0DBD5" stroke-width="0.8" stroke-linejoin="round" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="2" height="28" fill="#E8E0D8" stroke="#D8D0C8" stroke-width="0.8" stroke-linejoin="round" transform="translate(0,-28) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(2,1) matrix(-1,0.5,0,1,0,0)">' +
+    '<rect x="2" y="-26" width="24" height="24" fill="#FAF6F0"/>' +
+    '<circle cx="14" cy="-14" r="8" fill="none" stroke="#D4B5AF" stroke-width="1.5"/>' +
+    '<line x1="6" y1="-14" x2="22" y2="-14" stroke="#A3B5A0" stroke-width="0.8" opacity="0.6"/>' +
+    '<line x1="14" y1="-22" x2="14" y2="-6" stroke="#9BB0BD" stroke-width="0.8" opacity="0.6"/>' +
+    '<circle cx="14" cy="-14" r="2" fill="#D4C9A8"/>' +
+    '</g>' +
+    '</g>' +
+    '<g id="painting-4" transform="translate(300, 290)">' +
+    '<g transform="translate(0,0)">' +
+    '<rect x="0" y="-26" width="38" height="26" fill="#B0A090" stroke="#A09080" stroke-width="0.8" stroke-linejoin="round" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-26" width="2" height="26" fill="#A09080" stroke="#908070" stroke-width="0.8" stroke-linejoin="round" transform="translate(38,19) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="38" height="2" fill="#C0B0A0" stroke="#B0A090" stroke-width="0.8" stroke-linejoin="round" transform="translate(0,-26) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-2,1) matrix(1,0.5,0,1,0,0)">' +
+    '<rect x="2" y="-24" width="34" height="22" fill="#E8E2DA"/>' +
+    '<rect x="2" y="-24" width="7" height="22" fill="#D4B5AF" opacity="0.7"/>' +
+    '<rect x="9" y="-24" width="7" height="22" fill="#C8B8A8" opacity="0.6"/>' +
+    '<rect x="16" y="-24" width="6" height="22" fill="#9BB0BD" opacity="0.5"/>' +
+    '<rect x="22" y="-24" width="7" height="22" fill="#A3B5A0" opacity="0.5"/>' +
+    '<rect x="29" y="-24" width="7" height="22" fill="#B5A8BD" opacity="0.5"/>' +
+    '</g>' +
+    '</g>';
+  },
+
+  rugheart: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<g transform="matrix(1,0.5,-1,0.5,0,0)">' +
+    '<path d="M 0,40 C 0,40 -60,10 -60,-20 C -60,-45 -35,-55 0,-25 C 35,-55 60,-45 60,-20 C 60,10 0,40 0,40 Z"' +
+    'fill="none" stroke="#C4BAB0" stroke-width="2.5" stroke-dasharray="2,3"/>' +
+    '<path d="M 0,38 C 0,38 -58,8 -58,-20 C -58,-44 -34,-53 0,-24 C 34,-53 58,-44 58,-20 C 58,8 0,38 0,38 Z"' +
+    'fill="#D4B5AF"/>' +
+    '<path d="M 0,28 C 0,28 -44,4 -44,-14 C -44,-33 -26,-40 0,-17 C 26,-40 44,-33 44,-14 C 44,4 0,28 0,28 Z"' +
+    'fill="#E8E2DA"/>' +
+    '<path d="M 0,18 C 0,18 -30,0 -30,-10 C -30,-22 -18,-27 0,-12 C 18,-27 30,-22 30,-10 C 30,0 0,18 0,18 Z"' +
+    'fill="#B5A8BD"/>' +
+    '<path d="M 0,8 C 0,8 -14,-2 -14,-8 C -14,-14 -8,-16 0,-6 C 8,-16 14,-14 14,-8 C 14,-2 0,8 0,8 Z"' +
+    'fill="#D4C9A8"/>' +
+    '<path d="M 0,33 C 0,33 -50,6 -50,-18 C -50,-39 -30,-47 0,-21 C 30,-47 50,-39 50,-18 C 50,6 0,33 0,33 Z"' +
+    'fill="none" stroke="#C0A19B" stroke-width="0.4" opacity="0.4"/>' +
+    '</g>' +
+    '</g>';
+  },
+
+  rugrect: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<g transform="matrix(1,0.5,-1,0.5,0,0)">' +
+    '<line x1="-90" y1="-47" x2="90" y2="-47" stroke="#C4BAB0" stroke-width="2.5" stroke-dasharray="2,3"/>' +
+    '<line x1="-90" y1="47" x2="90" y2="47" stroke="#C4BAB0" stroke-width="2,3"/>' +
+    '<rect x="-90" y="-45" width="180" height="90" fill="#D8CFC4"/>' +
+    '<rect x="-86" y="-41" width="172" height="82" fill="none" stroke="#A3B5A0" stroke-width="2.5"/>' +
+    '<rect x="-80" y="-35" width="160" height="70" fill="#E8E2DA"/>' +
+    '<rect x="-80" y="-35" width="160" height="10" fill="#D4B5AF" opacity="0.5"/>' +
+    '<rect x="-80" y="-15" width="160" height="10" fill="#9BB0BD" opacity="0.4"/>' +
+    '<rect x="-80" y="5"   width="160" height="10" fill="#A3B5A0" opacity="0.4"/>' +
+    '<rect x="-80" y="25"  width="160" height="10" fill="#B5A8BD" opacity="0.4"/>' +
+    '<line x1="-80" y1="-25" x2="80" y2="-25" stroke="#C4BAB0" stroke-width="0.5" opacity="0.3"/>' +
+    '<line x1="-80" y1="-5"  x2="80" y2="-5"  stroke="#C4BAB0" stroke-width="0.5" opacity="0.3"/>' +
+    '<line x1="-80" y1="15"  x2="80" y2="15"  stroke="#C4BAB0" stroke-width="0.5" opacity="0.3"/>' +
+    '<polygon points="0,-18 20,0 0,18 -20,0" fill="none" stroke="#C0B09C" stroke-width="0.8" opacity="0.35"/>' +
+    '<polygon points="0,-10 12,0 0,10 -12,0" fill="#D4C9A8" opacity="0.3"/>' +
+    '</g>' +
+    '</g>';
+  },
+
+  rugsquare: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<g transform="matrix(1,0.5,-1,0.5,0,0)">' +
+    '<rect x="-62" y="-62" width="124" height="124" fill="none" stroke="#C4BAB0" stroke-width="2.5" stroke-dasharray="2,3" rx="2"/>' +
+    '<rect x="-60" y="-60" width="120" height="120" fill="#D8CFC4" rx="1"/>' +
+    '<rect x="-54" y="-54" width="108" height="108" fill="none" stroke="#D4B5AF" stroke-width="3" rx="1"/>' +
+    '<rect x="-48" y="-48" width="96" height="96" fill="#E8E2DA"/>' +
+    '<rect x="-48" y="-48" width="24" height="24" fill="#B8C6CB" opacity="0.5"/>' +
+    '<rect x="0"   y="-48" width="24" height="24" fill="#B8C6CB" opacity="0.5"/>' +
+    '<rect x="-24" y="-24" width="24" height="24" fill="#B8C6CB" opacity="0.5"/>' +
+    '<rect x="24"  y="-24" width="24" height="24" fill="#B8C6CB" opacity="0.5"/>' +
+    '<rect x="-48" y="0"   width="24" height="24" fill="#B8C6CB" opacity="0.5"/>' +
+    '<rect x="0"   y="0"   width="24" height="24" fill="#B8C6CB" opacity="0.5"/>' +
+    '<rect x="-24" y="24"  width="24" height="24" fill="#B8C6CB" opacity="0.5"/>' +
+    '<rect x="24"  y="24"  width="24" height="24" fill="#B8C6CB" opacity="0.5"/>' +
+    '<circle cx="0" cy="0" r="14" fill="none" stroke="#C0B09C" stroke-width="1" opacity="0.4"/>' +
+    '<circle cx="0" cy="0" r="4" fill="#D4C9A8" opacity="0.6"/>' +
+    '</g>' +
+    '</g>';
+  },
+
+  shower: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<rect x="0" y="0" width="42" height="42" fill="rgba(130,140,120,0.08)" transform="translate(3,4) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '<g transform="translate(0,0)">' +
+    '<rect x="0" y="-3" width="42" height="3" class="wht-r" transform="translate(-42,21) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-3" width="42" height="3" class="wht-l" transform="translate(42,21) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="42" height="42" class="wht-t" transform="translate(0,-3) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-2,-3)">' +
+    '<rect x="2" y="2" width="34" height="34" fill="rgba(180,215,230,0.35)" stroke="rgba(160,200,220,0.3)" stroke-width="0.5" transform="matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-1,-3)">' +
+    '<rect x="0" y="-70" width="2" height="70" class="mtl-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-70" width="40" height="70" fill="rgba(200,215,225,0.25)" stroke="rgba(160,175,185,0.4)" stroke-width="0.6" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="2" height="40" class="mtl-t" transform="translate(0,-70) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-1,-3)" opacity="0.12">' +
+    '<rect x="3" y="-60" width="12" height="40" fill="white" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,-3)">' +
+    '<rect x="0" y="-70" width="40" height="70" fill="rgba(200,215,225,0.25)" stroke="rgba(160,175,185,0.4)" stroke-width="0.6" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-70" width="2" height="70" class="mtl-l" transform="translate(40,20) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="40" height="2" class="mtl-t" transform="translate(0,-70) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,-3)" opacity="0.1">' +
+    '<rect x="5" y="-60" width="10" height="40" fill="white" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,-73)">' +
+    '<rect x="0" y="-2" width="40" height="2" class="mtl-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="2" height="2" class="mtl-l" transform="translate(40,20) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="40" height="2" class="mtl-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-1,-73)">' +
+    '<rect x="0" y="-2" width="2" height="2" class="mtl-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="40" height="2" class="mtl-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="2" height="40" class="mtl-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-32,-73)">' +
+    '<rect x="0" y="-14" width="1" height="14" class="mtl-r" transform="translate(-1,0.5) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-14" width="1" height="14" class="mtl-l" transform="translate(1,0.5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="1" height="1" class="mtl-t" transform="translate(0,-14) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-29,-87)">' +
+    '<rect x="0" y="-1" width="6" height="1" class="mtl-r" transform="translate(-6,3) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-1" width="6" height="1" class="mtl-l" transform="translate(6,3) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="6" height="6" class="mtl-t" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(16,-30)">' +
+    '<rect x="0" y="-6" width="1" height="6" class="blk-r" transform="translate(-1,0.5) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-6" width="1" height="6" class="blk-l" transform="translate(1,0.5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '</g>';
+  },
+
+  sink: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<rect x="0" y="0" width="20" height="50" fill="rgba(130,140,120,0.08)" transform="translate(3,4) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '<g transform="translate(0,0)">' +
+    '<rect x="0" y="-28" width="18" height="28" class="wood-r" transform="translate(-48,24) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-28" width="48" height="28" class="wood-l" transform="translate(18,9) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="18" height="48" class="wood-t" transform="translate(0,-28) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(8,-16)">' +
+    '<rect x="0" y="-1" width="1" height="1" class="blk-r" transform="translate(-12,6) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-1" width="12" height="1" class="blk-l" transform="translate(1,0.5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-16,-16)">' +
+    '<rect x="0" y="-1" width="1" height="1" class="blk-r" transform="translate(-12,6) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-1" width="12" height="1" class="blk-l" transform="translate(1,0.5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(8,-8)">' +
+    '<rect x="0" y="-1" width="1" height="1" class="blk-r" transform="translate(-12,6) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-1" width="12" height="1" class="blk-l" transform="translate(1,0.5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-16,-8)">' +
+    '<rect x="0" y="-1" width="1" height="1" class="blk-r" transform="translate(-12,6) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-1" width="12" height="1" class="blk-l" transform="translate(1,0.5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(1,-28)">' +
+    '<rect x="0" y="-2" width="20" height="2" class="wht-r" transform="translate(-50,25) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="50" height="2" class="wht-l" transform="translate(20,10) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="20" height="50" class="wht-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<!-- 台面顶面: translate(1,-30) matrix, 范围 w=20,d=50 -->' +
+    '<g transform="translate(1,-30)">' +
+    '<rect x="4" y="15" width="12" height="20" fill="rgba(200,218,230,0.45)" stroke="rgba(175,195,210,0.5)" stroke-width="0.6" transform="matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-20,-30)">' +
+    '<rect x="0" y="-4" width="2" height="4" class="mtl-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-4" width="4" height="4" class="mtl-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="2" height="4" class="mtl-t" transform="translate(0,-4) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-16,-34)">' +
+    '<rect x="0" y="-2" width="6" height="2" class="mtl-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="2" height="2" class="mtl-l" transform="translate(6,3) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="6" height="2" class="mtl-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-3,-38)">' +
+    '<rect x="0" y="-30" width="1" height="30" class="wood-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-30" width="40" height="30" class="wood-l" transform="translate(1,0.5) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="1" height="40" class="wood-t" transform="translate(0,-30) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-2.5,-39)">' +
+    '<rect x="1" y="-28" width="38" height="28" fill="rgba(215,225,235,0.6)" stroke="rgba(195,205,215,0.4)" stroke-width="0.4" transform="translate(0.5,0.25) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-2.5,-39)" opacity="0.15">' +
+    '<rect x="4" y="-24" width="10" height="18" fill="white" transform="translate(0.5,0.25) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '</g>';
+  },
+
+  toilet: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<rect x="0" y="0" width="24" height="28" fill="rgba(130,140,120,0.08)" transform="translate(3,4) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '<g transform="translate(0,0)">' +
+    '<rect x="0" y="-14" width="20" height="14" class="wht-r" transform="translate(-24,12) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-14" width="24" height="14" class="wht-l" transform="translate(20,10) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="20" height="24" class="wht-t" transform="translate(0,-14) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(1,-14)">' +
+    '<rect x="0" y="-2" width="22" height="2" class="wht-r" transform="translate(-26,13) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="26" height="2" class="wht-l" transform="translate(22,11) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="22" height="26" class="wht-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(1,-16)">' +
+    '<rect x="2" y="4" width="14" height="18" fill="rgba(200,210,215,0.5)" stroke="rgba(180,190,195,0.4)" stroke-width="0.5" transform="matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(1,-16)">' +
+    '<rect x="0" y="-1" width="22" height="1" class="stn-r" transform="translate(-26,13) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-1" width="26" height="1" class="stn-l" transform="translate(22,11) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="22" height="26" class="stn-t" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<!-- 底座顶面 y=-14 → 水箱从这里开始往上 -->' +
+    '<g transform="translate(0,-14)">' +
+    '<rect x="0" y="-18" width="18" height="18" class="wht-r" transform="translate(-8,4) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-18" width="8" height="18" class="wht-l" transform="translate(18,9) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="18" height="8" class="wht-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-1,-32)">' +
+    '<rect x="0" y="-2" width="20" height="2" class="stn-r" transform="translate(-10,5) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-2" width="10" height="2" class="stn-l" transform="translate(20,10) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="20" height="10" class="stn-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(5,-34)">' +
+    '<rect x="0" y="-1" width="4" height="1" class="blk-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-1" width="4" height="1" class="blk-l" transform="translate(4,2) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="4" height="4" class="blk-t" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '</g>';
+  },
+
+  bar: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<rect x="0" y="0" width="80" height="18" fill="rgba(130,140,120,0.06)" transform="translate(4,5) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '<g transform="translate(0,0)">' +
+    '<rect x="0" y="-32" width="80" height="32" class="cb-r" transform="translate(-16,8) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-32" width="16" height="32" class="cb-l" transform="translate(80,40) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(-16,8) matrix(1,0.5,0,1,0,0)" opacity="0.2">' +
+    '<line x1="20" y1="-30" x2="20" y2="-2" stroke="#806040" stroke-width="0.5"/>' +
+    '<line x1="40" y1="-30" x2="40" y2="-2" stroke="#806040" stroke-width="0.5"/>' +
+    '<line x1="60" y1="-30" x2="60" y2="-2" stroke="#806040" stroke-width="0.5"/>' +
+    '<rect x="8" y="-18" width="4" height="1.5" fill="#A09080" rx="0.5"/>' +
+    '<rect x="28" y="-18" width="4" height="1.5" fill="#A09080" rx="0.5"/>' +
+    '<rect x="48" y="-18" width="4" height="1.5" fill="#A09080" rx="0.5"/>' +
+    '<rect x="68" y="-18" width="4" height="1.5" fill="#A09080" rx="0.5"/>' +
+    '</g>' +
+    '<g transform="translate(-2,-32)">' +
+    '<rect x="0" y="-3" width="84" height="3" class="wt-r" transform="translate(-20,10) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-3" width="20" height="3" class="wt-l" transform="translate(84,42) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="84" height="20" class="wt-t" transform="translate(0,-3) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(30,32)">' +
+    '<g transform="translate(0,0)">' +
+    '<rect x="0" y="-22" width="2" height="22" class="mt-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-22" width="2" height="22" class="mt-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,-8)">' +
+    '<rect x="0" y="-1" width="8" height="1" class="mt-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,-22)">' +
+    '<g transform="translate(0,2) matrix(1,0.5,-1,0.5,0,0)">' +
+    '<circle cx="0" cy="0" r="7" fill="#DCD8D4" stroke="#CCC8C4" stroke-width="0.6"/>' +
+    '</g>' +
+    '<g transform="matrix(1,0.5,-1,0.5,0,0)">' +
+    '<circle cx="0" cy="0" r="7" fill="#F0ECE8" stroke="#E0DCD8" stroke-width="0.6"/>' +
+    '</g>' +
+    '</g>' +
+    '</g>' +
+    '<g transform="translate(54,44)">' +
+    '<g transform="translate(0,0)">' +
+    '<rect x="0" y="-22" width="2" height="22" class="mt-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-22" width="2" height="22" class="mt-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,-8)">' +
+    '<rect x="0" y="-1" width="8" height="1" class="mt-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(0,-22)">' +
+    '<g transform="translate(0,2) matrix(1,0.5,-1,0.5,0,0)">' +
+    '<circle cx="0" cy="0" r="7" fill="#DCD8D4" stroke="#CCC8C4" stroke-width="0.6"/>' +
+    '</g>' +
+    '<g transform="matrix(1,0.5,-1,0.5,0,0)">' +
+    '<circle cx="0" cy="0" r="7" fill="#F0ECE8" stroke="#E0DCD8" stroke-width="0.6"/>' +
+    '</g>' +
+    '</g>' +
+    '</g>' +
+    '</g>';
+  },
+
+  window: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<g transform="translate(0,0)">' +
+    '<rect x="0" y="-40" width="2" height="40" class="wht-r" transform="translate(-60,30) matrix(1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="-40" width="60" height="40" class="wht-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
+    '<rect x="0" y="0" width="2" height="60" class="wht-t" transform="translate(0,-40) matrix(1,0.5,-1,0.5,0,0)"/>' +
+    '</g>' +
+    '<g transform="translate(2,1) matrix(-1,0.5,0,1,0,0)">' +
+    '<rect x="2"  y="-38" width="17" height="36" fill="rgba(230,238,245,0.65)" stroke="rgba(210,218,225,0.4)" stroke-width="0.4"/>' +
+    '<rect x="21" y="-38" width="18" height="36" fill="rgba(230,238,245,0.65)" stroke="rgba(210,218,225,0.4)" stroke-width="0.4"/>' +
+    '<rect x="41" y="-38" width="17" height="36" fill="rgba(230,238,245,0.65)" stroke="rgba(210,218,225,0.4)" stroke-width="0.4"/>' +
+    '<rect x="4"  y="-34" width="5" height="20" fill="rgba(255,255,255,0.15)"/>' +
+    '<rect x="23" y="-34" width="5" height="20" fill="rgba(255,255,255,0.15)"/>' +
+    '<rect x="19" y="-40" width="2" height="40" fill="#EAEAEA" stroke="#DDD" stroke-width="0.3"/>' +
+    '<rect x="39" y="-40" width="2" height="40" fill="#EAEAEA" stroke="#DDD" stroke-width="0.3"/>' +
+    '</g>' +
+    '</g>';
+  },
+
+  rug: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
+    '<!-- 用等距地面变换把圆变成正确的椭圆 -->' +
+    '<g transform="matrix(1, 0.5, -1, 0.5, 0, 0)">' +
+    '<!-- 地毯阴影(最外层,略大) -->' +
+    '<circle cx="0" cy="0" r="82" fill="rgba(130,140,120,0.06)"/>' +
+    '<!-- 流苏边缘(用虚线模拟) -->' +
+    '<circle cx="0" cy="0" r="80" fill="none" stroke="#C4BAB0" stroke-width="3" stroke-dasharray="2,3"/>' +
+    '<!-- 最外圈 - 莫兰迪奶茶 -->' +
+    '<circle cx="0" cy="0" r="78" fill="#D8CFC4"/>' +
+    '<!-- 第2圈 - 莫兰迪粉 -->' +
+    '<circle cx="0" cy="0" r="68" fill="#D4B5AF"/>' +
+    '<!-- 第3圈 - 莫兰迪米白 -->' +
+    '<circle cx="0" cy="0" r="58" fill="#E8E2DA"/>' +
+    '<!-- 第4圈 - 莫兰迪蓝灰 -->' +
+    '<circle cx="0" cy="0" r="48" fill="#9BB0BD"/>' +
+    '<!-- 第5圈 - 莫兰迪暖灰 -->' +
+    '<circle cx="0" cy="0" r="38" fill="#C8C0B4"/>' +
+    '<!-- 第6圈 - 莫兰迪薄荷 -->' +
+    '<circle cx="0" cy="0" r="28" fill="#A3B5A0"/>' +
+    '<!-- 第7圈(中心) - 莫兰迪淡紫 -->' +
+    '<circle cx="0" cy="0" r="18" fill="#B5A8BD"/>' +
+    '<!-- 中心点 -->' +
+    '<circle cx="0" cy="0" r="6" fill="#D4C9A8"/>' +
+    '<!-- 纹理装饰线(同心圆细线) -->' +
+    '<circle cx="0" cy="0" r="73" fill="none" stroke="#C4BAB0" stroke-width="0.5" opacity="0.4"/>' +
+    '<circle cx="0" cy="0" r="63" fill="none" stroke="#C0A19B" stroke-width="0.5" opacity="0.4"/>' +
+    '<circle cx="0" cy="0" r="53" fill="none" stroke="#D0CAC2" stroke-width="0.5" opacity="0.4"/>' +
+    '<circle cx="0" cy="0" r="43" fill="none" stroke="#879CA9" stroke-width="0.5" opacity="0.4"/>' +
+    '<circle cx="0" cy="0" r="33" fill="none" stroke="#B8B0A4" stroke-width="0.5" opacity="0.4"/>' +
+    '<circle cx="0" cy="0" r="23" fill="none" stroke="#8FA18C" stroke-width="0.5" opacity="0.4"/>' +
+    '<!-- 放射纹(十字) -->' +
+    '<line x1="-78" y1="0" x2="78" y2="0" stroke="#C4BAB0" stroke-width="0.4" opacity="0.2"/>' +
+    '<line x1="0" y1="-78" x2="0" y2="78" stroke="#C4BAB0" stroke-width="0.4" opacity="0.2"/>' +
+    '<line x1="-55" y1="-55" x2="55" y2="55" stroke="#C4BAB0" stroke-width="0.3" opacity="0.15"/>' +
+    '<line x1="-55" y1="55" x2="55" y2="-55" stroke="#C4BAB0" stroke-width="0.3" opacity="0.15"/>' +
+    '</g>' +
+    '</g>';
+  },
+
+  // ===== 保留的旧家具 (Gemini matrix-rect style) =====
   tv: function(x, y, owned){
     if(!owned) return '';
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
     s += _iShadow(100, 35, 0, 0);
-    // TV stand: w=100, d=35, h=25
     s += _iR(100, 35, 25, 'wood', 0, 0);
-    // Stand door lines
     s += _iLineR(50, -25, 50, 0, -35, 17.5);
     s += _iLineR(0, -12, 100, -12, -35, 17.5);
-    // Deco: small plant: w=15, d=20, h=6
     s += _iR(15, 20, 6, 'wht', 10, -15);
-    // Deco: remote: w=8, d=5, h=2
     s += _iR(8, 5, 2, 'wht', -12, -4);
-    // Speaker: w=30, d=15, h=2
     s += _iR(30, 15, 2, 'blk', 25, -2.5);
-    // TV stand post: w=6, d=4, h=8
     s += _iR(6, 4, 8, 'blk', 32, 4);
-    // TV frame: w=80, d=4, h=45
     s += _iR(80, 4, 45, 'mtl', -7, -21.5);
-    // Screen: w=76, d=1, h=41
     s += _iR(76, 1, 41, 'blk', -9, -20.5);
     s += '</g>';
     return s;
   },
-
-  // ========== LAMP (from Gemini) ==========
-  lamp: function(x, y, owned){
-    if(!owned) return '';
-    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    s += _iShadow(20, 20, 0, 0);
-    // Base: w=20, d=20, h=4
-    s += _iR(20, 20, 4, 'stn', 0, 0);
-    // Pole: w=4, d=4, h=35
-    s += _iR(4, 4, 35, 'wood', 0, 4);
-    // Arm (horizontal bar): w=4, d=25, h=4
-    s += _iR(4, 25, 4, 'wood', 0, -31);
-    // Shade: w=14, d=14, h=10
-    s += _iR(14, 14, 10, 'grn', -20, -16);
-    // Bulb glow: w=10, d=10, h=2
-    s += '<g transform="translate(-20,-14)"><rect x="0" y="0" width="10" height="10" fill="#FFFBE6" stroke="#E6DBA8" stroke-width="0.8" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g>';
-    s += '</g>';
-    return s;
-  },
-
-  // ========== WARDROBE / SHELF (matching Gemini) ==========
-  shelf: function(x, y, owned){
-    if(!owned) return '';
-    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    s += _iShadow(70, 30, 0, 0);
-    // Main frame: w=70, d=30, h=90
-    s += _iR(70, 30, 90, 'wood', 0, 0);
-    // Door divider + handles
-    s += _iLineR(35, -90, 35, -25, -30, 15);
-    s += _iLineR(0, -25, 70, -25, -30, 15);
-    s += _iCircleR(30, -55, 1.5, -30, 15, 'wood');
-    s += _iCircleR(40, -55, 1.5, -30, 15, 'wood');
-    s += '</g>';
-    return s;
-  },
-
-  // ========== GAME CONSOLE ==========
-  game: function(x, y, owned){
-    if(!owned) return '';
-    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    // Console: w=20, d=14, h=4
-    s += _iR(20, 14, 4, 'blk', 0, 0);
-    // LED
-    s += _iCircleR(10, -2, 0.8, -14, 7, 'grn');
-    // Controller left: w=10, d=6, h=2
-    s += _iR(10, 6, 2, 'mtl', -16, 4);
-    // Controller right: w=10, d=6, h=2
-    s += _iR(10, 6, 2, 'mtl', 22, 14);
-    s += '</g>';
-    return s;
-  },
-
-  // ========== BATH ==========
   bath: function(x, y, owned){
     if(!owned) return '';
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
     s += _iShadow(60, 35, 0, 0);
-    // Outer rim (top): w=60, d=35, h=3
     s += _iR(60, 35, 3, 'wht', 0, 0);
-    // Inner tub body: w=56, d=31, h=18 (inset)
     s += _iR(56, 31, 18, 'wht', -2, 3);
-    // Inner cavity (darker): w=50, d=25, h=2
     s += _iR(50, 25, 2, 'stn', -5, -13);
-    // Water surface
     s += '<g transform="translate(-5,-14)"><rect x="0" y="0" width="50" height="25" fill="rgba(160,220,230,0.45)" stroke="rgba(140,200,220,0.3)" stroke-width="0.3" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/></g>';
-    // Faucet pillar: w=3, d=3, h=14
     s += _iR(3, 3, 14, 'stn', 48, -8);
-    // Faucet spout: w=8, d=3, h=2
     s += _iR(8, 3, 2, 'stn', 42, -22);
-    // Faucet handle: w=2, d=6, h=2
     s += _iR(2, 6, 2, 'stn', 49, -20);
     s += '</g>';
     return s;
   },
-
-  // ========== UPRIGHT PIANO (参考图2) ==========
-  piano: function(x, y, owned){
+  game: function(x, y, owned){
     if(!owned) return '';
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    s += _iShadow(18, 44, 4, 6);
-    // Legs (4 small boxes)
-    s += _iR(3, 3, 5, 'blk', 0, 0);
-    s += _iR(3, 3, 5, 'blk', 12, 0);
-    s += _iR(3, 3, 5, 'blk', -38, 0);
-    s += _iR(3, 3, 5, 'blk', -26, 0);
-    // Base board: w=18, d=44, h=3
-    s += _iR(18, 44, 3, 'blk', 0, -5);
-    // Pedals (3 tiny gold boxes in front)
-    s += _iR(2, 2, 2, 'wood', -14, -2);
-    s += _iR(2, 2, 2, 'wood', -20, -2);
-    s += _iR(2, 2, 2, 'wood', -26, -2);
-    // Main body (tall, wide along d): w=16, d=42, h=50
-    s += _iR(16, 42, 50, 'blk', -1, -8);
-    // Top lid: w=18, d=44, h=2
-    s += _iR(18, 44, 2, 'blk', 0, -58);
-    // Music stand (thin panel on top face): w=14, d=1, h=12
-    s += _iR(1, 36, 12, 'mtl', 2, -46);
-    // Keyboard shelf sticking out: w=16, d=44, h=2
-    s += _iR(16, 44, 2, 'wht', 0, -8);
-    // White keys surface (top face rectangle)
-    s += '<g transform="translate(0,-10)"><rect x="0" y="0" width="16" height="44" fill="#F8F6F0" stroke="#E0DDD5" stroke-width="0.4" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g>';
-    // Black keys (along the left axis = d direction)
-    s += _iR(8, 4, 2, 'blk', -4, -10);
-    s += _iR(8, 4, 2, 'blk', -10, -10);
-    s += _iR(8, 4, 2, 'blk', -18, -10);
-    s += _iR(8, 4, 2, 'blk', -24, -10);
-    s += _iR(8, 4, 2, 'blk', -32, -10);
-    // Bench in front: w=12, d=26, h=10
-    s += _iR(12, 26, 10, 'wood', 4, 12);
-    // Bench cushion: w=10, d=24, h=2
-    s += _iR(10, 24, 2, 'pnk', 3, 2);
+    s += _iR(20, 14, 4, 'blk', 0, 0);
+    s += _iCircleR(10, -2, 0.8, -14, 7, 'grn');
+    s += _iR(10, 6, 2, 'mtl', -16, 4);
+    s += _iR(10, 6, 2, 'mtl', 22, 14);
     s += '</g>';
     return s;
   },
-
-  // ========== SMALL PLANT ==========
   plant: function(x, y, owned){
     if(!owned) return '';
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    // Pot: w=14, d=14, h=12
     s += _iR(14, 14, 12, 'pnk', -7, 0);
-    // Soil: w=12, d=12, h=2
     s += _iR(12, 12, 2, 'wood', -6, -12);
-    // Leaves (stacked green boxes)
     s += _iR(16, 16, 6, 'grn', -8, -16);
     s += _iR(12, 12, 8, 'grn', -4, -22);
     s += _iR(8, 8, 6, 'grn', -2, -28);
     s += '</g>';
     return s;
   },
-
-  // ========== BIG PLANT (热带大叶, 参考图3) ==========
   bigplant: function(x, y, owned){
     if(!owned) return '';
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
     s += _iShadow(18, 18, -2, 2);
-    // Tall pot: w=16, d=16, h=18
     s += _iR(16, 16, 18, 'pnk', -8, 0);
-    // Soil: w=14, d=14, h=2
     s += _iR(14, 14, 2, 'wood', -7, -18);
-    // Trunk (thin tall): w=3, d=3, h=24
     s += _iR(3, 3, 24, 'wood', -1.5, -20);
-    // Large leaves (wide flat green boxes at various heights & offsets)
     s += _iR(20, 10, 2, 'grn', -14, -38);
     s += _iR(10, 18, 2, 'grn', 2, -42);
     s += _iR(18, 8, 2, 'grn', -10, -46);
     s += _iR(8, 16, 2, 'grn', 4, -50);
     s += _iR(16, 12, 2, 'grn', -8, -52);
-    // Top leaf
     s += _iR(12, 8, 2, 'grn', -4, -56);
-    s += '</g>';
-    return s;
-  },
-
-  // ========== FRAME (painting) ==========
-  frame: function(x, y, owned){
-    if(!owned) return '';
-    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    // Frame: w=1, d=30, h=24
-    s += _iR(1, 30, 24, 'wood', 0, 0);
-    // Canvas: w=0.5, d=26, h=20
-    s += '<g transform="translate(0,-2)"><rect x="0" y="-20" width="26" height="20" fill="#ebe7de" stroke="#9b9184" stroke-width="0.5" transform="translate(1, 0.5) matrix(-1, 0.5, 0, 1, 0, 0)"/></g>';
-    // Landscape triangle
-    s += '<g transform="translate(0,-8) matrix(-1, 0.5, 0, 1, 0, 0)"><polygon points="2,-8 13,-14 24,-8" fill="#94b26b" opacity="0.6"/></g>';
-    s += '</g>';
-    return s;
-  },
-
-  // ========== RUG (flat diamond) ==========
-  rug: function(x, y, owned){
-    if(!owned) return '';
-    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    // Main rug: w=50, d=35, h=0.5
-    s += _iR(50, 35, 0.5, 'pnk', -15, 10);
-    // Inner pattern: w=40, d=25, h=0.3
-    s += '<g transform="translate(-10,8)"><rect x="0" y="0" width="40" height="25" fill="rgba(200,180,160,0.3)" stroke="#c4a070" stroke-width="0.4" stroke-dasharray="2,1.5" transform="translate(0,-0.3) matrix(1,0.5,-1,0.5,0,0)"/></g>';
     s += '</g>';
     return s;
   }
@@ -27403,12 +28113,25 @@ var _defaultFurnPositions = {
   tv:    { gx:2, gy:0 },
   game:  { gx:3, gy:2 },
   bath:  { gx:0, gy:2 },
+  shower:{ gx:0, gy:3 },
+  sink:  { gx:1, gy:3 },
+  toilet:{ gx:0, gy:3 },
   piano: { gx:1, gy:2 },
   plant: { gx:4, gy:0 },
+  bigplant:{ gx:4, gy:2 },
   frame: { gx:0, gy:1 },
+  frame2:{ gx:1, gy:1 },
   shelf: { gx:4, gy:1 },
+  wshelf:{ gx:3, gy:1 },
   rug:   { gx:2, gy:2 },
-  bigplant: { gx:4, gy:2 },
+  rugheart:{ gx:2, gy:2 },
+  rugrect:{ gx:2, gy:2 },
+  rugsquare:{ gx:2, gy:2 },
+  table: { gx:2, gy:1 },
+  computer:{ gx:3, gy:0 },
+  fridge:{ gx:4, gy:0 },
+  bar:   { gx:3, gy:1 },
+  window:{ gx:1, gy:0 },
 };
 
 function _mapOpenRoom(container, mapData, houseId){
