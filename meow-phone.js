@@ -92,7 +92,7 @@ const WIDGET_TYPES = {
   todayItems:  { label:'今日事项', icon:'<svg class="phIco" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>', desc:'联动日历事项' },
   music:       { label:'音乐',     icon:'<svg class="phIco" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>', desc:'播放动效+真实音频' },
   messages:    { label:'消息',     icon:'<svg class="phIco" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>', desc:'私聊/论坛/新闻' },
-  custom:      { label:'自定义',   icon:'<svg class="phIco" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 11H19V7a2 2 0 0 0-2-2h-4V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V5H6a2 2 0 0 0-2 2v3.8h1.5A1.5 1.5 0 0 1 7 12.3a1.5 1.5 0 0 1-1.5 1.5H4V17a2 2 0 0 0 2 2h3.8v-1.5a1.5 1.5 0 0 1 1.5-1.5 1.5 1.5 0 0 1 1.5 1.5V19H17a2 2 0 0 0 2-2v-4h1.5a1.5 1.5 0 0 0 1.5-1.5 1.5 1.5 0 0 0-1.5-1.5z"/></svg>', desc:'自由拼装元素' },
+  custom:      { label:'自定义',   icon:'<svg class="phIco" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 11H19V7a2 2 0 0 0-2-2h-4V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V5H6a2 2 0 0 0-2 2v3.8h1.5A1.5 1.5 0 0 1 7 12.3a1.5 1.5 0 0 1-1.5 1.5H4V17a2 2 0 0 0 2 2h3.8v-1.5a1.5 1.5 0 0 1 1.5-1.5 1.5 1.5 0 0 1 1.5 1.5V19H17a2 2 0 0 0 2-2v-4h1.5a1.5 1.5 0 0 0 1.5-1.5 1.5 1.5 0 0 0-1.5-1.5z"/></svg>', desc:'自由拼装元素' }
 };
 
 // 每种类型3种预设排版
@@ -179,7 +179,7 @@ const WIDGET_PRESETS = {
       {id:_elid(),type:'emoji',content:'🖼️',x:12,y:12,fontSize:26},
       {id:_elid(),type:'text',content:'自定义内容',x:48,y:18,fontSize:12,color:'var(--ph-text-sub)'},
     ]; }},
-  ],
+  ]
 };
 
 const WIDGET_SIZES = {
@@ -188,7 +188,7 @@ const WIDGET_SIZES = {
   wide1:   { label:'1×4', cols:4, rows:1 },
   medium:  { label:'2×2', cols:2, rows:2 },
   wide2:   { label:'2×4', cols:4, rows:2 },
-  large:   { label:'4×4', cols:4, rows:4 },
+  large:   { label:'4×4', cols:4, rows:4 }
 };
 
 function _getWidgetPx(size, shape){
@@ -254,8 +254,8 @@ function phoneMakeDefaultG(){
       typingEffect: true,
       autoReply: true,
     },
-    updatedAt: Date.now(),
-  };
+    updatedAt: Date.now()
+};
 }
 function phoneMakeDefaultC(){
   return {
@@ -264,8 +264,8 @@ function phoneMakeDefaultC(){
     sms: [],
     forum: [],
     drafts: {},
-    updatedAt: Date.now(),
-  };
+    updatedAt: Date.now()
+};
 }
 // 📦==================== Phone Data Keys END ====================
 
@@ -294,8 +294,8 @@ function phoneLoadSettings(){
     timeMode: 'real', storyTime: '12:00', storyDate: '',
     typingEffect: 'none',
     syncToMain: false,
-    autoReply: true,
-  };
+    autoReply: true
+};
 
   try{
     const d = phoneGetG('settings_data_v1', null);
@@ -1056,8 +1056,8 @@ function phoneApplyVisualFromSettings(cfg){
         modern: '10,10,10',
         medieval: '26,14,4',
         cyber: '4,4,8',
-        sakura: '16,7,20',
-      };
+        sakura: '16,7,20'
+};
       root.style.setProperty('--phAppBodyRGB', _rgbMap[_theme] || '10,10,10');
     }catch(_e){}
 
@@ -1148,8 +1148,8 @@ function phoneApplyWallpaper(base64OrEmpty, target){
         browser:  { title:'浏览器', icon:'🌐' },
         photos:   { title:'相册',   icon:'🖼️' },
         settings: { title:'设置',   icon:'⚙️' },
-        map:      { title:'地图',   icon:'🗺️' },
-      };
+        map:      { title:'地图',   icon:'🗺️' }
+};
 
       /* ========== 工具 ========== */
       function timeStr(){
@@ -5136,8 +5136,8 @@ function buildHTML(){
 
           return {
             x: Math.max(0, Math.min(maxX, x)),
-            y: Math.max(0, Math.min(maxY, y)),
-          };
+            y: Math.max(0, Math.min(maxY, y))
+};
         }
 
         function applyXY(x, y){
@@ -6953,8 +6953,8 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           _weState.wData = {
             id: savedId || _wid(),
             type: wType, size: sz, shape: shape,
-            elements: [], config: {}, preset: '',
-          };
+            elements: [], config: {}, preset: ''
+};
           _weState.wData.elements = _extractElementsFromDOM(item);
           if (!_weState.wData.elements.length){
             const presets = WIDGET_PRESETS[wType] || WIDGET_PRESETS.custom;
@@ -11130,8 +11130,8 @@ ${lines}
               'meow_phone_chat_summary_v1': '📝 手机聊天总结',
               'meow_forum_dm_v1': '💬 论坛私信',
               'meow_sync_stage_v1': '🔄 同步暂存',
-              'meow_phone_api_presets_v1': '🔑 API预设',
-            };
+              'meow_phone_api_presets_v1': '🔑 API预设'
+};
 
             var h = '<div style="margin-bottom:6px;font-size:11px;color:var(--ph-text-sub);">小手机: <b>' + phoneKB + ' KB</b> | 其他(酒馆等): <b>' + otherKB + ' KB</b></div>';
             h += '<div style="border-top:1px solid rgba(128,128,128,.15);padding-top:6px;">';
@@ -17349,8 +17349,8 @@ const npc = _wxGetChatTargetMeta(npcId);
         startY: 0,
         moved: false,
         quotedText: '',
-        quotedRole: '',
-      };
+        quotedRole: ''
+};
 
       function _hideBubbleMenu(){
         try{
@@ -21468,8 +21468,8 @@ const npc = _wxGetChatTargetMeta(npcId);
             _svgPh('😊'), _svgPh('💬'), _svgPh('⭐'),
             _svgPh('🔥'), _svgPh('🔥'), _svgPh('⭐'),
             _svgPh('✉️'), _svgPh('🎯'), _svgPh('🎭'),
-          ],
-        };
+          ]
+};
         const catLabel = {all:'全部',avatar:'头像',wallpaper:'壁纸',sticker:'表情包'}[cat]||cat;
         let html = `<div style="padding:12px 14px;">
           <button class="photoUploadBtn" data-act="photoUpload" data-cat="${cat}">
@@ -24838,7 +24838,7 @@ var MAP_ZONES = {
   commercial:  { label:'商业区', cx:350, cy:230, rx:75, ry:60,  color:'#C4A060', ground:'urban' },
   nature:      { label:'自然区', cx:120, cy:120, rx:70, ry:60,  color:'#7A9E7A', ground:'green' },
   residential: { label:'居民区', cx:300, cy:360, rx:85, ry:65,  color:'#8B7A5A', ground:'suburb' },
-  special:     { label:'海滨区', cx:140, cy:380, rx:80, ry:55,  color:'#5A8AAA', ground:'green' },
+  special:     { label:'海滨区', cx:140, cy:380, rx:80, ry:55,  color:'#5A8AAA', ground:'green' }
 };
 
 // ---- 区块数据持久化：从mapData读取（允许用户自定义） ----
@@ -25048,7 +25048,6 @@ var FURNITURE_CATALOG = {
   bed:{emoji:'🛏️',label:'床',cost:0,fx:{energy:25,mood:3},desc:'休息恢复精力',png:'',pngW:40,pngH:40},
   sofa:{emoji:'🛋️',label:'沙发',cost:0,fx:{mood:8,energy:5},desc:'放松一下',png:'',pngW:40,pngH:40},
   shelf:{emoji:'📚',label:'书架',cost:150,fx:{mood:10,energy:-3},desc:'读一本好书',png:'',pngW:40,pngH:40},
-  wshelf:{emoji:'📖',label:'白色书架',cost:200,fx:{mood:12,energy:-3},desc:'整洁的书架',png:'',pngW:40,pngH:40},
   table:{emoji:'☕',label:'茶几',cost:60,fx:{mood:4},desc:'放杯咖啡',png:'',pngW:40,pngH:40},
   computer:{emoji:'💻',label:'电脑桌',cost:350,fx:{fun:15,mood:5},desc:'上网冲浪',png:'',pngW:40,pngH:40},
   lamp:{emoji:'💡',label:'落地灯',cost:0,fx:{mood:3},desc:'暖暖的光',png:'',pngW:40,pngH:40},
@@ -25071,6 +25070,24 @@ var FURNITURE_CATALOG = {
   game:{emoji:'🎮',label:'游戏机',cost:300,fx:{fun:20,mood:10},desc:'一起打游戏',png:'',pngW:24,pngH:18},
   plant:{emoji:'🌱',label:'小盆栽',cost:50,fx:{mood:5},desc:'绿意盎然',png:'',pngW:22,pngH:30},
   bigplant:{emoji:'🌿',label:'大盆栽',cost:180,fx:{mood:12,health:5},desc:'热带风情大叶植物',png:'',pngW:30,pngH:45},
+  wardrobe:{ emoji:'👔', label:'衣柜', cost:150, fx:{mood:8}, desc:'整理衣物', png:'', pngW:40, pngH:40 },
+  bed2: { emoji:'🛌', label:'双人床', cost:300, fx:{mood:12,energy:30}, desc:'舒适的大床', png:'', pngW:40, pngH:40 },
+  sofa2: { emoji:'🛋️', label:'L型沙发', cost:350, fx:{mood:15,energy:8}, desc:'宽大舒适', png:'', pngW:40, pngH:40 },
+  lamp2: { emoji:'🪔', label:'落地灯B', cost:100, fx:{mood:5}, desc:'简约落地灯', png:'', pngW:40, pngH:40 },
+  bookshelf: { emoji:'📚', label:'书架', cost:200, fx:{mood:10,energy:-3}, desc:'满满的书', png:'', pngW:40, pngH:40 },
+  whiteshelf: { emoji:'📖', label:'白色书架', cost:220, fx:{mood:10,energy:-3}, desc:'简约白色书架', png:'', pngW:40, pngH:40 },
+  computer: { emoji:'💻', label:'电脑桌', cost:350, fx:{fun:15,mood:8}, desc:'上网冲浪', png:'', pngW:40, pngH:40 },
+  fridge: { emoji:'🧊', label:'冰箱', cost:250, fx:{hunger:20,mood:5}, desc:'冷饮零食', png:'', pngW:40, pngH:40 },
+  kitchen: { emoji:'🍽️', label:'橱柜', cost:200, fx:{hunger:25,mood:5}, desc:'做饭收纳', png:'', pngW:40, pngH:40 },
+  painting1: { emoji:'🖼️', label:'画作A', cost:150, fx:{mood:10}, desc:'艺术气息', png:'', pngW:40, pngH:40 },
+  painting2: { emoji:'🎨', label:'画作B', cost:120, fx:{mood:8}, desc:'另一幅画', png:'', pngW:40, pngH:40 },
+  rug2: { emoji:'🧶', label:'地毯B', cost:90, fx:{mood:6}, desc:'柔软地毯', png:'', pngW:40, pngH:40 },
+  rugheart: { emoji:'💗', label:'心形地毯', cost:60, fx:{mood:8}, desc:'甜蜜的心', png:'', pngW:40, pngH:40 },
+  rugrect: { emoji:'🟫', label:'长条地毯', cost:70, fx:{mood:5}, desc:'走廊地毯', png:'', pngW:40, pngH:40 },
+  rugsquare: { emoji:'🟨', label:'方形地毯', cost:75, fx:{mood:5}, desc:'方方正正', png:'', pngW:40, pngH:40 },
+  shower: { emoji:'🚿', label:'淋浴间', cost:300, fx:{health:20,mood:10}, desc:'冲个热水澡', png:'', pngW:40, pngH:40 },
+  toilet: { emoji:'🚽', label:'马桶', cost:150, fx:{health:5}, desc:'必需品', png:'', pngW:40, pngH:40 },
+  window: { emoji:'🪟', label:'装饰窗', cost:100, fx:{mood:8}, desc:'透光装饰', png:'', pngW:40, pngH:40 }
 };
 
 function _defaultFurniture(){
@@ -25104,8 +25121,8 @@ function _mapGenHouses(rng, islandPts, zones, river){
     special: { types:['japanese'], count:1,
       colors:['#B0A890','#C0B8A0'], roofs:['#908070','#A09080'] },
     villa: { types:['villa','villa'], count:2,
-      colors:['#D0C8B0','#D8D0B8','#E0D8C0'], roofs:['#A89878','#B0A080','#988868'] },
-  };
+      colors:['#D0C8B0','#D8D0B8','#E0D8C0'], roofs:['#A89878','#B0A080','#988868'] }
+};
 
   for(var zk in zoneBuildings){
     var zb = zoneBuildings[zk];
@@ -27117,95 +27134,7 @@ function _iCircleR(cx,cy,r,ox,oy,cls){
 var _roomFurnSVG = {
   piano: function(x, y, owned){
     if(!owned) return '';
-    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
-    '<rect x="0" y="0" width="20" height="46" fill="rgba(130,140,120,0.10)" transform="translate(4,6) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '<g transform="translate(1,0)"><rect x="0" y="-5" width="3" height="5" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-5" width="3" height="5" class="blk-l" transform="translate(3,1.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="3" height="3" class="blk-t" transform="translate(0,-5) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
-    '<g transform="translate(13,0)"><rect x="0" y="-5" width="3" height="5" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-5" width="3" height="5" class="blk-l" transform="translate(3,1.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="3" height="3" class="blk-t" transform="translate(0,-5) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
-    '<g transform="translate(-37,0)"><rect x="0" y="-5" width="3" height="5" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-5" width="3" height="5" class="blk-l" transform="translate(3,1.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="3" height="3" class="blk-t" transform="translate(0,-5) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
-    '<g transform="translate(-25,0)"><rect x="0" y="-5" width="3" height="5" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-5" width="3" height="5" class="blk-l" transform="translate(3,1.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="3" height="3" class="blk-t" transform="translate(0,-5) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
-    '<g transform="translate(0,-5)">' +
-    '<rect x="0" y="-3" width="18" height="3" class="blk-r" transform="translate(-44,22) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-3" width="44" height="3" class="blk-l" transform="translate(18,9) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="18" height="44" class="blk-t" transform="translate(0,-3) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(-14,-2)"><rect x="0" y="-2" width="2" height="2" class="wood-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="2" height="2" class="wood-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="2" class="wood-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
-    '<g transform="translate(-20,-2)"><rect x="0" y="-2" width="2" height="2" class="wood-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="2" height="2" class="wood-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="2" class="wood-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
-    '<g transform="translate(-26,-2)"><rect x="0" y="-2" width="2" height="2" class="wood-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="2" height="2" class="wood-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="2" class="wood-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
-    '<!-- 下琴身 w=16,d=42,h=20 ox=-1 -->' +
-    '<g transform="translate(-1,-8)">' +
-    '<rect x="0" y="-20" width="16" height="20" class="blk-r" transform="translate(-42,21) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-20" width="42" height="20" class="blk-l" transform="translate(16,8) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="16" height="42" class="blk-t" transform="translate(0,-20) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(-1,-28)">' +
-    '<rect x="0" y="-28" width="16" height="28" class="blk-r" transform="translate(-42,21) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-28" width="42" height="28" class="blk-l" transform="translate(16,8) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="16" height="42" class="blk-t" transform="translate(0,-28) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(0,-56)">' +
-    '<rect x="0" y="-2" width="18" height="2" class="blk-r" transform="translate(-44,22) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-2" width="44" height="2" class="blk-l" transform="translate(18,9) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="18" height="44" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<!-- ★★★ 键盘组 - 整体右移16单位 ★★★ -->' +
-    '<g transform="translate(16,8)">' +
-    '<!-- 键盘底托 w=16,d=42,h=2 ox=-1 (标准盒子，和琴身一模一样) -->' +
-    '<g transform="translate(-1,-32)">' +
-    '<rect x="0" y="-2" width="16" height="2" class="blk-r" transform="translate(-42,21) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-2" width="42" height="2" class="blk-l" transform="translate(16,8) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="16" height="42" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(0,-34)">' +
-    '<rect x="0" y="-1" width="14" height="1" fill="#F8F6F0" stroke="#E8E5DD" stroke-width="0.5" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-1" width="40" height="1" fill="#EEEBE3" stroke="#E0DDD5" stroke-width="0.5" transform="translate(14,7) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="14" height="40" fill="#FDFCF8" stroke="#E8E5DD" stroke-width="0.4" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g opacity="0.25">' +
-    '<line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-6,-31) matrix(1,0.5,0,1,0,0)"/>' +
-    '<line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-12,-28) matrix(1,0.5,0,1,0,0)"/>' +
-    '<line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-18,-25) matrix(1,0.5,0,1,0,0)"/>' +
-    '<line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-24,-22) matrix(1,0.5,0,1,0,0)"/>' +
-    '<line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-30,-19) matrix(1,0.5,0,1,0,0)"/>' +
-    '<line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-36,-16) matrix(1,0.5,0,1,0,0)"/>' +
-    '</g>' +
-    '<!-- 白键顶y=-35, ox=0, 沿d偏移: translate(-d, -35+d*0.5) -->' +
-    '<g transform="translate(-4,-33)">' +
-    '<rect x="0" y="-2" width="8" height="2" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-2" width="3" height="2" class="blk-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="8" height="3" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(-10,-30)">' +
-    '<rect x="0" y="-2" width="8" height="2" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-2" width="3" height="2" class="blk-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="8" height="3" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(-19,-25.5)">' +
-    '<rect x="0" y="-2" width="8" height="2" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-2" width="3" height="2" class="blk-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="8" height="3" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(-25,-22.5)">' +
-    '<rect x="0" y="-2" width="8" height="2" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-2" width="3" height="2" class="blk-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="8" height="3" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(-34,-18)">' +
-    '<rect x="0" y="-2" width="8" height="2" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-2" width="3" height="2" class="blk-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="8" height="3" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '</g>' +
-    '<g transform="translate(4,12)">' +
-    '<rect x="0" y="-10" width="12" height="10" class="wood-r" transform="translate(-26,13) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-10" width="26" height="10" class="wood-l" transform="translate(12,6) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="12" height="26" class="wood-t" transform="translate(0,-10) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(3,2)">' +
-    '<rect x="0" y="-2" width="10" height="2" class="pnk-r" transform="translate(-24,12) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-2" width="24" height="2" class="pnk-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="10" height="24" class="pnk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '</g>';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><rect x="0" y="0" width="20" height="46" fill="rgba(130,140,120,0.10)" transform="translate(4,6) matrix(1,0.5,-1,0.5,0,0)"/><g transform="translate(1,0)"><rect x="0" y="-5" width="3" height="5" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-5" width="3" height="5" class="blk-l" transform="translate(3,1.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="3" height="3" class="blk-t" transform="translate(0,-5) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(13,0)"><rect x="0" y="-5" width="3" height="5" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-5" width="3" height="5" class="blk-l" transform="translate(3,1.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="3" height="3" class="blk-t" transform="translate(0,-5) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-37,0)"><rect x="0" y="-5" width="3" height="5" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-5" width="3" height="5" class="blk-l" transform="translate(3,1.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="3" height="3" class="blk-t" transform="translate(0,-5) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-25,0)"><rect x="0" y="-5" width="3" height="5" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-5" width="3" height="5" class="blk-l" transform="translate(3,1.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="3" height="3" class="blk-t" transform="translate(0,-5) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(0,-5)"><rect x="0" y="-3" width="18" height="3" class="blk-r" transform="translate(-44,22) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-3" width="44" height="3" class="blk-l" transform="translate(18,9) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="18" height="44" class="blk-t" transform="translate(0,-3) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-14,-2)"><rect x="0" y="-2" width="2" height="2" class="wood-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="2" height="2" class="wood-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="2" class="wood-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-20,-2)"><rect x="0" y="-2" width="2" height="2" class="wood-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="2" height="2" class="wood-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="2" class="wood-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-26,-2)"><rect x="0" y="-2" width="2" height="2" class="wood-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="2" height="2" class="wood-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="2" class="wood-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-1,-8)"><rect x="0" y="-20" width="16" height="20" class="blk-r" transform="translate(-42,21) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-20" width="42" height="20" class="blk-l" transform="translate(16,8) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="16" height="42" class="blk-t" transform="translate(0,-20) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-1,-28)"><rect x="0" y="-28" width="16" height="28" class="blk-r" transform="translate(-42,21) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-28" width="42" height="28" class="blk-l" transform="translate(16,8) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="16" height="42" class="blk-t" transform="translate(0,-28) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(0,-56)"><rect x="0" y="-2" width="18" height="2" class="blk-r" transform="translate(-44,22) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="44" height="2" class="blk-l" transform="translate(18,9) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="18" height="44" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(16,8)"><g transform="translate(-1,-32)"><rect x="0" y="-2" width="16" height="2" class="blk-r" transform="translate(-42,21) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="42" height="2" class="blk-l" transform="translate(16,8) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="16" height="42" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(0,-34)"><rect x="0" y="-1" width="14" height="1" fill="#F8F6F0" stroke="#E8E5DD" stroke-width="0.5" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-1" width="40" height="1" fill="#EEEBE3" stroke="#E0DDD5" stroke-width="0.5" transform="translate(14,7) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="14" height="40" fill="#FDFCF8" stroke="#E8E5DD" stroke-width="0.4" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/></g><g opacity="0.25"><line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-6,-31) matrix(1,0.5,0,1,0,0)"/><line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-12,-28) matrix(1,0.5,0,1,0,0)"/><line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-18,-25) matrix(1,0.5,0,1,0,0)"/><line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-24,-22) matrix(1,0.5,0,1,0,0)"/><line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-30,-19) matrix(1,0.5,0,1,0,0)"/><line x1="0" y1="-1" x2="0" y2="0" stroke="#BBB" stroke-width="0.3" transform="translate(-36,-16) matrix(1,0.5,0,1,0,0)"/></g><g transform="translate(-4,-33)"><rect x="0" y="-2" width="8" height="2" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="3" height="2" class="blk-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="8" height="3" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-10,-30)"><rect x="0" y="-2" width="8" height="2" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="3" height="2" class="blk-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="8" height="3" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-19,-25.5)"><rect x="0" y="-2" width="8" height="2" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="3" height="2" class="blk-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="8" height="3" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-25,-22.5)"><rect x="0" y="-2" width="8" height="2" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="3" height="2" class="blk-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="8" height="3" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-34,-18)"><rect x="0" y="-2" width="8" height="2" class="blk-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="3" height="2" class="blk-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="8" height="3" class="blk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g></g><g transform="translate(4,12)"><rect x="0" y="-10" width="12" height="10" class="wood-r" transform="translate(-26,13) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-10" width="26" height="10" class="wood-l" transform="translate(12,6) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="12" height="26" class="wood-t" transform="translate(0,-10) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(3,2)"><rect x="0" y="-2" width="10" height="2" class="pnk-r" transform="translate(-24,12) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="24" height="2" class="pnk-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="10" height="24" class="pnk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g>';
   },
 
   bed: function(x, y, owned){
@@ -27327,7 +27256,7 @@ var _roomFurnSVG = {
     '</g>';
   },
 
-  shelf: function(x, y, owned){
+  wardrobe: function(x, y, owned){
     if(!owned) return '';
     return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
     '<rect x="0" y="0" width="10" height="40" fill="rgba(130,140,120,0.08)" transform="translate(3,4) matrix(1,0.5,-1,0.5,0,0)"/>' +
@@ -27372,54 +27301,6 @@ var _roomFurnSVG = {
     '</g>';
   },
 
-  wshelf: function(x, y, owned){
-    if(!owned) return '';
-    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
-    '<rect x="0" y="0" width="10" height="40" fill="rgba(130,140,120,0.06)" transform="translate(3,4) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '<g transform="translate(8,2)">' +
-    '<rect x="0" y="-88" width="36" height="88" fill="#E0DBD5" stroke="#D4CFC9" stroke-width="0.5" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(0,0)">' +
-    '<rect x="0" y="-40" width="10" height="40" class="wf-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-40" width="40" height="40" class="wf-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(10,5) matrix(-1,0.5,0,1,0,0)" opacity="0.12">' +
-    '<line x1="20" y1="-38" x2="20" y2="-2" stroke="#808080" stroke-width="0.5"/>' +
-    '<rect x="17" y="-22" width="1.5" height="4" fill="#B0B0B0" rx="0.5"/>' +
-    '<rect x="21" y="-22" width="1.5" height="4" fill="#B0B0B0" rx="0.5"/>' +
-    '</g>' +
-    '<g transform="translate(0,-40)">' +
-    '<rect x="0" y="-2" width="10" height="2" class="wf-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-2" width="40" height="2" class="wf-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="10" height="40" class="wf-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<!-- ═══ 中段书(shelf_top=-42) 小d先→大d后 ═══ -->' +
-    '<g transform="translate(-5,-40)"><rect x="0" y="-18" width="7" height="18" class="bk1-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="4" height="18" class="bk1-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="bk1-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
-    '<g transform="translate(-9,-38)"><rect x="0" y="-16" width="7" height="16" class="bk2-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-16" width="3" height="16" class="bk2-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="bk2-t" transform="translate(0,-16) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
-    '<g transform="translate(-13,-36)"><rect x="0" y="-20" width="7" height="20" class="bk3-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-20" width="4" height="20" class="bk3-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="bk3-t" transform="translate(0,-20) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
-    '<g transform="translate(-17,-34)"><rect x="0" y="-17" width="7" height="17" class="bk4-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-17" width="3" height="17" class="bk4-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="bk4-t" transform="translate(0,-17) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
-    '<g transform="translate(-21,-32)"><rect x="0" y="-18" width="7" height="18" class="bk5-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="4" height="18" class="bk5-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="bk5-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
-    '<g transform="translate(-1,-64)">' +
-    '<rect x="0" y="-2" width="10" height="2" class="wf-r" transform="translate(-36,18) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-2" width="36" height="2" class="wf-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="10" height="36" class="wf-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<!-- ═══ 上段书(shelf_top=-66) ═══ -->' +
-    '<g transform="translate(-4,-64)"><rect x="0" y="-16" width="7" height="16" class="bk3-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-16" width="3" height="16" class="bk3-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="bk3-t" transform="translate(0,-16) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
-    '<g transform="translate(-8,-62)"><rect x="0" y="-18" width="7" height="18" class="bk1-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="4" height="18" class="bk1-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="bk1-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
-    '<g transform="translate(-12,-60)"><rect x="0" y="-15" width="7" height="15" class="bk2-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-15" width="3" height="15" class="bk2-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="bk2-t" transform="translate(0,-15) matrix(1,0.5,-1,0.5,0,0)"/></g>' +
-    '<g transform="translate(0,-90)">' +
-    '<rect x="0" y="-2" width="10" height="2" class="wf-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-2" width="40" height="2" class="wf-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="10" height="40" class="wf-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(-38,17)">' +
-    '<rect x="0" y="-88" width="10" height="88" class="wf-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-88" width="2" height="88" class="wf-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/>' +
-    '</g>' +
-    '</g>';
-  },
-
   table: function(x, y, owned){
     if(!owned) return '';
     return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
@@ -27450,41 +27331,6 @@ var _roomFurnSVG = {
     '</g>';
   },
 
-  computer: function(x, y, owned){
-    if(!owned) return '';
-    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
-    '<g transform="translate(0,0)">' +
-    '<rect x="0" y="-1" width="10" height="1" class="mtl-r" transform="translate(-8,4) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-1" width="8" height="1" class="mtl-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="10" height="8" class="mtl-t" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(1,-1)">' +
-    '<rect x="0" y="-16" width="2" height="16" class="mtl-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-16" width="2" height="16" class="mtl-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="2" height="2" class="mtl-t" transform="translate(0,-16) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(19,-26)">' +
-    '<rect x="0" y="-24" width="2" height="24" class="blk-r" transform="translate(-36,18) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-24" width="36" height="24" class="blk-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="2" height="36" class="blk-t" transform="translate(0,-24) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(19,-27)">' +
-    '<rect x="2" y="-20" width="32" height="20" fill="rgba(170,190,210,0.5)" stroke="rgba(150,170,190,0.3)" stroke-width="0.4" transform="translate(1.5,0.75) matrix(-1,0.5,0,1,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(19,-27)" opacity="0.12">' +
-    '<rect x="4" y="-16" width="8" height="12" fill="white" transform="translate(1.5,0.75) matrix(-1,0.5,0,1,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(12,6)">' +
-    '<rect x="0" y="-1" width="8" height="1" class="stn-r" transform="translate(-20,10) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-1" width="20" height="1" class="stn-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="8" height="20" class="stn-t" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(12,6)">' +
-    '<rect x="1" y="2" width="5" height="16" fill="rgba(80,85,90,0.25)" stroke="none" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '</g>';
-  },
-
   lamp: function(x, y, owned){
     if(!owned) return '';
     return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
@@ -27507,48 +27353,6 @@ var _roomFurnSVG = {
     'fill="#D4B49C" stroke="#C4A48C" stroke-width="0.8" stroke-linejoin="round"/>' +
     '<ellipse cx="0" cy="0" rx="22" ry="7" fill="#C8A88C" stroke="#B89880" stroke-width="0.6"/>' +
     '<ellipse cx="0" cy="-26" rx="12" ry="4" fill="#DCC4AC" stroke="#CCB49C" stroke-width="0.6"/>' +
-    '</g>' +
-    '</g>';
-  },
-
-  fridge: function(x, y, owned){
-    if(!owned) return '';
-    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
-    '<rect x="0" y="0" width="36" height="30" fill="rgba(130,140,120,0.10)" transform="translate(4,5) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '<g transform="translate(0,0)">' +
-    '<rect x="0" y="-50" width="36" height="50" class="fg-r" transform="translate(-30,15) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-50" width="30" height="50" class="fg-l" transform="translate(36,18) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="36" height="30" class="fg-t" transform="translate(0,-50) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)">' +
-    '<rect x="12" y="-44" width="14" height="2" fill="#C8C4C0" stroke="#A8A4A0" stroke-width="0.5" rx="1"/>' +
-    '</g>' +
-    '<g opacity="0.12">' +
-    '<line x1="0" y1="-50" x2="0" y2="0" stroke="#708068" stroke-width="0.6" transform="translate(-8,4) matrix(1,0.5,0,1,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(0,-50)">' +
-    '<rect x="0" y="-1" width="36" height="1" class="fd-r" transform="translate(-30,15) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-1" width="30" height="1" class="fd-l" transform="translate(36,18) matrix(-1,0.5,0,1,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(0,-51)">' +
-    '<rect x="0" y="-26" width="36" height="26" class="fg-r" transform="translate(-30,15) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-26" width="30" height="26" class="fg-l" transform="translate(36,18) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="36" height="30" class="fg-t" transform="translate(0,-26) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)">' +
-    '<rect x="12" y="-57" width="14" height="2" fill="#C8C4C0" stroke="#A8A4A0" stroke-width="0.5" rx="1"/>' +
-    '</g>' +
-    '<g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)" opacity="0.55">' +
-    '<rect x="10" y="-40" width="6" height="6" fill="#D4B5AF" stroke="#C0A19B" stroke-width="0.4"/>' +
-    '</g>' +
-    '<g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)" opacity="0.5">' +
-    '<rect x="20" y="-28" width="5" height="5" fill="#9BB0BD" stroke="#879CA9" stroke-width="0.4"/>' +
-    '</g>' +
-    '<g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)" opacity="0.5">' +
-    '<rect x="14" y="-68" width="6" height="5" fill="#D4C9A8" stroke="#C0B594" stroke-width="0.4"/>' +
-    '</g>' +
-    '<g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)" opacity="0.45">' +
-    '<rect x="24" y="-16" width="5" height="5" fill="#A3B5A0" stroke="#8FA18C" stroke-width="0.4"/>' +
     '</g>' +
     '</g>';
   },
@@ -27693,125 +27497,6 @@ var _roomFurnSVG = {
     '</g>';
   },
 
-  rugheart: function(x, y, owned){
-    if(!owned) return '';
-    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
-    '<g transform="matrix(1,0.5,-1,0.5,0,0)">' +
-    '<path d="M 0,40 C 0,40 -60,10 -60,-20 C -60,-45 -35,-55 0,-25 C 35,-55 60,-45 60,-20 C 60,10 0,40 0,40 Z"' +
-    'fill="none" stroke="#C4BAB0" stroke-width="2.5" stroke-dasharray="2,3"/>' +
-    '<path d="M 0,38 C 0,38 -58,8 -58,-20 C -58,-44 -34,-53 0,-24 C 34,-53 58,-44 58,-20 C 58,8 0,38 0,38 Z"' +
-    'fill="#D4B5AF"/>' +
-    '<path d="M 0,28 C 0,28 -44,4 -44,-14 C -44,-33 -26,-40 0,-17 C 26,-40 44,-33 44,-14 C 44,4 0,28 0,28 Z"' +
-    'fill="#E8E2DA"/>' +
-    '<path d="M 0,18 C 0,18 -30,0 -30,-10 C -30,-22 -18,-27 0,-12 C 18,-27 30,-22 30,-10 C 30,0 0,18 0,18 Z"' +
-    'fill="#B5A8BD"/>' +
-    '<path d="M 0,8 C 0,8 -14,-2 -14,-8 C -14,-14 -8,-16 0,-6 C 8,-16 14,-14 14,-8 C 14,-2 0,8 0,8 Z"' +
-    'fill="#D4C9A8"/>' +
-    '<path d="M 0,33 C 0,33 -50,6 -50,-18 C -50,-39 -30,-47 0,-21 C 30,-47 50,-39 50,-18 C 50,6 0,33 0,33 Z"' +
-    'fill="none" stroke="#C0A19B" stroke-width="0.4" opacity="0.4"/>' +
-    '</g>' +
-    '</g>';
-  },
-
-  rugrect: function(x, y, owned){
-    if(!owned) return '';
-    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
-    '<g transform="matrix(1,0.5,-1,0.5,0,0)">' +
-    '<line x1="-90" y1="-47" x2="90" y2="-47" stroke="#C4BAB0" stroke-width="2.5" stroke-dasharray="2,3"/>' +
-    '<line x1="-90" y1="47" x2="90" y2="47" stroke="#C4BAB0" stroke-width="2,3"/>' +
-    '<rect x="-90" y="-45" width="180" height="90" fill="#D8CFC4"/>' +
-    '<rect x="-86" y="-41" width="172" height="82" fill="none" stroke="#A3B5A0" stroke-width="2.5"/>' +
-    '<rect x="-80" y="-35" width="160" height="70" fill="#E8E2DA"/>' +
-    '<rect x="-80" y="-35" width="160" height="10" fill="#D4B5AF" opacity="0.5"/>' +
-    '<rect x="-80" y="-15" width="160" height="10" fill="#9BB0BD" opacity="0.4"/>' +
-    '<rect x="-80" y="5"   width="160" height="10" fill="#A3B5A0" opacity="0.4"/>' +
-    '<rect x="-80" y="25"  width="160" height="10" fill="#B5A8BD" opacity="0.4"/>' +
-    '<line x1="-80" y1="-25" x2="80" y2="-25" stroke="#C4BAB0" stroke-width="0.5" opacity="0.3"/>' +
-    '<line x1="-80" y1="-5"  x2="80" y2="-5"  stroke="#C4BAB0" stroke-width="0.5" opacity="0.3"/>' +
-    '<line x1="-80" y1="15"  x2="80" y2="15"  stroke="#C4BAB0" stroke-width="0.5" opacity="0.3"/>' +
-    '<polygon points="0,-18 20,0 0,18 -20,0" fill="none" stroke="#C0B09C" stroke-width="0.8" opacity="0.35"/>' +
-    '<polygon points="0,-10 12,0 0,10 -12,0" fill="#D4C9A8" opacity="0.3"/>' +
-    '</g>' +
-    '</g>';
-  },
-
-  rugsquare: function(x, y, owned){
-    if(!owned) return '';
-    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
-    '<g transform="matrix(1,0.5,-1,0.5,0,0)">' +
-    '<rect x="-62" y="-62" width="124" height="124" fill="none" stroke="#C4BAB0" stroke-width="2.5" stroke-dasharray="2,3" rx="2"/>' +
-    '<rect x="-60" y="-60" width="120" height="120" fill="#D8CFC4" rx="1"/>' +
-    '<rect x="-54" y="-54" width="108" height="108" fill="none" stroke="#D4B5AF" stroke-width="3" rx="1"/>' +
-    '<rect x="-48" y="-48" width="96" height="96" fill="#E8E2DA"/>' +
-    '<rect x="-48" y="-48" width="24" height="24" fill="#B8C6CB" opacity="0.5"/>' +
-    '<rect x="0"   y="-48" width="24" height="24" fill="#B8C6CB" opacity="0.5"/>' +
-    '<rect x="-24" y="-24" width="24" height="24" fill="#B8C6CB" opacity="0.5"/>' +
-    '<rect x="24"  y="-24" width="24" height="24" fill="#B8C6CB" opacity="0.5"/>' +
-    '<rect x="-48" y="0"   width="24" height="24" fill="#B8C6CB" opacity="0.5"/>' +
-    '<rect x="0"   y="0"   width="24" height="24" fill="#B8C6CB" opacity="0.5"/>' +
-    '<rect x="-24" y="24"  width="24" height="24" fill="#B8C6CB" opacity="0.5"/>' +
-    '<rect x="24"  y="24"  width="24" height="24" fill="#B8C6CB" opacity="0.5"/>' +
-    '<circle cx="0" cy="0" r="14" fill="none" stroke="#C0B09C" stroke-width="1" opacity="0.4"/>' +
-    '<circle cx="0" cy="0" r="4" fill="#D4C9A8" opacity="0.6"/>' +
-    '</g>' +
-    '</g>';
-  },
-
-  shower: function(x, y, owned){
-    if(!owned) return '';
-    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
-    '<rect x="0" y="0" width="42" height="42" fill="rgba(130,140,120,0.08)" transform="translate(3,4) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '<g transform="translate(0,0)">' +
-    '<rect x="0" y="-3" width="42" height="3" class="wht-r" transform="translate(-42,21) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-3" width="42" height="3" class="wht-l" transform="translate(42,21) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="42" height="42" class="wht-t" transform="translate(0,-3) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(-2,-3)">' +
-    '<rect x="2" y="2" width="34" height="34" fill="rgba(180,215,230,0.35)" stroke="rgba(160,200,220,0.3)" stroke-width="0.5" transform="matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(-1,-3)">' +
-    '<rect x="0" y="-70" width="2" height="70" class="mtl-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-70" width="40" height="70" fill="rgba(200,215,225,0.25)" stroke="rgba(160,175,185,0.4)" stroke-width="0.6" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="2" height="40" class="mtl-t" transform="translate(0,-70) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(-1,-3)" opacity="0.12">' +
-    '<rect x="3" y="-60" width="12" height="40" fill="white" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(0,-3)">' +
-    '<rect x="0" y="-70" width="40" height="70" fill="rgba(200,215,225,0.25)" stroke="rgba(160,175,185,0.4)" stroke-width="0.6" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-70" width="2" height="70" class="mtl-l" transform="translate(40,20) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="40" height="2" class="mtl-t" transform="translate(0,-70) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(0,-3)" opacity="0.1">' +
-    '<rect x="5" y="-60" width="10" height="40" fill="white" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(0,-73)">' +
-    '<rect x="0" y="-2" width="40" height="2" class="mtl-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-2" width="2" height="2" class="mtl-l" transform="translate(40,20) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="40" height="2" class="mtl-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(-1,-73)">' +
-    '<rect x="0" y="-2" width="2" height="2" class="mtl-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-2" width="40" height="2" class="mtl-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="2" height="40" class="mtl-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(-32,-73)">' +
-    '<rect x="0" y="-14" width="1" height="14" class="mtl-r" transform="translate(-1,0.5) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-14" width="1" height="14" class="mtl-l" transform="translate(1,0.5) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="1" height="1" class="mtl-t" transform="translate(0,-14) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(-29,-87)">' +
-    '<rect x="0" y="-1" width="6" height="1" class="mtl-r" transform="translate(-6,3) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-1" width="6" height="1" class="mtl-l" transform="translate(6,3) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="6" height="6" class="mtl-t" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(16,-30)">' +
-    '<rect x="0" y="-6" width="1" height="6" class="blk-r" transform="translate(-1,0.5) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-6" width="1" height="6" class="blk-l" transform="translate(1,0.5) matrix(-1,0.5,0,1,0,0)"/>' +
-    '</g>' +
-    '</g>';
-  },
-
   sink: function(x, y, owned){
     if(!owned) return '';
     return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
@@ -27866,47 +27551,6 @@ var _roomFurnSVG = {
     '</g>' +
     '<g transform="translate(-2.5,-39)" opacity="0.15">' +
     '<rect x="4" y="-24" width="10" height="18" fill="white" transform="translate(0.5,0.25) matrix(-1,0.5,0,1,0,0)"/>' +
-    '</g>' +
-    '</g>';
-  },
-
-  toilet: function(x, y, owned){
-    if(!owned) return '';
-    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
-    '<rect x="0" y="0" width="24" height="28" fill="rgba(130,140,120,0.08)" transform="translate(3,4) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '<g transform="translate(0,0)">' +
-    '<rect x="0" y="-14" width="20" height="14" class="wht-r" transform="translate(-24,12) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-14" width="24" height="14" class="wht-l" transform="translate(20,10) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="20" height="24" class="wht-t" transform="translate(0,-14) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(1,-14)">' +
-    '<rect x="0" y="-2" width="22" height="2" class="wht-r" transform="translate(-26,13) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-2" width="26" height="2" class="wht-l" transform="translate(22,11) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="22" height="26" class="wht-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(1,-16)">' +
-    '<rect x="2" y="4" width="14" height="18" fill="rgba(200,210,215,0.5)" stroke="rgba(180,190,195,0.4)" stroke-width="0.5" transform="matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(1,-16)">' +
-    '<rect x="0" y="-1" width="22" height="1" class="stn-r" transform="translate(-26,13) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-1" width="26" height="1" class="stn-l" transform="translate(22,11) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="22" height="26" class="stn-t" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<!-- 底座顶面 y=-14 → 水箱从这里开始往上 -->' +
-    '<g transform="translate(0,-14)">' +
-    '<rect x="0" y="-18" width="18" height="18" class="wht-r" transform="translate(-8,4) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-18" width="8" height="18" class="wht-l" transform="translate(18,9) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="18" height="8" class="wht-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(-1,-32)">' +
-    '<rect x="0" y="-2" width="20" height="2" class="stn-r" transform="translate(-10,5) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-2" width="10" height="2" class="stn-l" transform="translate(20,10) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="20" height="10" class="stn-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(5,-34)">' +
-    '<rect x="0" y="-1" width="4" height="1" class="blk-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-1" width="4" height="1" class="blk-l" transform="translate(4,2) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="4" height="4" class="blk-t" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/>' +
     '</g>' +
     '</g>';
   },
@@ -27966,26 +27610,6 @@ var _roomFurnSVG = {
     '<circle cx="0" cy="0" r="7" fill="#F0ECE8" stroke="#E0DCD8" stroke-width="0.6"/>' +
     '</g>' +
     '</g>' +
-    '</g>' +
-    '</g>';
-  },
-
-  window: function(x, y, owned){
-    if(!owned) return '';
-    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
-    '<g transform="translate(0,0)">' +
-    '<rect x="0" y="-40" width="2" height="40" class="wht-r" transform="translate(-60,30) matrix(1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="-40" width="60" height="40" class="wht-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>' +
-    '<rect x="0" y="0" width="2" height="60" class="wht-t" transform="translate(0,-40) matrix(1,0.5,-1,0.5,0,0)"/>' +
-    '</g>' +
-    '<g transform="translate(2,1) matrix(-1,0.5,0,1,0,0)">' +
-    '<rect x="2"  y="-38" width="17" height="36" fill="rgba(230,238,245,0.65)" stroke="rgba(210,218,225,0.4)" stroke-width="0.4"/>' +
-    '<rect x="21" y="-38" width="18" height="36" fill="rgba(230,238,245,0.65)" stroke="rgba(210,218,225,0.4)" stroke-width="0.4"/>' +
-    '<rect x="41" y="-38" width="17" height="36" fill="rgba(230,238,245,0.65)" stroke="rgba(210,218,225,0.4)" stroke-width="0.4"/>' +
-    '<rect x="4"  y="-34" width="5" height="20" fill="rgba(255,255,255,0.15)"/>' +
-    '<rect x="23" y="-34" width="5" height="20" fill="rgba(255,255,255,0.15)"/>' +
-    '<rect x="19" y="-40" width="2" height="40" fill="#EAEAEA" stroke="#DDD" stroke-width="0.3"/>' +
-    '<rect x="39" y="-40" width="2" height="40" fill="#EAEAEA" stroke="#DDD" stroke-width="0.3"/>' +
     '</g>' +
     '</g>';
   },
@@ -28098,6 +27722,92 @@ var _roomFurnSVG = {
     s += _iR(12, 8, 2, 'grn', -4, -56);
     s += '</g>';
     return s;
+  },
+
+  bed2: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><rect x="0" y="0" width="48" height="68" fill="rgba(130,140,120,0.06)" transform="translate(4,5) matrix(1,0.5,-1,0.5,0,0)"/><g transform="translate(-8,-6)"><rect x="0" y="-40" width="64" height="40" class="df-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-40" width="3" height="40" class="df-l" transform="translate(64,32) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="64" height="3" class="df-t" transform="translate(0,-40) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-11,-25)"><rect x="0" y="-2" width="14" height="2" class="sh-r" transform="translate(-14,7) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="14" height="2" class="sh-l" transform="translate(14,7) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="14" height="14" class="sh-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(39,-1)"><rect x="0" y="-2" width="14" height="2" class="sh-r" transform="translate(-14,7) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="14" height="2" class="sh-l" transform="translate(14,7) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="14" height="14" class="sh-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-7,-23)"><g transform="matrix(1,0.5,-1,0.5,0,0)"><circle cx="0" cy="0" r="3" fill="#606060" stroke="#505050" stroke-width="0.5"/></g><rect x="0" y="-14" width="1" height="14" class="lm-r" transform="translate(-1,0.5) matrix(1,0.5,0,1,0,0)"/><polyline points="0,-14 0,-16 -8,-16" fill="none" stroke="#606060" stroke-width="1" stroke-linecap="round" transform="translate(0,-0.5)"/><polygon points="-10,-14 -6,-18 -2,-18 -4,-14" fill="#D4C9A8" stroke="#C4B998" stroke-width="0.5"/></g><g transform="translate(43,-4)"><rect x="0" y="-6" width="4" height="6" fill="#9BB0BD" stroke="#879CA9" stroke-width="0.5" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-6" width="4" height="6" fill="#879CA9" stroke="#738895" stroke-width="0.5" transform="translate(4,2) matrix(-1,0.5,0,1,0,0)"/></g><g transform="translate(47,-2)"><rect x="0" y="-5" width="4" height="5" fill="#D4B5AF" stroke="#C4A59F" stroke-width="0.5" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-5" width="3" height="5" fill="#C4A59F" stroke="#B4958F" stroke-width="0.5" transform="translate(4,2) matrix(-1,0.5,0,1,0,0)"/></g><g transform="translate(0,-6)"><rect x="0" y="-8" width="48" height="8" class="df-r" transform="translate(-68,34) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-8" width="68" height="8" class="df-l" transform="translate(48,24) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="48" height="68" class="df-t" transform="translate(0,-8) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(0,-14)"><rect x="0" y="-6" width="44" height="6" class="wm-r" transform="translate(-62,31) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-6" width="62" height="6" class="wm-l" transform="translate(44,22) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="44" height="62" class="wm-t" transform="translate(0,-6) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-20,-6)"><rect x="0" y="-4" width="44" height="4" class="bl-r" transform="translate(-42,21) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-4" width="42" height="4" class="bl-l" transform="translate(44,22) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="44" height="42" class="bl-t" transform="translate(0,-4) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-20,-10) matrix(1,0.5,-1,0.5,0,0)" opacity="0.15"><line x1="0" y1="2" x2="44" y2="2" stroke="#FFF" stroke-width="1.5"/></g><g transform="translate(-20,-10) matrix(1,0.5,-1,0.5,0,0)" opacity="0.08"><line x1="11" y1="4" x2="11" y2="42" stroke="#68788A" stroke-width="0.5"/><line x1="22" y1="4" x2="22" y2="42" stroke="#68788A" stroke-width="0.5"/><line x1="33" y1="4" x2="33" y2="42" stroke="#68788A" stroke-width="0.5"/></g><g transform="translate(2,-15)"><rect x="0" y="-6" width="18" height="6" class="pw-r" transform="translate(-10,5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-6" width="10" height="6" class="pw-l" transform="translate(18,9) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="18" height="10" class="pw-t" transform="translate(0,-6) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(18,-7)"><rect x="0" y="-6" width="18" height="6" class="pw-r" transform="translate(-10,5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-6" width="10" height="6" class="pw-l" transform="translate(18,9) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="18" height="10" class="pw-t" transform="translate(0,-6) matrix(1,0.5,-1,0.5,0,0)"/></g>';
+  },
+
+  sofa2: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><rect x="0" y="0" width="56" height="30" fill="rgba(130,140,120,0.08)" transform="translate(4,5) matrix(1,0.5,-1,0.5,0,0)"/><g transform="translate(2,5)"><rect x="0" y="-3" width="2" height="3" class="lg-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-3" width="2" height="3" class="lg-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/></g><g transform="translate(48,28)"><rect x="0" y="-3" width="2" height="3" class="lg-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-3" width="2" height="3" class="lg-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/></g><g transform="translate(-24,18)"><rect x="0" y="-3" width="2" height="3" class="lg-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-3" width="2" height="3" class="lg-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/></g><g transform="translate(26,41)"><rect x="0" y="-3" width="2" height="3" class="lg-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-3" width="2" height="3" class="lg-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/></g><g transform="translate(0,-3)"><rect x="0" y="-24" width="56" height="24" class="sb-r" transform="translate(-8,4) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-24" width="8" height="24" class="sb-l" transform="translate(56,28) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="56" height="8" class="sb-t" transform="translate(0,-24) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-8,1)"><rect x="0" y="-18" width="6" height="18" class="sb-r" transform="translate(-22,11) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="22" height="18" class="sb-l" transform="translate(6,3) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="6" height="22" class="sb-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-2,4)"><rect x="0" y="-10" width="44" height="10" class="sf-r" transform="translate(-22,11) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-10" width="22" height="10" class="sf-l" transform="translate(44,22) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="44" height="22" class="sf-t" transform="translate(0,-10) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(42,26)"><rect x="0" y="-18" width="6" height="18" class="sb-r" transform="translate(-22,11) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="22" height="18" class="sb-l" transform="translate(6,3) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="6" height="22" class="sb-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(18,-3)"><rect x="0" y="-2" width="20" height="2" class="bk-r" transform="translate(-18,9) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="18" height="2" class="bk-l" transform="translate(20,10) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="20" height="18" class="bk-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(2,-9)"><rect x="0" y="-10" width="14" height="10" class="cp-r" transform="translate(-8,4) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-10" width="8" height="10" class="cp-l" transform="translate(14,7) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="14" height="8" class="cp-t" transform="translate(0,-10) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(16,-2)"><rect x="0" y="-10" width="14" height="10" class="cp-r" transform="translate(-8,4) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-10" width="8" height="10" class="cp-l" transform="translate(14,7) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="14" height="8" class="cp-t" transform="translate(0,-10) matrix(1,0.5,-1,0.5,0,0)"/></g>';
+  },
+
+  lamp2: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><g transform="translate(3,4) matrix(1,0.5,-1,0.5,0,0)"><circle cx="0" cy="0" r="16" fill="rgba(130,140,120,0.06)"/></g><g transform="translate(0,3) matrix(1,0.5,-1,0.5,0,0)"><circle cx="0" cy="0" r="14" fill="#6E767E" stroke="#545B62" stroke-width="0.8"/></g><g transform="matrix(1,0.5,-1,0.5,0,0)"><circle cx="0" cy="0" r="14" fill="#8A929B" stroke="#6E767E" stroke-width="0.8"/><circle cx="0" cy="0" r="10" fill="none" stroke="#7E868F" stroke-width="0.4" opacity="0.3"/></g><g transform="translate(0,-3)"><rect x="0" y="-88" width="2" height="88" class="mt-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-88" width="2" height="88" class="mt-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/></g><g transform="translate(0,-91)"><path d="M -22,0 L -12,-26 L 12,-26 L 22,0 Z"fill="#D4B49C" stroke="#C4A48C" stroke-width="0.8" stroke-linejoin="round"/><ellipse cx="0" cy="0" rx="22" ry="7" fill="#C8A88C" stroke="#B89880" stroke-width="0.6"/><ellipse cx="0" cy="-26" rx="12" ry="4" fill="#DCC4AC" stroke="#CCB49C" stroke-width="0.6"/></g>';
+  },
+
+  bookshelf: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><rect x="0" y="0" width="10" height="40" fill="rgba(130,140,120,0.08)" transform="translate(3,4) matrix(1,0.5,-1,0.5,0,0)"/><g transform="translate(8,2)"><rect x="0" y="-78" width="36" height="78" fill="#C8C0B4" stroke="#B8B0A4" stroke-width="0.5" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/></g><g transform="translate(0,0)"><rect x="0" y="-2" width="10" height="2" class="mw-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="40" height="2" class="mw-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="10" height="40" class="mw-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-5,0)"><rect x="0" y="-18" width="7" height="18" class="mb-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="4" height="18" class="mb-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="mb-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-9,2)"><rect x="0" y="-16" width="7" height="16" class="mp-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-16" width="3" height="16" class="mp-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="mp-t" transform="translate(0,-16) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-13,4)"><rect x="0" y="-18" width="7" height="18" class="mg-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="4" height="18" class="mg-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="mg-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-17,6)"><rect x="0" y="-15" width="7" height="15" class="mv-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-15" width="3" height="15" class="mv-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="mv-t" transform="translate(0,-15) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-21,8)"><rect x="0" y="-17" width="7" height="17" class="my-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-17" width="4" height="17" class="my-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="my-t" transform="translate(0,-17) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-1,-22)"><rect x="0" y="-2" width="10" height="2" class="mw-r" transform="translate(-36,18) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="36" height="2" class="mw-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="10" height="36" class="mw-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-6,-21.5)"><rect x="0" y="-16" width="7" height="16" class="mp-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-16" width="3" height="16" class="mp-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="mp-t" transform="translate(0,-16) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-10,-19.5)"><rect x="0" y="-18" width="7" height="18" class="mb-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="4" height="18" class="mb-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="mb-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-14,-17.5)"><rect x="0" y="-15" width="7" height="15" class="mx-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-15" width="3" height="15" class="mx-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="mx-t" transform="translate(0,-15) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-18,-15.5)"><rect x="0" y="-17" width="7" height="17" class="mg-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-17" width="4" height="17" class="mg-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="mg-t" transform="translate(0,-17) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-1,-42)"><rect x="0" y="-2" width="10" height="2" class="mw-r" transform="translate(-36,18) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="36" height="2" class="mw-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="10" height="36" class="mw-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-7,-41)"><rect x="0" y="-16" width="7" height="16" class="mv-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-16" width="4" height="16" class="mv-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="mv-t" transform="translate(0,-16) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-11,-39)"><rect x="0" y="-18" width="7" height="18" class="my-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="3" height="18" class="my-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="my-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-15,-37)"><rect x="0" y="-15" width="7" height="15" class="mb-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-15" width="4" height="15" class="mb-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="mb-t" transform="translate(0,-15) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-1,-62)"><rect x="0" y="-2" width="10" height="2" class="mw-r" transform="translate(-36,18) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="36" height="2" class="mw-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="10" height="36" class="mw-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-9,-60)"><rect x="0" y="-14" width="7" height="14" class="mp-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-14" width="3" height="14" class="mp-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="mp-t" transform="translate(0,-14) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(0,-80)"><rect x="0" y="-2" width="10" height="2" class="mw-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="40" height="2" class="mw-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="10" height="40" class="mw-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-38,17)"><rect x="0" y="-78" width="10" height="78" class="mw-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-78" width="2" height="78" class="mw-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="10" height="2" class="mw-t" transform="translate(0,-78) matrix(1,0.5,-1,0.5,0,0)"/></g>';
+  },
+
+  whiteshelf: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><rect x="0" y="0" width="10" height="40" fill="rgba(130,140,120,0.06)" transform="translate(3,4) matrix(1,0.5,-1,0.5,0,0)"/><g transform="translate(8,2)"><rect x="0" y="-88" width="36" height="88" fill="#E0DBD5" stroke="#D4CFC9" stroke-width="0.5" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/></g><g transform="translate(0,0)"><rect x="0" y="-40" width="10" height="40" class="wf-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-40" width="40" height="40" class="wf-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/></g><g transform="translate(10,5) matrix(-1,0.5,0,1,0,0)" opacity="0.12"><line x1="20" y1="-38" x2="20" y2="-2" stroke="#808080" stroke-width="0.5"/><rect x="17" y="-22" width="1.5" height="4" fill="#B0B0B0" rx="0.5"/><rect x="21" y="-22" width="1.5" height="4" fill="#B0B0B0" rx="0.5"/></g><g transform="translate(0,-40)"><rect x="0" y="-2" width="10" height="2" class="wf-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="40" height="2" class="wf-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="10" height="40" class="wf-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-5,-40)"><rect x="0" y="-18" width="7" height="18" class="bk1-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="4" height="18" class="bk1-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="bk1-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-9,-38)"><rect x="0" y="-16" width="7" height="16" class="bk2-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-16" width="3" height="16" class="bk2-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="bk2-t" transform="translate(0,-16) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-13,-36)"><rect x="0" y="-20" width="7" height="20" class="bk3-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-20" width="4" height="20" class="bk3-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="bk3-t" transform="translate(0,-20) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-17,-34)"><rect x="0" y="-17" width="7" height="17" class="bk4-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-17" width="3" height="17" class="bk4-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="bk4-t" transform="translate(0,-17) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-21,-32)"><rect x="0" y="-18" width="7" height="18" class="bk5-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="4" height="18" class="bk5-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="bk5-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-1,-64)"><rect x="0" y="-2" width="10" height="2" class="wf-r" transform="translate(-36,18) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="36" height="2" class="wf-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="10" height="36" class="wf-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-4,-64)"><rect x="0" y="-16" width="7" height="16" class="bk3-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-16" width="3" height="16" class="bk3-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="bk3-t" transform="translate(0,-16) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-8,-62)"><rect x="0" y="-18" width="7" height="18" class="bk1-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="4" height="18" class="bk1-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="4" class="bk1-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-12,-60)"><rect x="0" y="-15" width="7" height="15" class="bk2-r" transform="translate(-3,1.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-15" width="3" height="15" class="bk2-l" transform="translate(7,3.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="7" height="3" class="bk2-t" transform="translate(0,-15) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(0,-90)"><rect x="0" y="-2" width="10" height="2" class="wf-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="40" height="2" class="wf-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="10" height="40" class="wf-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-38,17)"><rect x="0" y="-88" width="10" height="88" class="wf-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-88" width="2" height="88" class="wf-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/></g>';
+  },
+
+  kitchen: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><rect x="0" y="0" width="100" height="20" fill="rgba(130,140,120,0.06)" transform="translate(4,5) matrix(1,0.5,-1,0.5,0,0)"/><g transform="translate(0,0)"><rect x="0" y="-28" width="100" height="28" class="cb-r" transform="translate(-18,9) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-28" width="18" height="28" class="cb-l" transform="translate(100,50) matrix(-1,0.5,0,1,0,0)"/></g><g transform="translate(-18,9) matrix(1,0.5,0,1,0,0)" opacity="0.15"><line x1="25" y1="-26" x2="25" y2="-2" stroke="#808080" stroke-width="0.5"/><line x1="50" y1="-26" x2="50" y2="-2" stroke="#808080" stroke-width="0.5"/><line x1="75" y1="-26" x2="75" y2="-2" stroke="#808080" stroke-width="0.5"/><rect x="10" y="-16" width="5" height="1.5" fill="#A0A0A0" rx="0.5"/><rect x="35" y="-16" width="5" height="1.5" fill="#A0A0A0" rx="0.5"/></g><g transform="translate(-18,9) matrix(1,0.5,0,1,0,0)"><rect x="76" y="-26" width="23" height="24" fill="#404448" stroke="#303438" stroke-width="0.6" rx="1"/><rect x="78" y="-24" width="19" height="16" fill="rgba(100,110,120,0.3)" stroke="#505458" stroke-width="0.4" rx="0.5"/><rect x="84" y="-6" width="7" height="1.5" fill="#808488" rx="0.5"/></g><g transform="translate(-2,-28)"><rect x="0" y="-2" width="104" height="2" class="wt-r" transform="translate(-22,11) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="22" height="2" class="wt-l" transform="translate(104,52) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="104" height="22" class="wt-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-2,-30) matrix(1,0.5,-1,0.5,0,0)"><rect x="12" y="4" width="20" height="14" fill="#C8CCD0" stroke="#B8BCC0" stroke-width="0.5" rx="2"/><rect x="14" y="6" width="7" height="10" fill="#B0B8C0" stroke="#A0A8B0" stroke-width="0.4" rx="1"/><rect x="23" y="6" width="7" height="10" fill="#B0B8C0" stroke="#A0A8B0" stroke-width="0.4" rx="1"/><rect x="18" y="2" width="3" height="3" fill="#A0A4A8" stroke="#909498" stroke-width="0.4" rx="0.5"/><circle cx="50" cy="7" r="5" fill="none" stroke="#404040" stroke-width="0.8" opacity="0.3"/><circle cx="50" cy="7" r="2" fill="none" stroke="#404040" stroke-width="0.5" opacity="0.3"/><circle cx="66" cy="12" r="4" fill="none" stroke="#404040" stroke-width="0.8" opacity="0.3"/><circle cx="66" cy="12" r="1.5" fill="none" stroke="#404040" stroke-width="0.5" opacity="0.3"/></g>';
+  },
+
+  painting1: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><g transform="translate(0,0)"><rect x="0" y="-28" width="2" height="28" fill="#A09080" stroke="#908070" stroke-width="0.8" stroke-linejoin="round" transform="translate(-36,18) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-28" width="36" height="28" fill="#C8C0B4" stroke="#B8B0A4" stroke-width="0.8" stroke-linejoin="round" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="36" fill="#B0A090" stroke="#A09080" stroke-width="0.8" stroke-linejoin="round" transform="translate(0,-28) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"><rect x="2" y="-26" width="32" height="24" fill="#E8E2DA"/><rect x="4" y="-24" width="14" height="10" fill="#D4B5AF" rx="1"/><rect x="20" y="-24" width="12" height="8" fill="#9BB0BD" rx="1"/><rect x="4" y="-12" width="10" height="8" fill="#A3B5A0" rx="1"/><rect x="16" y="-14" width="16" height="10" fill="#D4C9A8" rx="1"/><circle cx="10" cy="-19" r="3" fill="#B5A8BD" opacity="0.6"/></g></g><g id="painting-2" transform="translate(300, 160)"><g transform="translate(0,0)"><rect x="0" y="-34" width="2" height="34" fill="#706050" stroke="#605040" stroke-width="0.8" stroke-linejoin="round" transform="translate(-44,22) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-34" width="44" height="34" fill="#8C7C6C" stroke="#7C6C5C" stroke-width="0.8" stroke-linejoin="round" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="44" fill="#7C6C5C" stroke="#6C5C4C" stroke-width="0.8" stroke-linejoin="round" transform="translate(0,-34) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"><rect x="3" y="-32" width="38" height="30" fill="#C8D4DC"/><polygon points="3,-14 12,-24 22,-16 32,-22 41,-14 41,-2 3,-2" fill="#A4ACB0" opacity="0.5"/><polygon points="3,-8 10,-18 20,-10 28,-16 41,-8 41,-2 3,-2" fill="#8C9490" opacity="0.6"/><rect x="3" y="-6" width="38" height="4" fill="#B8C0A8" opacity="0.5"/><circle cx="32" cy="-26" r="4" fill="#E8D8C0" opacity="0.7"/></g></g><g id="painting-3" transform="translate(490, 200)"><g transform="translate(0,0)"><rect x="0" y="-28" width="2" height="28" fill="#E0D8D0" stroke="#D0C8C0" stroke-width="0.8" stroke-linejoin="round" transform="translate(-28,14) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-28" width="28" height="28" fill="#F0EBE5" stroke="#E0DBD5" stroke-width="0.8" stroke-linejoin="round" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="28" fill="#E8E0D8" stroke="#D8D0C8" stroke-width="0.8" stroke-linejoin="round" transform="translate(0,-28) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"><rect x="2" y="-26" width="24" height="24" fill="#FAF6F0"/><circle cx="14" cy="-14" r="8" fill="none" stroke="#D4B5AF" stroke-width="1.5"/><line x1="6" y1="-14" x2="22" y2="-14" stroke="#A3B5A0" stroke-width="0.8" opacity="0.6"/><line x1="14" y1="-22" x2="14" y2="-6" stroke="#9BB0BD" stroke-width="0.8" opacity="0.6"/><circle cx="14" cy="-14" r="2" fill="#D4C9A8"/></g></g><g id="painting-4" transform="translate(300, 290)"><g transform="translate(0,0)"><rect x="0" y="-26" width="38" height="26" fill="#B0A090" stroke="#A09080" stroke-width="0.8" stroke-linejoin="round" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-26" width="2" height="26" fill="#A09080" stroke="#908070" stroke-width="0.8" stroke-linejoin="round" transform="translate(38,19) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="38" height="2" fill="#C0B0A0" stroke="#B0A090" stroke-width="0.8" stroke-linejoin="round" transform="translate(0,-26) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"><rect x="2" y="-24" width="34" height="22" fill="#E8E2DA"/><rect x="2" y="-24" width="7" height="22" fill="#D4B5AF" opacity="0.7"/><rect x="9" y="-24" width="7" height="22" fill="#C8B8A8" opacity="0.6"/><rect x="16" y="-24" width="6" height="22" fill="#9BB0BD" opacity="0.5"/><rect x="22" y="-24" width="7" height="22" fill="#A3B5A0" opacity="0.5"/><rect x="29" y="-24" width="7" height="22" fill="#B5A8BD" opacity="0.5"/></g>';
+  },
+
+  painting2: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><g transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"><rect x="10" y="-68" width="48" height="34" fill="#D4C8B8" stroke="#C4B8A8" stroke-width="1" rx="1"/><rect x="13" y="-65" width="42" height="28" fill="#E8E2DA"/><polygon points="13,-50 24,-60 34,-52 44,-58 55,-50 55,-37 13,-37" fill="#A4ACB0" opacity="0.5"/><polygon points="13,-44 20,-54 30,-46 40,-52 55,-44 55,-37 13,-37" fill="#8C9490" opacity="0.6"/><rect x="13" y="-40" width="42" height="3" fill="#B8C0A8" opacity="0.4"/><circle cx="46" cy="-58" r="3" fill="#E8D8C0" opacity="0.7"/><rect x="-6" y="-106" width="26" height="34" fill="#D4C8B8" stroke="#C4B8A8" stroke-width="1" rx="1"/><rect x="-3" y="-103" width="20" height="28" fill="#FAF6F0"/><ellipse cx="7" cy="-82" rx="5" ry="8" fill="#D4B5AF" opacity="0.6"/><rect x="4" y="-90" width="6" height="2" fill="#C0A19B" opacity="0.5"/><line x1="5" y1="-92" x2="3" y2="-98" stroke="#A3B5A0" stroke-width="1" opacity="0.5"/><line x1="7" y1="-92" x2="7" y2="-100" stroke="#A3B5A0" stroke-width="1" opacity="0.5"/><line x1="9" y1="-92" x2="11" y2="-99" stroke="#A3B5A0" stroke-width="1" opacity="0.5"/><circle cx="3" cy="-99" r="2" fill="#A3B5A0" opacity="0.4"/><circle cx="7" cy="-101" r="2" fill="#9BB0BD" opacity="0.4"/><circle cx="11" cy="-100" r="2" fill="#D4C9A8" opacity="0.4"/><rect x="42" y="-108" width="24" height="24" fill="#D4C8B8" stroke="#C4B8A8" stroke-width="1" rx="1"/><rect x="45" y="-105" width="18" height="18" fill="#E8E2DA"/><circle cx="54" cy="-96" r="7" fill="none" stroke="#D4B5AF" stroke-width="1.2"/><circle cx="54" cy="-96" r="3.5" fill="#B5A8BD" opacity="0.5"/><rect x="-6" y="-20" width="22" height="22" fill="#D4C8B8" stroke="#C4B8A8" stroke-width="1" rx="1"/><rect x="-3" y="-17" width="16" height="16" fill="#FAF6F0"/><rect x="-3" y="-17" width="8" height="8" fill="#9BB0BD" opacity="0.4"/><rect x="5" y="-17" width="8" height="8" fill="#D4C9A8" opacity="0.4"/><rect x="-3" y="-9" width="8" height="8" fill="#D4B5AF" opacity="0.4"/><rect x="5" y="-9" width="8" height="8" fill="#A3B5A0" opacity="0.4"/><rect x="52" y="-28" width="20" height="28" fill="#D4C8B8" stroke="#C4B8A8" stroke-width="1" rx="1"/><rect x="55" y="-25" width="14" height="22" fill="#E8E2DA"/><rect x="55" y="-25" width="3.5" height="22" fill="#D4B5AF" opacity="0.5"/><rect x="58.5" y="-25" width="3.5" height="22" fill="#9BB0BD" opacity="0.4"/><rect x="62" y="-25" width="3.5" height="22" fill="#A3B5A0" opacity="0.4"/><rect x="65.5" y="-25" width="3.5" height="22" fill="#B5A8BD" opacity="0.4"/></g>';
+  },
+
+  rug2: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><g transform="matrix(1, 0.5, -1, 0.5, 0, 0)"><circle cx="0" cy="0" r="82" fill="rgba(130,140,120,0.06)"/><circle cx="0" cy="0" r="80" fill="none" stroke="#C4BAB0" stroke-width="3" stroke-dasharray="2,3"/><circle cx="0" cy="0" r="78" fill="#D8CFC4"/><circle cx="0" cy="0" r="68" fill="#D4B5AF"/><circle cx="0" cy="0" r="58" fill="#E8E2DA"/><circle cx="0" cy="0" r="48" fill="#9BB0BD"/><circle cx="0" cy="0" r="38" fill="#C8C0B4"/><circle cx="0" cy="0" r="28" fill="#A3B5A0"/><circle cx="0" cy="0" r="18" fill="#B5A8BD"/><circle cx="0" cy="0" r="6" fill="#D4C9A8"/><circle cx="0" cy="0" r="73" fill="none" stroke="#C4BAB0" stroke-width="0.5" opacity="0.4"/><circle cx="0" cy="0" r="63" fill="none" stroke="#C0A19B" stroke-width="0.5" opacity="0.4"/><circle cx="0" cy="0" r="53" fill="none" stroke="#D0CAC2" stroke-width="0.5" opacity="0.4"/><circle cx="0" cy="0" r="43" fill="none" stroke="#879CA9" stroke-width="0.5" opacity="0.4"/><circle cx="0" cy="0" r="33" fill="none" stroke="#B8B0A4" stroke-width="0.5" opacity="0.4"/><circle cx="0" cy="0" r="23" fill="none" stroke="#8FA18C" stroke-width="0.5" opacity="0.4"/><line x1="-78" y1="0" x2="78" y2="0" stroke="#C4BAB0" stroke-width="0.4" opacity="0.2"/><line x1="0" y1="-78" x2="0" y2="78" stroke="#C4BAB0" stroke-width="0.4" opacity="0.2"/><line x1="-55" y1="-55" x2="55" y2="55" stroke="#C4BAB0" stroke-width="0.3" opacity="0.15"/><line x1="-55" y1="55" x2="55" y2="-55" stroke="#C4BAB0" stroke-width="0.3" opacity="0.15"/></g>';
+  }
+,
+
+  computer: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><g transform="translate(0,0)"><rect x="0" y="-1" width="10" height="1" class="mtl-r" transform="translate(-8,4) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-1" width="8" height="1" class="mtl-l" transform="translate(10,5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="10" height="8" class="mtl-t" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(1,-1)"><rect x="0" y="-16" width="2" height="16" class="mtl-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-16" width="2" height="16" class="mtl-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="2" class="mtl-t" transform="translate(0,-16) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(19,-26)"><rect x="0" y="-24" width="2" height="24" class="blk-r" transform="translate(-36,18) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-24" width="36" height="24" class="blk-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="36" class="blk-t" transform="translate(0,-24) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(19,-27)"><rect x="2" y="-20" width="32" height="20" fill="rgba(170,190,210,0.5)" stroke="rgba(150,170,190,0.3)" stroke-width="0.4" transform="translate(1.5,0.75) matrix(-1,0.5,0,1,0,0)"/></g><g transform="translate(19,-27)" opacity="0.12"><rect x="4" y="-16" width="8" height="12" fill="white" transform="translate(1.5,0.75) matrix(-1,0.5,0,1,0,0)"/></g><g transform="translate(12,6)"><rect x="0" y="-1" width="8" height="1" class="stn-r" transform="translate(-20,10) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-1" width="20" height="1" class="stn-l" transform="translate(8,4) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="8" height="20" class="stn-t" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(12,6)"><rect x="1" y="2" width="5" height="16" fill="rgba(80,85,90,0.25)" stroke="none" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/></g>';
+  },
+
+  fridge: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><rect x="0" y="0" width="36" height="30" fill="rgba(130,140,120,0.10)" transform="translate(4,5) matrix(1,0.5,-1,0.5,0,0)"/><g transform="translate(0,0)"><rect x="0" y="-50" width="36" height="50" class="fg-r" transform="translate(-30,15) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-50" width="30" height="50" class="fg-l" transform="translate(36,18) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="36" height="30" class="fg-t" transform="translate(0,-50) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)"><rect x="12" y="-44" width="14" height="2" fill="#C8C4C0" stroke="#A8A4A0" stroke-width="0.5" rx="1"/></g><g opacity="0.12"><line x1="0" y1="-50" x2="0" y2="0" stroke="#708068" stroke-width="0.6" transform="translate(-8,4) matrix(1,0.5,0,1,0,0)"/></g><g transform="translate(0,-50)"><rect x="0" y="-1" width="36" height="1" class="fd-r" transform="translate(-30,15) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-1" width="30" height="1" class="fd-l" transform="translate(36,18) matrix(-1,0.5,0,1,0,0)"/></g><g transform="translate(0,-51)"><rect x="0" y="-26" width="36" height="26" class="fg-r" transform="translate(-30,15) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-26" width="30" height="26" class="fg-l" transform="translate(36,18) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="36" height="30" class="fg-t" transform="translate(0,-26) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)"><rect x="12" y="-57" width="14" height="2" fill="#C8C4C0" stroke="#A8A4A0" stroke-width="0.5" rx="1"/></g><g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)" opacity="0.55"><rect x="10" y="-40" width="6" height="6" fill="#D4B5AF" stroke="#C0A19B" stroke-width="0.4"/></g><g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)" opacity="0.5"><rect x="20" y="-28" width="5" height="5" fill="#9BB0BD" stroke="#879CA9" stroke-width="0.4"/></g><g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)" opacity="0.5"><rect x="14" y="-68" width="6" height="5" fill="#D4C9A8" stroke="#C0B594" stroke-width="0.4"/></g><g transform="translate(-30,15) matrix(1,0.5,0,1,0,0)" opacity="0.45"><rect x="24" y="-16" width="5" height="5" fill="#A3B5A0" stroke="#8FA18C" stroke-width="0.4"/></g>';
+  },
+
+  rugheart: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><g transform="matrix(1,0.5,-1,0.5,0,0)"><path d="M 0,40 C 0,40 -60,10 -60,-20 C -60,-45 -35,-55 0,-25 C 35,-55 60,-45 60,-20 C 60,10 0,40 0,40 Z"fill="none" stroke="#C4BAB0" stroke-width="2.5" stroke-dasharray="2,3"/><path d="M 0,38 C 0,38 -58,8 -58,-20 C -58,-44 -34,-53 0,-24 C 34,-53 58,-44 58,-20 C 58,8 0,38 0,38 Z"fill="#D4B5AF"/><path d="M 0,28 C 0,28 -44,4 -44,-14 C -44,-33 -26,-40 0,-17 C 26,-40 44,-33 44,-14 C 44,4 0,28 0,28 Z"fill="#E8E2DA"/><path d="M 0,18 C 0,18 -30,0 -30,-10 C -30,-22 -18,-27 0,-12 C 18,-27 30,-22 30,-10 C 30,0 0,18 0,18 Z"fill="#B5A8BD"/><path d="M 0,8 C 0,8 -14,-2 -14,-8 C -14,-14 -8,-16 0,-6 C 8,-16 14,-14 14,-8 C 14,-2 0,8 0,8 Z"fill="#D4C9A8"/><path d="M 0,33 C 0,33 -50,6 -50,-18 C -50,-39 -30,-47 0,-21 C 30,-47 50,-39 50,-18 C 50,6 0,33 0,33 Z"fill="none" stroke="#C0A19B" stroke-width="0.4" opacity="0.4"/></g>';
+  },
+
+  rugrect: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><g transform="matrix(1,0.5,-1,0.5,0,0)"><line x1="-90" y1="-47" x2="90" y2="-47" stroke="#C4BAB0" stroke-width="2.5" stroke-dasharray="2,3"/><line x1="-90" y1="47" x2="90" y2="47" stroke="#C4BAB0" stroke-width="2,3"/><rect x="-90" y="-45" width="180" height="90" fill="#D8CFC4"/><rect x="-86" y="-41" width="172" height="82" fill="none" stroke="#A3B5A0" stroke-width="2.5"/><rect x="-80" y="-35" width="160" height="70" fill="#E8E2DA"/><rect x="-80" y="-35" width="160" height="10" fill="#D4B5AF" opacity="0.5"/><rect x="-80" y="-15" width="160" height="10" fill="#9BB0BD" opacity="0.4"/><rect x="-80" y="5"   width="160" height="10" fill="#A3B5A0" opacity="0.4"/><rect x="-80" y="25"  width="160" height="10" fill="#B5A8BD" opacity="0.4"/><line x1="-80" y1="-25" x2="80" y2="-25" stroke="#C4BAB0" stroke-width="0.5" opacity="0.3"/><line x1="-80" y1="-5"  x2="80" y2="-5"  stroke="#C4BAB0" stroke-width="0.5" opacity="0.3"/><line x1="-80" y1="15"  x2="80" y2="15"  stroke="#C4BAB0" stroke-width="0.5" opacity="0.3"/><polygon points="0,-18 20,0 0,18 -20,0" fill="none" stroke="#C0B09C" stroke-width="0.8" opacity="0.35"/><polygon points="0,-10 12,0 0,10 -12,0" fill="#D4C9A8" opacity="0.3"/></g>';
+  },
+
+  rugsquare: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><g transform="matrix(1,0.5,-1,0.5,0,0)"><rect x="-62" y="-62" width="124" height="124" fill="none" stroke="#C4BAB0" stroke-width="2.5" stroke-dasharray="2,3" rx="2"/><rect x="-60" y="-60" width="120" height="120" fill="#D8CFC4" rx="1"/><rect x="-54" y="-54" width="108" height="108" fill="none" stroke="#D4B5AF" stroke-width="3" rx="1"/><rect x="-48" y="-48" width="96" height="96" fill="#E8E2DA"/><rect x="-48" y="-48" width="24" height="24" fill="#B8C6CB" opacity="0.5"/><rect x="0"   y="-48" width="24" height="24" fill="#B8C6CB" opacity="0.5"/><rect x="-24" y="-24" width="24" height="24" fill="#B8C6CB" opacity="0.5"/><rect x="24"  y="-24" width="24" height="24" fill="#B8C6CB" opacity="0.5"/><rect x="-48" y="0"   width="24" height="24" fill="#B8C6CB" opacity="0.5"/><rect x="0"   y="0"   width="24" height="24" fill="#B8C6CB" opacity="0.5"/><rect x="-24" y="24"  width="24" height="24" fill="#B8C6CB" opacity="0.5"/><rect x="24"  y="24"  width="24" height="24" fill="#B8C6CB" opacity="0.5"/><circle cx="0" cy="0" r="14" fill="none" stroke="#C0B09C" stroke-width="1" opacity="0.4"/><circle cx="0" cy="0" r="4" fill="#D4C9A8" opacity="0.6"/></g>';
+  },
+
+  shower: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><rect x="0" y="0" width="42" height="42" fill="rgba(130,140,120,0.08)" transform="translate(3,4) matrix(1,0.5,-1,0.5,0,0)"/><g transform="translate(0,0)"><rect x="0" y="-3" width="42" height="3" class="wht-r" transform="translate(-42,21) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-3" width="42" height="3" class="wht-l" transform="translate(42,21) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="42" height="42" class="wht-t" transform="translate(0,-3) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-2,-3)"><rect x="2" y="2" width="34" height="34" fill="rgba(180,215,230,0.35)" stroke="rgba(160,200,220,0.3)" stroke-width="0.5" transform="matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-1,-3)"><rect x="0" y="-70" width="2" height="70" class="mtl-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-70" width="40" height="70" fill="rgba(200,215,225,0.25)" stroke="rgba(160,175,185,0.4)" stroke-width="0.6" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="40" class="mtl-t" transform="translate(0,-70) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-1,-3)" opacity="0.12"><rect x="3" y="-60" width="12" height="40" fill="white" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/></g><g transform="translate(0,-3)"><rect x="0" y="-70" width="40" height="70" fill="rgba(200,215,225,0.25)" stroke="rgba(160,175,185,0.4)" stroke-width="0.6" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-70" width="2" height="70" class="mtl-l" transform="translate(40,20) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="40" height="2" class="mtl-t" transform="translate(0,-70) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(0,-3)" opacity="0.1"><rect x="5" y="-60" width="10" height="40" fill="white" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/></g><g transform="translate(0,-73)"><rect x="0" y="-2" width="40" height="2" class="mtl-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="2" height="2" class="mtl-l" transform="translate(40,20) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="40" height="2" class="mtl-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-1,-73)"><rect x="0" y="-2" width="2" height="2" class="mtl-r" transform="translate(-40,20) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="40" height="2" class="mtl-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="40" class="mtl-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-32,-73)"><rect x="0" y="-14" width="1" height="14" class="mtl-r" transform="translate(-1,0.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-14" width="1" height="14" class="mtl-l" transform="translate(1,0.5) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="1" height="1" class="mtl-t" transform="translate(0,-14) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-29,-87)"><rect x="0" y="-1" width="6" height="1" class="mtl-r" transform="translate(-6,3) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-1" width="6" height="1" class="mtl-l" transform="translate(6,3) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="6" height="6" class="mtl-t" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(16,-30)"><rect x="0" y="-6" width="1" height="6" class="blk-r" transform="translate(-1,0.5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-6" width="1" height="6" class="blk-l" transform="translate(1,0.5) matrix(-1,0.5,0,1,0,0)"/></g>';
+  },
+
+  toilet: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><rect x="0" y="0" width="24" height="28" fill="rgba(130,140,120,0.08)" transform="translate(3,4) matrix(1,0.5,-1,0.5,0,0)"/><g transform="translate(0,0)"><rect x="0" y="-14" width="20" height="14" class="wht-r" transform="translate(-24,12) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-14" width="24" height="14" class="wht-l" transform="translate(20,10) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="20" height="24" class="wht-t" transform="translate(0,-14) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(1,-14)"><rect x="0" y="-2" width="22" height="2" class="wht-r" transform="translate(-26,13) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="26" height="2" class="wht-l" transform="translate(22,11) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="22" height="26" class="wht-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(1,-16)"><rect x="2" y="4" width="14" height="18" fill="rgba(200,210,215,0.5)" stroke="rgba(180,190,195,0.4)" stroke-width="0.5" transform="matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(1,-16)"><rect x="0" y="-1" width="22" height="1" class="stn-r" transform="translate(-26,13) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-1" width="26" height="1" class="stn-l" transform="translate(22,11) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="22" height="26" class="stn-t" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(0,-14)"><rect x="0" y="-18" width="18" height="18" class="wht-r" transform="translate(-8,4) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-18" width="8" height="18" class="wht-l" transform="translate(18,9) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="18" height="8" class="wht-t" transform="translate(0,-18) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(-1,-32)"><rect x="0" y="-2" width="20" height="2" class="stn-r" transform="translate(-10,5) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-2" width="10" height="2" class="stn-l" transform="translate(20,10) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="20" height="10" class="stn-t" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(5,-34)"><rect x="0" y="-1" width="4" height="1" class="blk-r" transform="translate(-4,2) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-1" width="4" height="1" class="blk-l" transform="translate(4,2) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="4" height="4" class="blk-t" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/></g>';
+  },
+
+  window: function(x, y, owned){
+    if(!owned) return '';
+    return '<g class="rm-furn" transform="translate('+x+','+y+')"><g transform="translate(0,0)"><rect x="0" y="-40" width="2" height="40" class="wht-r" transform="translate(-60,30) matrix(1,0.5,0,1,0,0)"/><rect x="0" y="-40" width="60" height="40" class="wht-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/><rect x="0" y="0" width="2" height="60" class="wht-t" transform="translate(0,-40) matrix(1,0.5,-1,0.5,0,0)"/></g><g transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"><rect x="2"  y="-38" width="17" height="36" fill="rgba(230,238,245,0.65)" stroke="rgba(210,218,225,0.4)" stroke-width="0.4"/><rect x="21" y="-38" width="18" height="36" fill="rgba(230,238,245,0.65)" stroke="rgba(210,218,225,0.4)" stroke-width="0.4"/><rect x="41" y="-38" width="17" height="36" fill="rgba(230,238,245,0.65)" stroke="rgba(210,218,225,0.4)" stroke-width="0.4"/><rect x="4"  y="-34" width="5" height="20" fill="rgba(255,255,255,0.15)"/><rect x="23" y="-34" width="5" height="20" fill="rgba(255,255,255,0.15)"/><rect x="19" y="-40" width="2" height="40" fill="#EAEAEA" stroke="#DDD" stroke-width="0.3"/><rect x="39" y="-40" width="2" height="40" fill="#EAEAEA" stroke="#DDD" stroke-width="0.3"/></g>';
   }
 };
 
@@ -28121,8 +27831,7 @@ var _defaultFurnPositions = {
   bigplant:{ gx:4, gy:2 },
   frame: { gx:0, gy:1 },
   frame2:{ gx:1, gy:1 },
-  shelf: { gx:4, gy:1 },
-  wshelf:{ gx:3, gy:1 },
+  wardrobe:{ gx:4, gy:1 },
   rug:   { gx:2, gy:2 },
   rugheart:{ gx:2, gy:2 },
   rugrect:{ gx:2, gy:2 },
@@ -28132,6 +27841,15 @@ var _defaultFurnPositions = {
   fridge:{ gx:4, gy:0 },
   bar:   { gx:3, gy:1 },
   window:{ gx:1, gy:0 },
+  bed2: { gx:0, gy:3 },
+  bookshelf: { gx:1, gy:3 },
+  kitchen: { gx:2, gy:3 },
+  lamp2: { gx:3, gy:3 },
+  painting1: { gx:4, gy:3 },
+  painting2: { gx:0, gy:4 },
+  rug2: { gx:1, gy:4 },
+  sofa2: { gx:2, gy:4 },
+  whiteshelf: { gx:3, gy:4 }
 };
 
 function _mapOpenRoom(container, mapData, houseId){
