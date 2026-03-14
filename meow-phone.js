@@ -27289,38 +27289,38 @@ var _roomFurnSVG = {
   piano: function(x, y, owned){
     if(!owned) return '';
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    s += _iShadow(50, 20, 5, 8);
-    // Legs (4 small boxes at corners)
-    s += _iR(3, 3, 6, 'blk', 0, 0);
-    s += _iR(3, 3, 6, 'blk', 42, 0);
-    s += _iR(3, 3, 6, 'blk', -15, 0);
-    s += _iR(3, 3, 6, 'blk', 27, 0);
-    // Base board: w=50, d=20, h=4
-    s += _iR(50, 20, 4, 'blk', 0, -6);
-    // Pedals (3 tiny gold boxes)
-    s += _iR(2, 2, 2, 'wood', 14, -2);
-    s += _iR(2, 2, 2, 'wood', 20, -2);
-    s += _iR(2, 2, 2, 'wood', 26, -2);
-    // Main body (tall back): w=50, d=18, h=55
-    s += _iR(50, 18, 55, 'blk', -1, -10);
-    // Top lid: w=52, d=20, h=2
-    s += _iR(52, 20, 2, 'blk', -2, -65);
-    // Music stand (thin panel): w=44, d=1, h=14
-    s += _iR(44, 1, 14, 'mtl', 2, -48);
-    // Keyboard shelf: w=50, d=12, h=2
-    s += _iR(50, 12, 2, 'wht', 0, -6);
-    // White keys area on top face of keyboard
-    s += '<g transform="translate(0,-8)"><rect x="0" y="0" width="50" height="12" fill="#F8F6F0" stroke="#E0DDD5" stroke-width="0.5" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g>';
-    // Black keys (5 small dark boxes on keyboard)
-    s += _iR(4, 6, 2, 'blk', 6, -8);
-    s += _iR(4, 6, 2, 'blk', 14, -8);
-    s += _iR(4, 6, 2, 'blk', 24, -8);
-    s += _iR(4, 6, 2, 'blk', 32, -8);
-    s += _iR(4, 6, 2, 'blk', 40, -8);
-    // Bench: w=30, d=12, h=10
-    s += _iR(30, 12, 10, 'wood', 10, 18);
-    // Bench cushion: w=28, d=10, h=2
-    s += _iR(28, 10, 2, 'pnk', 9, 8);
+    s += _iShadow(18, 44, 4, 6);
+    // Legs (4 small boxes)
+    s += _iR(3, 3, 5, 'blk', 0, 0);
+    s += _iR(3, 3, 5, 'blk', 12, 0);
+    s += _iR(3, 3, 5, 'blk', -38, 0);
+    s += _iR(3, 3, 5, 'blk', -26, 0);
+    // Base board: w=18, d=44, h=3
+    s += _iR(18, 44, 3, 'blk', 0, -5);
+    // Pedals (3 tiny gold boxes in front)
+    s += _iR(2, 2, 2, 'wood', -14, -2);
+    s += _iR(2, 2, 2, 'wood', -20, -2);
+    s += _iR(2, 2, 2, 'wood', -26, -2);
+    // Main body (tall, wide along d): w=16, d=42, h=50
+    s += _iR(16, 42, 50, 'blk', -1, -8);
+    // Top lid: w=18, d=44, h=2
+    s += _iR(18, 44, 2, 'blk', 0, -58);
+    // Music stand (thin panel on top face): w=14, d=1, h=12
+    s += _iR(1, 36, 12, 'mtl', 2, -46);
+    // Keyboard shelf sticking out: w=16, d=44, h=2
+    s += _iR(16, 44, 2, 'wht', 0, -8);
+    // White keys surface (top face rectangle)
+    s += '<g transform="translate(0,-10)"><rect x="0" y="0" width="16" height="44" fill="#F8F6F0" stroke="#E0DDD5" stroke-width="0.4" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g>';
+    // Black keys (along the left axis = d direction)
+    s += _iR(8, 4, 2, 'blk', -4, -10);
+    s += _iR(8, 4, 2, 'blk', -10, -10);
+    s += _iR(8, 4, 2, 'blk', -18, -10);
+    s += _iR(8, 4, 2, 'blk', -24, -10);
+    s += _iR(8, 4, 2, 'blk', -32, -10);
+    // Bench in front: w=12, d=26, h=10
+    s += _iR(12, 26, 10, 'wood', 4, 12);
+    // Bench cushion: w=10, d=24, h=2
+    s += _iR(10, 24, 2, 'pnk', 3, 2);
     s += '</g>';
     return s;
   },
@@ -27555,7 +27555,8 @@ function _mapOpenRoom(container, mapData, houseId){
       var cat4 = FURNITURE_CATALOG[item.type] || {};
       var hasPng = cat4.png && cat4.png.length > 10;
       var drawFn = _roomFurnSVG[item.type];
-      var sc = item.f.furnScale || 0.6; // default 60% scale
+      var sc = item.f.furnScale || 0.6;
+      var flip = item.f.flipped ? -1 : 1;
 
       html += '<g class="rm-furn-wrap'+(isSelected?' dragging':'')+'" data-furnid="'+item.f.id+'" data-furntype="'+item.type+'">';
       if(isSelected){
@@ -27565,10 +27566,12 @@ function _mapOpenRoom(container, mapData, houseId){
 
       if(hasPng){
         var pw = (cat4.pngW||40)*sc, ph = (cat4.pngH||40)*sc;
+        html += '<g transform="translate('+item.x+','+item.y+') scale('+(flip)+',1) translate(-'+item.x+',-'+item.y+')">';
         html += '<image href="'+cat4.png+'" x="'+(item.x - pw/2)+'" y="'+(item.y - ph)+'" width="'+pw+'" height="'+ph+'" style="cursor:pointer;" class="rm-furn"/>';
+        html += '</g>';
       } else if(drawFn){
-        // Wrap in scale group centered at (item.x, item.y)
-        html += '<g transform="translate('+item.x+','+item.y+') scale('+sc+') translate(-'+item.x+',-'+item.y+')">';
+        // Scale + optional flip: translate to origin, scale, translate back
+        html += '<g transform="translate('+item.x+','+item.y+') scale('+(flip*sc)+','+sc+') translate(-'+item.x+',-'+item.y+')">';
         html += drawFn(item.x, item.y, true);
         html += '</g>';
       } else {
@@ -27576,7 +27579,7 @@ function _mapOpenRoom(container, mapData, houseId){
       }
 
       if(_editMode){
-        html += '<text x="'+item.x+'" y="'+(item.y+12*sc+6)+'" text-anchor="middle" font-size="6" fill="rgba(100,160,80,0.8)" font-weight="600">'+cat4.label+'</text>';
+        html += '<text x="'+item.x+'" y="'+(item.y+12*sc+6)+'" text-anchor="middle" font-size="6" fill="rgba(100,160,80,0.8)" font-weight="600">'+cat4.label+(item.f.flipped?' ↔':'')+'</text>';
       }
       html += '</g>';
     });
@@ -27629,13 +27632,14 @@ function _mapOpenRoom(container, mapData, houseId){
       html += '<div style="height:3px;border-top:1px solid rgba(0,0,0,0.1);margin:2px 0;width:20px;"></div>';
       html += '<button data-act="roomScaleUp" style="font-size:9px;" title="放大家具">🔍+</button>';
       html += '<button data-act="roomScaleDown" style="font-size:9px;" title="缩小家具">🔍−</button>';
+      html += '<button data-act="roomFlip" style="font-size:9px;" title="翻转家具">↔</button>';
     }
     html += '</div>';
     if(_editMode && _dragTarget){
       var selF = furniture.find(function(ff){return ff.id===_dragTarget;});
       var selCat = selF ? (FURNITURE_CATALOG[selF.type]||{}) : {};
       var curScale = selF ? (selF.furnScale||0.6) : 0.6;
-      html += '<div class="mapRoomEditHint">'+esc(selCat.label||'家具')+' ('+Math.round(curScale*100)+'%) — ▲▼◀▶移动 🔍缩放</div>';
+      html += '<div class="mapRoomEditHint">'+esc(selCat.label||'家具')+' ('+Math.round(curScale*100)+'%'+(selF&&selF.flipped?' 已翻转':'')+') — ▲▼◀▶移动 🔍缩放 ↔翻转</div>';
     }
     html += '</div>';
 
@@ -27789,6 +27793,20 @@ function _mapOpenRoom(container, mapData, houseId){
 
     // Direction buttons: move furniture if selected, otherwise pan view
     var panStep = 30, furnStep = 6;
+    // Flip furniture
+    if(act==='roomFlip'){
+      if(_editMode && _dragTarget){
+        var ff2 = furniture.find(function(ff){ return ff.id===_dragTarget; });
+        if(ff2){
+          ff2.flipped = !ff2.flipped;
+          house.rooms.furniture = furniture;
+          _mapSave(mapData);
+          renderRoom();
+        }
+      }
+      return;
+    }
+
     // Scale furniture
     if(act==='roomScaleUp'||act==='roomScaleDown'){
       if(_editMode && _dragTarget){
