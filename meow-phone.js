@@ -3070,36 +3070,87 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   overflow-y:auto; -webkit-overflow-scrolling:touch;
 }
 #${ID} .wxOfflineWrap::-webkit-scrollbar{ width:0 !important; display:none !important; }
+/* 有背景图时加半透明遮罩提升文字可读性 */
+#${ID} .wxOfflineWrap[style*="background-image"]{ background-color:rgba(0,0,0,.25); background-blend-mode:darken; }
 #${ID} .wxOfflineParagraph{
-  font-size:14px; line-height:1.9; color:rgba(46,38,26,.82);
-  margin-bottom:14px; text-indent:0; position:relative;
+  font-size:13.5px; line-height:1.85; color:rgba(255,255,255,.92);
+  margin-bottom:16px; text-indent:0; position:relative;
   animation:phBubbleIn .25s ease-out;
+  padding:10px 14px; border-radius:10px;
+  background:rgba(0,0,0,.35); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  text-shadow:0 1px 3px rgba(0,0,0,.5);
+}
+/* 无背景图时回退到浅色方案 */
+#${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph{
+  color:rgba(46,38,26,.88); background:rgba(255,255,255,.45); text-shadow:none;
 }
 #${ID} .wxOfflineParagraph .rpSpeaker{
-  font-weight:700; color:rgba(46,38,26,.55); font-size:12px;
-  display:block; margin-bottom:2px;
+  font-weight:700; font-size:12px;
+  display:block; margin-bottom:4px; letter-spacing:.5px;
+  color:rgba(255,255,200,.8);
+  border-bottom:1px solid rgba(255,255,255,.12); padding-bottom:3px;
+}
+#${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph .rpSpeaker{
+  color:rgba(46,38,26,.55); border-bottom-color:rgba(0,0,0,.06);
 }
 #${ID} .wxOfflineParagraph .rpText{ display:block; }
-#${ID} .wxOfflineParagraph .rpAction{ font-style:italic; color:rgba(120,100,70,.7); }
-#${ID} .wxOfflineParagraph .rpDialog{ color:rgba(46,38,26,.95); }
-#${ID} .wxOfflineParagraph.me .rpText{ color:rgba(70,90,130,.85); }
+#${ID} .wxOfflineParagraph .rpAction{
+  font-style:italic; display:block; margin:4px 0;
+  color:rgba(255,255,200,.65); font-size:12.5px; line-height:1.7;
+}
+#${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph .rpAction{
+  color:rgba(120,100,70,.65);
+}
+#${ID} .wxOfflineParagraph .rpDialog{
+  color:rgba(255,255,255,.97); font-weight:500;
+}
+#${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph .rpDialog{
+  color:rgba(46,38,26,.95);
+}
+#${ID} .wxOfflineParagraph.me .rpText{ }
 #${ID} .wxOfflineParagraph.me{
-  text-align:right; padding-left:20%; padding-right:0;
-  border-right:3px solid rgba(70,90,130,.25); border-left:0;
-  margin-left:auto;
+  border-left:3px solid rgba(130,170,255,.5);
+}
+#${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph.me{
+  border-left-color:rgba(70,90,130,.3);
 }
 #${ID} .wxOfflineParagraph.them{
-  text-align:left; padding-right:20%; padding-left:0;
+  border-left:3px solid rgba(255,200,130,.5);
+}
+#${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph.them{
+  border-left-color:rgba(180,140,80,.3);
+}
+/* 环境描写块（舞台指示） */
+#${ID} .wxOfflineParagraph.rpStageDir{
+  border-left:0; text-align:center; font-style:italic;
+  color:rgba(255,255,255,.6); background:rgba(0,0,0,.2);
+  font-size:12px; line-height:1.7; padding:8px 14px;
+}
+#${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph.rpStageDir{
+  color:rgba(100,90,70,.55); background:rgba(0,0,0,.03);
 }
 #${ID} .wxSceneBanner{
-  text-align:center; padding:18px 14px; margin-bottom:16px;
-  border-bottom:1px solid rgba(0,0,0,.06);
+  text-align:center; padding:22px 14px 16px; margin-bottom:16px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+  background:rgba(0,0,0,.3); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  border-radius:10px;
+}
+#${ID} .wxOfflineWrap:not([style*="background-image"]) .wxSceneBanner{
+  background:rgba(255,255,255,.4); border-bottom-color:rgba(0,0,0,.06);
 }
 #${ID} .wxSceneBanner .wxSceneName{
-  font-size:15px; font-weight:700; color:rgba(46,38,26,.65); letter-spacing:.5px;
+  font-size:16px; font-weight:700; color:rgba(255,255,255,.88); letter-spacing:1px;
+  text-shadow:0 1px 4px rgba(0,0,0,.4);
+}
+#${ID} .wxOfflineWrap:not([style*="background-image"]) .wxSceneBanner .wxSceneName{
+  color:rgba(46,38,26,.7); text-shadow:none;
 }
 #${ID} .wxSceneBanner .wxSceneDesc{
-  font-size:12px; color:rgba(46,38,26,.4); margin-top:4px; line-height:1.5;
+  font-size:12px; color:rgba(255,255,255,.5); margin-top:6px; line-height:1.5;
+  font-style:italic;
+}
+#${ID} .wxOfflineWrap:not([style*="background-image"]) .wxSceneBanner .wxSceneDesc{
+  color:rgba(46,38,26,.4);
 }
 #${ID} .wxOfflineInputBar{
   /* inherits from wxChatInputBar base styles */
@@ -23589,9 +23640,10 @@ function _saveSceneData(npcId, data){
 // ========== Phase 3C：自定义样式系统 ==========
 var STYLE_PRESETS = {
   default_white: { name:'默认白', css:'', font:'' },
-  dark_night:    { name:'暗夜',   css:'.wxOfflineParagraph{color:rgba(220,220,220,.9);} .wxOfflineWrap{background:rgba(15,15,20,.95);}', font:'' },
-  ancient:       { name:'古风',   css:'.wxOfflineParagraph{font-family:"STKaiti","KaiTi",serif;color:rgba(80,50,30,.85);line-height:2;} .wxOfflineWrap{background:linear-gradient(180deg,#f5e6c8,#e8d5a8);}', font:'STKaiti,KaiTi,serif' },
-  cyberpunk:     { name:'赛博朋克', css:'.wxOfflineParagraph{color:#0ff;text-shadow:0 0 4px #0ff;font-family:"Courier New",monospace;} .wxOfflineWrap{background:linear-gradient(180deg,#0a0a1a,#1a0a2e);}', font:'Courier New,monospace' }
+  theater:       { name:'话剧',   css:'.wxOfflineParagraph{font-family:"Georgia","Noto Serif SC","STSong",serif;line-height:2;} .wxOfflineParagraph .rpAction{font-size:12px;letter-spacing:.5px;} .wxSceneBanner{letter-spacing:2px;}', font:'Georgia,"Noto Serif SC","STSong",serif' },
+  dark_night:    { name:'暗夜',   css:'.wxOfflineParagraph{color:rgba(220,220,220,.92);background:rgba(0,0,0,.5);} .wxOfflineWrap{background:rgba(15,15,20,.95);} .wxSceneBanner{background:rgba(0,0,0,.4);}', font:'' },
+  ancient:       { name:'古风',   css:'.wxOfflineParagraph{font-family:"STKaiti","KaiTi",serif;color:rgba(80,50,30,.85);line-height:2;background:rgba(255,250,240,.5);} .wxOfflineWrap{background:linear-gradient(180deg,#f5e6c8,#e8d5a8);} .wxSceneBanner{background:rgba(255,250,240,.4);}', font:'STKaiti,KaiTi,serif' },
+  cyberpunk:     { name:'赛博朋克', css:'.wxOfflineParagraph{color:#0ff;text-shadow:0 0 4px #0ff;font-family:"Courier New",monospace;background:rgba(0,0,20,.6);} .wxOfflineWrap{background:linear-gradient(180deg,#0a0a1a,#1a0a2e);} .wxSceneBanner{background:rgba(0,0,20,.5);}', font:'Courier New,monospace' }
 };
 
 function _loadCustomStyle(npcId){
@@ -23631,44 +23683,93 @@ function _injectCustomCSS(npcId){
   }catch(e){}
 }
 
-// ========== Phase 3D：线下模式渲染器 ==========
+// ========== Phase 3D：线下模式渲染器（话剧/舞台剧风格） ==========
 function _renderOfflineParagraph(container, npc, role, text, ts, meta){
-  var p = doc.createElement('div');
-  p.className = 'wxOfflineParagraph ' + role;
-  p.setAttribute('data-msgts', String(ts||0));
-  p.setAttribute('data-msgrole', role);
-  p.setAttribute('data-msgtext', String(text||''));
-  if (meta && meta.mode) p.setAttribute('data-mode', meta.mode);
-  if (meta && meta.branch) p.setAttribute('data-branch', meta.branch);
-
-  var speaker = role === 'me' ? '你' : (npc.name || '对方');
   var displayText = String(text || '').trim();
-  var formatted = esc(displayText)
-    .replace(/\*([^*]+)\*/g, '<em class="rpAction">$1</em>')
-    .replace(/"([^"]+)"/g, '<span class="rpDialog">"$1"</span>')
-    .replace(/「([^」]+)」/g, '<span class="rpDialog">「$1」</span>');
+  var speaker = role === 'me' ? '你' : (npc.name || '对方');
 
-  try{
-    var styles = _loadCustomStyle(npc && npc.id ? npc.id : state.chatTarget);
-    var tpl = styles && styles.offlineStyle && styles.offlineStyle.paragraphHTML;
-    if (tpl && String(tpl).trim()){
-      p.innerHTML = _applyCustomHTMLTemplate(tpl, {
-        role: role,
-        speaker: esc(speaker),
-        text: esc(displayText),
-        formatted: formatted,
-        time: _fmtTime(ts || _now()),
-        name: esc(npc && npc.name ? npc.name : '对方')
-      });
-      container.appendChild(p);
-      return p;
+  // 解析舞台剧格式：拆分环境描写（*...*整段）和对话/动作混合段
+  var segments = _parseTheaterSegments(displayText, speaker, role);
+
+  segments.forEach(function(seg){
+    var p = doc.createElement('div');
+    p.className = 'wxOfflineParagraph ' + (seg.type === 'stage' ? 'rpStageDir' : role);
+    p.setAttribute('data-msgts', String(ts||0));
+    p.setAttribute('data-msgrole', role);
+    p.setAttribute('data-msgtext', String(text||''));
+    if (meta && meta.mode) p.setAttribute('data-mode', meta.mode);
+    if (meta && meta.branch) p.setAttribute('data-branch', meta.branch);
+    p.innerHTML = seg.html;
+    container.appendChild(p);
+  });
+}
+
+// 解析文本为舞台剧段落
+function _parseTheaterSegments(text, speaker, role){
+  var segments = [];
+  // 按换行拆段
+  var lines = text.split(/\n+/).filter(function(l){ return l.trim(); });
+
+  var actionBuf = [];   // 动作/环境描写缓冲
+  var dialogBuf = [];   // 对话缓冲
+
+  function flushAction(){
+    if(!actionBuf.length) return;
+    var joined = actionBuf.join(' ');
+    segments.push({
+      type: 'stage',
+      html: '<em class="rpAction">— ' + esc(joined) + ' —</em>'
+    });
+    actionBuf = [];
+  }
+  function flushDialog(){
+    if(!dialogBuf.length) return;
+    var nameTag = '<span class="rpSpeaker">' + esc(speaker) + '</span>';
+    var formatted = dialogBuf.map(function(d){
+      return esc(d)
+        .replace(/\*([^*]+)\*/g, '<em class="rpAction">$1</em>')
+        .replace(/"([^"]+)"/g, '<span class="rpDialog">"$1"</span>')
+        .replace(/「([^」]+)」/g, '<span class="rpDialog">「$1」</span>');
+    }).join('<br/>');
+    segments.push({
+      type: 'speech',
+      html: nameTag + '<span class="rpText">' + formatted + '</span>'
+    });
+    dialogBuf = [];
+  }
+
+  lines.forEach(function(line){
+    var trimmed = line.trim();
+    // 纯动作行（整行被*...*包裹 或以"rpAction"标签开头）
+    var pureActionMatch = trimmed.match(/^\*([^*]+)\*$/);
+    if (pureActionMatch){
+      flushDialog();
+      actionBuf.push(pureActionMatch[1]);
+      return;
     }
-  }catch(e){}
+    // 有对话引号的行视为对话段
+    if (/["「]/.test(trimmed) || /^[^\*]/.test(trimmed)){
+      flushAction();
+      dialogBuf.push(trimmed);
+    } else {
+      // 其余归为动作描写
+      flushDialog();
+      actionBuf.push(trimmed);
+    }
+  });
+  flushAction();
+  flushDialog();
 
-  var nameTag = role === 'me' ? '' : '<span class="rpSpeaker">' + esc(speaker) + '</span>';
-  p.innerHTML = nameTag + '<span class="rpText">' + formatted + '</span>';
-  container.appendChild(p);
-  return p;
+  // 如果没有拆出任何段落，退回普通渲染
+  if(!segments.length){
+    var formatted2 = esc(text)
+      .replace(/\*([^*]+)\*/g, '<em class="rpAction">$1</em>')
+      .replace(/"([^"]+)"/g, '<span class="rpDialog">"$1"</span>')
+      .replace(/「([^」]+)」/g, '<span class="rpDialog">「$1」</span>');
+    var nameTag2 = role === 'me' ? '' : '<span class="rpSpeaker">' + esc(speaker) + '</span>';
+    segments.push({ type:'speech', html: nameTag2 + '<span class="rpText">' + formatted2 + '</span>' });
+  }
+  return segments;
 }
 
 function _renderSceneBanner(container, sceneName, sceneDesc){
@@ -23686,8 +23787,9 @@ function _renderSceneBanner(container, sceneName, sceneDesc){
       return;
     }
   }catch(e){}
-  banner.innerHTML = '<div class="wxSceneName">☕ ' + esc(sceneName || '未命名场景') + '</div>' +
-    (sceneDesc ? '<div class="wxSceneDesc">' + esc(sceneDesc) + '</div>' : '');
+  banner.innerHTML = '<div class="wxSceneName">🎭 ' + esc(sceneName || '未命名场景') + '</div>' +
+    (sceneDesc ? '<div class="wxSceneDesc">' + esc(sceneDesc) + '</div>' : '') +
+    '<div style="margin-top:6px;font-size:10px;opacity:.45;letter-spacing:2px;">— 幕 启 —</div>';
   container.appendChild(banner);
 }
 
@@ -23695,14 +23797,33 @@ function _renderSceneBanner(container, sceneName, sceneDesc){
 function _buildOfflinePromptAddition(npcId){
   var scene = _loadSceneData(npcId);
   var lines = [
-    '\n\n【当前模式：线下面对面】',
+    '\n\n【当前模式：线下面对面 · 话剧/舞台剧风格】',
+    '⚠ 重要：线下模式下请忽略上面的"|||"分隔消息格式要求。线下模式只输出一整段连续的文字，不使用"|||"分隔。',
     '你现在和用户面对面，不是在手机上聊天。',
-    '用小说/RP 风格描写，包括动作描写、表情变化、环境细节。',
-    '可以使用 *动作* 和 "对话" 格式。',
-    '不要写太长，保持2-4段。'
+    '请用话剧/舞台剧风格来描写，格式规范如下：',
+    '1. 先用 *环境/动作描写* 描述场景氛围和角色肢体语言（如 *海风拂过你的脸颊，远处灯塔的光在雾中若隐若现*）',
+    '2. 然后用对话格式写角色的台词，用引号标注（如 "你看，那边有只海鸥。"）',
+    '3. 对话中穿插 *动作* 描写来体现角色的表情、动作、语气变化',
+    '4. 每段回复遵循「环境描写 → 动作描写 → 对话」的节奏，像一幕短剧',
+    '5. 保持2-4段，不要太长。每段之间用换行分隔。',
+    '示例格式：',
+    '*夕阳把海面染成了橘红色。你们并肩坐在灯塔下的石阶上，海风带着咸味掠过。*',
+    '',
+    '*我侧过头看着你，嘴角不自觉地微微上扬。*',
+    '"今天的晚霞真好看。"',
+    '',
+    '*我把手里的咖啡递给你，目光落在远处的海平线上。*',
+    '"下次……我们还来这里吧。"'
   ];
-  if (scene.location) lines.push('当前地点：' + scene.location);
+  if (scene.location) lines.push('\n当前地点：' + scene.location);
   if (scene.description) lines.push('场景描述：' + scene.description);
+
+  // 追加自定义提示词预设
+  if (scene.customPrompt && String(scene.customPrompt).trim()){
+    lines.push('\n【场景自定义提示词】');
+    lines.push(String(scene.customPrompt).trim());
+  }
+
   return lines.join('\n');
 }
 
@@ -23725,6 +23846,11 @@ function _openSceneEditor(npcId){
     <div style="margin-bottom:8px;">
       <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">场景描述（可选）</div>
       <textarea data-el="sceneDesc" rows="3" placeholder="环境描述、氛围、时间等" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;">${esc(scene.description||'')}</textarea>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">📝 提示词预设（可选）</div>
+      <div style="font-size:10px;color:rgba(20,24,28,.3);margin-bottom:4px;">自定义AI在此场景中的行为风格，如语气、描写偏好、剧情设定等，会追加到系统提示词中</div>
+      <textarea data-el="scenePrompt" rows="4" placeholder="例如：&#10;描写时着重渲染海边的氛围，风声、潮汐声此起彼伏。&#10;角色语气温柔但带点小心翼翼，好像在试探。&#10;偶尔穿插对过去回忆的描写。" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;">${esc(scene.customPrompt||'')}</textarea>
     </div>
     <div style="margin-bottom:10px;">
       <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">🖼 场景背景图（可选）</div>
@@ -23782,6 +23908,14 @@ function _openSceneEditor(npcId){
           if(descInp) descInp.value = dn2+'，'+(descWords||'一个有趣的地方')+'。';
           lmOv.remove();
           try{ toast('已选择「'+dn2+'」'); }catch(e){}
+
+          // ★ 同步更新标题栏（与地图地标互动保持一致）
+          try{
+            var titleEl = root.querySelector('[data-ph="appTitle"]');
+            if (titleEl && _getChatMode(npcId) === 'offline'){
+              titleEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ph-accent,#07c160);margin-right:4px;vertical-align:middle;"></span>线下 · ' + esc(dn2);
+            }
+          }catch(e){}
         }
       });
     }catch(e){ try{toast('读取地图失败');}catch(e2){} }
@@ -23796,7 +23930,8 @@ function _openSceneEditor(npcId){
       name: (ov.querySelector('[data-el="sceneName"]')?.value||'').trim(),
       location: (ov.querySelector('[data-el="sceneLoc"]')?.value||'').trim(),
       description: (ov.querySelector('[data-el="sceneDesc"]')?.value||'').trim(),
-      bgImage: (ov.querySelector('[data-el="sceneBgUrl"]')?.value||'').trim()
+      bgImage: (ov.querySelector('[data-el="sceneBgUrl"]')?.value||'').trim(),
+      customPrompt: (ov.querySelector('[data-el="scenePrompt"]')?.value||'').trim()
     };
     _saveSceneData(npcId, newScene);
     ov.remove();
@@ -23805,7 +23940,7 @@ function _openSceneEditor(npcId){
     try{
       var titleEl = root.querySelector('[data-ph="appTitle"]');
       if (titleEl && _getChatMode(npcId) === 'offline'){
-        titleEl.textContent = '☕ 线下 · ' + (newScene.name || '未命名');
+        titleEl.textContent = '🎭 线下 · ' + (newScene.name || '未命名');
       }
     }catch(e){}
     // 刷新线下背景
@@ -27531,73 +27666,55 @@ function _mapOpenRoom(container, mapData, houseId){
     html += '<line x1="150" y1="42" x2="290" y2="114" stroke="rgba(160,148,120,0.15)" stroke-width="0.5"/>';
     html += '<line x1="150" y1="-24" x2="150" y2="46" stroke="rgba(160,148,120,0.2)" stroke-width="0.8"/>';
 
-    // === 窗户（从house数据读取位置/缩放，装修可编辑） ===
+    // === 左墙窗户 ===
+    var lwx1=45, lwy1=72, lwx2=105, lwy2=42;
     var _winStyle = house._windowStyle || 'default';
-    // 窗户位置数据（装修模式可调）
-    var wL = house._winLeft || {ox:75, oy:50, sc:1};
-    var wR = house._winRight || {ox:225, oy:68, sc:1};
-
+    var _winSc = house._winScale || 1;
     if(_winStyle === 'modern'){
-      // ---- 左墙：用户自制窗户SVG ----
-      html += '<g transform="translate('+wL.ox+','+wL.oy+') scale('+wL.sc+')">';
-      // 窗框 w=2,d=60,h=40 (挂左墙)
-      html += '<g transform="translate(0,0)">';
-      html += '<rect x="0" y="-40" width="2" height="40" class="wht-r" transform="translate(-60,30) matrix(1,0.5,0,1,0,0)"/>';
-      html += '<rect x="0" y="-40" width="60" height="40" class="wht-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>';
-      html += '<rect x="0" y="0" width="2" height="60" class="wht-t" transform="translate(0,-40) matrix(1,0.5,-1,0.5,0,0)"/>';
-      html += '</g>';
-      // 玻璃和分隔条（左面matrix）
-      html += '<g transform="translate(2,1) matrix(-1,0.5,0,1,0,0)">';
-      html += '<rect x="2" y="-38" width="17" height="36" fill="rgba(230,238,245,0.65)" stroke="rgba(210,218,225,0.4)" stroke-width="0.4"/>';
-      html += '<rect x="21" y="-38" width="18" height="36" fill="rgba(230,238,245,0.65)" stroke="rgba(210,218,225,0.4)" stroke-width="0.4"/>';
-      html += '<rect x="41" y="-38" width="17" height="36" fill="rgba(230,238,245,0.65)" stroke="rgba(210,218,225,0.4)" stroke-width="0.4"/>';
-      html += '<rect x="4" y="-34" width="5" height="20" fill="rgba(255,255,255,0.15)"/>';
-      html += '<rect x="23" y="-34" width="5" height="20" fill="rgba(255,255,255,0.15)"/>';
-      html += '<rect x="19" y="-40" width="2" height="40" fill="#EAEAEA" stroke="#DDD" stroke-width="0.3"/>';
-      html += '<rect x="39" y="-40" width="2" height="40" fill="#EAEAEA" stroke="#DDD" stroke-width="0.3"/>';
-      html += '</g>';
-      html += '</g>';
+      // 现代落地窗 - 左墙
+      html += '<g transform="translate(75,45) scale('+_winSc+') translate(-75,-45)">';
+      // 左墙4角: (10,118)(150,46)(150,-24)(10,48) → 窗在墙中央偏位
+      // 窗框外轮廓 (同default窗位置但更大)
+      html += '<polygon points="30,88 120,43 120,2 30,47" fill="rgba(215,230,245,0.5)" stroke="#D0D4D8" stroke-width="1.5" stroke-linejoin="round"/>';
+      // 3格竖分栏
+      html += '<polygon points="30,88 60,73 60,17 30,47" fill="rgba(220,235,248,0.55)" stroke="rgba(200,215,228,0.4)" stroke-width="0.5"/>';
+      html += '<polygon points="60,73 90,58 90,2 60,17" fill="rgba(220,235,248,0.55)" stroke="rgba(200,215,228,0.4)" stroke-width="0.5"/>';
+      html += '<polygon points="90,58 120,43 120,2 90,17" fill="rgba(220,235,248,0.55)" stroke="rgba(200,215,228,0.4)" stroke-width="0.5"/>';
+      // 高光条
+      html += '<polygon points="33,82 43,77 43,52 33,57" fill="rgba(255,255,255,0.15)"/>';
+      html += '<polygon points="63,67 73,62 73,37 63,42" fill="rgba(255,255,255,0.15)"/>';
+      // 竖分隔条
+      html += '<line x1="60" y1="73" x2="60" y2="17" stroke="#E0E0E0" stroke-width="1.5"/>';
+      html += '<line x1="90" y1="58" x2="90" y2="2" stroke="#E0E0E0" stroke-width="1.5"/>';
 
-      // ---- 右墙：镜像版本（用右面matrix） ----
-      html += '<g transform="translate('+wR.ox+','+wR.oy+') scale('+wR.sc+')">';
-      // 窗框 w=60,d=2,h=40 (挂右墙)
-      html += '<g transform="translate(0,0)">';
-      html += '<rect x="0" y="-40" width="60" height="40" class="wht-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>';
-      html += '<rect x="0" y="-40" width="2" height="40" class="wht-l" transform="translate(60,30) matrix(-1,0.5,0,1,0,0)"/>';
-      html += '<rect x="0" y="0" width="60" height="2" class="wht-t" transform="translate(0,-40) matrix(1,0.5,-1,0.5,0,0)"/>';
+      html += '</g>'; // close left window scale group
+
+      // 现代落地窗 - 右墙（对称）
+      html += '<g transform="translate(225,60) scale('+_winSc+') translate(-225,-60)">';
+      // 右墙4角: (150,46)(290,118)(290,48)(150,-24) → 窗在右墙中央
+      html += '<polygon points="180,58 270,103 270,62 180,17" fill="rgba(210,225,240,0.45)" stroke="#D0D4D8" stroke-width="1.5" stroke-linejoin="round"/>';
+      html += '<polygon points="180,58 210,73 210,32 180,17" fill="rgba(215,228,242,0.5)" stroke="rgba(195,208,222,0.4)" stroke-width="0.5"/>';
+      html += '<polygon points="210,73 240,88 240,47 210,32" fill="rgba(215,228,242,0.5)" stroke="rgba(195,208,222,0.4)" stroke-width="0.5"/>';
+      html += '<polygon points="240,88 270,103 270,62 240,47" fill="rgba(215,228,242,0.5)" stroke="rgba(195,208,222,0.4)" stroke-width="0.5"/>';
+      html += '<polygon points="183,55 193,60 193,38 183,33" fill="rgba(255,255,255,0.12)"/>';
+      html += '<line x1="210" y1="73" x2="210" y2="32" stroke="#DCDCDC" stroke-width="1.5"/>';
+      html += '<line x1="240" y1="88" x2="240" y2="47" stroke="#DCDCDC" stroke-width="1.5"/>';
       html += '</g>';
-      // 玻璃和分隔条（右面matrix）
-      html += '<g transform="translate(-2,1) matrix(1,0.5,0,1,0,0)">';
-      html += '<rect x="2" y="-38" width="17" height="36" fill="rgba(220,230,242,0.6)" stroke="rgba(200,210,222,0.35)" stroke-width="0.4"/>';
-      html += '<rect x="21" y="-38" width="18" height="36" fill="rgba(220,230,242,0.6)" stroke="rgba(200,210,222,0.35)" stroke-width="0.4"/>';
-      html += '<rect x="41" y="-38" width="17" height="36" fill="rgba(220,230,242,0.6)" stroke="rgba(200,210,222,0.35)" stroke-width="0.4"/>';
-      html += '<rect x="4" y="-34" width="5" height="20" fill="rgba(255,255,255,0.12)"/>';
-      html += '<rect x="19" y="-40" width="2" height="40" fill="#E4E4E4" stroke="#D8D8D8" stroke-width="0.3"/>';
-      html += '<rect x="39" y="-40" width="2" height="40" fill="#E4E4E4" stroke="#D8D8D8" stroke-width="0.3"/>';
-      html += '</g>';
-      html += '</g>';
+      html += '</g>'; // close right window scale group
     } else {
       // 经典格窗 - 左墙
-      html += '<g transform="translate('+((wL.ox||75)-75)+','+((wL.oy||50)-50)+') scale('+(wL.sc||1)+')">';
       html += '<polygon points="'+lwx1+','+(lwy1-32)+' '+lwx2+','+(lwy2-32)+' '+lwx2+','+lwy2+' '+lwx1+','+lwy1+'" fill="'+lighting.windowGlow+'" stroke="#A89878" stroke-width="1.2"/>';
       html += '<line x1="'+((lwx1+lwx2)/2)+'" y1="'+((lwy1-32+lwy1)/2)+'" x2="'+((lwx1+lwx2)/2)+'" y2="'+((lwy2-32+lwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
       html += '<line x1="'+lwx1+'" y1="'+(lwy1-16)+'" x2="'+lwx2+'" y2="'+(lwy2-16)+'" stroke="#A89878" stroke-width="0.8"/>';
-      html += '</g>';
+      html += '<polygon points="'+(lwx1+3)+','+(lwy1-30)+' '+(lwx1+12)+','+(lwy1-34)+' '+(lwx1+12)+','+(lwy1-20)+' '+(lwx1+3)+','+(lwy1-16)+'" fill="rgba(255,255,255,0.25)"/>';
       // 经典格窗 - 右墙
       var rwx1=195, rwy1=42, rwx2=255, rwy2=72;
-      html += '<g transform="translate('+((wR.ox||225)-225)+','+((wR.oy||68)-68)+') scale('+(wR.sc||1)+')">';
       html += '<polygon points="'+rwx1+','+(rwy1-32)+' '+rwx2+','+(rwy2-32)+' '+rwx2+','+rwy2+' '+rwx1+','+rwy1+'" fill="'+lighting.windowGlow+'" stroke="#A89878" stroke-width="1.2"/>';
       html += '<line x1="'+((rwx1+rwx2)/2)+'" y1="'+((rwy1-32+rwy1)/2)+'" x2="'+((rwx1+rwx2)/2)+'" y2="'+((rwy2-32+rwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
-      html += '</g>';
+      html += '<line x1="'+rwx1+'" y1="'+(rwy1-16)+'" x2="'+rwx2+'" y2="'+(rwy2-16)+'" stroke="#A89878" stroke-width="0.8"/>';
       // 窗帘
       html += '<path d="M'+(lwx1-2)+','+(lwy1-34)+' Q'+(lwx1+5)+','+(lwy1-20)+' '+(lwx1+2)+','+(lwy1+2)+'" fill="none" stroke="#8BAE6E" stroke-width="3" opacity="0.5" stroke-linecap="round"/>';
       html += '<path d="M'+(lwx2+2)+','+(lwy2-34)+' Q'+(lwx2-5)+','+(lwy2-20)+' '+(lwx2-2)+','+(lwy2+2)+'" fill="none" stroke="#8BAE6E" stroke-width="3" opacity="0.5" stroke-linecap="round"/>';
-    }
-
-    // 装修模式：显示窗户编辑提示
-    if(_editMode){
-      html += '<text x="75" y="15" text-anchor="middle" font-size="6" fill="rgba(100,160,80,0.6)">左窗</text>';
-      html += '<text x="225" y="32" text-anchor="middle" font-size="6" fill="rgba(100,160,80,0.6)">右窗</text>';
     }
 
     // === 门（贴地！右墙从150,46到290,118） ===
@@ -27677,9 +27794,12 @@ function _mapOpenRoom(container, mapData, houseId){
 
     // === 常驻装饰（已移除） ===
 
-    // === 夜间光照：蒙版法（有灯的地方挖洞，再叠淡暖光） ===
-    var _lampPositions = [];
+    // === 全局光照叠加（夜间暗色） ===
+    html += '<polygon points="-20,-60 320,-60 320,220 -20,220" fill="'+lighting.overlay+'" style="pointer-events:none;"/>';
+
+    // === 灯光发光效果（在暗色遮罩之上，用screen混合模式穿透黑暗） ===
     if(lighting.lampSpread > 0){
+      html += '<g style="mix-blend-mode:screen;pointer-events:none;">';
       furniture.forEach(function(lf){
         if(!lf.owned) return;
         if(lf.type !== 'lamp' && lf.type !== 'lamp2') return;
@@ -27690,48 +27810,18 @@ function _mapOpenRoom(container, mapData, houseId){
           var lip = _isoProject(typeof lf.gx==='number'?lf.gx:lpos.gx, typeof lf.gy==='number'?lf.gy:lpos.gy);
           lfx = lip.x; lfy = lip.y;
         }
-        _lampPositions.push({x:lfx, y:lfy, sc:lf.furnScale||0.6});
+        var lsc = lf.furnScale || 0.6;
+        var gStr = lighting.lampSpread;
+        // 大范围地面暖光
+        html += '<ellipse cx="'+lfx+'" cy="'+(lfy+5)+'" rx="'+(60*lsc)+'" ry="'+(35*lsc)+'" fill="rgba(255,210,120,'+(gStr*0.6).toFixed(2)+')" />';
+        // 中范围亮光
+        html += '<ellipse cx="'+lfx+'" cy="'+(lfy-8*lsc)+'" rx="'+(40*lsc)+'" ry="'+(24*lsc)+'" fill="rgba(255,225,150,'+(gStr*0.8).toFixed(2)+')" />';
+        // 灯泡核心（强白光）
+        html += '<ellipse cx="'+lfx+'" cy="'+(lfy-22*lsc)+'" rx="'+(10*lsc)+'" ry="'+(6*lsc)+'" fill="rgba(255,250,220,'+(gStr*1.2).toFixed(2)+')" />';
+        // 向上照射的光柱
+        html += '<ellipse cx="'+lfx+'" cy="'+(lfy-35*lsc)+'" rx="'+(6*lsc)+'" ry="'+(4*lsc)+'" fill="rgba(255,245,200,'+(gStr*0.5).toFixed(2)+')" />';
       });
-    }
-
-    if(lighting.lampSpread > 0 && _lampPositions.length > 0){
-      // 定义蒙版：白色=显示遮罩，黑色=透明（灯光穿透）
-      var maskId = 'nightMask_' + Date.now();
-      html += '<defs>';
-      // 径向渐变：灯光区域从黑(透明)到白(遮罩)
-      _lampPositions.forEach(function(lp, li){
-        html += '<radialGradient id="lg'+li+'_'+maskId+'" cx="50%" cy="50%" r="50%">';
-        html += '<stop offset="0%" stop-color="black"/>';
-        html += '<stop offset="40%" stop-color="rgba(0,0,0,0.7)"/>';
-        html += '<stop offset="100%" stop-color="white"/>';
-        html += '</radialGradient>';
-      });
-      html += '<mask id="'+maskId+'">';
-      html += '<rect x="-20" y="-60" width="340" height="280" fill="white"/>';
-      _lampPositions.forEach(function(lp, li){
-        var r = 55 * lp.sc;
-        html += '<ellipse cx="'+lp.x+'" cy="'+(lp.y-5)+'" rx="'+r+'" ry="'+(r*0.6)+'" fill="url(#lg'+li+'_'+maskId+')"/>';
-      });
-      html += '</mask>';
-      html += '</defs>';
-
-      // 夜间遮罩（有灯的地方被mask挖洞）
-      html += '<polygon points="-20,-60 320,-60 320,220 -20,220" fill="'+lighting.overlay+'" mask="url(#'+maskId+')" style="pointer-events:none;"/>';
-
-      // 灯光区域叠加淡暖光
-      _lampPositions.forEach(function(lp){
-        var gs = lighting.lampSpread;
-        var lsc = lp.sc;
-        // 柔和大范围暖光
-        html += '<ellipse cx="'+lp.x+'" cy="'+(lp.y+2)+'" rx="'+(50*lsc)+'" ry="'+(30*lsc)+'" fill="rgba(255,230,170,'+(gs*0.12).toFixed(3)+')" style="pointer-events:none;"/>';
-        // 中心暖光
-        html += '<ellipse cx="'+lp.x+'" cy="'+(lp.y-10*lsc)+'" rx="'+(25*lsc)+'" ry="'+(15*lsc)+'" fill="rgba(255,240,190,'+(gs*0.15).toFixed(3)+')" style="pointer-events:none;"/>';
-        // 灯泡光点
-        html += '<ellipse cx="'+lp.x+'" cy="'+(lp.y-22*lsc)+'" rx="'+(6*lsc)+'" ry="'+(4*lsc)+'" fill="rgba(255,250,220,'+(gs*0.25).toFixed(3)+')" style="pointer-events:none;"/>';
-      });
-    } else {
-      // 无灯/白天：普通遮罩
-      html += '<polygon points="-20,-60 320,-60 320,220 -20,220" fill="'+lighting.overlay+'" style="pointer-events:none;"/>';
+      html += '</g>';
     }
 
     html += '</svg>';
@@ -27757,14 +27847,6 @@ function _mapOpenRoom(container, mapData, houseId){
       html += '<div style="height:3px;border-top:1px solid rgba(0,0,0,0.1);margin:2px 0;width:22px;"></div>';
       html += '<button data-act="winScaleUp" style="font-size:7px;">窗+</button>';
       html += '<button data-act="winScaleDown" style="font-size:7px;">窗−</button>';
-      html += '<div class="zDirRow">';
-      html += '<button data-act="winMoveL" style="font-size:7px;">窗◀</button>';
-      html += '<button data-act="winMoveR" style="font-size:7px;">窗▶</button>';
-      html += '</div>';
-      html += '<div class="zDirRow">';
-      html += '<button data-act="winMoveU" style="font-size:7px;">窗▲</button>';
-      html += '<button data-act="winMoveD" style="font-size:7px;">窗▼</button>';
-      html += '</div>';
     }
     html += '</div>';
     if(_editMode && _dragTarget){
@@ -27951,22 +28033,12 @@ function _mapOpenRoom(container, mapData, houseId){
     }
 
     if(act==='winScaleUp'||act==='winScaleDown'){
-      if(!house._winLeft) house._winLeft = {ox:75,oy:50,sc:1};
-      if(!house._winRight) house._winRight = {ox:225,oy:68,sc:1};
-      var ws = act==='winScaleUp' ? 0.1 : -0.1;
-      house._winLeft.sc = Math.max(0.3, Math.min(2.5, (house._winLeft.sc||1)+ws));
-      house._winRight.sc = Math.max(0.3, Math.min(2.5, (house._winRight.sc||1)+ws));
-      _mapSave(mapData); renderRoom(); return;
-    }
-    if(act==='winMoveL'||act==='winMoveR'||act==='winMoveU'||act==='winMoveD'){
-      if(!house._winLeft) house._winLeft = {ox:75,oy:50,sc:1};
-      if(!house._winRight) house._winRight = {ox:225,oy:68,sc:1};
-      var wd = 5;
-      if(act==='winMoveL'){ house._winLeft.ox-=wd; house._winRight.ox-=wd; }
-      if(act==='winMoveR'){ house._winLeft.ox+=wd; house._winRight.ox+=wd; }
-      if(act==='winMoveU'){ house._winLeft.oy-=wd; house._winRight.oy-=wd; }
-      if(act==='winMoveD'){ house._winLeft.oy+=wd; house._winRight.oy+=wd; }
-      _mapSave(mapData); renderRoom(); return;
+      if(!house._winScale) house._winScale = 1;
+      house._winScale = Math.max(0.5, Math.min(2, house._winScale + (act==='winScaleUp'?0.1:-0.1)));
+      _mapSave(mapData);
+      try{ toast('窗户缩放: '+Math.round(house._winScale*100)+'%'); }catch(e){}
+      renderRoom();
+      return;
     }
 
     // Scale furniture
