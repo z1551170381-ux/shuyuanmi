@@ -27000,26 +27000,36 @@ function _isoFloorPt(gx5, gy4){
 //   垂直 (dx:0, dy:-1)
 // w=宽(右下方向), d=深(左下方向), h=高(垂直), 单位都是像素
 // ox,oy = 前顶点（最靠近观察者的角）
-function _isoBox(ox, oy, w, d, h, topColor, leftColor, rightColor, strokeColor){
+// Isometric box: all edges follow 3 axes only.
+// RIGHT axis: (dx:+1, dy:+0.5), LEFT axis: (dx:-1, dy:+0.5), UP axis: (dx:0, dy:-1)
+// ox,oy = front vertex (closest to viewer)
+// w = width along RIGHT axis, d = depth along LEFT axis, h = height (up)
+// Convention (SketchUp-style, light from upper-left):
+//   top = brightest, left face = medium, right face = darkest
+function _isoBox(ox, oy, w, d, h, topCol, leftCol, rightCol, sc){
+  sc = sc || 'rgba(60,50,30,0.15)';
+  // Top face: 4 corners shifted up by h
+  var ft = [ox, oy-h]; // front-top
+  var rt = [ox+w, oy+w/2-h]; // right-top
+  var bt = [ox+w-d, oy+w/2+d/2-h]; // back-top
+  var lt = [ox-d, oy+d/2-h]; // left-top
+  // Bottom face: 4 corners at base
+  var fb = [ox, oy]; // front-bottom
+  var rb = [ox+w, oy+w/2]; // right-bottom
+  var lb = [ox-d, oy+d/2]; // left-bottom
   var s = '';
-  var sc = strokeColor || 'rgba(0,0,0,0.12)';
-  var sw = '0.5';
-  // 顶面
-  var tx1=ox, ty1=oy-h;
-  var tx2=ox+w, ty2=oy+w*0.5-h;
-  var tx3=ox+w-d, ty3=oy+w*0.5+d*0.5-h;
-  var tx4=ox-d, ty4=oy+d*0.5-h;
-  s += '<polygon points="'+tx1+','+ty1+' '+tx2+','+ty2+' '+tx3+','+ty3+' '+tx4+','+ty4+'" fill="'+topColor+'" stroke="'+sc+'" stroke-width="'+sw+'"/>';
-  // 左面
-  s += '<polygon points="'+tx1+','+ty1+' '+tx4+','+ty4+' '+(ox-d)+','+(oy+d*0.5)+' '+ox+','+oy+'" fill="'+leftColor+'" stroke="'+sc+'" stroke-width="'+sw+'"/>';
-  // 右面
-  s += '<polygon points="'+tx1+','+ty1+' '+tx2+','+ty2+' '+(ox+w)+','+(oy+w*0.5)+' '+ox+','+oy+'" fill="'+rightColor+'" stroke="'+sc+'" stroke-width="'+sw+'"/>';
+  // Draw back-to-front: left face first, then right face, then top (painter's algorithm)
+  // Left face (faces left — catches light from upper-left = MEDIUM brightness)
+  s += '<polygon points="'+ft[0]+','+ft[1]+' '+lt[0]+','+lt[1]+' '+lb[0]+','+lb[1]+' '+fb[0]+','+fb[1]+'" fill="'+leftCol+'" stroke="'+sc+'" stroke-width="0.5" stroke-linejoin="round"/>';
+  // Right face (faces right — in shadow = DARKEST)
+  s += '<polygon points="'+ft[0]+','+ft[1]+' '+rt[0]+','+rt[1]+' '+rb[0]+','+rb[1]+' '+fb[0]+','+fb[1]+'" fill="'+rightCol+'" stroke="'+sc+'" stroke-width="0.5" stroke-linejoin="round"/>';
+  // Top face (faces up — brightest)
+  s += '<polygon points="'+ft[0]+','+ft[1]+' '+rt[0]+','+rt[1]+' '+bt[0]+','+bt[1]+' '+lt[0]+','+lt[1]+'" fill="'+topCol+'" stroke="'+sc+'" stroke-width="0.5" stroke-linejoin="round"/>';
   return s;
 }
 
-// 等轴面板（只画一个平面四边形）
 function _isoFace(x1,y1,x2,y2,x3,y3,x4,y4,fill,stroke){
-  return '<polygon points="'+x1+','+y1+' '+x2+','+y2+' '+x3+','+y3+' '+x4+','+y4+'" fill="'+fill+'"'+(stroke?' stroke="'+stroke+'" stroke-width="0.4"':'')+'/>';
+  return '<polygon points="'+x1+','+y1+' '+x2+','+y2+' '+x3+','+y3+' '+x4+','+y4+'" fill="'+fill+'"'+(stroke?' stroke="'+stroke+'" stroke-width="0.4" stroke-linejoin="round"':'')+'/>';
 }
 
 // 日夜光照计算
@@ -27126,35 +27136,28 @@ var _roomFurnSVG = {
 
   stove: function(x, y, owned){
     if(!owned) return '';
-    var s = '';
-    s += '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    // 灶台主体 (w=24 right, d=16 left, h=12 up) using isoBox rules
-    // Front vertex at (0,8), all edges follow iso axes
-    // Top: (0,-4) (24,8) (8,16) (-16,4) ... let me use consistent iso math
-    // Right direction: dx=1, dy=0.5. Left direction: dx=-1, dy=0.5
-    var w=24, d=16, h=12;
-    // front=(0,8)
-    // right face: front→(w, 8+w/2)=(24,20) top→(0,-4)→(24,8)
-    s += _isoBox(0, 8, w, d, h, '#F0E8D8', '#D8D0C0', '#E0D8C8', 'rgba(160,148,120,0.3)');
-    // 台面边框
-    s += _isoFace(-1,-5, w+1,8-h+w/2+1, w-d+1,8-h+w/2+d/2+1, -d-1,8-h+d/2+1, 'none', 'rgba(180,170,150,0.4)');
-    // 灶眼（等轴菱形 - 不用ellipse+rotate，用菱形更准确）
-    // 左灶眼 center roughly at iso top face
-    s += '<polygon points="-4,-1 2,-4 8,-1 2,2" fill="none" stroke="#888" stroke-width="0.7"/>';
-    s += '<polygon points="-2,-1 2,-3 6,-1 2,1" fill="none" stroke="#999" stroke-width="0.4"/>';
-    // 右灶眼
-    s += '<polygon points="6,3 12,0 18,3 12,6" fill="none" stroke="#888" stroke-width="0.7"/>';
-    // 锅（等轴扁圆柱体）
-    s += '<polygon points="-5,0 2,-4 9,0 2,4" fill="#555" stroke="#444" stroke-width="0.4"/>';
-    s += '<polygon points="-4,-1 2,-4 8,-1 2,2" fill="#666" stroke="none"/>';
-    // 锅把手（沿左轴方向）
-    s += '<line x1="-4" y1="0" x2="-9" y2="2.5" stroke="#555" stroke-width="1.2" stroke-linecap="round"/>';
-    // 蒸汽
-    s += '<path d="M0,-4 C-1,-7 1,-9 0,-12" fill="none" stroke="rgba(200,200,200,0.35)" stroke-width="0.5"/>';
-    s += '<path d="M3,-3 C4,-6 2,-8 3,-10" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.4"/>';
-    // 旋钮（在前面板上，沿右轴方向）
-    s += '<circle cx="8" cy="14" r="1.2" fill="#999" stroke="#777" stroke-width="0.3"/>';
-    s += '<circle cx="14" cy="17" r="1.2" fill="#999" stroke="#777" stroke-width="0.3"/>';
+    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // SketchUp style: all faces follow strict iso axes, no curves
+    // Colors: top=brightest, left=medium, right=darkest
+    // Main cabinet: w=22 along right, d=14 along left, h=14 up
+    s += _isoBox(0, 8, 22, 14, 14, '#F0EAE0','#E2DAD0','#CCC4B8');
+    // Countertop slab (thin overhang): w=24, d=15, h=1.5
+    s += _isoBox(-1, -5.5, 24, 15, 1.5, '#F5F0E8','#EAE2D8','#DAD2C8');
+    // Left burner (iso diamond on top face)
+    s += '<polygon points="-4,-9 2,-12 8,-9 2,-6" fill="none" stroke="#888" stroke-width="0.8"/>';
+    s += '<polygon points="-2,-9 2,-11 6,-9 2,-7" fill="none" stroke="#999" stroke-width="0.4"/>';
+    // Right burner
+    s += '<polygon points="8,-5 13,-7.5 18,-5 13,-2.5" fill="none" stroke="#888" stroke-width="0.7"/>';
+    // Pot (small box on left burner): w=8, d=8, h=4
+    s += _isoBox(-4, -6, 8, 8, 4, '#555','#484848','#3A3A3A');
+    // Pot handle along left axis
+    s += '<line x1="-12" y1="-4" x2="-16" y2="-2" stroke="#555" stroke-width="1.2" stroke-linecap="round"/>';
+    // Steam (vertical lines)
+    s += '<line x1="-1" y1="-12" x2="-2" y2="-18" stroke="rgba(180,180,180,0.25)" stroke-width="0.5" stroke-linecap="round"/>';
+    s += '<line x1="2" y1="-11" x2="1" y2="-16" stroke="rgba(180,180,180,0.2)" stroke-width="0.4" stroke-linecap="round"/>';
+    // Knobs on right face
+    s += '<circle cx="8" cy="2" r="1" fill="#AAA" stroke="#888" stroke-width="0.3"/>';
+    s += '<circle cx="14" cy="5" r="1" fill="#AAA" stroke="#888" stroke-width="0.3"/>';
     s += '</g>';
     return s;
   },
@@ -27320,40 +27323,33 @@ var _roomFurnSVG = {
 
   shelf: function(x, y, owned){
     if(!owned) return '';
-    var s = '';
-    s += '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    // 书架主体框架 (w=14 right, d=10 left, h=28 up)
-    // Front vertex at (0,8)
-    s += _isoBox(0, 8, 14, 10, 28, '#A08A6A', '#7A5E3E', '#9B7E5E', 'rgba(100,80,50,0.3)');
-    // 隔板 - 3层，每层是一个扁平等轴面 (top face of thin box)
-    // 隔板高度间距=8, 第一层在h=7, 第二层h=15, 第三层h=23
+    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // Shelf frame: w=14(right), d=10(left), h=28(up)
+    // top=brightest, left=medium, right=darkest
+    s += _isoBox(0, 8, 14, 10, 28, '#B09A7A','#9B8060','#7A5E3E');
+    // 3 shelf boards (top faces)
     for(var si=0;si<3;si++){
       var sh = 7 + si*8;
-      // 隔板 = top face at this height
-      var sy = 8 - sh; // front vertex y offset
-      s += _isoFace(0,sy, 14,sy+7, 4,sy+12, -10,sy+5, '#A89070', 'rgba(100,80,50,0.2)');
+      var sy = 8 - sh;
+      s += _isoFace(0,sy, 14,sy+7, 4,sy+12, -10,sy+5, '#B8A080', 'rgba(100,80,50,0.2)');
     }
-    // 书本 - 在每层隔板上放书，书是薄的等轴盒子
-    // 书的方向沿右轴（倾斜摆放），这样书脊面向观察者
-    var bookColors = ['#D05050','#5080C0','#E0A030','#50A060','#A060A0','#D07050','#4090A0','#C06080','#80A040'];
+    // Books: upright boxes sitting on each shelf
+    // Each book = _isoBox with w=bw(thickness), d=7(along left axis), h=6
+    var bColors = ['#D05050','#5080C0','#E0A030','#50A060','#A060A0','#D07050','#4090A0','#C06080','#80A040'];
     for(var li=0;li<3;li++){
-      var baseH = 7 + li*8;
-      var baseY = 8 - baseH;
-      // 每层放3-4本书，沿左轴方向排列
-      var booksOnShelf = li===0 ? 4 : (li===1 ? 3 : 4);
-      for(var bi=0;bi<booksOnShelf;bi++){
-        var bc = bookColors[(li*4+bi) % bookColors.length];
-        // 书 = 沿左轴排列的薄盒子
-        // 每本书: w=2(厚度,右轴), d=3(宽度,左轴), h=6(高度,垂直)
-        var bw = 1.8 + (bi%2)*0.6;
-        // 偏移：沿左轴方向排列
-        var bOffX = -bi*2.2, bOffY = bi*1.1;
-        var bfx = 2 + bi*bw + bOffX, bfy = baseY + 1 + bOffY;
-        // 书脊（右面）+ 书顶（顶面）
-        // Right face of book (visible spine)
-        s += '<polygon points="'+(bfx)+','+(bfy)+' '+(bfx+bw)+','+(bfy+bw/2)+' '+(bfx+bw)+','+(bfy+bw/2-6)+' '+(bfx)+','+(bfy-6)+'" fill="'+bc+'" stroke="rgba(0,0,0,0.1)" stroke-width="0.3"/>';
-        // Top face of book
-        s += '<polygon points="'+(bfx)+','+(bfy-6)+' '+(bfx+bw)+','+(bfy+bw/2-6)+' '+(bfx+bw-3)+','+(bfy+bw/2-6+1.5)+' '+(bfx-3)+','+(bfy-6+1.5)+'" fill="'+(bc)+'" stroke="rgba(0,0,0,0.08)" stroke-width="0.2" opacity="0.85"/>';
+      var shelfH = 7 + li*8;
+      var frontY = 8 - shelfH; // front vertex of shelf surface
+      // Books arranged along right axis from the front
+      var bx = 1, numBooks = li===1 ? 3 : 4;
+      for(var bi=0;bi<numBooks;bi++){
+        var bc = bColors[(li*4+bi) % bColors.length];
+        var bw = 2; // book thickness (along right axis)
+        // Each book: front vertex along right axis from shelf front
+        // Book front at (bx + bi*bw, frontY + (bx+bi*bw)/2)
+        var fx = bx + bi*(bw+0.3);
+        var fy = frontY + fx*0.5;
+        // Darken right face for depth
+        s += _isoBox(fx, fy, bw, 7, 6, bc, bc, bc);
       }
     }
     s += '</g>';
@@ -27536,8 +27532,8 @@ function _mapOpenRoom(container, mapData, houseId){
       var cat = FURNITURE_CATALOG[f.type];
       if(!cat) return;
       var pos = _defaultFurnPositions[f.type] || { gx:0, gy:0 };
-      var gx = (f.gx != null && (f.gx !== 0 || pos.gx===0)) ? f.gx : pos.gx;
-      var gy = (f.gy != null && (f.gy !== 0 || pos.gy===0)) ? f.gy : pos.gy;
+      var gx = (typeof f.gx === 'number') ? f.gx : pos.gx;
+      var gy = (typeof f.gy === 'number') ? f.gy : pos.gy;
       var iso = _isoProject(gx, gy);
       furnItems.push({ f:f, type:f.type, x:iso.x, y:iso.y, gx:gx, gy:gy, sortY: iso.y + iso.x*0.1 });
     });
@@ -27599,6 +27595,12 @@ function _mapOpenRoom(container, mapData, houseId){
     }
 
     html += '</svg>';
+    // Compact zoom bar (bottom-right of SVG area)
+    html += '<div class="mapRoomZoomBar">';
+    html += '<button data-act="roomZoomIn">+</button>';
+    html += '<button data-act="roomZoomOut">−</button>';
+    html += '<button data-act="roomZoomReset" style="font-size:10px;">↺</button>';
+    html += '</div>';
     html += '</div>';
 
     // 家具网格
@@ -27706,24 +27708,25 @@ function _mapOpenRoom(container, mapData, houseId){
     wrap.addEventListener('mouseup', function(){ isPanning=false; wrap.style.cursor=''; });
     wrap.addEventListener('mouseleave', function(){ isPanning=false; wrap.style.cursor=''; });
 
-    // 编辑模式下的网格点击放置
-    if(_editMode && _dragTarget){
-      var cells = wrap.querySelectorAll('.rm-grid-cell');
-      cells.forEach(function(cell){
-        cell.addEventListener('click', function(){
-          var gx = parseInt(cell.getAttribute('data-gx'));
-          var gy = parseInt(cell.getAttribute('data-gy'));
-          if(isNaN(gx)||isNaN(gy)) return;
-          var f = furniture.find(function(ff){ return ff.id===_dragTarget; });
-          if(f){
-            f.gx = gx; f.gy = gy;
-            house.rooms.furniture = furniture;
-            _mapSave(mapData);
-            try{ toast('✅ 已移动 '+FURNITURE_CATALOG[f.type].label); }catch(e){}
-          }
-          _dragTarget = null;
-          renderRoom();
-        });
+    // 编辑模式：网格点击使用事件委托（更可靠）
+    if(_editMode){
+      wrap.addEventListener('click', function(ev){
+        if(!_dragTarget) return;
+        var cell = ev.target.closest('.rm-grid-cell');
+        if(!cell) return;
+        var gx = parseInt(cell.getAttribute('data-gx'));
+        var gy = parseInt(cell.getAttribute('data-gy'));
+        if(isNaN(gx)||isNaN(gy)) return;
+        ev.stopPropagation();
+        var f = furniture.find(function(ff){ return ff.id===_dragTarget; });
+        if(f){
+          f.gx = gx; f.gy = gy;
+          house.rooms.furniture = furniture;
+          _mapSave(mapData);
+          try{ toast('✅ 已移动 '+FURNITURE_CATALOG[f.type].label+' → ('+gx+','+gy+')'); }catch(e){}
+        }
+        _dragTarget = null;
+        renderRoom();
       });
     }
   }
@@ -27746,6 +27749,10 @@ function _mapOpenRoom(container, mapData, houseId){
     var act = tgt.getAttribute('data-act');
 
     if(act==='roomBack'){ clearInterval(_lightTimer); roomEl.remove(); return; }
+
+    if(act==='roomZoomIn'){ _roomZoom=Math.min(4,_roomZoom+0.25); _applyTransform(); return; }
+    if(act==='roomZoomOut'){ _roomZoom=Math.max(0.5,_roomZoom-0.25); _applyTransform(); return; }
+    if(act==='roomZoomReset'){ _roomZoom=1;_roomPanX=0;_roomPanY=0; _applyTransform(); return; }
 
     if(act==='roomToggleEdit'){
       _editMode = !_editMode;
