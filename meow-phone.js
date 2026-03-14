@@ -23740,7 +23740,7 @@ function _parseTheaterSegments(text, speaker, role){
 
   lines.forEach(function(line){
     var trimmed = line.trim();
-    // 纯动作行（整行被*...*包裹 或以"rpAction"标签开头）
+    // 纯动作行（整行被*...*包裹）
     var pureActionMatch = trimmed.match(/^\*([^*]+)\*$/);
     if (pureActionMatch){
       flushDialog();
@@ -27666,55 +27666,73 @@ function _mapOpenRoom(container, mapData, houseId){
     html += '<line x1="150" y1="42" x2="290" y2="114" stroke="rgba(160,148,120,0.15)" stroke-width="0.5"/>';
     html += '<line x1="150" y1="-24" x2="150" y2="46" stroke="rgba(160,148,120,0.2)" stroke-width="0.8"/>';
 
-    // === 左墙窗户 ===
-    var lwx1=45, lwy1=72, lwx2=105, lwy2=42;
+    // === 窗户（从house数据读取位置/缩放，装修可编辑） ===
     var _winStyle = house._windowStyle || 'default';
-    var _winSc = house._winScale || 1;
+    // 窗户位置数据（装修模式可调）
+    var wL = house._winLeft || {ox:75, oy:50, sc:1};
+    var wR = house._winRight || {ox:225, oy:68, sc:1};
+
     if(_winStyle === 'modern'){
-      // 现代落地窗 - 左墙
-      html += '<g transform="translate(75,45) scale('+_winSc+') translate(-75,-45)">';
-      // 左墙4角: (10,118)(150,46)(150,-24)(10,48) → 窗在墙中央偏位
-      // 窗框外轮廓 (同default窗位置但更大)
-      html += '<polygon points="30,88 120,43 120,2 30,47" fill="rgba(215,230,245,0.5)" stroke="#D0D4D8" stroke-width="1.5" stroke-linejoin="round"/>';
-      // 3格竖分栏
-      html += '<polygon points="30,88 60,73 60,17 30,47" fill="rgba(220,235,248,0.55)" stroke="rgba(200,215,228,0.4)" stroke-width="0.5"/>';
-      html += '<polygon points="60,73 90,58 90,2 60,17" fill="rgba(220,235,248,0.55)" stroke="rgba(200,215,228,0.4)" stroke-width="0.5"/>';
-      html += '<polygon points="90,58 120,43 120,2 90,17" fill="rgba(220,235,248,0.55)" stroke="rgba(200,215,228,0.4)" stroke-width="0.5"/>';
-      // 高光条
-      html += '<polygon points="33,82 43,77 43,52 33,57" fill="rgba(255,255,255,0.15)"/>';
-      html += '<polygon points="63,67 73,62 73,37 63,42" fill="rgba(255,255,255,0.15)"/>';
-      // 竖分隔条
-      html += '<line x1="60" y1="73" x2="60" y2="17" stroke="#E0E0E0" stroke-width="1.5"/>';
-      html += '<line x1="90" y1="58" x2="90" y2="2" stroke="#E0E0E0" stroke-width="1.5"/>';
-
-      html += '</g>'; // close left window scale group
-
-      // 现代落地窗 - 右墙（对称）
-      html += '<g transform="translate(225,60) scale('+_winSc+') translate(-225,-60)">';
-      // 右墙4角: (150,46)(290,118)(290,48)(150,-24) → 窗在右墙中央
-      html += '<polygon points="180,58 270,103 270,62 180,17" fill="rgba(210,225,240,0.45)" stroke="#D0D4D8" stroke-width="1.5" stroke-linejoin="round"/>';
-      html += '<polygon points="180,58 210,73 210,32 180,17" fill="rgba(215,228,242,0.5)" stroke="rgba(195,208,222,0.4)" stroke-width="0.5"/>';
-      html += '<polygon points="210,73 240,88 240,47 210,32" fill="rgba(215,228,242,0.5)" stroke="rgba(195,208,222,0.4)" stroke-width="0.5"/>';
-      html += '<polygon points="240,88 270,103 270,62 240,47" fill="rgba(215,228,242,0.5)" stroke="rgba(195,208,222,0.4)" stroke-width="0.5"/>';
-      html += '<polygon points="183,55 193,60 193,38 183,33" fill="rgba(255,255,255,0.12)"/>';
-      html += '<line x1="210" y1="73" x2="210" y2="32" stroke="#DCDCDC" stroke-width="1.5"/>';
-      html += '<line x1="240" y1="88" x2="240" y2="47" stroke="#DCDCDC" stroke-width="1.5"/>';
+      // ---- 左墙：用户自制窗户SVG ----
+      html += '<g transform="translate('+wL.ox+','+wL.oy+') scale('+wL.sc+')">';
+      // 窗框 w=2,d=60,h=40 (挂左墙)
+      html += '<g transform="translate(0,0)">';
+      html += '<rect x="0" y="-40" width="2" height="40" class="wht-r" transform="translate(-60,30) matrix(1,0.5,0,1,0,0)"/>';
+      html += '<rect x="0" y="-40" width="60" height="40" class="wht-l" transform="translate(2,1) matrix(-1,0.5,0,1,0,0)"/>';
+      html += '<rect x="0" y="0" width="2" height="60" class="wht-t" transform="translate(0,-40) matrix(1,0.5,-1,0.5,0,0)"/>';
       html += '</g>';
-      html += '</g>'; // close right window scale group
+      // 玻璃和分隔条（左面matrix）
+      html += '<g transform="translate(2,1) matrix(-1,0.5,0,1,0,0)">';
+      html += '<rect x="2" y="-38" width="17" height="36" fill="rgba(230,238,245,0.65)" stroke="rgba(210,218,225,0.4)" stroke-width="0.4"/>';
+      html += '<rect x="21" y="-38" width="18" height="36" fill="rgba(230,238,245,0.65)" stroke="rgba(210,218,225,0.4)" stroke-width="0.4"/>';
+      html += '<rect x="41" y="-38" width="17" height="36" fill="rgba(230,238,245,0.65)" stroke="rgba(210,218,225,0.4)" stroke-width="0.4"/>';
+      html += '<rect x="4" y="-34" width="5" height="20" fill="rgba(255,255,255,0.15)"/>';
+      html += '<rect x="23" y="-34" width="5" height="20" fill="rgba(255,255,255,0.15)"/>';
+      html += '<rect x="19" y="-40" width="2" height="40" fill="#EAEAEA" stroke="#DDD" stroke-width="0.3"/>';
+      html += '<rect x="39" y="-40" width="2" height="40" fill="#EAEAEA" stroke="#DDD" stroke-width="0.3"/>';
+      html += '</g>';
+      html += '</g>';
+
+      // ---- 右墙：镜像版本（用右面matrix） ----
+      html += '<g transform="translate('+wR.ox+','+wR.oy+') scale('+wR.sc+')">';
+      // 窗框 w=60,d=2,h=40 (挂右墙)
+      html += '<g transform="translate(0,0)">';
+      html += '<rect x="0" y="-40" width="60" height="40" class="wht-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>';
+      html += '<rect x="0" y="-40" width="2" height="40" class="wht-l" transform="translate(60,30) matrix(-1,0.5,0,1,0,0)"/>';
+      html += '<rect x="0" y="0" width="60" height="2" class="wht-t" transform="translate(0,-40) matrix(1,0.5,-1,0.5,0,0)"/>';
+      html += '</g>';
+      // 玻璃和分隔条（右面matrix）
+      html += '<g transform="translate(-2,1) matrix(1,0.5,0,1,0,0)">';
+      html += '<rect x="2" y="-38" width="17" height="36" fill="rgba(220,230,242,0.6)" stroke="rgba(200,210,222,0.35)" stroke-width="0.4"/>';
+      html += '<rect x="21" y="-38" width="18" height="36" fill="rgba(220,230,242,0.6)" stroke="rgba(200,210,222,0.35)" stroke-width="0.4"/>';
+      html += '<rect x="41" y="-38" width="17" height="36" fill="rgba(220,230,242,0.6)" stroke="rgba(200,210,222,0.35)" stroke-width="0.4"/>';
+      html += '<rect x="4" y="-34" width="5" height="20" fill="rgba(255,255,255,0.12)"/>';
+      html += '<rect x="19" y="-40" width="2" height="40" fill="#E4E4E4" stroke="#D8D8D8" stroke-width="0.3"/>';
+      html += '<rect x="39" y="-40" width="2" height="40" fill="#E4E4E4" stroke="#D8D8D8" stroke-width="0.3"/>';
+      html += '</g>';
+      html += '</g>';
     } else {
       // 经典格窗 - 左墙
+      html += '<g transform="translate('+((wL.ox||75)-75)+','+((wL.oy||50)-50)+') scale('+(wL.sc||1)+')">';
       html += '<polygon points="'+lwx1+','+(lwy1-32)+' '+lwx2+','+(lwy2-32)+' '+lwx2+','+lwy2+' '+lwx1+','+lwy1+'" fill="'+lighting.windowGlow+'" stroke="#A89878" stroke-width="1.2"/>';
       html += '<line x1="'+((lwx1+lwx2)/2)+'" y1="'+((lwy1-32+lwy1)/2)+'" x2="'+((lwx1+lwx2)/2)+'" y2="'+((lwy2-32+lwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
       html += '<line x1="'+lwx1+'" y1="'+(lwy1-16)+'" x2="'+lwx2+'" y2="'+(lwy2-16)+'" stroke="#A89878" stroke-width="0.8"/>';
-      html += '<polygon points="'+(lwx1+3)+','+(lwy1-30)+' '+(lwx1+12)+','+(lwy1-34)+' '+(lwx1+12)+','+(lwy1-20)+' '+(lwx1+3)+','+(lwy1-16)+'" fill="rgba(255,255,255,0.25)"/>';
+      html += '</g>';
       // 经典格窗 - 右墙
       var rwx1=195, rwy1=42, rwx2=255, rwy2=72;
+      html += '<g transform="translate('+((wR.ox||225)-225)+','+((wR.oy||68)-68)+') scale('+(wR.sc||1)+')">';
       html += '<polygon points="'+rwx1+','+(rwy1-32)+' '+rwx2+','+(rwy2-32)+' '+rwx2+','+rwy2+' '+rwx1+','+rwy1+'" fill="'+lighting.windowGlow+'" stroke="#A89878" stroke-width="1.2"/>';
       html += '<line x1="'+((rwx1+rwx2)/2)+'" y1="'+((rwy1-32+rwy1)/2)+'" x2="'+((rwx1+rwx2)/2)+'" y2="'+((rwy2-32+rwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
-      html += '<line x1="'+rwx1+'" y1="'+(rwy1-16)+'" x2="'+rwx2+'" y2="'+(rwy2-16)+'" stroke="#A89878" stroke-width="0.8"/>';
+      html += '</g>';
       // 窗帘
       html += '<path d="M'+(lwx1-2)+','+(lwy1-34)+' Q'+(lwx1+5)+','+(lwy1-20)+' '+(lwx1+2)+','+(lwy1+2)+'" fill="none" stroke="#8BAE6E" stroke-width="3" opacity="0.5" stroke-linecap="round"/>';
       html += '<path d="M'+(lwx2+2)+','+(lwy2-34)+' Q'+(lwx2-5)+','+(lwy2-20)+' '+(lwx2-2)+','+(lwy2+2)+'" fill="none" stroke="#8BAE6E" stroke-width="3" opacity="0.5" stroke-linecap="round"/>';
+    }
+
+    // 装修模式：显示窗户编辑提示
+    if(_editMode){
+      html += '<text x="75" y="15" text-anchor="middle" font-size="6" fill="rgba(100,160,80,0.6)">左窗</text>';
+      html += '<text x="225" y="32" text-anchor="middle" font-size="6" fill="rgba(100,160,80,0.6)">右窗</text>';
     }
 
     // === 门（贴地！右墙从150,46到290,118） ===
@@ -27794,12 +27812,9 @@ function _mapOpenRoom(container, mapData, houseId){
 
     // === 常驻装饰（已移除） ===
 
-    // === 全局光照叠加（夜间暗色） ===
-    html += '<polygon points="-20,-60 320,-60 320,220 -20,220" fill="'+lighting.overlay+'" style="pointer-events:none;"/>';
-
-    // === 灯光发光效果（在暗色遮罩之上，用screen混合模式穿透黑暗） ===
+    // === 夜间光照：蒙版法（有灯的地方挖洞，再叠淡暖光） ===
+    var _lampPositions = [];
     if(lighting.lampSpread > 0){
-      html += '<g style="mix-blend-mode:screen;pointer-events:none;">';
       furniture.forEach(function(lf){
         if(!lf.owned) return;
         if(lf.type !== 'lamp' && lf.type !== 'lamp2') return;
@@ -27810,18 +27825,48 @@ function _mapOpenRoom(container, mapData, houseId){
           var lip = _isoProject(typeof lf.gx==='number'?lf.gx:lpos.gx, typeof lf.gy==='number'?lf.gy:lpos.gy);
           lfx = lip.x; lfy = lip.y;
         }
-        var lsc = lf.furnScale || 0.6;
-        var gStr = lighting.lampSpread;
-        // 大范围地面暖光
-        html += '<ellipse cx="'+lfx+'" cy="'+(lfy+5)+'" rx="'+(60*lsc)+'" ry="'+(35*lsc)+'" fill="rgba(255,210,120,'+(gStr*0.6).toFixed(2)+')" />';
-        // 中范围亮光
-        html += '<ellipse cx="'+lfx+'" cy="'+(lfy-8*lsc)+'" rx="'+(40*lsc)+'" ry="'+(24*lsc)+'" fill="rgba(255,225,150,'+(gStr*0.8).toFixed(2)+')" />';
-        // 灯泡核心（强白光）
-        html += '<ellipse cx="'+lfx+'" cy="'+(lfy-22*lsc)+'" rx="'+(10*lsc)+'" ry="'+(6*lsc)+'" fill="rgba(255,250,220,'+(gStr*1.2).toFixed(2)+')" />';
-        // 向上照射的光柱
-        html += '<ellipse cx="'+lfx+'" cy="'+(lfy-35*lsc)+'" rx="'+(6*lsc)+'" ry="'+(4*lsc)+'" fill="rgba(255,245,200,'+(gStr*0.5).toFixed(2)+')" />';
+        _lampPositions.push({x:lfx, y:lfy, sc:lf.furnScale||0.6});
       });
-      html += '</g>';
+    }
+
+    if(lighting.lampSpread > 0 && _lampPositions.length > 0){
+      // 定义蒙版：白色=显示遮罩，黑色=透明（灯光穿透）
+      var maskId = 'nightMask_' + Date.now();
+      html += '<defs>';
+      // 径向渐变：灯光区域从黑(透明)到白(遮罩)
+      _lampPositions.forEach(function(lp, li){
+        html += '<radialGradient id="lg'+li+'_'+maskId+'" cx="50%" cy="50%" r="50%">';
+        html += '<stop offset="0%" stop-color="black"/>';
+        html += '<stop offset="40%" stop-color="rgba(0,0,0,0.7)"/>';
+        html += '<stop offset="100%" stop-color="white"/>';
+        html += '</radialGradient>';
+      });
+      html += '<mask id="'+maskId+'">';
+      html += '<rect x="-20" y="-60" width="340" height="280" fill="white"/>';
+      _lampPositions.forEach(function(lp, li){
+        var r = 55 * lp.sc;
+        html += '<ellipse cx="'+lp.x+'" cy="'+(lp.y-5)+'" rx="'+r+'" ry="'+(r*0.6)+'" fill="url(#lg'+li+'_'+maskId+')"/>';
+      });
+      html += '</mask>';
+      html += '</defs>';
+
+      // 夜间遮罩（有灯的地方被mask挖洞）
+      html += '<polygon points="-20,-60 320,-60 320,220 -20,220" fill="'+lighting.overlay+'" mask="url(#'+maskId+')" style="pointer-events:none;"/>';
+
+      // 灯光区域叠加淡暖光
+      _lampPositions.forEach(function(lp){
+        var gs = lighting.lampSpread;
+        var lsc = lp.sc;
+        // 柔和大范围暖光
+        html += '<ellipse cx="'+lp.x+'" cy="'+(lp.y+2)+'" rx="'+(50*lsc)+'" ry="'+(30*lsc)+'" fill="rgba(255,230,170,'+(gs*0.12).toFixed(3)+')" style="pointer-events:none;"/>';
+        // 中心暖光
+        html += '<ellipse cx="'+lp.x+'" cy="'+(lp.y-10*lsc)+'" rx="'+(25*lsc)+'" ry="'+(15*lsc)+'" fill="rgba(255,240,190,'+(gs*0.15).toFixed(3)+')" style="pointer-events:none;"/>';
+        // 灯泡光点
+        html += '<ellipse cx="'+lp.x+'" cy="'+(lp.y-22*lsc)+'" rx="'+(6*lsc)+'" ry="'+(4*lsc)+'" fill="rgba(255,250,220,'+(gs*0.25).toFixed(3)+')" style="pointer-events:none;"/>';
+      });
+    } else {
+      // 无灯/白天：普通遮罩
+      html += '<polygon points="-20,-60 320,-60 320,220 -20,220" fill="'+lighting.overlay+'" style="pointer-events:none;"/>';
     }
 
     html += '</svg>';
@@ -27847,6 +27892,14 @@ function _mapOpenRoom(container, mapData, houseId){
       html += '<div style="height:3px;border-top:1px solid rgba(0,0,0,0.1);margin:2px 0;width:22px;"></div>';
       html += '<button data-act="winScaleUp" style="font-size:7px;">窗+</button>';
       html += '<button data-act="winScaleDown" style="font-size:7px;">窗−</button>';
+      html += '<div class="zDirRow">';
+      html += '<button data-act="winMoveL" style="font-size:7px;">窗◀</button>';
+      html += '<button data-act="winMoveR" style="font-size:7px;">窗▶</button>';
+      html += '</div>';
+      html += '<div class="zDirRow">';
+      html += '<button data-act="winMoveU" style="font-size:7px;">窗▲</button>';
+      html += '<button data-act="winMoveD" style="font-size:7px;">窗▼</button>';
+      html += '</div>';
     }
     html += '</div>';
     if(_editMode && _dragTarget){
@@ -28033,12 +28086,22 @@ function _mapOpenRoom(container, mapData, houseId){
     }
 
     if(act==='winScaleUp'||act==='winScaleDown'){
-      if(!house._winScale) house._winScale = 1;
-      house._winScale = Math.max(0.5, Math.min(2, house._winScale + (act==='winScaleUp'?0.1:-0.1)));
-      _mapSave(mapData);
-      try{ toast('窗户缩放: '+Math.round(house._winScale*100)+'%'); }catch(e){}
-      renderRoom();
-      return;
+      if(!house._winLeft) house._winLeft = {ox:75,oy:50,sc:1};
+      if(!house._winRight) house._winRight = {ox:225,oy:68,sc:1};
+      var ws = act==='winScaleUp' ? 0.1 : -0.1;
+      house._winLeft.sc = Math.max(0.3, Math.min(2.5, (house._winLeft.sc||1)+ws));
+      house._winRight.sc = Math.max(0.3, Math.min(2.5, (house._winRight.sc||1)+ws));
+      _mapSave(mapData); renderRoom(); return;
+    }
+    if(act==='winMoveL'||act==='winMoveR'||act==='winMoveU'||act==='winMoveD'){
+      if(!house._winLeft) house._winLeft = {ox:75,oy:50,sc:1};
+      if(!house._winRight) house._winRight = {ox:225,oy:68,sc:1};
+      var wd = 5;
+      if(act==='winMoveL'){ house._winLeft.ox-=wd; house._winRight.ox-=wd; }
+      if(act==='winMoveR'){ house._winLeft.ox+=wd; house._winRight.ox+=wd; }
+      if(act==='winMoveU'){ house._winLeft.oy-=wd; house._winRight.oy-=wd; }
+      if(act==='winMoveD'){ house._winLeft.oy+=wd; house._winRight.oy+=wd; }
+      _mapSave(mapData); renderRoom(); return;
     }
 
     // Scale furniture
