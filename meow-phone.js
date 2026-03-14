@@ -26964,22 +26964,62 @@ _mapBuildSVG = function(mapData){
 // 等轴测坐标转换：网格坐标 → SVG像素坐标
 // gx: 0-4 (左→右), gy: 0-3 (前→后, 0=靠近观察者)
 function _isoProject(gx, gy){
-  var cellW = 52, cellH = 28;
-  var originX = 150, originY = 110;
-  var px = originX + (gx - 2) * (cellW/2) - (gy - 1.5) * (cellW/2);
-  var py = originY + (gx - 2) * (cellH/2) + (gy - 1.5) * (cellH/2) - 10;
-  return { x: px, y: py };
+  // Floor diamond: Left(10,118) Top(150,46) Right(290,118) Bottom(150,190)
+  // Basis: a=(140,-72) along left wall, b=(140,72) along right wall
+  // Cell center at u=(gx+0.5)/5, v=(gy+0.5)/4
+  var u = (gx + 0.5) / 5, v = (gy + 0.5) / 4;
+  return {
+    x: 10 + 140*u + 140*v,
+    y: 118 - 72*u + 72*v
+  };
 }
 
-// 反向等轴投影：SVG坐标 → 网格坐标（用于拖拽）
 function _isoUnproject(px, py){
-  var originX = 150, originY = 110;
-  var cellW = 52, cellH = 28;
-  py += 10;
-  var dx = px - originX, dy = py - originY;
-  var gx = (dx / (cellW/2) + dy / (cellH/2)) / 2 + 2;
-  var gy = (dy / (cellH/2) - dx / (cellW/2)) / 2 + 1.5;
-  return { gx: Math.round(Math.max(0, Math.min(4, gx))), gy: Math.round(Math.max(0, Math.min(3, gy))) };
+  // Inverse of _isoProject: screen coords → grid coords
+  // px = 10 + 140*u + 140*v → 140*(u+v) = px-10
+  // py = 118 - 72*u + 72*v  → 72*(-u+v) = py-118
+  // u+v = (px-10)/140, v-u = (py-118)/72
+  // v = ((px-10)/140 + (py-118)/72)/2
+  // u = (px-10)/140 - v
+  var uv = (px-10)/140, vu = (py-118)/72;
+  var v = (uv+vu)/2, u = uv-v;
+  var gx = Math.round(u*5 - 0.5), gy = Math.round(v*4 - 0.5);
+  return { gx: Math.max(0,Math.min(4,gx)), gy: Math.max(0,Math.min(3,gy)) };
+}
+
+// Floor grid corner: P(gx/5, gy/4)
+function _isoFloorPt(gx5, gy4){
+  var u=gx5/5, v=gy4/4;
+  return { x: 10+140*u+140*v, y: 118-72*u+72*v };
+}
+
+// ---- 等轴测盒子绘制器 ----
+// 在isometric视角下所有线条只有三个方向：
+//   右下 slope=0.5 (dx:2, dy:1)
+//   左下 slope=-0.5 (dx:-2, dy:-1 ... well dx:-2,dy:1)
+//   垂直 (dx:0, dy:-1)
+// w=宽(右下方向), d=深(左下方向), h=高(垂直), 单位都是像素
+// ox,oy = 前顶点（最靠近观察者的角）
+function _isoBox(ox, oy, w, d, h, topColor, leftColor, rightColor, strokeColor){
+  var s = '';
+  var sc = strokeColor || 'rgba(0,0,0,0.12)';
+  var sw = '0.5';
+  // 顶面
+  var tx1=ox, ty1=oy-h;
+  var tx2=ox+w, ty2=oy+w*0.5-h;
+  var tx3=ox+w-d, ty3=oy+w*0.5+d*0.5-h;
+  var tx4=ox-d, ty4=oy+d*0.5-h;
+  s += '<polygon points="'+tx1+','+ty1+' '+tx2+','+ty2+' '+tx3+','+ty3+' '+tx4+','+ty4+'" fill="'+topColor+'" stroke="'+sc+'" stroke-width="'+sw+'"/>';
+  // 左面
+  s += '<polygon points="'+tx1+','+ty1+' '+tx4+','+ty4+' '+(ox-d)+','+(oy+d*0.5)+' '+ox+','+oy+'" fill="'+leftColor+'" stroke="'+sc+'" stroke-width="'+sw+'"/>';
+  // 右面
+  s += '<polygon points="'+tx1+','+ty1+' '+tx2+','+ty2+' '+(ox+w)+','+(oy+w*0.5)+' '+ox+','+oy+'" fill="'+rightColor+'" stroke="'+sc+'" stroke-width="'+sw+'"/>';
+  return s;
+}
+
+// 等轴面板（只画一个平面四边形）
+function _isoFace(x1,y1,x2,y2,x3,y3,x4,y4,fill,stroke){
+  return '<polygon points="'+x1+','+y1+' '+x2+','+y2+' '+x3+','+y3+' '+x4+','+y4+'" fill="'+fill+'"'+(stroke?' stroke="'+stroke+'" stroke-width="0.4"':'')+'/>';
 }
 
 // 日夜光照计算
@@ -27088,26 +27128,33 @@ var _roomFurnSVG = {
     if(!owned) return '';
     var s = '';
     s += '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    // 灶台主体
-    s += '<path d="M-12,4 L4,12 L20,4 L4,-4 Z" fill="#E8E0D0" stroke="#C8C0B0" stroke-width="0.5"/>';
-    s += '<path d="M-12,4 L-12,-6 L4,-14 L4,-4 Z" fill="#D8D0C0" stroke="#B8B0A0" stroke-width="0.4"/>';
-    s += '<path d="M4,-4 L4,-14 L20,-6 L20,4 Z" fill="#E0D8C8" stroke="#C0B8A8" stroke-width="0.4"/>';
-    // 灶台面板
-    s += '<path d="M-10,2 L4,10 L18,2 L4,-6 Z" fill="#F0E8D8" stroke="#D0C8B8" stroke-width="0.3"/>';
-    // 灶眼（两个圆环 - 等轴椭圆）
-    s += '<ellipse cx="-2" cy="1" rx="4" ry="2.5" fill="none" stroke="#888" stroke-width="0.6" transform="rotate(-26 -2 1)"/>';
-    s += '<ellipse cx="8" cy="-1" rx="3" ry="1.8" fill="none" stroke="#888" stroke-width="0.6" transform="rotate(-26 8 -1)"/>';
-    // 锅
-    s += '<ellipse cx="-2" cy="-1" rx="4.5" ry="2.5" fill="#555" stroke="#444" stroke-width="0.4" transform="rotate(-26 -2 -1)"/>';
-    s += '<ellipse cx="-2" cy="-2" rx="4" ry="2.2" fill="#666" stroke="none" transform="rotate(-26 -2 -2)"/>';
-    // 锅把手
-    s += '<line x1="-6" y1="0" x2="-10" y2="2" stroke="#555" stroke-width="1" stroke-linecap="round"/>';
+    // 灶台主体 (w=24 right, d=16 left, h=12 up) using isoBox rules
+    // Front vertex at (0,8), all edges follow iso axes
+    // Top: (0,-4) (24,8) (8,16) (-16,4) ... let me use consistent iso math
+    // Right direction: dx=1, dy=0.5. Left direction: dx=-1, dy=0.5
+    var w=24, d=16, h=12;
+    // front=(0,8)
+    // right face: front→(w, 8+w/2)=(24,20) top→(0,-4)→(24,8)
+    s += _isoBox(0, 8, w, d, h, '#F0E8D8', '#D8D0C0', '#E0D8C8', 'rgba(160,148,120,0.3)');
+    // 台面边框
+    s += _isoFace(-1,-5, w+1,8-h+w/2+1, w-d+1,8-h+w/2+d/2+1, -d-1,8-h+d/2+1, 'none', 'rgba(180,170,150,0.4)');
+    // 灶眼（等轴菱形 - 不用ellipse+rotate，用菱形更准确）
+    // 左灶眼 center roughly at iso top face
+    s += '<polygon points="-4,-1 2,-4 8,-1 2,2" fill="none" stroke="#888" stroke-width="0.7"/>';
+    s += '<polygon points="-2,-1 2,-3 6,-1 2,1" fill="none" stroke="#999" stroke-width="0.4"/>';
+    // 右灶眼
+    s += '<polygon points="6,3 12,0 18,3 12,6" fill="none" stroke="#888" stroke-width="0.7"/>';
+    // 锅（等轴扁圆柱体）
+    s += '<polygon points="-5,0 2,-4 9,0 2,4" fill="#555" stroke="#444" stroke-width="0.4"/>';
+    s += '<polygon points="-4,-1 2,-4 8,-1 2,2" fill="#666" stroke="none"/>';
+    // 锅把手（沿左轴方向）
+    s += '<line x1="-4" y1="0" x2="-9" y2="2.5" stroke="#555" stroke-width="1.2" stroke-linecap="round"/>';
     // 蒸汽
-    s += '<path d="M-3,-4 Q-4,-7 -2,-9" fill="none" stroke="rgba(200,200,200,0.4)" stroke-width="0.6"/>';
-    s += '<path d="M0,-3 Q1,-6 -1,-8" fill="none" stroke="rgba(200,200,200,0.3)" stroke-width="0.5"/>';
-    // 旋钮
-    s += '<circle cx="4" cy="11" r="1.2" fill="#888" stroke="#666" stroke-width="0.3"/>';
-    s += '<circle cx="8" cy="9" r="1.2" fill="#888" stroke="#666" stroke-width="0.3"/>';
+    s += '<path d="M0,-4 C-1,-7 1,-9 0,-12" fill="none" stroke="rgba(200,200,200,0.35)" stroke-width="0.5"/>';
+    s += '<path d="M3,-3 C4,-6 2,-8 3,-10" fill="none" stroke="rgba(200,200,200,0.25)" stroke-width="0.4"/>';
+    // 旋钮（在前面板上，沿右轴方向）
+    s += '<circle cx="8" cy="14" r="1.2" fill="#999" stroke="#777" stroke-width="0.3"/>';
+    s += '<circle cx="14" cy="17" r="1.2" fill="#999" stroke="#777" stroke-width="0.3"/>';
     s += '</g>';
     return s;
   },
@@ -27275,23 +27322,38 @@ var _roomFurnSVG = {
     if(!owned) return '';
     var s = '';
     s += '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    // 书架主体
-    s += '<path d="M-10,8 L4,15 L18,8 L4,1 Z" fill="#8B6E4E" stroke="#6B5030" stroke-width="0.5"/>';
-    s += '<path d="M-10,8 L-10,-18 L4,-25 L4,1 Z" fill="#7A5E3E"/>';
-    s += '<path d="M4,1 L4,-25 L18,-18 L18,8 Z" fill="#9B7E5E"/>';
-    // 隔板（3层）
+    // 书架主体框架 (w=14 right, d=10 left, h=28 up)
+    // Front vertex at (0,8)
+    s += _isoBox(0, 8, 14, 10, 28, '#A08A6A', '#7A5E3E', '#9B7E5E', 'rgba(100,80,50,0.3)');
+    // 隔板 - 3层，每层是一个扁平等轴面 (top face of thin box)
+    // 隔板高度间距=8, 第一层在h=7, 第二层h=15, 第三层h=23
     for(var si=0;si<3;si++){
-      var sy = 2 - si*9;
-      s += '<path d="M-9,'+(sy)+' L4,'+(sy+6)+' L17,'+(sy)+' L4,'+(sy-6)+' Z" fill="#A08A6A" stroke="#8B7050" stroke-width="0.3"/>';
+      var sh = 7 + si*8;
+      // 隔板 = top face at this height
+      var sy = 8 - sh; // front vertex y offset
+      s += _isoFace(0,sy, 14,sy+7, 4,sy+12, -10,sy+5, '#A89070', 'rgba(100,80,50,0.2)');
     }
-    // 书本
-    var bookColors = ['#E05050','#5080C0','#E0A030','#50A060','#A060A0','#D07050'];
-    for(var si2=0;si2<3;si2++){
-      var by = -1 - si2*9;
-      for(var bi=0;bi<3;bi++){
-        var bx = -6 + bi*5, bw = 2.5 + Math.random()*1.5;
-        var bc = bookColors[(si2*3+bi) % bookColors.length];
-        s += '<path d="M'+(bx)+','+(by-bi*0.8)+' L'+(bx)+','+(by-5-bi*0.8)+' L'+(bx+bw)+','+(by-5.5-bi*0.8)+' L'+(bx+bw)+','+(by-0.5-bi*0.8)+' Z" fill="'+bc+'" opacity="0.8"/>';
+    // 书本 - 在每层隔板上放书，书是薄的等轴盒子
+    // 书的方向沿右轴（倾斜摆放），这样书脊面向观察者
+    var bookColors = ['#D05050','#5080C0','#E0A030','#50A060','#A060A0','#D07050','#4090A0','#C06080','#80A040'];
+    for(var li=0;li<3;li++){
+      var baseH = 7 + li*8;
+      var baseY = 8 - baseH;
+      // 每层放3-4本书，沿左轴方向排列
+      var booksOnShelf = li===0 ? 4 : (li===1 ? 3 : 4);
+      for(var bi=0;bi<booksOnShelf;bi++){
+        var bc = bookColors[(li*4+bi) % bookColors.length];
+        // 书 = 沿左轴排列的薄盒子
+        // 每本书: w=2(厚度,右轴), d=3(宽度,左轴), h=6(高度,垂直)
+        var bw = 1.8 + (bi%2)*0.6;
+        // 偏移：沿左轴方向排列
+        var bOffX = -bi*2.2, bOffY = bi*1.1;
+        var bfx = 2 + bi*bw + bOffX, bfy = baseY + 1 + bOffY;
+        // 书脊（右面）+ 书顶（顶面）
+        // Right face of book (visible spine)
+        s += '<polygon points="'+(bfx)+','+(bfy)+' '+(bfx+bw)+','+(bfy+bw/2)+' '+(bfx+bw)+','+(bfy+bw/2-6)+' '+(bfx)+','+(bfy-6)+'" fill="'+bc+'" stroke="rgba(0,0,0,0.1)" stroke-width="0.3"/>';
+        // Top face of book
+        s += '<polygon points="'+(bfx)+','+(bfy-6)+' '+(bfx+bw)+','+(bfy+bw/2-6)+' '+(bfx+bw-3)+','+(bfy+bw/2-6+1.5)+' '+(bfx-3)+','+(bfy-6+1.5)+'" fill="'+(bc)+'" stroke="rgba(0,0,0,0.08)" stroke-width="0.2" opacity="0.85"/>';
       }
     }
     s += '</g>';
@@ -27453,13 +27515,16 @@ function _mapOpenRoom(container, mapData, houseId){
     html += '<polygon points="25,80 42,72 42,60 25,68" fill="#7A6040" stroke="#5A4020" stroke-width="0.5"/>';
     html += '<polygon points="27,78 40,71 40,62 27,69" fill="#E8D8C0"/>';
 
-    // === 编辑模式：显示网格 ===
+    // === 编辑模式：显示网格（贴合地板） ===
     if(_editMode){
-      for(var egx=0;egx<=4;egx++){
-        for(var egy=0;egy<=3;egy++){
-          var ep = _isoProject(egx, egy);
-          var occupied = furniture.some(function(ff){ return ff.owned && ((_defaultFurnPositions[ff.type]||{}).gx===egx || ff.gx===egx) && ((_defaultFurnPositions[ff.type]||{}).gy===egy || ff.gy===egy); });
-          html += '<polygon class="rm-grid-cell" data-gx="'+egx+'" data-gy="'+egy+'" points="'+(ep.x)+','+(ep.y-12)+' '+(ep.x+22)+','+(ep.y)+' '+(ep.x)+','+(ep.y+12)+' '+(ep.x-22)+','+(ep.y)+'" fill="rgba(120,180,80,0.08)" stroke="rgba(120,180,80,0.25)" stroke-width="0.5" stroke-dasharray="3,2"/>';
+      for(var egx=0;egx<5;egx++){
+        for(var egy=0;egy<4;egy++){
+          // 用地板坐标系绘制网格：四角=_isoFloorPt(gx,gy)
+          var c0 = _isoFloorPt(egx, egy);
+          var c1 = _isoFloorPt(egx+1, egy);
+          var c2 = _isoFloorPt(egx+1, egy+1);
+          var c3 = _isoFloorPt(egx, egy+1);
+          html += '<polygon class="rm-grid-cell" data-gx="'+egx+'" data-gy="'+egy+'" points="'+c0.x.toFixed(1)+','+c0.y.toFixed(1)+' '+c1.x.toFixed(1)+','+c1.y.toFixed(1)+' '+c2.x.toFixed(1)+','+c2.y.toFixed(1)+' '+c3.x.toFixed(1)+','+c3.y.toFixed(1)+'" fill="rgba(120,180,80,0.06)" stroke="rgba(120,180,80,0.3)" stroke-width="0.5" stroke-dasharray="3,2"/>';
         }
       }
     }
@@ -27534,14 +27599,6 @@ function _mapOpenRoom(container, mapData, houseId){
     }
 
     html += '</svg>';
-
-    // 缩放控制按钮
-    html += '<div class="mapRoomZoomBar">';
-    html += '<button data-act="roomZoomIn">+</button>';
-    html += '<span data-el="zoomLabel">100%</span>';
-    html += '<button data-act="roomZoomOut">−</button>';
-    html += '<button data-act="roomZoomReset" style="font-size:10px;margin-top:2px;">↺</button>';
-    html += '</div>';
     html += '</div>';
 
     // 家具网格
@@ -27689,10 +27746,6 @@ function _mapOpenRoom(container, mapData, houseId){
     var act = tgt.getAttribute('data-act');
 
     if(act==='roomBack'){ clearInterval(_lightTimer); roomEl.remove(); return; }
-
-    if(act==='roomZoomIn'){ _roomZoom = Math.min(4, _roomZoom + 0.2); _applyTransform(); return; }
-    if(act==='roomZoomOut'){ _roomZoom = Math.max(0.5, _roomZoom - 0.2); _applyTransform(); return; }
-    if(act==='roomZoomReset'){ _roomZoom=1; _roomPanX=0; _roomPanY=0; _applyTransform(); return; }
 
     if(act==='roomToggleEdit'){
       _editMode = !_editMode;
