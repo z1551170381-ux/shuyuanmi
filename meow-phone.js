@@ -3883,39 +3883,44 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .mapLogName{ font-weight:600; color:rgba(20,24,28,0.65); }
 #${ID} .mapLogTime{ color:rgba(20,24,28,0.3); font-size:10px; }
 #${ID} .mapLogAction{ flex:1; }
-/* ===== Map Room (2.5D) ===== */
+/* ===== Map Room (2.5D Enhanced) ===== */
 #${ID} .mapRoomWrap{
   position:absolute; inset:0; z-index:20;
-  background:rgba(245,240,230,0.98);
+  background:linear-gradient(180deg, #F5F0E5 0%, #EDE6D6 100%);
   display:flex; flex-direction:column;
   animation:mapFadeIn .2s ease;
+  overflow:hidden;
 }
 #${ID} .mapRoomHeader{
   padding:10px 14px; display:flex; align-items:center; gap:8px;
   border-bottom:1px solid rgba(0,0,0,0.06); flex-shrink:0;
+  background:rgba(255,255,255,0.5); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
 }
-#${ID} .mapRoomBackBtn{ font-size:18px; cursor:pointer; border:0; background:transparent; padding:4px; }
-#${ID} .mapRoomTitle{ flex:1; font-size:14px; font-weight:600; }
+#${ID} .mapRoomBackBtn{ font-size:18px; cursor:pointer; border:0; background:transparent; padding:4px; color:rgba(20,24,28,0.6); }
+#${ID} .mapRoomTitle{ flex:1; font-size:14px; font-weight:600; color:rgba(40,35,28,0.85); }
 #${ID} .mapRoomSvgWrap{
-  flex:1; min-height:160px; display:flex; align-items:center; justify-content:center; overflow:visible;
-  position:relative; padding:10px;
+  flex:1; min-height:200px; display:flex; align-items:center; justify-content:center; overflow:visible;
+  position:relative; padding:8px 4px;
 }
+#${ID} .mapRoomSvgWrap svg .rm-furn{ cursor:pointer; transition:filter .15s; }
+#${ID} .mapRoomSvgWrap svg .rm-furn:hover{ filter:brightness(1.08) drop-shadow(0 2px 6px rgba(0,0,0,0.18)); }
+#${ID} .mapRoomSvgWrap svg .rm-furn:active{ filter:brightness(0.95); }
 #${ID} .mapRoomGrid{
-  display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:10px 14px; flex-shrink:0;
-  max-height:180px; overflow-y:auto; scrollbar-width:none;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:8px 12px; flex-shrink:0;
+  max-height:160px; overflow-y:auto; scrollbar-width:none;
 }
 #${ID} .mapRoomGrid::-webkit-scrollbar{ display:none; }
 #${ID} .mapFurnSlot{
   display:flex; flex-direction:column; align-items:center; gap:2px;
-  padding:8px 4px; border-radius:10px; cursor:pointer;
-  background:rgba(255,255,255,0.6); border:1px solid rgba(0,0,0,0.04);
-  transition:background .15s;
+  padding:8px 4px; border-radius:12px; cursor:pointer;
+  background:rgba(255,255,255,0.65); border:1px solid rgba(180,165,140,0.15);
+  transition:all .15s; box-shadow:0 1px 3px rgba(0,0,0,0.04);
 }
-#${ID} .mapFurnSlot:hover{ background:rgba(255,255,255,0.9); }
-#${ID} .mapFurnSlot:active{ transform:scale(0.96); }
-#${ID} .mapFurnSlot .fe{ font-size:24px; }
-#${ID} .mapFurnSlot .fn{ font-size:10px; color:rgba(20,24,28,0.6); }
-#${ID} .mapFurnSlot .fd{ font-size:9px; color:rgba(20,24,28,0.3); }
+#${ID} .mapFurnSlot:hover{ background:rgba(255,255,255,0.95); box-shadow:0 2px 8px rgba(0,0,0,0.08); transform:translateY(-1px); }
+#${ID} .mapFurnSlot:active{ transform:scale(0.96) translateY(0); }
+#${ID} .mapFurnSlot .fe{ font-size:22px; }
+#${ID} .mapFurnSlot .fn{ font-size:10px; color:rgba(50,40,30,0.6); font-weight:500; }
+#${ID} .mapFurnSlot .fd{ font-size:9px; color:rgba(50,40,30,0.3); }
 #${ID} .mapFurnSlot.locked{ opacity:0.35; }
 #${ID} .mapFurnSlot.locked .fe::after{ content:'🔒'; font-size:10px; position:absolute; }
 #${ID} .mapRoomLog{
@@ -26924,7 +26929,328 @@ _mapBuildSVG = function(mapData){
   }
   return svg;
 };
-// ---- 房间系统（2.5D简化版） ----
+// ---- 房间系统（2.5D手绘风格增强版） ----
+
+// 等轴测坐标转换：网格坐标 → SVG像素坐标
+// gx: 0-4 (左→右), gy: 0-3 (前→后, 0=靠近观察者)
+function _isoProject(gx, gy){
+  // 地板菱形的四个角: 左(20,110) 前(150,180) 右(280,110) 后(150,40)
+  // 等轴单元格大小
+  var cellW = 52, cellH = 28;
+  var originX = 150, originY = 110; // 地板中心
+  var startX = originX - 2*cellW/2 + 0.5*cellH/2;
+  var startY = originY - 0.5*cellH;
+  var px = originX + (gx - 2) * (cellW/2) - (gy - 1.5) * (cellW/2);
+  var py = originY + (gx - 2) * (cellH/2) + (gy - 1.5) * (cellH/2) - 10;
+  return { x: px, y: py };
+}
+
+// 2.5D家具SVG绘制器 - 手绘扁平风
+var _roomFurnSVG = {
+  bed: function(x, y, owned){
+    if(!owned) return '';
+    var s = '';
+    // 床架（等轴矩形）
+    // 床垫（暖绿色调，参考图1）
+    s += '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // 床架底部
+    s += '<path d="M-20,8 L0,18 L26,4 L6,-6 Z" fill="#8B6E4E" stroke="#6B5040" stroke-width="0.6"/>';
+    // 床腿
+    s += '<path d="M-20,8 L-20,14 L0,24 L0,18 Z" fill="#7A5E3E" stroke="#6B5040" stroke-width="0.4"/>';
+    s += '<path d="M0,18 L0,24 L26,10 L26,4 Z" fill="#9B7E5E" stroke="#6B5040" stroke-width="0.4"/>';
+    // 床垫
+    s += '<path d="M-18,4 L2,14 L24,1 L4,-9 Z" fill="#9DB87D" stroke="#7A9A60" stroke-width="0.5"/>';
+    // 被子
+    s += '<path d="M-14,2 L2,10 L20,0 L4,-8 Z" fill="#B8D4A0" stroke="#8CB47A" stroke-width="0.4"/>';
+    // 被子褶皱
+    s += '<path d="M-6,-1 L6,5" stroke="#9DC088" stroke-width="0.4" fill="none"/>';
+    s += '<path d="M2,-4 L14,2" stroke="#9DC088" stroke-width="0.3" fill="none"/>';
+    // 枕头
+    s += '<path d="M-16,1 L-8,-3 L-2,0 L-10,4 Z" fill="#EDE8D8" stroke="#D0C8B0" stroke-width="0.4" rx="1"/>';
+    s += '<path d="M-14,1 L-8,-2" stroke="#D8D0C0" stroke-width="0.3" fill="none"/>';
+    // 床头板
+    s += '<path d="M-20,-2 L-20,8 L6,-6 L6,-16 Z" fill="#7A5A3A" stroke="#6B4E30" stroke-width="0.5"/>';
+    s += '<path d="M-18,-1 L-18,5 L4,-7 L4,-13 Z" fill="#8B6A4A" stroke="none"/>';
+    s += '</g>';
+    return s;
+  },
+
+  sofa: function(x, y, owned){
+    if(!owned) return '';
+    var s = '';
+    s += '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // 沙发底座
+    s += '<path d="M-16,4 L4,14 L24,4 L4,-6 Z" fill="#6B8E5A" stroke="#5A7A4A" stroke-width="0.5"/>';
+    // 左侧面
+    s += '<path d="M-16,4 L-16,-2 L4,-12 L4,-6 Z" fill="#5A7A4A"/>';
+    s += '<path d="M-16,4 L-16,10 L4,20 L4,14 Z" fill="#4A6A3A" stroke="#3A5A2A" stroke-width="0.4"/>';
+    // 右侧面
+    s += '<path d="M4,14 L4,20 L24,10 L24,4 Z" fill="#5A8A4A" stroke="#4A7A3A" stroke-width="0.4"/>';
+    // 座垫
+    s += '<path d="M-12,1 L4,9 L20,1 L4,-7 Z" fill="#8BAE6E" stroke="#6B8E5A" stroke-width="0.3"/>';
+    // 靠背
+    s += '<path d="M-14,-4 L4,-12 L4,-6 L-14,2 Z" fill="#7BA05E" stroke="#5A7A4A" stroke-width="0.4"/>';
+    s += '<path d="M4,-12 L22,-4 L22,2 L4,-6 Z" fill="#8BB66E" stroke="#6B9A5A" stroke-width="0.4"/>';
+    // 扶手
+    s += '<path d="M-16,-2 L-16,4 L-12,2 L-12,-4 Z" fill="#6B8A5A" stroke="#5A7A4A" stroke-width="0.3"/>';
+    s += '<path d="M22,-4 L24,4 L24,10 L22,2 Z" fill="#6B8A5A" stroke="#5A7A4A" stroke-width="0.3"/>';
+    // 靠枕
+    s += '<path d="M-6,-2 L0,-5 L6,-2 L0,1 Z" fill="#E8C85A" stroke="#D0B040" stroke-width="0.4"/>';
+    s += '<path d="M-6,-2 L-6,-4 L0,-7 L0,-5 Z" fill="#D8B84A"/>';
+    s += '</g>';
+    return s;
+  },
+
+  stove: function(x, y, owned){
+    if(!owned) return '';
+    var s = '';
+    s += '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // 灶台主体
+    s += '<path d="M-12,4 L4,12 L20,4 L4,-4 Z" fill="#E8E0D0" stroke="#C8C0B0" stroke-width="0.5"/>';
+    s += '<path d="M-12,4 L-12,-6 L4,-14 L4,-4 Z" fill="#D8D0C0" stroke="#B8B0A0" stroke-width="0.4"/>';
+    s += '<path d="M4,-4 L4,-14 L20,-6 L20,4 Z" fill="#E0D8C8" stroke="#C0B8A8" stroke-width="0.4"/>';
+    // 灶台面板
+    s += '<path d="M-10,2 L4,10 L18,2 L4,-6 Z" fill="#F0E8D8" stroke="#D0C8B8" stroke-width="0.3"/>';
+    // 灶眼（两个圆环 - 等轴椭圆）
+    s += '<ellipse cx="-2" cy="1" rx="4" ry="2.5" fill="none" stroke="#888" stroke-width="0.6" transform="rotate(-26 -2 1)"/>';
+    s += '<ellipse cx="8" cy="-1" rx="3" ry="1.8" fill="none" stroke="#888" stroke-width="0.6" transform="rotate(-26 8 -1)"/>';
+    // 锅
+    s += '<ellipse cx="-2" cy="-1" rx="4.5" ry="2.5" fill="#555" stroke="#444" stroke-width="0.4" transform="rotate(-26 -2 -1)"/>';
+    s += '<ellipse cx="-2" cy="-2" rx="4" ry="2.2" fill="#666" stroke="none" transform="rotate(-26 -2 -2)"/>';
+    // 锅把手
+    s += '<line x1="-6" y1="0" x2="-10" y2="2" stroke="#555" stroke-width="1" stroke-linecap="round"/>';
+    // 蒸汽
+    s += '<path d="M-3,-4 Q-4,-7 -2,-9" fill="none" stroke="rgba(200,200,200,0.4)" stroke-width="0.6"/>';
+    s += '<path d="M0,-3 Q1,-6 -1,-8" fill="none" stroke="rgba(200,200,200,0.3)" stroke-width="0.5"/>';
+    // 旋钮
+    s += '<circle cx="4" cy="11" r="1.2" fill="#888" stroke="#666" stroke-width="0.3"/>';
+    s += '<circle cx="8" cy="9" r="1.2" fill="#888" stroke="#666" stroke-width="0.3"/>';
+    s += '</g>';
+    return s;
+  },
+
+  lamp: function(x, y, owned){
+    if(!owned) return '';
+    var s = '';
+    s += '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // 灯座
+    s += '<ellipse cx="0" cy="8" rx="5" ry="2.5" fill="#8B7A5A" stroke="#6B5A3A" stroke-width="0.4"/>';
+    // 灯杆
+    s += '<line x1="0" y1="8" x2="0" y2="-10" stroke="#A08A6A" stroke-width="1.5" stroke-linecap="round"/>';
+    // 灯罩（等轴梯形）
+    s += '<path d="M-8,-14 L-4,-22 L4,-22 L8,-14 Z" fill="#F5E8C8" stroke="#E0D0A8" stroke-width="0.5" opacity="0.9"/>';
+    s += '<path d="M-8,-14 L8,-14" stroke="#E0D0A8" stroke-width="0.5"/>';
+    // 灯光效果
+    s += '<ellipse cx="0" cy="-6" rx="10" ry="6" fill="rgba(255,240,180,0.12)"/>';
+    s += '<ellipse cx="0" cy="-10" rx="5" ry="3" fill="rgba(255,240,180,0.08)"/>';
+    s += '</g>';
+    return s;
+  },
+
+  tv: function(x, y, owned){
+    if(!owned) return '';
+    var s = '';
+    s += '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // 电视柜
+    s += '<path d="M-16,4 L2,13 L22,4 L4,-5 Z" fill="#7A6A4A" stroke="#6A5A3A" stroke-width="0.5"/>';
+    s += '<path d="M-16,4 L-16,8 L2,17 L2,13 Z" fill="#6A5A3A"/>';
+    s += '<path d="M2,13 L2,17 L22,8 L22,4 Z" fill="#8A7A5A"/>';
+    // 电视屏幕背面
+    s += '<path d="M-12,-8 L4,-16 L20,-8 L4,0 Z" fill="#333" stroke="#222" stroke-width="0.5"/>';
+    s += '<path d="M-12,-8 L-12,-2 L4,6 L4,0 Z" fill="#2A2A2A"/>';
+    s += '<path d="M4,0 L4,6 L20,-2 L20,-8 Z" fill="#3A3A3A"/>';
+    // 屏幕
+    s += '<path d="M-10,-7 L4,-14 L18,-7 L4,-1 Z" fill="#4488BB" stroke="#336699" stroke-width="0.3"/>';
+    // 屏幕高光
+    s += '<path d="M-8,-7 L2,-12 L6,-10 L-4,-5 Z" fill="rgba(255,255,255,0.1)"/>';
+    // 底座支架
+    s += '<path d="M0,0 L4,2 L8,0 L4,-2 Z" fill="#444" stroke="#333" stroke-width="0.3"/>';
+    s += '</g>';
+    return s;
+  },
+
+  game: function(x, y, owned){
+    if(!owned) return '';
+    var s = '';
+    s += '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // 游戏主机
+    s += '<path d="M-6,2 L2,6 L12,2 L4,-2 Z" fill="#2A2A2A" stroke="#1A1A1A" stroke-width="0.4"/>';
+    s += '<path d="M-6,2 L-6,5 L2,9 L2,6 Z" fill="#222"/>';
+    s += '<path d="M2,6 L2,9 L12,5 L12,2 Z" fill="#333"/>';
+    // 指示灯
+    s += '<circle cx="2" cy="3" r="0.8" fill="#4AE050"/>';
+    // 手柄（散落在旁边）
+    s += '<path d="M-10,7 L-6,5 L-2,7 L-6,9 Z" fill="#3A3A3A" stroke="#2A2A2A" stroke-width="0.3"/>';
+    s += '<circle cx="-8" cy="6.5" r="0.6" fill="#666"/>';
+    s += '<circle cx="-4" cy="7.5" r="0.6" fill="#E44"/>';
+    // 连接线
+    s += '<path d="M-4,7 Q0,8 2,6" fill="none" stroke="#444" stroke-width="0.4"/>';
+    s += '</g>';
+    return s;
+  },
+
+  bath: function(x, y, owned){
+    if(!owned) return '';
+    var s = '';
+    s += '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // 浴缸外壁
+    s += '<path d="M-18,0 L2,10 L22,0 L2,-10 Z" fill="#F0EBE0" stroke="#D0C8B8" stroke-width="0.6"/>';
+    s += '<path d="M-18,0 L-18,6 L2,16 L2,10 Z" fill="#E0D8C8" stroke="#C8C0B0" stroke-width="0.4"/>';
+    s += '<path d="M2,10 L2,16 L22,6 L22,0 Z" fill="#E8E0D0" stroke="#D0C8B8" stroke-width="0.4"/>';
+    // 浴缸内壁
+    s += '<path d="M-14,-1 L2,7 L18,-1 L2,-9 Z" fill="#D8E8F0" stroke="#B8D0E0" stroke-width="0.3"/>';
+    // 水面
+    s += '<path d="M-12,0 L2,6 L16,0 L2,-6 Z" fill="rgba(160,210,235,0.5)"/>';
+    // 水面波纹
+    s += '<path d="M-6,0 L2,3 L10,0" fill="none" stroke="rgba(200,230,250,0.5)" stroke-width="0.4"/>';
+    s += '<path d="M-4,1 L2,4 L8,1" fill="none" stroke="rgba(200,230,250,0.4)" stroke-width="0.3"/>';
+    // 泡泡
+    s += '<circle cx="-4" cy="-1" r="1.5" fill="rgba(255,255,255,0.5)" stroke="rgba(200,220,240,0.4)" stroke-width="0.3"/>';
+    s += '<circle cx="6" cy="-2" r="1" fill="rgba(255,255,255,0.4)"/>';
+    s += '<circle cx="0" cy="2" r="1.2" fill="rgba(255,255,255,0.45)"/>';
+    // 水龙头
+    s += '<path d="M16,-2 L18,-4 L18,-8 L16,-6" fill="none" stroke="#AAA" stroke-width="1" stroke-linecap="round"/>';
+    s += '<circle cx="18" cy="-8" r="1" fill="#BBB" stroke="#999" stroke-width="0.3"/>';
+    s += '</g>';
+    return s;
+  },
+
+  piano: function(x, y, owned){
+    if(!owned) return '';
+    var s = '';
+    s += '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // 钢琴主体
+    s += '<path d="M-14,2 L4,11 L22,2 L4,-7 Z" fill="#3A2A1A" stroke="#2A1A0A" stroke-width="0.5"/>';
+    s += '<path d="M-14,2 L-14,-12 L4,-21 L4,-7 Z" fill="#2A1A0A"/>';
+    s += '<path d="M4,-7 L4,-21 L22,-12 L22,2 Z" fill="#4A3A2A"/>';
+    // 键盘面
+    s += '<path d="M-12,0 L4,8 L20,0 L4,-8 Z" fill="#F8F4E8" stroke="#D0C8B8" stroke-width="0.3"/>';
+    // 白键
+    for(var ki=0;ki<6;ki++){
+      var kx = -8 + ki*4.5, ky = -3 + ki*1.2;
+      s += '<line x1="'+(kx)+'" y1="'+(ky)+'" x2="'+(kx+3)+'" y2="'+(ky+2)+'" stroke="rgba(0,0,0,0.1)" stroke-width="0.3"/>';
+    }
+    // 黑键
+    s += '<path d="M-4,-2 L-2,-3 L0,-2 L-2,-1 Z" fill="#1A1A1A"/>';
+    s += '<path d="M2,-1 L4,-2 L6,-1 L4,0 Z" fill="#1A1A1A"/>';
+    s += '<path d="M10,1 L12,0 L14,1 L12,2 Z" fill="#1A1A1A"/>';
+    // 翻盖（打开状态）
+    s += '<path d="M-14,-12 L-10,-18 L8,-27 L4,-21 Z" fill="#3A2A1A" stroke="#2A1A0A" stroke-width="0.4" opacity="0.9"/>';
+    // 翻盖支撑杆
+    s += '<line x1="-2" y1="-18" x2="-2" y2="-12" stroke="#5A4A3A" stroke-width="0.6"/>';
+    // 琴凳
+    s += '<path d="M-4,12 L4,16 L12,12 L4,8 Z" fill="#5A4A3A" stroke="#4A3A2A" stroke-width="0.4"/>';
+    s += '<path d="M-4,12 L-4,14 L4,18 L4,16 Z" fill="#4A3A2A"/>';
+    s += '<path d="M4,16 L4,18 L12,14 L12,12 Z" fill="#6A5A4A"/>';
+    s += '</g>';
+    return s;
+  },
+
+  plant: function(x, y, owned){
+    if(!owned) return '';
+    var s = '';
+    s += '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // 花盆
+    s += '<path d="M-5,6 L0,9 L5,6 L0,3 Z" fill="#C4956A" stroke="#A87A52" stroke-width="0.5"/>';
+    s += '<path d="M-5,6 L-5,10 L0,13 L0,9 Z" fill="#B88A5E"/>';
+    s += '<path d="M0,9 L0,13 L5,10 L5,6 Z" fill="#D0A070"/>';
+    // 土壤
+    s += '<ellipse cx="0" cy="5" rx="4" ry="2" fill="#8B6E4E"/>';
+    // 叶子们（手绘风格的圆叶植物）
+    s += '<path d="M0,4 Q-6,-4 -8,-8" fill="none" stroke="#5A8A4A" stroke-width="1" stroke-linecap="round"/>';
+    s += '<ellipse cx="-9" cy="-9" rx="4" ry="6" fill="#6A9A5A" stroke="#5A8A4A" stroke-width="0.4" transform="rotate(-20 -9 -9)"/>';
+    s += '<path d="M0,3 Q4,-3 8,-6" fill="none" stroke="#5A8A4A" stroke-width="1" stroke-linecap="round"/>';
+    s += '<ellipse cx="9" cy="-7" rx="4" ry="5" fill="#7AAA6A" stroke="#5A8A4A" stroke-width="0.4" transform="rotate(15 9 -7)"/>';
+    s += '<path d="M0,2 Q-2,-6 0,-12" fill="none" stroke="#5A8A4A" stroke-width="1" stroke-linecap="round"/>';
+    s += '<ellipse cx="0" cy="-14" rx="4" ry="5.5" fill="#6A9E5A" stroke="#5A8A4A" stroke-width="0.4"/>';
+    // 叶脉
+    s += '<line x1="-9" y1="-12" x2="-9" y2="-6" stroke="rgba(255,255,255,0.15)" stroke-width="0.3"/>';
+    s += '<line x1="9" y1="-10" x2="9" y2="-4" stroke="rgba(255,255,255,0.15)" stroke-width="0.3"/>';
+    s += '</g>';
+    return s;
+  },
+
+  frame: function(x, y, owned){
+    if(!owned) return '';
+    var s = '';
+    s += '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // 画框（挂在左墙上 - 等轴透视）
+    s += '<path d="M-10,-18 L-10,0 L10,-6 L10,-24 Z" fill="#8B7050" stroke="#6B5030" stroke-width="0.8"/>';
+    // 内框
+    s += '<path d="M-8,-16 L-8,-2 L8,-7 L8,-22 Z" fill="#F0E8D0"/>';
+    // 画面内容（风景画）
+    s += '<path d="M-7,-15 L-7,-3 L7,-8 L7,-21 Z" fill="#B0D0E8"/>';
+    // 山
+    s += '<path d="M-7,-6 L-2,-12 L3,-8 L7,-11 L7,-8 L-7,-3 Z" fill="#8AA070"/>';
+    // 太阳
+    s += '<circle cx="4" cy="-18" r="1.5" fill="#F0D060"/>';
+    s += '</g>';
+    return s;
+  },
+
+  shelf: function(x, y, owned){
+    if(!owned) return '';
+    var s = '';
+    s += '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // 书架主体
+    s += '<path d="M-10,8 L4,15 L18,8 L4,1 Z" fill="#8B6E4E" stroke="#6B5030" stroke-width="0.5"/>';
+    s += '<path d="M-10,8 L-10,-18 L4,-25 L4,1 Z" fill="#7A5E3E"/>';
+    s += '<path d="M4,1 L4,-25 L18,-18 L18,8 Z" fill="#9B7E5E"/>';
+    // 隔板（3层）
+    for(var si=0;si<3;si++){
+      var sy = 2 - si*9;
+      s += '<path d="M-9,'+(sy)+' L4,'+(sy+6)+' L17,'+(sy)+' L4,'+(sy-6)+' Z" fill="#A08A6A" stroke="#8B7050" stroke-width="0.3"/>';
+    }
+    // 书本
+    var bookColors = ['#E05050','#5080C0','#E0A030','#50A060','#A060A0','#D07050'];
+    for(var si2=0;si2<3;si2++){
+      var by = -1 - si2*9;
+      for(var bi=0;bi<3;bi++){
+        var bx = -6 + bi*5, bw = 2.5 + Math.random()*1.5;
+        var bc = bookColors[(si2*3+bi) % bookColors.length];
+        s += '<path d="M'+(bx)+','+(by-bi*0.8)+' L'+(bx)+','+(by-5-bi*0.8)+' L'+(bx+bw)+','+(by-5.5-bi*0.8)+' L'+(bx+bw)+','+(by-0.5-bi*0.8)+' Z" fill="'+bc+'" opacity="0.8"/>';
+      }
+    }
+    s += '</g>';
+    return s;
+  },
+
+  rug: function(x, y, owned){
+    if(!owned) return '';
+    var s = '';
+    s += '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // 地毯（菱形）
+    s += '<path d="M0,-12 L-20,0 L0,12 L20,0 Z" fill="#C89868" stroke="#A87848" stroke-width="0.5" opacity="0.8"/>';
+    // 花纹边框
+    s += '<path d="M0,-9 L-15,0 L0,9 L15,0 Z" fill="none" stroke="#B08858" stroke-width="0.8" stroke-dasharray="2,2"/>';
+    // 中心花纹
+    s += '<path d="M0,-5 L-8,0 L0,5 L8,0 Z" fill="#D8A878" stroke="#C09060" stroke-width="0.3"/>';
+    s += '<path d="M0,-3 L-5,0 L0,3 L5,0 Z" fill="#E0B888" stroke="none"/>';
+    // 流苏（前后两端）
+    for(var fi=-3;fi<=3;fi++){
+      s += '<line x1="'+(fi*2.5-1)+'" y1="'+(12+Math.abs(fi)*0.3)+'" x2="'+(fi*2.5)+'" y2="'+(14+Math.abs(fi)*0.3)+'" stroke="#C89868" stroke-width="0.5" stroke-linecap="round"/>';
+    }
+    s += '</g>';
+    return s;
+  }
+};
+
+// 默认家具放置位置（网格坐标 gx, gy）
+var _defaultFurnPositions = {
+  bed:   { gx:0, gy:0 },
+  sofa:  { gx:2, gy:1 },
+  stove: { gx:3, gy:0 },
+  lamp:  { gx:1, gy:0 },
+  tv:    { gx:2, gy:0 },
+  game:  { gx:3, gy:2 },
+  bath:  { gx:0, gy:2 },
+  piano: { gx:1, gy:2 },
+  plant: { gx:4, gy:0 },
+  frame: { gx:0, gy:1 },
+  shelf: { gx:4, gy:1 },
+  rug:   { gx:2, gy:2 },
+};
+
 function _mapOpenRoom(container, mapData, houseId){
   var house = (mapData.houses||[]).find(function(h){ return h.id===houseId; });
   if(!house) return;
@@ -26952,41 +27278,148 @@ function _mapOpenRoom(container, mapData, houseId){
     html += '<span style="font-size:11px;color:rgba(20,24,28,.35);">💰 $'+wallet.balance+'</span>';
     html += '</div>';
 
-    // 2.5D 等距房间 SVG
+    // 2.5D 等距房间 SVG（增强版）
     html += '<div class="mapRoomSvgWrap">';
-    html += '<svg viewBox="-10 -30 320 230" xmlns="http://www.w3.org/2000/svg" style="width:92%;max-height:200px;" preserveAspectRatio="xMidYMid meet">';
-    // 地板（等距菱形）
-    html += '<polygon points="150,180 280,110 150,40 20,110" fill="#E8DCC8" stroke="rgba(180,165,140,0.3)" stroke-width="0.5"/>';
-    // 地板纹理线
-    for(var gi=1;gi<5;gi++){
-      var gy1=40+gi*28, gx1L=20+(150-20)*gi/5, gx1R=280-(280-150)*gi/5;
-      html += '<line x1="'+gx1L+'" y1="'+gy1+'" x2="'+gx1R+'" y2="'+gy1+'" stroke="rgba(180,165,140,0.15)" stroke-width="0.5"/>';
-    }
-    // 左墙
-    html += '<polygon points="20,110 150,40 150,-20 20,50" fill="#F0E6D5"/>';
-    html += '<line x1="20" y1="110" x2="20" y2="50" stroke="rgba(160,145,125,0.2)" stroke-width="0.5"/>';
-    // 右墙
-    html += '<polygon points="150,40 280,110 280,50 150,-20" fill="#E5DBCA"/>';
-    // 窗户（左墙上）
-    html += '<polygon points="55,55 95,35 95,10 55,30" fill="rgba(180,215,240,0.5)" stroke="rgba(140,125,105,0.3)" stroke-width="0.5"/>';
-    // 窗户（右墙上）
-    html += '<polygon points="200,35 240,55 240,30 200,10" fill="rgba(180,215,240,0.5)" stroke="rgba(140,125,105,0.3)" stroke-width="0.5"/>';
+    html += '<svg viewBox="-20 -60 340 280" xmlns="http://www.w3.org/2000/svg" style="width:96%;max-height:240px;" preserveAspectRatio="xMidYMid meet">';
 
-    // 家具放置在等距网格上（3x2网格）
-    var gridPos = [
-      {x:70, y:130},  {x:150,y:100}, {x:230,y:130},
-      {x:90, y:155},  {x:150,y:140}, {x:210,y:155},
-    ];
-    furniture.forEach(function(f, fi){
+    // === 阴影（房间整体投影） ===
+    html += '<defs>';
+    html += '<filter id="roomShadow"><feDropShadow dx="2" dy="3" stdDeviation="4" flood-opacity="0.08"/></filter>';
+    html += '<pattern id="floorTile" width="26" height="14" patternUnits="userSpaceOnUse" patternTransform="skewY(-26.57) scale(1,1.2)">';
+    html += '<rect width="13" height="7" fill="#D8CEAA" opacity="0.3"/>';
+    html += '<rect x="13" y="7" width="13" height="7" fill="#D8CEAA" opacity="0.3"/>';
+    html += '</pattern>';
+    html += '</defs>';
+
+    // === 地板（等距菱形 + 格子纹理） ===
+    html += '<polygon points="150,190 290,118 150,46 10,118" fill="#E8DEC8" stroke="rgba(180,168,140,0.2)" stroke-width="0.5" filter="url(#roomShadow)"/>';
+
+    // 格子地板纹理（交替色块 - 类似图1的方格地板）
+    var tileW = 28, tileH = 14;
+    for(var ty=0;ty<6;ty++){
+      for(var tx=0;tx<6;tx++){
+        var isAlt = (tx+ty)%2===0;
+        var tcx = 150 + (tx-3)*tileW/2 - (ty-3)*tileW/2;
+        var tcy = 118 + (tx-3)*tileH/2 + (ty-3)*tileH/2;
+        if(isAlt){
+          html += '<polygon points="'+(tcx)+','+(tcy-tileH/2)+' '+(tcx+tileW/2)+','+(tcy)+' '+(tcx)+','+(tcy+tileH/2)+' '+(tcx-tileW/2)+','+(tcy)+'" fill="rgba(180,200,140,0.18)"/>';
+        }
+      }
+    }
+    // 地板边缘高光线
+    html += '<line x1="150" y1="46" x2="290" y2="118" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>';
+    html += '<line x1="150" y1="46" x2="10" y2="118" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>';
+
+    // === 左墙 ===
+    html += '<polygon points="10,118 150,46 150,-24 10,48" fill="#F2EAD8" stroke="rgba(170,158,130,0.15)" stroke-width="0.5"/>';
+    // 左墙壁纸纹理（竖条纹）
+    for(var wi=0;wi<6;wi++){
+      var wx1 = 10 + (150-10)*wi/6, wy1 = 118-(118-48)*wi/6;
+      var wx2 = 10 + (150-10)*wi/6, wy2 = 48-(48-(-24))*wi/6 + (118-48)*(1-wi/6);
+      html += '<line x1="'+(10+(150-10)*wi/6).toFixed(1)+'" y1="'+(48+(118-48)*(1-wi/6)).toFixed(1)+'" x2="'+(10+(150-10)*wi/6).toFixed(1)+'" y2="'+(-24+(48-(-24))*(1-wi/6)).toFixed(1)+'" stroke="rgba(200,190,165,0.12)" stroke-width="0.5"/>';
+    }
+    // 左墙踢脚线
+    html += '<line x1="10" y1="118" x2="150" y2="46" stroke="rgba(160,148,120,0.3)" stroke-width="1.5"/>';
+    html += '<line x1="10" y1="114" x2="150" y2="42" stroke="rgba(160,148,120,0.15)" stroke-width="0.5"/>';
+
+    // === 右墙 ===
+    html += '<polygon points="150,46 290,118 290,48 150,-24" fill="#E8E0CE" stroke="rgba(170,158,130,0.15)" stroke-width="0.5"/>';
+    // 右墙踢脚线
+    html += '<line x1="150" y1="46" x2="290" y2="118" stroke="rgba(160,148,120,0.3)" stroke-width="1.5"/>';
+    html += '<line x1="150" y1="42" x2="290" y2="114" stroke="rgba(160,148,120,0.15)" stroke-width="0.5"/>';
+
+    // 墙角线
+    html += '<line x1="150" y1="-24" x2="150" y2="46" stroke="rgba(160,148,120,0.2)" stroke-width="0.8"/>';
+
+    // === 左墙窗户（大窗） ===
+    var lwx1=45, lwy1=72, lwx2=105, lwy2=42;
+    // 窗框
+    html += '<polygon points="'+lwx1+','+(lwy1-32)+' '+lwx2+','+(lwy2-32)+' '+lwx2+','+lwy2+' '+lwx1+','+lwy1+'" fill="rgba(180,218,245,0.5)" stroke="#A89878" stroke-width="1.2"/>';
+    // 窗格（十字分格）
+    html += '<line x1="'+((lwx1+lwx2)/2)+'" y1="'+((lwy1-32+lwy1)/2)+'" x2="'+((lwx1+lwx2)/2)+'" y2="'+((lwy2-32+lwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
+    html += '<line x1="'+lwx1+'" y1="'+(lwy1-16)+'" x2="'+lwx2+'" y2="'+(lwy2-16)+'" stroke="#A89878" stroke-width="0.8"/>';
+    // 窗户高光
+    html += '<polygon points="'+(lwx1+3)+','+(lwy1-30)+' '+(lwx1+12)+','+(lwy1-34)+' '+(lwx1+12)+','+(lwy1-20)+' '+(lwx1+3)+','+(lwy1-16)+'" fill="rgba(255,255,255,0.25)"/>';
+    // 窗帘（左侧绿色窗帘 - 参考图1）
+    html += '<path d="M'+(lwx1-2)+','+(lwy1-34)+' Q'+(lwx1+5)+','+(lwy1-20)+' '+(lwx1+2)+','+(lwy1+2)+'" fill="none" stroke="#8BAE6E" stroke-width="3" opacity="0.5" stroke-linecap="round"/>';
+    html += '<path d="M'+(lwx2+2)+','+(lwy2-34)+' Q'+(lwx2-5)+','+(lwy2-20)+' '+(lwx2-2)+','+(lwy2+2)+'" fill="none" stroke="#8BAE6E" stroke-width="3" opacity="0.5" stroke-linecap="round"/>';
+
+    // === 右墙窗户 ===
+    var rwx1=195, rwy1=42, rwx2=255, rwy2=72;
+    html += '<polygon points="'+rwx1+','+(rwy1-32)+' '+rwx2+','+(rwy2-32)+' '+rwx2+','+rwy2+' '+rwx1+','+rwy1+'" fill="rgba(180,218,245,0.5)" stroke="#A89878" stroke-width="1.2"/>';
+    html += '<line x1="'+((rwx1+rwx2)/2)+'" y1="'+((rwy1-32+rwy1)/2)+'" x2="'+((rwx1+rwx2)/2)+'" y2="'+((rwy2-32+rwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
+    html += '<line x1="'+rwx1+'" y1="'+(rwy1-16)+'" x2="'+rwx2+'" y2="'+(rwy2-16)+'" stroke="#A89878" stroke-width="0.8"/>';
+    html += '<polygon points="'+(rwx1+3)+','+(rwy1-30)+' '+(rwx1+12)+','+(rwy1-26)+' '+(rwx1+12)+','+(rwy1-14)+' '+(rwx1+3)+','+(rwy1-18)+'" fill="rgba(255,255,255,0.25)"/>';
+
+    // === 门（右墙上） ===
+    html += '<polygon points="252,72 280,86 280,42 252,28" fill="#A08A6A" stroke="#8A7454" stroke-width="0.8"/>';
+    html += '<polygon points="254,70 278,83 278,44 254,30" fill="#B89A7A" stroke="none"/>';
+    // 门把手
+    html += '<circle cx="258" cy="58" r="1.5" fill="#D0B888" stroke="#A08A6A" stroke-width="0.4"/>';
+
+    // === 装饰：墙上相框（左墙） ===
+    html += '<polygon points="118,16 138,6 138,-10 118,0" fill="#8B7050" stroke="#6B5030" stroke-width="0.6"/>';
+    html += '<polygon points="120,14 136,5 136,-8 120,-1" fill="#E8C8A8"/>';
+    html += '<polygon points="122,12 134,4 134,-6 122,1" fill="#D0E8C8"/>';
+
+    // 小相框
+    html += '<polygon points="25,80 42,72 42,60 25,68" fill="#7A6040" stroke="#5A4020" stroke-width="0.5"/>';
+    html += '<polygon points="27,78 40,71 40,62 27,69" fill="#E8D8C0"/>';
+
+    // === 家具渲染（按 y坐标排序实现遮挡） ===
+    var furnItems = [];
+    furniture.forEach(function(f){
+      if(!f.owned) return;
       var cat = FURNITURE_CATALOG[f.type];
       if(!cat) return;
-      var pos = gridPos[fi % gridPos.length];
-      if(!pos) return;
-      if(f.owned){
-        html += '<text x="'+pos.x+'" y="'+pos.y+'" text-anchor="middle" font-size="22" style="cursor:pointer;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.15));" data-furnid="'+f.id+'">'+cat.emoji+'</text>';
-        html += '<text x="'+pos.x+'" y="'+(pos.y+14)+'" text-anchor="middle" font-size="7" fill="rgba(80,60,40,0.5)">'+cat.label+'</text>';
+      var pos = _defaultFurnPositions[f.type] || { gx: f.gx||0, gy: f.gy||0 };
+      // 使用家具自身的gx/gy如果已设置，否则用默认
+      var gx = (f.gx != null && f.gx !== 0) ? f.gx : pos.gx;
+      var gy = (f.gy != null && f.gy !== 0) ? f.gy : pos.gy;
+      var iso = _isoProject(gx, gy);
+      furnItems.push({ f:f, type:f.type, x:iso.x, y:iso.y, sortY: iso.y + iso.x*0.1 });
+    });
+    // 按y排序（远处先画）
+    furnItems.sort(function(a,b){ return a.sortY - b.sortY; });
+
+    furnItems.forEach(function(item){
+      var drawFn = _roomFurnSVG[item.type];
+      if(drawFn){
+        html += drawFn(item.x, item.y, true);
+      } else {
+        // 未定义SVG的家具用emoji回退
+        var cat = FURNITURE_CATALOG[item.type];
+        if(cat){
+          html += '<text x="'+item.x+'" y="'+item.y+'" text-anchor="middle" font-size="20" style="cursor:pointer;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.15));" class="rm-furn" data-furnid="'+item.f.id+'">'+cat.emoji+'</text>';
+          html += '<text x="'+item.x+'" y="'+(item.y+12)+'" text-anchor="middle" font-size="6" fill="rgba(80,60,40,0.5)">'+cat.label+'</text>';
+        }
       }
     });
+
+    // === 常驻装饰（不依赖购买） ===
+    // 墙角小盆栽装饰
+    html += '<g transform="translate(22,108)" opacity="0.6">';
+    html += '<ellipse cx="0" cy="2" rx="3" ry="1.5" fill="#C4956A"/>';
+    html += '<ellipse cx="0" cy="0" rx="2.5" ry="4" fill="#6A9A5A"/>';
+    html += '<ellipse cx="-2" cy="-2" rx="2" ry="3" fill="#7AAA6A"/>';
+    html += '</g>';
+
+    // 猫（如果有沙发就在旁边画只猫）
+    var hasSofa = furniture.some(function(f){ return f.type==='sofa' && f.owned; });
+    if(hasSofa){
+      var sofaPos = _isoProject(_defaultFurnPositions.sofa.gx, _defaultFurnPositions.sofa.gy);
+      html += '<g transform="translate('+(sofaPos.x+28)+','+(sofaPos.y+8)+')" opacity="0.7">';
+      // 猫身体
+      html += '<ellipse cx="0" cy="0" rx="5" ry="3" fill="#3A3A3A"/>';
+      // 猫头
+      html += '<circle cx="-5" cy="-1" r="3" fill="#3A3A3A"/>';
+      // 猫耳朵
+      html += '<polygon points="-7,-3 -6,-6 -4,-3" fill="#3A3A3A"/>';
+      html += '<polygon points="-4,-3 -3,-6 -2,-3" fill="#3A3A3A"/>';
+      // 猫尾巴
+      html += '<path d="M5,0 Q8,-2 10,1" fill="none" stroke="#3A3A3A" stroke-width="1.2" stroke-linecap="round"/>';
+      html += '</g>';
+    }
 
     html += '</svg></div>';
 
