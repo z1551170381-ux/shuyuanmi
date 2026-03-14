@@ -27512,8 +27512,7 @@ function _mapOpenRoom(container, mapData, houseId){
         }
       }
     }
-    // 窗户光斑投射到地板
-    html += '<ellipse cx="80" cy="135" rx="40" ry="22" fill="url(#windowLight)" opacity="0.6"/>';
+    // 窗户光斑（已简化）
     html += '<line x1="150" y1="46" x2="290" y2="118" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>';
     html += '<line x1="150" y1="46" x2="10" y2="118" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>';
 
@@ -27535,23 +27534,29 @@ function _mapOpenRoom(container, mapData, houseId){
     var lwx1=45, lwy1=72, lwx2=105, lwy2=42;
     var _winStyle = house._windowStyle || 'default';
     if(_winStyle === 'modern'){
-      // 新款窗户SVG渲染到墙上
-      html += '<image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjEzMCAxNjAgMjQwIDE2MCI+CiAgPHN0eWxlPgogICAgLndodC10e2ZpbGw6I0ZGRjtzdHJva2U6I0YwRjBGMDtzdHJva2Utd2lkdGg6MC44O3N0cm9rZS1saW5lam9pbjpyb3VuZDt9CiAgICAud2h0LWx7ZmlsbDojRjBGMEYwO3N0cm9rZTojRTBFMEUwO3N0cm9rZS13aWR0aDowLjg7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO30KICAgIC53aHQtcntmaWxsOiNFNEU0RTQ7c3Ryb2tlOiNENEQ0RDQ7c3Ryb2tlLXdpZHRoOjAuODtzdHJva2UtbGluZWpvaW46cm91bmQ7fQogIDwvc3R5bGU+CgogIDwhLS0g4piF4piF4piFIOeql+aItyjmjILlt6blopkpIOKYheKYheKYhSAtLT4KICA8ZyBpZD0id2luZG93IiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNTAsIDI2MCkiPgoKICAgIDwhLS0g56qX5qGGIHc9MixkPTYwLGg9NDAgLS0+CiAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIj4KICAgICAgPHJlY3QgeD0iMCIgeT0iLTQwIiB3aWR0aD0iMiIgaGVpZ2h0PSI0MCIgY2xhc3M9IndodC1yIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNjAsMzApIG1hdHJpeCgxLDAuNSwwLDEsMCwwKSIvPgogICAgICA8cmVjdCB4PSIwIiB5PSItNDAiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0MCIgY2xhc3M9IndodC1sIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyLDEpIG1hdHJpeCgtMSwwLjUsMCwxLDAsMCkiLz4KICAgICAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjIiIGhlaWdodD0iNjAiIGNsYXNzPSJ3aHQtdCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwtNDApIG1hdHJpeCgxLDAuNSwtMSwwLjUsMCwwKSIvPgogICAgPC9nPgoKICAgIDwhLS0g4piFIOaJgOacieeOu+eSg+WSjOWIhumalOadoemDveeUu+WcqOW3pumdouS4iu+8jOWFseS6q+WQjOS4gG1hdHJpeCDimIUgLS0+CiAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyLDEpIG1hdHJpeCgtMSwwLjUsMCwxLDAsMCkiPgogICAgICA8IS0tIOS4ieWdl+eOu+eSg+mdouadvyjlhoXltYzlnKjmoYblhoUpIC0tPgogICAgICA8cmVjdCB4PSIyIiAgeT0iLTM4IiB3aWR0aD0iMTciIGhlaWdodD0iMzYiIGZpbGw9InJnYmEoMjMwLDIzOCwyNDUsMC42NSkiIHN0cm9rZT0icmdiYSgyMTAsMjE4LDIyNSwwLjQpIiBzdHJva2Utd2lkdGg9IjAuNCIvPgogICAgICA8cmVjdCB4PSIyMSIgeT0iLTM4IiB3aWR0aD0iMTgiIGhlaWdodD0iMzYiIGZpbGw9InJnYmEoMjMwLDIzOCwyNDUsMC42NSkiIHN0cm9rZT0icmdiYSgyMTAsMjE4LDIyNSwwLjQpIiBzdHJva2Utd2lkdGg9IjAuNCIvPgogICAgICA8cmVjdCB4PSI0MSIgeT0iLTM4IiB3aWR0aD0iMTciIGhlaWdodD0iMzYiIGZpbGw9InJnYmEoMjMwLDIzOCwyNDUsMC42NSkiIHN0cm9rZT0icmdiYSgyMTAsMjE4LDIyNSwwLjQpIiBzdHJva2Utd2lkdGg9IjAuNCIvPgoKICAgICAgPCEtLSDpq5jlhYkgLS0+CiAgICAgIDxyZWN0IHg9IjQiICB5PSItMzQiIHdpZHRoPSI1IiBoZWlnaHQ9IjIwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMTUpIi8+CiAgICAgIDxyZWN0IHg9IjIzIiB5PSItMzQiIHdpZHRoPSI1IiBoZWlnaHQ9IjIwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMTUpIi8+CgogICAgICA8IS0tIOerluWIhumalOadoSAtLT4KICAgICAgPHJlY3QgeD0iMTkiIHk9Ii00MCIgd2lkdGg9IjIiIGhlaWdodD0iNDAiIGZpbGw9IiNFQUVBRUEiIHN0cm9rZT0iI0RERCIgc3Ryb2tlLXdpZHRoPSIwLjMiLz4KICAgICAgPHJlY3QgeD0iMzkiIHk9Ii00MCIgd2lkdGg9IjIiIGhlaWdodD0iNDAiIGZpbGw9IiNFQUVBRUEiIHN0cm9rZT0iI0RERCIgc3Ryb2tlLXdpZHRoPSIwLjMiLz4KICAgIDwvZz4KCiAgPC9nPgo8L3N2Zz4K" x="'+(lwx1-5)+'" y="'+(lwy2-36)+'" width="70" height="48" style="pointer-events:none;" preserveAspectRatio="none" transform="skewY(0)"/>';
+      // 现代落地窗 - 贴合左墙透视
+      html += '<image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjEzMCAxNjAgMjQwIDE2MCI+CiAgPHN0eWxlPgogICAgLndodC10e2ZpbGw6I0ZGRjtzdHJva2U6I0YwRjBGMDtzdHJva2Utd2lkdGg6MC44O3N0cm9rZS1saW5lam9pbjpyb3VuZDt9CiAgICAud2h0LWx7ZmlsbDojRjBGMEYwO3N0cm9rZTojRTBFMEUwO3N0cm9rZS13aWR0aDowLjg7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO30KICAgIC53aHQtcntmaWxsOiNFNEU0RTQ7c3Ryb2tlOiNENEQ0RDQ7c3Ryb2tlLXdpZHRoOjAuODtzdHJva2UtbGluZWpvaW46cm91bmQ7fQogIDwvc3R5bGU+CgogIDwhLS0g4piF4piF4piFIOeql+aItyjmjILlt6blopkpIOKYheKYheKYhSAtLT4KICA8ZyBpZD0id2luZG93IiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNTAsIDI2MCkiPgoKICAgIDwhLS0g56qX5qGGIHc9MixkPTYwLGg9NDAgLS0+CiAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIj4KICAgICAgPHJlY3QgeD0iMCIgeT0iLTQwIiB3aWR0aD0iMiIgaGVpZ2h0PSI0MCIgY2xhc3M9IndodC1yIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNjAsMzApIG1hdHJpeCgxLDAuNSwwLDEsMCwwKSIvPgogICAgICA8cmVjdCB4PSIwIiB5PSItNDAiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0MCIgY2xhc3M9IndodC1sIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyLDEpIG1hdHJpeCgtMSwwLjUsMCwxLDAsMCkiLz4KICAgICAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjIiIGhlaWdodD0iNjAiIGNsYXNzPSJ3aHQtdCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwtNDApIG1hdHJpeCgxLDAuNSwtMSwwLjUsMCwwKSIvPgogICAgPC9nPgoKICAgIDwhLS0g4piFIOaJgOacieeOu+eSg+WSjOWIhumalOadoemDveeUu+WcqOW3pumdouS4iu+8jOWFseS6q+WQjOS4gG1hdHJpeCDimIUgLS0+CiAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyLDEpIG1hdHJpeCgtMSwwLjUsMCwxLDAsMCkiPgogICAgICA8IS0tIOS4ieWdl+eOu+eSg+mdouadvyjlhoXltYzlnKjmoYblhoUpIC0tPgogICAgICA8cmVjdCB4PSIyIiAgeT0iLTM4IiB3aWR0aD0iMTciIGhlaWdodD0iMzYiIGZpbGw9InJnYmEoMjMwLDIzOCwyNDUsMC42NSkiIHN0cm9rZT0icmdiYSgyMTAsMjE4LDIyNSwwLjQpIiBzdHJva2Utd2lkdGg9IjAuNCIvPgogICAgICA8cmVjdCB4PSIyMSIgeT0iLTM4IiB3aWR0aD0iMTgiIGhlaWdodD0iMzYiIGZpbGw9InJnYmEoMjMwLDIzOCwyNDUsMC42NSkiIHN0cm9rZT0icmdiYSgyMTAsMjE4LDIyNSwwLjQpIiBzdHJva2Utd2lkdGg9IjAuNCIvPgogICAgICA8cmVjdCB4PSI0MSIgeT0iLTM4IiB3aWR0aD0iMTciIGhlaWdodD0iMzYiIGZpbGw9InJnYmEoMjMwLDIzOCwyNDUsMC42NSkiIHN0cm9rZT0icmdiYSgyMTAsMjE4LDIyNSwwLjQpIiBzdHJva2Utd2lkdGg9IjAuNCIvPgoKICAgICAgPCEtLSDpq5jlhYkgLS0+CiAgICAgIDxyZWN0IHg9IjQiICB5PSItMzQiIHdpZHRoPSI1IiBoZWlnaHQ9IjIwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMTUpIi8+CiAgICAgIDxyZWN0IHg9IjIzIiB5PSItMzQiIHdpZHRoPSI1IiBoZWlnaHQ9IjIwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMTUpIi8+CgogICAgICA8IS0tIOerluWIhumalOadoSAtLT4KICAgICAgPHJlY3QgeD0iMTkiIHk9Ii00MCIgd2lkdGg9IjIiIGhlaWdodD0iNDAiIGZpbGw9IiNFQUVBRUEiIHN0cm9rZT0iI0RERCIgc3Ryb2tlLXdpZHRoPSIwLjMiLz4KICAgICAgPHJlY3QgeD0iMzkiIHk9Ii00MCIgd2lkdGg9IjIiIGhlaWdodD0iNDAiIGZpbGw9IiNFQUVBRUEiIHN0cm9rZT0iI0RERCIgc3Ryb2tlLXdpZHRoPSIwLjMiLz4KICAgIDwvZz4KCiAgPC9nPgo8L3N2Zz4K" x="30" y="-5" width="90" height="85" style="pointer-events:none;" preserveAspectRatio="none" transform="skewY(26.57) skewX(0)"/>';
     } else {
-      // 默认窗户
+      // 默认格窗
       html += '<polygon points="'+lwx1+','+(lwy1-32)+' '+lwx2+','+(lwy2-32)+' '+lwx2+','+lwy2+' '+lwx1+','+lwy1+'" fill="'+lighting.windowGlow+'" stroke="#A89878" stroke-width="1.2"/>';
       html += '<line x1="'+((lwx1+lwx2)/2)+'" y1="'+((lwy1-32+lwy1)/2)+'" x2="'+((lwx1+lwx2)/2)+'" y2="'+((lwy2-32+lwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
       html += '<line x1="'+lwx1+'" y1="'+(lwy1-16)+'" x2="'+lwx2+'" y2="'+(lwy2-16)+'" stroke="#A89878" stroke-width="0.8"/>';
       html += '<polygon points="'+(lwx1+3)+','+(lwy1-30)+' '+(lwx1+12)+','+(lwy1-34)+' '+(lwx1+12)+','+(lwy1-20)+' '+(lwx1+3)+','+(lwy1-16)+'" fill="rgba(255,255,255,0.25)"/>';
     }
+    // 左墙藤蔓
     html += '<path d="M'+(lwx1-2)+','+(lwy1-34)+' Q'+(lwx1+5)+','+(lwy1-20)+' '+(lwx1+2)+','+(lwy1+2)+'" fill="none" stroke="#8BAE6E" stroke-width="3" opacity="0.5" stroke-linecap="round"/>';
     html += '<path d="M'+(lwx2+2)+','+(lwy2-34)+' Q'+(lwx2-5)+','+(lwy2-20)+' '+(lwx2-2)+','+(lwy2+2)+'" fill="none" stroke="#8BAE6E" stroke-width="3" opacity="0.5" stroke-linecap="round"/>';
 
-    // === 右墙窗户 ===
+    // === 右墙窗户（同步款式替换） ===
     var rwx1=195, rwy1=42, rwx2=255, rwy2=72;
-    html += '<polygon points="'+rwx1+','+(rwy1-32)+' '+rwx2+','+(rwy2-32)+' '+rwx2+','+rwy2+' '+rwx1+','+rwy1+'" fill="'+lighting.windowGlow+'" stroke="#A89878" stroke-width="1.2"/>';
-    html += '<line x1="'+((rwx1+rwx2)/2)+'" y1="'+((rwy1-32+rwy1)/2)+'" x2="'+((rwx1+rwx2)/2)+'" y2="'+((rwy2-32+rwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
-    html += '<line x1="'+rwx1+'" y1="'+(rwy1-16)+'" x2="'+rwx2+'" y2="'+(rwy2-16)+'" stroke="#A89878" stroke-width="0.8"/>';
+    if(_winStyle === 'modern'){
+      // 现代落地窗 - 贴合右墙透视
+      html += '<image href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjEzMCAxNjAgMjQwIDE2MCI+CiAgPHN0eWxlPgogICAgLndodC10e2ZpbGw6I0ZGRjtzdHJva2U6I0YwRjBGMDtzdHJva2Utd2lkdGg6MC44O3N0cm9rZS1saW5lam9pbjpyb3VuZDt9CiAgICAud2h0LWx7ZmlsbDojRjBGMEYwO3N0cm9rZTojRTBFMEUwO3N0cm9rZS13aWR0aDowLjg7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO30KICAgIC53aHQtcntmaWxsOiNFNEU0RTQ7c3Ryb2tlOiNENEQ0RDQ7c3Ryb2tlLXdpZHRoOjAuODtzdHJva2UtbGluZWpvaW46cm91bmQ7fQogIDwvc3R5bGU+CgogIDwhLS0g4piF4piF4piFIOeql+aItyjmjILlt6blopkpIOKYheKYheKYhSAtLT4KICA8ZyBpZD0id2luZG93IiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyNTAsIDI2MCkiPgoKICAgIDwhLS0g56qX5qGGIHc9MixkPTYwLGg9NDAgLS0+CiAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIj4KICAgICAgPHJlY3QgeD0iMCIgeT0iLTQwIiB3aWR0aD0iMiIgaGVpZ2h0PSI0MCIgY2xhc3M9IndodC1yIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNjAsMzApIG1hdHJpeCgxLDAuNSwwLDEsMCwwKSIvPgogICAgICA8cmVjdCB4PSIwIiB5PSItNDAiIHdpZHRoPSI2MCIgaGVpZ2h0PSI0MCIgY2xhc3M9IndodC1sIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyLDEpIG1hdHJpeCgtMSwwLjUsMCwxLDAsMCkiLz4KICAgICAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjIiIGhlaWdodD0iNjAiIGNsYXNzPSJ3aHQtdCIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMCwtNDApIG1hdHJpeCgxLDAuNSwtMSwwLjUsMCwwKSIvPgogICAgPC9nPgoKICAgIDwhLS0g4piFIOaJgOacieeOu+eSg+WSjOWIhumalOadoemDveeUu+WcqOW3pumdouS4iu+8jOWFseS6q+WQjOS4gG1hdHJpeCDimIUgLS0+CiAgICA8ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgyLDEpIG1hdHJpeCgtMSwwLjUsMCwxLDAsMCkiPgogICAgICA8IS0tIOS4ieWdl+eOu+eSg+mdouadvyjlhoXltYzlnKjmoYblhoUpIC0tPgogICAgICA8cmVjdCB4PSIyIiAgeT0iLTM4IiB3aWR0aD0iMTciIGhlaWdodD0iMzYiIGZpbGw9InJnYmEoMjMwLDIzOCwyNDUsMC42NSkiIHN0cm9rZT0icmdiYSgyMTAsMjE4LDIyNSwwLjQpIiBzdHJva2Utd2lkdGg9IjAuNCIvPgogICAgICA8cmVjdCB4PSIyMSIgeT0iLTM4IiB3aWR0aD0iMTgiIGhlaWdodD0iMzYiIGZpbGw9InJnYmEoMjMwLDIzOCwyNDUsMC42NSkiIHN0cm9rZT0icmdiYSgyMTAsMjE4LDIyNSwwLjQpIiBzdHJva2Utd2lkdGg9IjAuNCIvPgogICAgICA8cmVjdCB4PSI0MSIgeT0iLTM4IiB3aWR0aD0iMTciIGhlaWdodD0iMzYiIGZpbGw9InJnYmEoMjMwLDIzOCwyNDUsMC42NSkiIHN0cm9rZT0icmdiYSgyMTAsMjE4LDIyNSwwLjQpIiBzdHJva2Utd2lkdGg9IjAuNCIvPgoKICAgICAgPCEtLSDpq5jlhYkgLS0+CiAgICAgIDxyZWN0IHg9IjQiICB5PSItMzQiIHdpZHRoPSI1IiBoZWlnaHQ9IjIwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMTUpIi8+CiAgICAgIDxyZWN0IHg9IjIzIiB5PSItMzQiIHdpZHRoPSI1IiBoZWlnaHQ9IjIwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMTUpIi8+CgogICAgICA8IS0tIOerluWIhumalOadoSAtLT4KICAgICAgPHJlY3QgeD0iMTkiIHk9Ii00MCIgd2lkdGg9IjIiIGhlaWdodD0iNDAiIGZpbGw9IiNFQUVBRUEiIHN0cm9rZT0iI0RERCIgc3Ryb2tlLXdpZHRoPSIwLjMiLz4KICAgICAgPHJlY3QgeD0iMzkiIHk9Ii00MCIgd2lkdGg9IjIiIGhlaWdodD0iNDAiIGZpbGw9IiNFQUVBRUEiIHN0cm9rZT0iI0RERCIgc3Ryb2tlLXdpZHRoPSIwLjMiLz4KICAgIDwvZz4KCiAgPC9nPgo8L3N2Zz4K" x="183" y="-5" width="90" height="85" style="pointer-events:none;" preserveAspectRatio="none" transform="skewY(-26.57) skewX(0)"/>';
+    } else {
+      html += '<polygon points="'+rwx1+','+(rwy1-32)+' '+rwx2+','+(rwy2-32)+' '+rwx2+','+rwy2+' '+rwx1+','+rwy1+'" fill="'+lighting.windowGlow+'" stroke="#A89878" stroke-width="1.2"/>';
+      html += '<line x1="'+((rwx1+rwx2)/2)+'" y1="'+((rwy1-32+rwy1)/2)+'" x2="'+((rwx1+rwx2)/2)+'" y2="'+((rwy2-32+rwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
+      html += '<line x1="'+rwx1+'" y1="'+(rwy1-16)+'" x2="'+rwx2+'" y2="'+(rwy2-16)+'" stroke="#A89878" stroke-width="0.8"/>';
+    }
 
     // === 门（贴地！右墙从150,46到290,118） ===
     // 门底边在墙底线上：x=258时 y=46+(258-150)/(290-150)*(118-46)=101.5, x=284时 y=112.5
@@ -27559,12 +27564,14 @@ function _mapOpenRoom(container, mapData, houseId){
     html += '<polygon points="260,100 282,112 282,58 260,46" fill="#B89A7A" stroke="none"/>';
     html += '<circle cx="264" cy="82" r="1.5" fill="#D0B888" stroke="#A08A6A" stroke-width="0.4"/>';
 
-    // === 墙上装饰 ===
-    html += '<polygon points="118,16 138,6 138,-10 118,0" fill="#8B7050" stroke="#6B5030" stroke-width="0.6"/>';
-    html += '<polygon points="120,14 136,5 136,-8 120,-1" fill="#E8C8A8"/>';
-    html += '<polygon points="122,12 134,4 134,-6 122,1" fill="#D0E8C8"/>';
-    html += '<polygon points="25,80 42,72 42,60 25,68" fill="#7A6040" stroke="#5A4020" stroke-width="0.5"/>';
-    html += '<polygon points="27,78 40,71 40,62 27,69" fill="#E8D8C0"/>';
+    // === 墙上装饰（已移除假装饰画） ===
+
+    // === 全局光照叠加（在家具之前渲染，不遮挡家具） ===
+    html += '<polygon points="-20,-60 320,-60 320,220 -20,220" fill="'+lighting.overlay+'" style="pointer-events:none;"/>';
+    if(lighting.ambientTint && lighting.ambientTint !== 'rgba(0,0,0,0)'){
+      html += '<polygon points="10,118 150,46 150,-24 10,48" fill="'+lighting.ambientTint+'" style="pointer-events:none;"/>';
+      html += '<polygon points="150,46 290,118 290,48 150,-24" fill="'+lighting.ambientTint+'" style="pointer-events:none;"/>';
+    }
 
     // === 家具渲染 ===
     var furnItems = [];
@@ -27584,7 +27591,11 @@ function _mapOpenRoom(container, mapData, houseId){
       }
       furnItems.push({ f:f, type:f.type, x:fx, y:fy, sortY: fy + fx*0.1 });
     });
-    furnItems.sort(function(a,b){ return a.sortY - b.sortY; });
+    furnItems.sort(function(a,b){
+      var za = (a.f.zLayer||0), zb = (b.f.zLayer||0);
+      if(za !== zb) return za - zb;
+      return a.sortY - b.sortY;
+    });
 
     furnItems.forEach(function(item){
       var isSelected = _editMode && _dragTarget === item.f.id;
@@ -27609,8 +27620,10 @@ function _mapOpenRoom(container, mapData, houseId){
 
       if(hasPng){
         var pw = (_usePngW||40)*sc, ph = (_usePngH||40)*sc;
+        // anchor offset: shift image down by 20% of height so ground-contact aligns with grid pos
+        var _anchorOff = ph * 0.2;
         html += '<g transform="translate('+item.x+','+item.y+') scale('+(flip)+',1) translate(-'+item.x+',-'+item.y+')">';
-        html += '<image href="'+_usePng+'" x="'+(item.x - pw/2)+'" y="'+(item.y - ph)+'" width="'+pw+'" height="'+ph+'" style="cursor:pointer;" class="rm-furn"/>';
+        html += '<image href="'+_usePng+'" x="'+(item.x - pw/2)+'" y="'+(item.y - ph + _anchorOff)+'" width="'+pw+'" height="'+ph+'" style="cursor:pointer;" class="rm-furn"/>';
         html += '</g>';
       } else if(drawFn){
         // Scale + optional flip: translate to origin, scale, translate back
@@ -27627,18 +27640,7 @@ function _mapOpenRoom(container, mapData, houseId){
       html += '</g>';
     });
 
-    // === 常驻装饰（已移除） ===
-
-    // === 沙发猫咪（已移除） ===
-
-    // === 室内灯光（已简化，移除地面光斑） ===
-
-    // === 全局光照叠加 ===
-    html += '<polygon points="-20,-60 320,-60 320,220 -20,220" fill="'+lighting.overlay+'" style="pointer-events:none;"/>';
-    if(lighting.ambientTint && lighting.ambientTint !== 'rgba(0,0,0,0)'){
-      html += '<polygon points="10,118 150,46 150,-24 10,48" fill="'+lighting.ambientTint+'" style="pointer-events:none;"/>';
-      html += '<polygon points="150,46 290,118 290,48 150,-24" fill="'+lighting.ambientTint+'" style="pointer-events:none;"/>';
-    }
+    // === 光照已移到家具之前渲染 ===
 
     html += '</svg>';
     // Controls (zoom + direction)
@@ -27655,13 +27657,16 @@ function _mapOpenRoom(container, mapData, houseId){
       html += '<button data-act="roomScaleUp" style="font-size:9px;" title="放大家具">🔍+</button>';
       html += '<button data-act="roomScaleDown" style="font-size:9px;" title="缩小家具">🔍−</button>';
       html += '<button data-act="roomFlip" style="font-size:9px;" title="翻转家具">↔</button>';
+      html += '<button data-act="roomLayerUp" style="font-size:9px;" title="置前">⬆层</button>';
+      html += '<button data-act="roomLayerDown" style="font-size:9px;" title="置后">⬇层</button>';
     }
     html += '</div>';
     if(_editMode && _dragTarget){
       var selF = furniture.find(function(ff){return ff.id===_dragTarget;});
       var selCat = selF ? (FURNITURE_CATALOG[selF.type]||{}) : {};
       var curScale = selF ? (selF.furnScale||0.6) : 0.6;
-      html += '<div class="mapRoomEditHint">'+esc(selCat.label||'家具')+' ('+Math.round(curScale*100)+'%'+(selF&&selF.flipped?' 已翻转':'')+') — ▲▼◀▶移动 🔍缩放 ↔翻转</div>';
+      var _layerVal = selF ? (selF.zLayer||0) : 0;
+      html += '<div class="mapRoomEditHint">'+esc(selCat.label||'家具')+' ('+Math.round(curScale*100)+'%'+(selF&&selF.flipped?' 翻转':'')+' 层:'+_layerVal+') — ▲▼◀▶移动 🔍缩放 ↔翻转 ⬆⬇层级</div>';
     }
     html += '</div>';
 
@@ -27829,6 +27834,20 @@ function _mapOpenRoom(container, mapData, houseId){
         var ff2 = furniture.find(function(ff){ return ff.id===_dragTarget; });
         if(ff2){
           ff2.flipped = !ff2.flipped;
+          house.rooms.furniture = furniture;
+          _mapSave(mapData);
+          renderRoom();
+        }
+      }
+      return;
+    }
+
+    // Layer (z-order) furniture
+    if(act==='roomLayerUp'||act==='roomLayerDown'){
+      if(_editMode && _dragTarget){
+        var lf = furniture.find(function(ff){ return ff.id===_dragTarget; });
+        if(lf){
+          lf.zLayer = (lf.zLayer||0) + (act==='roomLayerUp' ? 1 : -1);
           house.rooms.furniture = furniture;
           _mapSave(mapData);
           renderRoom();
