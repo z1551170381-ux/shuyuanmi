@@ -3964,6 +3964,28 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   font-size:10px; color:rgba(100,160,80,0.8); background:rgba(255,255,255,0.7);
   padding:3px 10px; border-radius:10px; pointer-events:none;
 }
+/* Isometric material classes (Gemini-style matrix rect approach) */
+#${ID} .wood-t{fill:#E8D8C3;stroke:#D1BFA6;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .wood-l{fill:#D1BFA6;stroke:#BEAA8F;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .wood-r{fill:#BEAA8F;stroke:#A9967D;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .grn-t{fill:#AEC2A5;stroke:#97AB8E;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .grn-l{fill:#97AB8E;stroke:#82967A;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .grn-r{fill:#82967A;stroke:#6E8066;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .wht-t{fill:#FFF;stroke:#F0F0F0;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .wht-l{fill:#F0F0F0;stroke:#E0E0E0;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .wht-r{fill:#E0E0E0;stroke:#D0D0D0;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .stn-t{fill:#E4E5E1;stroke:#C8CCC4;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .stn-l{fill:#C8CCC4;stroke:#AEB3A8;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .stn-r{fill:#B6BBB0;stroke:#999F92;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .mtl-t{fill:#757D84;stroke:#5C636A;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .mtl-l{fill:#5C636A;stroke:#454A50;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .mtl-r{fill:#454A50;stroke:#2E3236;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .blk-t{fill:#3D4246;stroke:#292D30;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .blk-l{fill:#292D30;stroke:#171A1C;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .blk-r{fill:#171A1C;stroke:#000;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .pnk-t{fill:#E8BFB8;stroke:#D4A8A0;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .pnk-l{fill:#D4A8A0;stroke:#C0918A;stroke-width:0.8;stroke-linejoin:round;}
+#${ID} .pnk-r{fill:#C0918A;stroke:#AC7A74;stroke-width:0.8;stroke-linejoin:round;}
 /* ===== Map Editor ===== */
 #${ID} .mapEditorBar{
   position:absolute; bottom:0; left:0; right:0; z-index:22;
@@ -27007,355 +27029,276 @@ function _isoFloorPt(gx5, gy4){
 //   右下 slope=0.5 (dx:2, dy:1)
 //   左下 slope=-0.5 (dx:-2, dy:-1 ... well dx:-2,dy:1)
 //   垂直 (dx:0, dy:-1)
-// w=宽(右下方向), d=深(左下方向), h=高(垂直), 单位都是像素
-// ox,oy = 前顶点（最靠近观察者的角）
-// Isometric box: all edges follow 3 axes only.
-// RIGHT axis: (dx:+1, dy:+0.5), LEFT axis: (dx:-1, dy:+0.5), UP axis: (dx:0, dy:-1)
-// ox,oy = front vertex (closest to viewer)
-// w = width along RIGHT axis, d = depth along LEFT axis, h = height (up)
-// Convention (SketchUp-style, light from upper-left):
-//   top = brightest, left face = medium, right face = darkest
-function _isoBox(ox, oy, w, d, h, topCol, leftCol, rightCol, sc){
-  sc = sc || 'rgba(60,50,30,0.15)';
-  // Top face: 4 corners shifted up by h
-  var ft = [ox, oy-h]; // front-top
-  var rt = [ox+w, oy+w/2-h]; // right-top
-  var bt = [ox+w-d, oy+w/2+d/2-h]; // back-top
-  var lt = [ox-d, oy+d/2-h]; // left-top
-  // Bottom face: 4 corners at base
-  var fb = [ox, oy]; // front-bottom
-  var rb = [ox+w, oy+w/2]; // right-bottom
-  var lb = [ox-d, oy+d/2]; // left-bottom
-  var s = '';
-  // Draw back-to-front: left face first, then right face, then top (painter's algorithm)
-  // Left face (faces left — catches light from upper-left = MEDIUM brightness)
-  s += '<polygon points="'+ft[0]+','+ft[1]+' '+lt[0]+','+lt[1]+' '+lb[0]+','+lb[1]+' '+fb[0]+','+fb[1]+'" fill="'+leftCol+'" stroke="'+sc+'" stroke-width="0.5" stroke-linejoin="round"/>';
-  // Right face (faces right — in shadow = DARKEST)
-  s += '<polygon points="'+ft[0]+','+ft[1]+' '+rt[0]+','+rt[1]+' '+rb[0]+','+rb[1]+' '+fb[0]+','+fb[1]+'" fill="'+rightCol+'" stroke="'+sc+'" stroke-width="0.5" stroke-linejoin="round"/>';
-  // Top face (faces up — brightest)
-  s += '<polygon points="'+ft[0]+','+ft[1]+' '+rt[0]+','+rt[1]+' '+bt[0]+','+bt[1]+' '+lt[0]+','+lt[1]+'" fill="'+topCol+'" stroke="'+sc+'" stroke-width="0.5" stroke-linejoin="round"/>';
+// ---- Gemini-style Isometric Box (matrix rect approach) ----
+// Uses CSS transform matrix instead of polygon coordinates.
+// Mathematically impossible to get broken faces.
+// _iR(w, d, h, cls, ox, oy) → SVG string for one box
+//   w=width(right axis), d=depth(left axis), h=height(up)
+//   cls='wood'|'grn'|'wht'|'stn'|'mtl'|'blk'|'pnk'
+//   ox,oy = translate offset for this box within the furniture group
+function _iR(w, d, h, cls, ox, oy){
+  ox = ox||0; oy = oy||0;
+  var s = '<g transform="translate('+ox+','+oy+')">';
+  // Right face: rect(w×h) sheared right
+  s += '<rect x="0" y="-'+h+'" width="'+w+'" height="'+h+'" class="'+cls+'-r" transform="translate(-'+d+', '+(d/2)+') matrix(1, 0.5, 0, 1, 0, 0)"/>';
+  // Left face: rect(d×h) sheared left
+  s += '<rect x="0" y="-'+h+'" width="'+d+'" height="'+h+'" class="'+cls+'-l" transform="translate('+w+', '+(w/2)+') matrix(-1, 0.5, 0, 1, 0, 0)"/>';
+  // Top face: rect(w×d) isometric diamond
+  s += '<rect x="0" y="0" width="'+w+'" height="'+d+'" class="'+cls+'-t" transform="translate(0, -'+h+') matrix(1, 0.5, -1, 0.5, 0, 0)"/>';
+  s += '</g>';
   return s;
 }
 
-function _isoFace(x1,y1,x2,y2,x3,y3,x4,y4,fill,stroke){
-  return '<polygon points="'+x1+','+y1+' '+x2+','+y2+' '+x3+','+y3+' '+x4+','+y4+'" fill="'+fill+'"'+(stroke?' stroke="'+stroke+'" stroke-width="0.4" stroke-linejoin="round"':'')+'/>';
+// Shadow helper (flat diamond on ground)
+function _iShadow(w, d, ox, oy){
+  return '<rect x="0" y="0" width="'+w+'" height="'+d+'" fill="rgba(130,140,120,0.08)" transform="translate('+(ox||0)+','+(oy||0)+') matrix(1, 0.5, -1, 0.5, 0, 0)"/>';
 }
 
-// 日夜光照计算
-function _roomGetLighting(){
-  var h = new Date().getHours(), m = new Date().getMinutes();
-  var t = h + m/60;
-  // 6-8 dawn, 8-16 day, 16-19 sunset, 19-22 dusk, 22-6 night
-  var phase, overlay, windowGlow, shadowAlpha, ambientTint;
-  if(t >= 6 && t < 8){
-    var p = (t-6)/2;
-    phase = '清晨';
-    overlay = 'rgba(255,220,160,'+(0.12*(1-p)).toFixed(3)+')';
-    windowGlow = 'rgba(255,240,200,'+(0.3+p*0.2).toFixed(3)+')';
-    shadowAlpha = 0.04 + p*0.04;
-    ambientTint = 'rgba(255,230,180,'+(0.08*(1-p)).toFixed(3)+')';
-  } else if(t >= 8 && t < 16){
-    phase = '白天';
-    overlay = 'rgba(255,255,240,0)';
-    windowGlow = 'rgba(200,230,255,0.5)';
-    shadowAlpha = 0.08;
-    ambientTint = 'rgba(0,0,0,0)';
-  } else if(t >= 16 && t < 19){
-    var p2 = (t-16)/3;
-    phase = '傍晚';
-    overlay = 'rgba(255,160,80,'+(0.06+p2*0.1).toFixed(3)+')';
-    windowGlow = 'rgba(255,180,100,'+(0.4+p2*0.15).toFixed(3)+')';
-    shadowAlpha = 0.08 + p2*0.06;
-    ambientTint = 'rgba(255,140,60,'+(p2*0.1).toFixed(3)+')';
-  } else if(t >= 19 && t < 22){
-    var p3 = (t-19)/3;
-    phase = '夜晚';
-    overlay = 'rgba(30,40,80,'+(0.12+p3*0.18).toFixed(3)+')';
-    windowGlow = 'rgba(60,80,140,'+(0.15+p3*0.1).toFixed(3)+')';
-    shadowAlpha = 0.14 + p3*0.08;
-    ambientTint = 'rgba(20,30,60,'+(0.08+p3*0.12).toFixed(3)+')';
-  } else {
-    phase = '深夜';
-    overlay = 'rgba(20,25,60,0.3)';
-    windowGlow = 'rgba(40,50,100,0.25)';
-    shadowAlpha = 0.22;
-    ambientTint = 'rgba(15,20,50,0.2)';
-  }
-  // 窗户内光（夜间暖黄灯光）
-  var lampGlow = (t>=18 || t<6) ? 'rgba(255,220,140,0.35)' : 'rgba(255,255,255,0)';
-  var lampSpread = (t>=18 || t<6) ? 0.18 : 0;
-  return { phase:phase, overlay:overlay, windowGlow:windowGlow, shadowAlpha:shadowAlpha, ambientTint:ambientTint, lampGlow:lampGlow, lampSpread:lampSpread, hour:h };
+// Detail line on right face (for door/drawer lines)
+function _iLineR(x1,y1,x2,y2,ox,oy,color){
+  return '<g transform="translate('+(ox||0)+','+(oy||0)+') matrix(1, 0.5, 0, 1, 0, 0)"><line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+(color||'#A9967D')+'" stroke-width="0.8"/></g>';
 }
 
-// 2.5D家具SVG绘制器 - 手绘扁平风
+// Circle on right face
+function _iCircleR(cx,cy,r,ox,oy,cls){
+  return '<g transform="translate('+(ox||0)+','+(oy||0)+') matrix(1, 0.5, 0, 1, 0, 0)"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" class="'+(cls||'wood')+'-t"/></g>';
+}
+
 var _roomFurnSVG = {
-  // ============================================================
-  // GPT-style isometric furniture: explicit polygons, warm strokes
-  // Stroke: #9b9184, stroke-linejoin:round
-  // Light: top=bright, left=mid, right=dark
-  // All coords relative to translate(x,y), y=ground
-  // ============================================================
 
-  // ---- GPT originals (converted) ----
-
-  tv: function(x, y, owned){
-    if(!owned) return '';
-    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
-    '<polygon points="-10.4,-22.4 22.5,-3.5 10.4,3.3 -22.5,-15.5" fill="#000000" opacity="0.06"/>' +
-    '<polygon points="-10.4,-29.4 20.9,-11.5 10.6,-5.6 -20.7,-23.5" fill="#efe7d9" stroke="#9b9184" stroke-width="0.42" stroke-linejoin="round"/>' +
-    '<polygon points="-20.7,-17.9 10.6,0.0 10.6,-5.6 -20.7,-23.5" fill="#e1d8c7" stroke="#9b9184" stroke-width="0.42" stroke-linejoin="round"/>' +
-    '<polygon points="-14.9,-15.3 -7.1,-10.8 -7.1,-14.5 -14.9,-19.0" fill="#f4eee4" stroke="#cdbfae" stroke-width="0.32" stroke-linejoin="round"/>' +
-    '<polygon points="-4.5,-9.4 3.4,-4.9 3.4,-8.6 -4.5,-13.1" fill="#f4eee4" stroke="#cdbfae" stroke-width="0.32" stroke-linejoin="round"/>' +
-    '<polygon points="20.9,-5.9 10.6,0.0 10.6,-5.6 20.9,-11.5" fill="#d0c4b1" stroke="#9b9184" stroke-width="0.42" stroke-linejoin="round"/>' +
-    '<polygon points="-5.8,-22.1 8.2,-14.1 8.2,-19.8 -5.8,-27.8" fill="#7b848b" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>' +
-    '<polygon points="-4.6,-22.1 7.5,-15.2 7.5,-19.9 -4.6,-26.8" fill="#95b0b9"/>' +
-    '<polygon points="1.8,-17.8 0.3,-17.0 0.3,-18.6 1.8,-19.4" fill="#ad9979" stroke="#9b9184" stroke-width="0.26" stroke-linejoin="round"/>' +
-    '<polygon points="-0.8,-17.6 0.3,-17.0 0.3,-18.6 -0.8,-19.3" fill="#c2b18f" stroke="#9b9184" stroke-width="0.26" stroke-linejoin="round"/>' +
-    '<polygon points="-4.5,-28.5 9.5,-20.5 8.2,-19.8 -5.8,-27.8" fill="#90999f" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>' +
-    '<polygon points="0.6,-20.1 1.8,-19.4 0.3,-18.6 -0.8,-19.3" fill="#d6c5a2" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>' +
-    '<polygon points="-4.2,-27.0 7.9,-20.1 7.5,-19.9 -4.6,-26.8" fill="#a8c6d0"/>' +
-    '<polygon points="9.5,-14.9 8.2,-14.1 8.2,-19.8 9.5,-20.5" fill="#687077" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>' +
-    '<polygon points="7.9,-15.5 7.5,-15.2 7.5,-19.9 7.9,-20.1" fill="#819aa2"/>' +
-    '</g>';
-  },
-
-  plant: function(x, y, owned){
-    if(!owned) return '';
-    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
-    '<polygon points="0.0,-17.4 22.5,-4.6 0.0,8.3 -22.5,-4.6" fill="#000000" opacity="0.05"/>' +
-    '<polygon points="0.0,-24.2 14.7,-15.8 0.0,-7.4 -14.7,-15.8" fill="#f3efe6" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>' +
-    '<polygon points="-14.7,-8.4 0.0,0.0 0.0,-7.4 -14.7,-15.8" fill="#e6dfd3" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>' +
-    '<polygon points="14.7,-8.4 0.0,0.0 0.0,-7.4 14.7,-15.8" fill="#d7cebf" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>' +
-    '<polygon points="0.0,-23.3 11.9,-16.6 0.0,-9.8 -11.9,-16.6" fill="#8d7763" stroke="#9b9184" stroke-width="0.26" stroke-linejoin="round"/>' +
-    '<polygon points="-11.9,-15.8 0.0,-9.0 0.0,-9.8 -11.9,-16.6" fill="#7c6856" stroke="#9b9184" stroke-width="0.26" stroke-linejoin="round"/>' +
-    '<polygon points="11.9,-15.8 0.0,-9.0 0.0,-9.8 11.9,-16.6" fill="#6b594a" stroke="#9b9184" stroke-width="0.26" stroke-linejoin="round"/>' +
-    '<polygon points="0.0,-18.0 2.9,-17.3 13.5,-29.2 10.6,-29.9" fill="#8fad6d" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>' +
-    '<polygon points="-0.6,-16.7 1.2,-15.4 6.1,-24.7 4.3,-26.0" fill="#96ba78" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>' +
-    '<polygon points="-2.2,-17.6 -1.6,-16.1 -11.7,-29.6 -12.3,-31.1" fill="#8fad6d" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>' +
-    '<polygon points="0.0,-18.0 0.0,-19.4 0.0,-34.6 0.0,-33.2" fill="#96ba78" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>' +
-    '</g>';
-  },
-
-  lamp: function(x, y, owned){
-    if(!owned) return '';
-    // Based on GPT floor lamp, offset so shade is more centered
-    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
-    '<polygon points="-2.5,-20.9 22.5,-6.6 2.5,4.8 -22.5,-9.4" fill="#000000" opacity="0.05"/>' +
-    '<polygon points="-2.5,-18.0 12.5,-9.4 -2.5,-0.9 -17.5,-9.4" fill="#d9c8a6" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>' +
-    '<polygon points="-17.5,-8.6 -2.5,0.0 -2.5,-0.9 -17.5,-9.4" fill="#c7b691" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>' +
-    '<polygon points="12.5,-8.6 -2.5,0.0 -2.5,-0.9 12.5,-9.4" fill="#b39f79" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>' +
-    '<polygon points="-4.5,-9.4 -2.5,-8.3 -2.5,-30.2 -4.5,-31.4" fill="#b9a47d" stroke="#9b9184" stroke-width="0.33" stroke-linejoin="round"/>' +
-    '<polygon points="-0.5,-9.4 -2.5,-8.3 -2.5,-30.2 -0.5,-31.4" fill="#a48e6b" stroke="#9b9184" stroke-width="0.33" stroke-linejoin="round"/>' +
-    '<polygon points="-2.5,-32.2 9.5,-25.3 6.5,-23.6 -5.5,-30.4" fill="#cbb893" stroke="#9b9184" stroke-width="0.32" stroke-linejoin="round"/>' +
-    '<polygon points="-5.5,-29.6 6.5,-22.7 6.5,-23.6 -5.5,-30.4" fill="#bba67f" stroke="#9b9184" stroke-width="0.32" stroke-linejoin="round"/>' +
-    '<polygon points="9.5,-24.4 6.5,-22.7 6.5,-23.6 9.5,-25.3" fill="#a7916f" stroke="#9b9184" stroke-width="0.32" stroke-linejoin="round"/>' +
-    '<polygon points="-2.5,-32.5 -0.5,-31.4 -2.5,-30.2 -4.5,-31.4" fill="#c9b690" stroke="#9b9184" stroke-width="0.33" stroke-linejoin="round"/>' +
-    '<polygon points="7.5,-29.7 21.8,-21.5 7.5,-13.4 -6.8,-21.5" fill="#f4efe3" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>' +
-    '<polygon points="-6.8,-19.8 7.5,-11.6 7.5,-13.4 -6.8,-21.5" fill="#e8e0d2" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>' +
-    '<polygon points="21.8,-19.8 7.5,-11.6 7.5,-13.4 21.8,-21.5" fill="#d8cebd" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>' +
-    '<ellipse cx="2" cy="-18" rx="8" ry="5" fill="rgba(255,240,180,0.1)"/>' +
-    '</g>';
-  },
-
-  frame: function(x, y, owned){
-    if(!owned) return '';
-    return '<g class="rm-furn" transform="translate('+x+','+y+')">' +
-    '<polygon points="-22.5,-23.0 17.7,0.0 17.7,-18.0 -22.5,-41.0" fill="#a8866b" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>' +
-    '<polygon points="-17.7,-43.7 22.5,-20.7 17.7,-18.0 -22.5,-41.0" fill="#b69474" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>' +
-    '<polygon points="22.5,-2.7 17.7,0.0 17.7,-18.0 22.5,-20.7" fill="#96755b" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>' +
-    '<polygon points="-16.0,-24.2 16.0,-5.9 16.0,-19.5 -16.0,-37.8" fill="#ebe7de" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>' +
-    '<polygon points="-14.3,-38.8 17.7,-20.5 16.0,-19.5 -16.0,-37.8" fill="#f6f3ec" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>' +
-    '<polygon points="-7.5,-21.8 2.0,-21.6 10.9,-10.9" fill="#94b26b"/>' +
-    '<polygon points="17.7,-6.9 16.0,-5.9 16.0,-19.5 17.7,-20.5" fill="#ddd7cb" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>' +
-    '</g>';
-  },
-
-  // ---- Matching style: explicit polygons, same palette ----
-  // Box helper macro: F=(fx,fy) w=right d=left h=up
-  // T: top bright, L: left mid, R: right dark
-
+  // ========== BED (from Gemini) ==========
   bed: function(x, y, owned){
     if(!owned) return '';
-    // Shadow
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    s += '<polygon points="-18,-2 16,17 28,10 -6,-9" fill="#000" opacity="0.05"/>';
-    // Frame: F(0,0) w=28 d=18 h=5
-    s += '<polygon points="0,-5 -18,4 -18,9 0,0" fill="#d4bc9a" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-5 28,9 28,14 0,0" fill="#b8a07a" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-5 28,9 10,19 -18,4" fill="#e2ceae" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    // Mattress: F(-1,-5) w=26 d=16 h=4
-    s += '<polygon points="-1,-9 -17,-1 -17,3 -1,-5" fill="#ece5da" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>';
-    s += '<polygon points="-1,-9 25,4 25,8 -1,-5" fill="#ddd4c6" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>';
-    s += '<polygon points="-1,-9 25,4 9,12 -17,-1" fill="#f5f0e8" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>';
-    // Pillow: F(-12,-9) w=8 d=7 h=3
-    s += '<polygon points="-12,-12 -19,-8.5 -19,-5.5 -12,-9" fill="#eee8e0" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    s += '<polygon points="-12,-12 -4,-8 -4,-5 -12,-9" fill="#e0d8cc" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    s += '<polygon points="-12,-12 -4,-8 -11,-4.5 -19,-8.5" fill="#f8f5f0" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    // Blanket: F(4,-8) w=18 d=12 h=1
-    s += '<polygon points="4,-8 22,-1 4,5 -8,1" fill="#8bad6e" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    // Headboard: F(-18,9) w=0 d=0 h=8 (flat panel on left wall)
-    s += '<polygon points="-18,1 0,-8 0,-13 -18,-4" fill="#c4a882" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
+    s += _iShadow(60, 92, -8, 4);
+    // Headboard: w=60, d=8, h=32
+    s += _iR(60, 8, 32, 'wood', 0, 0);
+    // Frame: w=60, d=92, h=15
+    s += _iR(60, 92, 15, 'wood', -8, 4);
+    // Mattress: w=56, d=88, h=10
+    s += _iR(56, 88, 10, 'wht', -8, -9);
+    // Pillow: w=40, d=16, h=6
+    s += _iR(40, 16, 6, 'wht', -4, -13);
+    // Blanket: w=60, d=50, h=12
+    s += _iR(60, 50, 12, 'grn', -50, 10);
     s += '</g>';
     return s;
   },
 
+  // ========== SOFA (from Gemini) ==========
   sofa: function(x, y, owned){
     if(!owned) return '';
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    s += '<polygon points="-14,-3 20,16 30,10 -4,-9" fill="#000" opacity="0.05"/>';
-    // Base: F(0,0) w=26 d=14 h=6
-    s += '<polygon points="0,-6 -14,1 -14,7 0,0" fill="#72964a" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-6 26,7 26,13 0,0" fill="#5e8040" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-6 26,7 12,14 -14,1" fill="#8bad6e" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    // Seat: F(-1,-6) w=24 d=12 h=3
-    s += '<polygon points="-1,-9 23,3 11,9 -13,0" fill="#96ba78" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>';
-    // Backrest: F(-11,-1) w=26 d=3 h=8
-    s += '<polygon points="-11,-9 -14,-7.5 -14,0.5 -11,-1" fill="#7aa05a" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>';
-    s += '<polygon points="-11,-9 15,4 15,12 -11,-1" fill="#648a44" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>';
-    s += '<polygon points="-11,-9 15,4 12,5.5 -14,-7.5" fill="#8bad6e" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>';
-    // Pillow: F(4,-8) w=8 d=6 h=2
-    s += '<polygon points="4,-9 12,-5 6,-2 -2,-6" fill="#e8c85a" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
+    s += _iShadow(100, 50, 0, 0);
+    // Base frame: w=100, d=50, h=6
+    s += _iR(100, 50, 6, 'wood', 0, 0);
+    // Back cushion: w=100, d=15, h=30
+    s += _iR(100, 15, 30, 'grn', 0, -6);
+    // Left arm: w=15, d=35, h=20
+    s += _iR(15, 35, 20, 'grn', -15, 1.5);
+    // Seat cushion panels (3 segments): w=70, d=35, h=10
+    var s2 = '<g transform="translate(0,9)">';
+    // Right face with divider lines
+    s2 += '<rect x="0" y="-10" width="70" height="10" class="grn-r" transform="translate(-35, 17.5) matrix(1, 0.5, 0, 1, 0, 0)"/>';
+    s2 += '<g transform="translate(-35, 17.5) matrix(1, 0.5, 0, 1, 0, 0)"><line x1="23.33" y1="-10" x2="23.33" y2="0" stroke="#6E8066" stroke-width="0.8"/><line x1="46.66" y1="-10" x2="46.66" y2="0" stroke="#6E8066" stroke-width="0.8"/></g>';
+    s2 += '<rect x="0" y="-10" width="35" height="10" class="grn-l" transform="translate(70, 35) matrix(-1, 0.5, 0, 1, 0, 0)"/>';
+    // Top face with divider lines
+    s2 += '<rect x="0" y="0" width="70" height="35" class="grn-t" transform="translate(0, -10) matrix(1, 0.5, -1, 0.5, 0, 0)"/>';
+    s2 += '<g transform="translate(0, -10) matrix(1, 0.5, -1, 0.5, 0, 0)"><line x1="23.33" y1="0" x2="23.33" y2="35" stroke="#82967A" stroke-width="0.8"/><line x1="46.66" y1="0" x2="46.66" y2="35" stroke="#82967A" stroke-width="0.8"/></g>';
+    s2 += '</g>';
+    s += s2;
+    // Right arm: w=15, d=35, h=20
+    s += _iR(15, 35, 20, 'grn', 70, 44);
     s += '</g>';
     return s;
   },
 
+  // ========== STOVE (from Gemini) ==========
   stove: function(x, y, owned){
     if(!owned) return '';
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    s += '<polygon points="-14,-4 18,14 26,10 -6,-8" fill="#000" opacity="0.05"/>';
-    // Cabinet: F(0,0) w=22 d=14 h=14
-    s += '<polygon points="0,-14 -14,-7 -14,7 0,0" fill="#e1d8c7" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-14 22,-3 22,11 0,0" fill="#d0c4b1" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-14 22,-3 8,4 -14,-7" fill="#efe7d9" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    // Countertop: F(-1,-14) w=24 d=15 h=2
-    s += '<polygon points="-1,-16 -16,-8.5 -16,-6.5 -1,-14" fill="#ece5da" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>';
-    s += '<polygon points="-1,-16 23,-4 23,-2 -1,-14" fill="#ddd4c6" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>';
-    s += '<polygon points="-1,-16 23,-4 8,3.5 -16,-8.5" fill="#f5f0e8" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>';
-    // Burner rings (iso diamonds)
-    s += '<polygon points="-2,-14 4,-17 10,-14 4,-11" fill="none" stroke="#999" stroke-width="0.6" stroke-linejoin="round"/>';
-    s += '<polygon points="10,-11 15,-13.5 20,-11 15,-8.5" fill="none" stroke="#999" stroke-width="0.5" stroke-linejoin="round"/>';
-    // Pot: F(-3,-14) w=8 d=8 h=4
-    s += '<polygon points="-3,-18 -11,-14 -11,-10 -3,-14" fill="#555d63" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    s += '<polygon points="-3,-18 5,-14 5,-10 -3,-14" fill="#454d53" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    s += '<polygon points="-3,-18 5,-14 -3,-10 -11,-14" fill="#687077" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    // Handle
-    s += '<line x1="-11" y1="-12" x2="-15" y2="-10" stroke="#687077" stroke-width="1" stroke-linecap="round"/>';
-    // Steam
-    s += '<line x1="-2" y1="-20" x2="-3" y2="-26" stroke="rgba(180,180,180,0.25)" stroke-width="0.5" stroke-linecap="round"/>';
-    // Knobs
-    s += '<circle cx="8" cy="-5" r="1" fill="#ccc" stroke="#9b9184" stroke-width="0.25"/>';
-    s += '<circle cx="14" cy="-2" r="1" fill="#ccc" stroke="#9b9184" stroke-width="0.25"/>';
+    s += _iShadow(70, 50, 0, 0);
+    // Cabinet: w=70, d=50, h=55
+    s += _iR(70, 50, 55, 'wood', 0, 0);
+    // Cabinet door line + knobs
+    s += _iLineR(35, -50, 35, -5, -50, 25);
+    s += _iCircleR(30, -40, 1.5, -50, 25, 'wood');
+    s += _iCircleR(40, -40, 1.5, -50, 25, 'wood');
+    // Countertop: w=74, d=54, h=4
+    s += _iR(74, 54, 4, 'stn', 0, -57);
+    // Burner left: w=18, d=18, h=2
+    s += _iR(18, 18, 2, 'blk', -15, -41.5);
+    // Burner right: w=18, d=18, h=2
+    s += _iR(18, 18, 2, 'blk', 34, -32);
+    // Knobs (4 small cubes on right face)
+    s += _iR(4, 3, 4, 'wht', -41, -14.5);
+    s += _iR(4, 3, 4, 'wht', -26, -7);
+    s += _iR(4, 3, 4, 'wht', -11, 0.5);
+    s += _iR(4, 3, 4, 'wht', 4, 8);
+    // Pot on left burner: w=14, d=14, h=12
+    s += _iR(14, 14, 12, 'mtl', -15, -41.5);
+    // Pot lid: w=16, d=16, h=2
+    s += _iR(16, 16, 2, 'stn', -15, -53.5);
+    // Pot handle: w=4, d=4, h=3
+    s += _iR(4, 4, 3, 'wood', -15, -52.5);
     s += '</g>';
     return s;
   },
 
-  game: function(x, y, owned){
+  // ========== TV + STAND (from Gemini) ==========
+  tv: function(x, y, owned){
     if(!owned) return '';
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    s += '<polygon points="-8,0 10,9 16,6 -2,-3" fill="#000" opacity="0.04"/>';
-    // Console: F(0,0) w=12 d=8 h=3
-    s += '<polygon points="0,-3 -8,1 -8,4 0,0" fill="#555d63" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-3 12,3 12,6 0,0" fill="#454d53" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-3 12,3 4,7 -8,1" fill="#687077" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>';
-    s += '<circle cx="4" cy="0" r="0.7" fill="#4ae050"/>';
-    // Controller left
-    s += '<polygon points="-10,2 -4,-1 -4,0 -10,3" fill="#7b848b" stroke="#9b9184" stroke-width="0.25" stroke-linejoin="round"/>';
-    s += '<circle cx="-8" cy="2" r="0.5" fill="#e44"/>';
-    // Controller right
-    s += '<polygon points="14,6 20,3 20,4 14,7" fill="#7b848b" stroke="#9b9184" stroke-width="0.25" stroke-linejoin="round"/>';
-    s += '<circle cx="16" cy="5" r="0.5" fill="#48f"/>';
+    s += _iShadow(100, 35, 0, 0);
+    // TV stand: w=100, d=35, h=25
+    s += _iR(100, 35, 25, 'wood', 0, 0);
+    // Stand door lines
+    s += _iLineR(50, -25, 50, 0, -35, 17.5);
+    s += _iLineR(0, -12, 100, -12, -35, 17.5);
+    // Deco: small plant: w=15, d=20, h=6
+    s += _iR(15, 20, 6, 'wht', 10, -15);
+    // Deco: remote: w=8, d=5, h=2
+    s += _iR(8, 5, 2, 'wht', -12, -4);
+    // Speaker: w=30, d=15, h=2
+    s += _iR(30, 15, 2, 'blk', 25, -2.5);
+    // TV stand post: w=6, d=4, h=8
+    s += _iR(6, 4, 8, 'blk', 32, 4);
+    // TV frame: w=80, d=4, h=45
+    s += _iR(80, 4, 45, 'mtl', -7, -21.5);
+    // Screen: w=76, d=1, h=41
+    s += _iR(76, 1, 41, 'blk', -9, -20.5);
     s += '</g>';
     return s;
   },
 
-  bath: function(x, y, owned){
+  // ========== LAMP (from Gemini) ==========
+  lamp: function(x, y, owned){
     if(!owned) return '';
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    s += '<polygon points="-16,-4 22,17 32,12 -6,-9" fill="#000" opacity="0.05"/>';
-    // Tub outer: F(0,0) w=28 d=16 h=10
-    s += '<polygon points="0,-10 -16,-2 -16,8 0,0" fill="#e6dfd3" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-10 28,4 28,14 0,0" fill="#d7cebf" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-10 28,4 12,12 -16,-2" fill="#f3efe6" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    // Water: F(-2,-8) w=24 d=12 h=0.5
-    s += '<polygon points="-2,-8 22,4 10,10 -14,-2" fill="rgba(150,210,240,0.45)" stroke="#9b9184" stroke-width="0.2" stroke-linejoin="round"/>';
-    // Bubbles
-    s += '<circle cx="4" cy="-4" r="1.5" fill="rgba(255,255,255,0.5)"/>';
-    s += '<circle cx="12" cy="0" r="1" fill="rgba(255,255,255,0.4)"/>';
-    // Faucet: small box F(24,2) w=3 d=2 h=7
-    s += '<polygon points="24,-5 22,-4 22,3 24,2" fill="#c0c0c0" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    s += '<polygon points="24,-5 27,-3.5 27,3.5 24,2" fill="#a8a8a8" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    s += '<polygon points="24,-5 27,-3.5 25,-2.5 22,-4" fill="#d0d0d0" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
+    s += _iShadow(20, 20, 0, 0);
+    // Base: w=20, d=20, h=4
+    s += _iR(20, 20, 4, 'stn', 0, 0);
+    // Pole: w=4, d=4, h=35
+    s += _iR(4, 4, 35, 'wood', 0, 4);
+    // Arm (horizontal bar): w=4, d=25, h=4
+    s += _iR(4, 25, 4, 'wood', 0, -31);
+    // Shade: w=14, d=14, h=10
+    s += _iR(14, 14, 10, 'grn', -20, -16);
+    // Bulb glow: w=10, d=10, h=2
+    s += '<g transform="translate(-20,-14)"><rect x="0" y="0" width="10" height="10" fill="#FFFBE6" stroke="#E6DBA8" stroke-width="0.8" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g>';
     s += '</g>';
     return s;
   },
 
-  piano: function(x, y, owned){
-    if(!owned) return '';
-    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    s += '<polygon points="-16,-4 22,17 30,12 -8,-9" fill="#000" opacity="0.05"/>';
-    // Body: F(0,0) w=26 d=16 h=14
-    s += '<polygon points="0,-14 -16,-6 -16,8 0,0" fill="#3e3020" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-14 26,-1 26,13 0,0" fill="#2e2010" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-14 26,-1 10,7 -16,-6" fill="#4a3a28" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    // Keys: F(0,0) w=26 d=4 h=1
-    s += '<polygon points="0,-1 -4,1 -4,2 0,0" fill="#e8e0d4" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-1 26,12 26,13 0,0" fill="#d8d0c4" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-1 26,12 22,14 -4,1" fill="#f5f0e5" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    // Black keys
-    s += '<polygon points="4,0 10,3 6,5 0,2" fill="#222" stroke="#9b9184" stroke-width="0.2" stroke-linejoin="round"/>';
-    s += '<polygon points="12,4 18,7 14,9 8,6" fill="#222" stroke="#9b9184" stroke-width="0.2" stroke-linejoin="round"/>';
-    // Lid (open)
-    s += '<polygon points="-16,-6 -12,-12 14,-25 10,-19" fill="#3e3020" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>';
-    // Bench: F(6,10) w=14 d=6 h=5
-    s += '<polygon points="6,5 0,8 0,13 6,10" fill="#6b5a48" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    s += '<polygon points="6,5 20,12 20,17 6,10" fill="#5a4a38" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    s += '<polygon points="6,5 20,12 14,15 0,8" fill="#7c6a56" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    s += '</g>';
-    return s;
-  },
-
+  // ========== WARDROBE / SHELF (matching Gemini) ==========
   shelf: function(x, y, owned){
     if(!owned) return '';
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    s += '<polygon points="-10,0 14,12 20,9 -4,-3" fill="#000" opacity="0.04"/>';
-    // Frame: F(0,0) w=16 d=10 h=28
-    s += '<polygon points="0,-28 -10,-23 -10,5 0,0" fill="#c4aa88" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-28 16,-20 16,8 0,0" fill="#a8906e" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-28 16,-20 6,-15 -10,-23" fill="#d4ba98" stroke="#9b9184" stroke-width="0.4" stroke-linejoin="round"/>';
-    // Shelf boards at h=7,15,23 (flat top faces)
-    s += '<polygon points="0,-7 16,-1 6,3 -10,1" fill="#d4ba98" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-15 16,-7 6,-3 -10,-11" fill="#d4ba98" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    s += '<polygon points="0,-23 16,-15 6,-11 -10,-19" fill="#d4ba98" stroke="#9b9184" stroke-width="0.3" stroke-linejoin="round"/>';
-    // Books bottom shelf (right face = spine visible)
-    s += '<polygon points="1,-7 3,-6 3,-12 1,-13" fill="#d05050" stroke="#9b9184" stroke-width="0.2" stroke-linejoin="round"/>';
-    s += '<polygon points="4,-5.5 6,-4.5 6,-11 4,-12" fill="#5080c0" stroke="#9b9184" stroke-width="0.2" stroke-linejoin="round"/>';
-    s += '<polygon points="7,-4 9,-3 9,-9.5 7,-10.5" fill="#e0a030" stroke="#9b9184" stroke-width="0.2" stroke-linejoin="round"/>';
-    s += '<polygon points="10,-2.5 12,-1.5 12,-7.5 10,-8.5" fill="#50a060" stroke="#9b9184" stroke-width="0.2" stroke-linejoin="round"/>';
-    // Books middle shelf
-    s += '<polygon points="1,-15 3,-14 3,-20 1,-21" fill="#a060a0" stroke="#9b9184" stroke-width="0.2" stroke-linejoin="round"/>';
-    s += '<polygon points="4,-13.5 6,-12.5 6,-19 4,-20" fill="#d07050" stroke="#9b9184" stroke-width="0.2" stroke-linejoin="round"/>';
-    s += '<polygon points="7,-12 9,-11 9,-17 7,-18" fill="#4090a0" stroke="#9b9184" stroke-width="0.2" stroke-linejoin="round"/>';
-    // Books top shelf
-    s += '<polygon points="1,-23 3,-22 3,-27 1,-28" fill="#c06080" stroke="#9b9184" stroke-width="0.2" stroke-linejoin="round"/>';
-    s += '<polygon points="4,-21.5 6,-20.5 6,-26 4,-27" fill="#80a040" stroke="#9b9184" stroke-width="0.2" stroke-linejoin="round"/>';
-    s += '<polygon points="7,-20 9,-19 9,-24 7,-25" fill="#e0a030" stroke="#9b9184" stroke-width="0.2" stroke-linejoin="round"/>';
+    s += _iShadow(70, 30, 0, 0);
+    // Main frame: w=70, d=30, h=90
+    s += _iR(70, 30, 90, 'wood', 0, 0);
+    // Door divider + handles
+    s += _iLineR(35, -90, 35, -25, -30, 15);
+    s += _iLineR(0, -25, 70, -25, -30, 15);
+    s += _iCircleR(30, -55, 1.5, -30, 15, 'wood');
+    s += _iCircleR(40, -55, 1.5, -30, 15, 'wood');
     s += '</g>';
     return s;
   },
 
+  // ========== GAME CONSOLE ==========
+  game: function(x, y, owned){
+    if(!owned) return '';
+    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // Console: w=20, d=14, h=4
+    s += _iR(20, 14, 4, 'blk', 0, 0);
+    // LED
+    s += _iCircleR(10, -2, 0.8, -14, 7, 'grn');
+    // Controller left: w=10, d=6, h=2
+    s += _iR(10, 6, 2, 'mtl', -16, 4);
+    // Controller right: w=10, d=6, h=2
+    s += _iR(10, 6, 2, 'mtl', 22, 14);
+    s += '</g>';
+    return s;
+  },
+
+  // ========== BATH ==========
+  bath: function(x, y, owned){
+    if(!owned) return '';
+    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    s += _iShadow(60, 35, 0, 0);
+    // Tub outer: w=60, d=35, h=20
+    s += _iR(60, 35, 20, 'wht', 0, 0);
+    // Water (thin layer on top): w=56, d=31, h=1
+    s += '<g transform="translate(-2,-18)"><rect x="0" y="0" width="56" height="31" fill="rgba(150,210,240,0.4)" stroke="#9b9184" stroke-width="0.3" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/></g>';
+    // Faucet: w=4, d=4, h=10
+    s += _iR(4, 4, 10, 'stn', 50, -10);
+    s += '</g>';
+    return s;
+  },
+
+  // ========== PIANO ==========
+  piano: function(x, y, owned){
+    if(!owned) return '';
+    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    s += _iShadow(60, 40, 0, 0);
+    // Body: w=60, d=40, h=50
+    s += _iR(60, 40, 50, 'blk', 0, 0);
+    // Keys shelf: w=60, d=8, h=2
+    s += _iR(60, 8, 2, 'wht', 0, 0);
+    // Black keys: 3 thin boxes
+    s += _iR(8, 4, 2, 'blk', 6, -2);
+    s += _iR(8, 4, 2, 'blk', 22, -2);
+    s += _iR(8, 4, 2, 'blk', 38, -2);
+    // Bench: w=30, d=14, h=12
+    s += _iR(30, 14, 12, 'wood', 15, 25);
+    s += '</g>';
+    return s;
+  },
+
+  // ========== PLANT (pot + soil + leaves) ==========
+  plant: function(x, y, owned){
+    if(!owned) return '';
+    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // Pot: w=14, d=14, h=12
+    s += _iR(14, 14, 12, 'pnk', -7, 0);
+    // Soil: w=12, d=12, h=2
+    s += _iR(12, 12, 2, 'wood', -6, -12);
+    // Leaves (stacked green boxes): ascending
+    s += _iR(16, 16, 6, 'grn', -8, -16);
+    s += _iR(12, 12, 8, 'grn', -4, -22);
+    s += _iR(8, 8, 6, 'grn', -2, -28);
+    s += '</g>';
+    return s;
+  },
+
+  // ========== FRAME (painting) ==========
+  frame: function(x, y, owned){
+    if(!owned) return '';
+    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // Frame: w=1, d=30, h=24
+    s += _iR(1, 30, 24, 'wood', 0, 0);
+    // Canvas: w=0.5, d=26, h=20
+    s += '<g transform="translate(0,-2)"><rect x="0" y="-20" width="26" height="20" fill="#ebe7de" stroke="#9b9184" stroke-width="0.5" transform="translate(1, 0.5) matrix(-1, 0.5, 0, 1, 0, 0)"/></g>';
+    // Landscape triangle
+    s += '<g transform="translate(0,-8) matrix(-1, 0.5, 0, 1, 0, 0)"><polygon points="2,-8 13,-14 24,-8" fill="#94b26b" opacity="0.6"/></g>';
+    s += '</g>';
+    return s;
+  },
+
+  // ========== RUG (flat diamond) ==========
   rug: function(x, y, owned){
     if(!owned) return '';
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    // Rug = flat diamond, F(0,0) top face only
-    s += '<polygon points="0,-10 25,2.5 0,15 -25,2.5" fill="#d8b888" stroke="#9b9184" stroke-width="0.35" stroke-linejoin="round"/>';
-    // Border
-    s += '<polygon points="0,-7 20,3 0,11 -20,3" fill="none" stroke="#c4a070" stroke-width="0.6" stroke-dasharray="2,1.5" stroke-linejoin="round"/>';
-    // Center motif
-    s += '<polygon points="0,-3 8,1 0,5 -8,1" fill="#e0c898" stroke="#c4a070" stroke-width="0.3" stroke-linejoin="round"/>';
+    // Main rug: w=50, d=35, h=0.5
+    s += _iR(50, 35, 0.5, 'pnk', -15, 10);
+    // Inner pattern: w=40, d=25, h=0.3
+    s += '<g transform="translate(-10,8)"><rect x="0" y="0" width="40" height="25" fill="rgba(200,180,160,0.3)" stroke="#c4a070" stroke-width="0.4" stroke-dasharray="2,1.5" transform="translate(0,-0.3) matrix(1,0.5,-1,0.5,0,0)"/></g>';
     s += '</g>';
     return s;
   }
 };
+
 
 
 
