@@ -25060,6 +25060,7 @@ var FURNITURE_CATALOG = {
   frame:  { emoji:'🖼️', label:'画框',  cost:120, fx:{mood:8},             desc:'欣赏画作', png:'', pngW:24, pngH:31 },
   shelf:  { emoji:'📚', label:'书架',  cost:150, fx:{mood:10,energy:-3},  desc:'读一本好书', png:'', pngW:38, pngH:35 },
   rug:    { emoji:'🧶', label:'地毯',  cost:80,  fx:{mood:6},             desc:'踩上去很舒服', png:'', pngW:48, pngH:29 },
+  bigplant:{ emoji:'🌿', label:'大盆栽', cost:180, fx:{mood:12,health:5},  desc:'热带风情大叶植物', png:'', pngW:30, pngH:45 },
 };
 
 function _defaultFurniture(){
@@ -27266,36 +27267,65 @@ var _roomFurnSVG = {
     if(!owned) return '';
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
     s += _iShadow(60, 35, 0, 0);
-    // Tub outer: w=60, d=35, h=20
-    s += _iR(60, 35, 20, 'wht', 0, 0);
-    // Water (thin layer on top): w=56, d=31, h=1
-    s += '<g transform="translate(-2,-18)"><rect x="0" y="0" width="56" height="31" fill="rgba(150,210,240,0.4)" stroke="#9b9184" stroke-width="0.3" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/></g>';
-    // Faucet: w=4, d=4, h=10
-    s += _iR(4, 4, 10, 'stn', 50, -10);
+    // Outer rim (top): w=60, d=35, h=3
+    s += _iR(60, 35, 3, 'wht', 0, 0);
+    // Inner tub body: w=56, d=31, h=18 (inset)
+    s += _iR(56, 31, 18, 'wht', -2, 3);
+    // Inner cavity (darker): w=50, d=25, h=2
+    s += _iR(50, 25, 2, 'stn', -5, -13);
+    // Water surface
+    s += '<g transform="translate(-5,-14)"><rect x="0" y="0" width="50" height="25" fill="rgba(160,220,230,0.45)" stroke="rgba(140,200,220,0.3)" stroke-width="0.3" transform="translate(0,-1) matrix(1,0.5,-1,0.5,0,0)"/></g>';
+    // Faucet pillar: w=3, d=3, h=14
+    s += _iR(3, 3, 14, 'stn', 48, -8);
+    // Faucet spout: w=8, d=3, h=2
+    s += _iR(8, 3, 2, 'stn', 42, -22);
+    // Faucet handle: w=2, d=6, h=2
+    s += _iR(2, 6, 2, 'stn', 49, -20);
     s += '</g>';
     return s;
   },
 
-  // ========== PIANO ==========
+  // ========== UPRIGHT PIANO (参考图2) ==========
   piano: function(x, y, owned){
     if(!owned) return '';
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    s += _iShadow(60, 40, 0, 0);
-    // Body: w=60, d=40, h=50
-    s += _iR(60, 40, 50, 'blk', 0, 0);
-    // Keys shelf: w=60, d=8, h=2
-    s += _iR(60, 8, 2, 'wht', 0, 0);
-    // Black keys: 3 thin boxes
-    s += _iR(8, 4, 2, 'blk', 6, -2);
-    s += _iR(8, 4, 2, 'blk', 22, -2);
-    s += _iR(8, 4, 2, 'blk', 38, -2);
-    // Bench: w=30, d=14, h=12
-    s += _iR(30, 14, 12, 'wood', 15, 25);
+    s += _iShadow(50, 20, 5, 8);
+    // Legs (4 small boxes at corners)
+    s += _iR(3, 3, 6, 'blk', 0, 0);
+    s += _iR(3, 3, 6, 'blk', 42, 0);
+    s += _iR(3, 3, 6, 'blk', -15, 0);
+    s += _iR(3, 3, 6, 'blk', 27, 0);
+    // Base board: w=50, d=20, h=4
+    s += _iR(50, 20, 4, 'blk', 0, -6);
+    // Pedals (3 tiny gold boxes)
+    s += _iR(2, 2, 2, 'wood', 14, -2);
+    s += _iR(2, 2, 2, 'wood', 20, -2);
+    s += _iR(2, 2, 2, 'wood', 26, -2);
+    // Main body (tall back): w=50, d=18, h=55
+    s += _iR(50, 18, 55, 'blk', -1, -10);
+    // Top lid: w=52, d=20, h=2
+    s += _iR(52, 20, 2, 'blk', -2, -65);
+    // Music stand (thin panel): w=44, d=1, h=14
+    s += _iR(44, 1, 14, 'mtl', 2, -48);
+    // Keyboard shelf: w=50, d=12, h=2
+    s += _iR(50, 12, 2, 'wht', 0, -6);
+    // White keys area on top face of keyboard
+    s += '<g transform="translate(0,-8)"><rect x="0" y="0" width="50" height="12" fill="#F8F6F0" stroke="#E0DDD5" stroke-width="0.5" transform="translate(0,-2) matrix(1,0.5,-1,0.5,0,0)"/></g>';
+    // Black keys (5 small dark boxes on keyboard)
+    s += _iR(4, 6, 2, 'blk', 6, -8);
+    s += _iR(4, 6, 2, 'blk', 14, -8);
+    s += _iR(4, 6, 2, 'blk', 24, -8);
+    s += _iR(4, 6, 2, 'blk', 32, -8);
+    s += _iR(4, 6, 2, 'blk', 40, -8);
+    // Bench: w=30, d=12, h=10
+    s += _iR(30, 12, 10, 'wood', 10, 18);
+    // Bench cushion: w=28, d=10, h=2
+    s += _iR(28, 10, 2, 'pnk', 9, 8);
     s += '</g>';
     return s;
   },
 
-  // ========== PLANT (pot + soil + leaves) ==========
+  // ========== SMALL PLANT ==========
   plant: function(x, y, owned){
     if(!owned) return '';
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
@@ -27303,10 +27333,33 @@ var _roomFurnSVG = {
     s += _iR(14, 14, 12, 'pnk', -7, 0);
     // Soil: w=12, d=12, h=2
     s += _iR(12, 12, 2, 'wood', -6, -12);
-    // Leaves (stacked green boxes): ascending
+    // Leaves (stacked green boxes)
     s += _iR(16, 16, 6, 'grn', -8, -16);
     s += _iR(12, 12, 8, 'grn', -4, -22);
     s += _iR(8, 8, 6, 'grn', -2, -28);
+    s += '</g>';
+    return s;
+  },
+
+  // ========== BIG PLANT (热带大叶, 参考图3) ==========
+  bigplant: function(x, y, owned){
+    if(!owned) return '';
+    var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    s += _iShadow(18, 18, -2, 2);
+    // Tall pot: w=16, d=16, h=18
+    s += _iR(16, 16, 18, 'pnk', -8, 0);
+    // Soil: w=14, d=14, h=2
+    s += _iR(14, 14, 2, 'wood', -7, -18);
+    // Trunk (thin tall): w=3, d=3, h=24
+    s += _iR(3, 3, 24, 'wood', -1.5, -20);
+    // Large leaves (wide flat green boxes at various heights & offsets)
+    s += _iR(20, 10, 2, 'grn', -14, -38);
+    s += _iR(10, 18, 2, 'grn', 2, -42);
+    s += _iR(18, 8, 2, 'grn', -10, -46);
+    s += _iR(8, 16, 2, 'grn', 4, -50);
+    s += _iR(16, 12, 2, 'grn', -8, -52);
+    // Top leaf
+    s += _iR(12, 8, 2, 'grn', -4, -56);
     s += '</g>';
     return s;
   },
@@ -27355,6 +27408,7 @@ var _defaultFurnPositions = {
   frame: { gx:0, gy:1 },
   shelf: { gx:4, gy:1 },
   rug:   { gx:2, gy:2 },
+  bigplant: { gx:4, gy:2 },
 };
 
 function _mapOpenRoom(container, mapData, houseId){
@@ -27499,28 +27553,30 @@ function _mapOpenRoom(container, mapData, houseId){
     furnItems.forEach(function(item){
       var isSelected = _editMode && _dragTarget === item.f.id;
       var cat4 = FURNITURE_CATALOG[item.type] || {};
-      var hasPng = cat4.png && cat4.png.length > 10; // has base64/URL
+      var hasPng = cat4.png && cat4.png.length > 10;
       var drawFn = _roomFurnSVG[item.type];
+      var sc = item.f.furnScale || 0.6; // default 60% scale
 
       html += '<g class="rm-furn-wrap'+(isSelected?' dragging':'')+'" data-furnid="'+item.f.id+'" data-furntype="'+item.type+'">';
       if(isSelected){
-        html += '<polygon points="'+(item.x)+','+(item.y-14)+' '+(item.x+14)+','+(item.y-7)+' '+(item.x)+','+(item.y)+' '+(item.x-14)+','+(item.y-7)+'" fill="rgba(100,180,80,0.15)" stroke="rgba(100,180,80,0.5)" stroke-width="0.8" stroke-dasharray="3,2"/>';
+        var sr = 16*sc;
+        html += '<polygon points="'+(item.x)+','+(item.y-sr)+' '+(item.x+sr)+','+(item.y-sr/2)+' '+(item.x)+','+(item.y)+' '+(item.x-sr)+','+(item.y-sr/2)+'" fill="rgba(100,180,80,0.15)" stroke="rgba(100,180,80,0.5)" stroke-width="0.8" stroke-dasharray="3,2"/>';
       }
 
       if(hasPng){
-        // PNG素材优先：用 <image> 渲染，居中对齐
-        var pw = cat4.pngW || 40, ph = cat4.pngH || 40;
+        var pw = (cat4.pngW||40)*sc, ph = (cat4.pngH||40)*sc;
         html += '<image href="'+cat4.png+'" x="'+(item.x - pw/2)+'" y="'+(item.y - ph)+'" width="'+pw+'" height="'+ph+'" style="cursor:pointer;" class="rm-furn"/>';
       } else if(drawFn){
-        // SVG path 绘制
+        // Wrap in scale group centered at (item.x, item.y)
+        html += '<g transform="translate('+item.x+','+item.y+') scale('+sc+') translate(-'+item.x+',-'+item.y+')">';
         html += drawFn(item.x, item.y, true);
+        html += '</g>';
       } else {
-        // emoji 回退
-        html += '<text x="'+item.x+'" y="'+item.y+'" text-anchor="middle" font-size="20" style="cursor:pointer;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.15));" class="rm-furn">'+cat4.emoji+'</text>';
+        html += '<text x="'+item.x+'" y="'+item.y+'" text-anchor="middle" font-size="'+(20*sc)+'" style="cursor:pointer;" class="rm-furn">'+cat4.emoji+'</text>';
       }
 
       if(_editMode){
-        html += '<text x="'+item.x+'" y="'+(item.y+18)+'" text-anchor="middle" font-size="7" fill="rgba(100,160,80,0.8)" font-weight="600">'+cat4.label+'</text>';
+        html += '<text x="'+item.x+'" y="'+(item.y+12*sc+6)+'" text-anchor="middle" font-size="6" fill="rgba(100,160,80,0.8)" font-weight="600">'+cat4.label+'</text>';
       }
       html += '</g>';
     });
@@ -27569,11 +27625,17 @@ function _mapOpenRoom(container, mapData, houseId){
     html += '<button data-act="roomPanUp" style="font-size:10px;">▲</button>';
     html += '<div class="zDirRow"><button data-act="roomPanLeft">◀</button><button data-act="roomPanRight">▶</button></div>';
     html += '<button data-act="roomPanDown" style="font-size:10px;">▼</button>';
+    if(_editMode && _dragTarget){
+      html += '<div style="height:3px;border-top:1px solid rgba(0,0,0,0.1);margin:2px 0;width:20px;"></div>';
+      html += '<button data-act="roomScaleUp" style="font-size:9px;" title="放大家具">🔍+</button>';
+      html += '<button data-act="roomScaleDown" style="font-size:9px;" title="缩小家具">🔍−</button>';
+    }
     html += '</div>';
     if(_editMode && _dragTarget){
       var selF = furniture.find(function(ff){return ff.id===_dragTarget;});
       var selCat = selF ? (FURNITURE_CATALOG[selF.type]||{}) : {};
-      html += '<div class="mapRoomEditHint">选中: '+(selCat.label||'家具')+' — 用 ▲▼◀▶ 移动</div>';
+      var curScale = selF ? (selF.furnScale||0.6) : 0.6;
+      html += '<div class="mapRoomEditHint">'+esc(selCat.label||'家具')+' ('+Math.round(curScale*100)+'%) — ▲▼◀▶移动 🔍缩放</div>';
     }
     html += '</div>';
 
@@ -27727,6 +27789,21 @@ function _mapOpenRoom(container, mapData, houseId){
 
     // Direction buttons: move furniture if selected, otherwise pan view
     var panStep = 30, furnStep = 6;
+    // Scale furniture
+    if(act==='roomScaleUp'||act==='roomScaleDown'){
+      if(_editMode && _dragTarget){
+        var sf2 = furniture.find(function(ff){ return ff.id===_dragTarget; });
+        if(sf2){
+          var cur = sf2.furnScale || 0.6;
+          sf2.furnScale = act==='roomScaleUp' ? Math.min(1.5, cur+0.05) : Math.max(0.2, cur-0.05);
+          house.rooms.furniture = furniture;
+          _mapSave(mapData);
+          renderRoom();
+        }
+      }
+      return;
+    }
+
     if(act==='roomPanUp'||act==='roomPanDown'||act==='roomPanLeft'||act==='roomPanRight'){
       if(_editMode && _dragTarget){
         var mf = furniture.find(function(ff){ return ff.id===_dragTarget; });
