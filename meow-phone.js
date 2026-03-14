@@ -27024,11 +27024,50 @@ function _isoFloorPt(gx5, gy4){
   return { x: 10+140*u+140*v, y: 118-72*u+72*v };
 }
 
-// ---- 等轴测盒子绘制器 ----
-// 在isometric视角下所有线条只有三个方向：
-//   右下 slope=0.5 (dx:2, dy:1)
-//   左下 slope=-0.5 (dx:-2, dy:-1 ... well dx:-2,dy:1)
-//   垂直 (dx:0, dy:-1)
+// 日夜光照计算
+function _roomGetLighting(){
+  var h = new Date().getHours(), m = new Date().getMinutes();
+  var t = h + m/60;
+  var phase, overlay, windowGlow, shadowAlpha, ambientTint;
+  if(t >= 6 && t < 8){
+    var p = (t-6)/2;
+    phase = '清晨';
+    overlay = 'rgba(255,220,160,'+(0.12*(1-p)).toFixed(3)+')';
+    windowGlow = 'rgba(255,240,200,'+(0.3+p*0.2).toFixed(3)+')';
+    shadowAlpha = 0.04 + p*0.04;
+    ambientTint = 'rgba(255,230,180,'+(0.08*(1-p)).toFixed(3)+')';
+  } else if(t >= 8 && t < 16){
+    phase = '白天';
+    overlay = 'rgba(255,255,240,0)';
+    windowGlow = 'rgba(200,230,255,0.5)';
+    shadowAlpha = 0.08;
+    ambientTint = 'rgba(0,0,0,0)';
+  } else if(t >= 16 && t < 19){
+    var p2 = (t-16)/3;
+    phase = '傍晚';
+    overlay = 'rgba(255,160,80,'+(0.06+p2*0.1).toFixed(3)+')';
+    windowGlow = 'rgba(255,180,100,'+(0.4+p2*0.15).toFixed(3)+')';
+    shadowAlpha = 0.08 + p2*0.06;
+    ambientTint = 'rgba(255,140,60,'+(p2*0.1).toFixed(3)+')';
+  } else if(t >= 19 && t < 22){
+    var p3 = (t-19)/3;
+    phase = '夜晚';
+    overlay = 'rgba(30,40,80,'+(0.12+p3*0.18).toFixed(3)+')';
+    windowGlow = 'rgba(60,80,140,'+(0.15+p3*0.1).toFixed(3)+')';
+    shadowAlpha = 0.14 + p3*0.08;
+    ambientTint = 'rgba(20,30,60,'+(0.08+p3*0.12).toFixed(3)+')';
+  } else {
+    phase = '深夜';
+    overlay = 'rgba(20,25,60,0.3)';
+    windowGlow = 'rgba(40,50,100,0.25)';
+    shadowAlpha = 0.22;
+    ambientTint = 'rgba(15,20,50,0.2)';
+  }
+  var lampGlow = (t>=18 || t<6) ? 'rgba(255,220,140,0.35)' : 'rgba(255,255,255,0)';
+  var lampSpread = (t>=18 || t<6) ? 0.18 : 0;
+  return { phase:phase, overlay:overlay, windowGlow:windowGlow, shadowAlpha:shadowAlpha, ambientTint:ambientTint, lampGlow:lampGlow, lampSpread:lampSpread, hour:h };
+}
+
 // ---- Gemini-style Isometric Box (matrix rect approach) ----
 // Uses CSS transform matrix instead of polygon coordinates.
 // Mathematically impossible to get broken faces.
