@@ -3897,8 +3897,8 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .mapRoomBackBtn{ font-size:18px; cursor:pointer; border:0; background:transparent; padding:4px; }
 #${ID} .mapRoomTitle{ flex:1; font-size:14px; font-weight:600; }
 #${ID} .mapRoomSvgWrap{
-  flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden;
-  position:relative;
+  flex:1; min-height:160px; display:flex; align-items:center; justify-content:center; overflow:visible;
+  position:relative; padding:10px;
 }
 #${ID} .mapRoomGrid{
   display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:10px 14px; flex-shrink:0;
@@ -24916,12 +24916,13 @@ function _mapPointInIsland(px, py, islandPts){
   return inside;
 }
 
-function _mapGenLandmarks(rng, islandPts){
+function _mapGenLandmarks(rng, islandPts, zones){
+  if(!zones) zones = MAP_ZONES;
   var landmarks = [];
   var usedPositions = [];
 
   function placeNear(zone, tmpl){
-    var z = MAP_ZONES[zone];
+    var z = zones[zone] || MAP_ZONES[zone];
     var attempts = 0, bx, by;
     do {
       // 在区域中心附近随机，但收紧范围
@@ -25004,41 +25005,59 @@ function _defaultFurniture(){
   ];
 }
 
-function _mapGenHouses(rng, islandPts){
-  var rz = MAP_ZONES.residential;
+function _mapGenHouses(rng, islandPts, zones){
+  if(!zones) zones = MAP_ZONES;
   var houses = [];
-  var count = _mapRandInt(rng, 6, 9);
-  // 随机分配建筑类型
-  var typeOrder = _mapShuffle(rng, ['cottage','cottage','apartment','villa','shop','japanese','tower','cottage','apartment']);
+  var hIdx = 0;
 
-  var cols = 3, startX = rz.cx - 45, startY = rz.cy - 25;
-  for(var i=0;i<count;i++){
-    var col = i % cols, row = Math.floor(i/cols);
-    var hx = startX + col*35 + (rng()-0.5)*10;
-    var hy = startY + row*32 + (rng()-0.5)*8;
-    if(!_mapPointInIsland(hx, hy, islandPts)){
-      hx = rz.cx + (rng()-0.5)*30; hy = rz.cy + (rng()-0.5)*25;
+  // 每个区域放置适合的建筑类型
+  var zoneBuildings = {
+    city: { types:['apartment','apartment','tower'], count:3,
+      colors:['#B8C8D8','#C0D0E0','#A8B8C8','#D0D8E0'], roofs:['#8898A8','#9AA8B8','#7888A0'] },
+    commercial: { types:['shop','shop'], count:2,
+      colors:['#D8C8A8','#E0D0B8','#C8B898'], roofs:['#C0A878','#B8A070','#D0B888'] },
+    residential: { types:['cottage','cottage','cottage'], count:3,
+      colors:['#C9A88A','#BFAA90','#D0B89A'], roofs:['#D4896A','#C8806A','#CC8870'] },
+    nature: { types:['villa','japanese'], count:2,
+      colors:['#C8C0A8','#D0C8B0','#B8B098'], roofs:['#A89878','#B0A080','#988868'] },
+    special: { types:['japanese','tower'], count:1,
+      colors:['#B0A890','#C0B8A0'], roofs:['#908070','#A09080'] },
+  };
+
+  for(var zk in zoneBuildings){
+    var zb = zoneBuildings[zk];
+    var z = zones[zk];
+    if(!z) continue;
+    var cols = Math.min(3, zb.count);
+    for(var i=0; i<zb.count; i++){
+      var col = i % cols, row = Math.floor(i/cols);
+      var hx = z.cx - (cols-1)*18 + col*36 + (rng()-0.5)*10;
+      var hy = z.cy + 15 + row*30 + (rng()-0.5)*8;
+      if(!_mapPointInIsland(hx, hy, islandPts)){
+        hx = z.cx + (rng()-0.5)*20; hy = z.cy + (rng()-0.5)*15;
+      }
+      var htype = zb.types[i % zb.types.length];
+      var htDef = HOUSE_TYPES.find(function(t){ return t.id===htype; }) || HOUSE_TYPES[0];
+      houses.push({
+        id: 'house_'+hIdx, x: hx, y: hy,
+        type: htype,
+        name: _mapPick(rng, htDef.namePool),
+        color: _mapPick(rng, zb.colors),
+        roofColor: _mapPick(rng, zb.roofs),
+        rooms: { furniture: _defaultFurniture() },
+      });
+      hIdx++;
     }
-    var htype = typeOrder[i % typeOrder.length];
-    var htDef = HOUSE_TYPES.find(function(t){ return t.id===htype; }) || HOUSE_TYPES[0];
-    houses.push({
-      id: 'house_'+i, x: hx, y: hy,
-      type: htype,
-      name: _mapPick(rng, htDef.namePool),
-      color: _mapPick(rng, ['#C9A88A','#BFAA90','#B8A088','#D0B89A','#C4B090']),
-      roofColor: _mapPick(rng, ['#D4896A','#C8806A','#CC8870','#D09070','#C07860']),
-      rooms: { furniture: _defaultFurniture() },
-    });
   }
   return houses;
 }
 
 // ---- 装饰生成 ----
-function _mapGenDecorations(rng, islandPts, landmarks, river){
+function _mapGenDecorations(rng, islandPts, landmarks, river, zones){
   var decos = [];
   function nearZone(x,y){
     var best='', bestD=9999;
-    for(var k in MAP_ZONES){ var z=MAP_ZONES[k]; var d=Math.sqrt(Math.pow(x-z.cx,2)+Math.pow(y-z.cy,2)); if(d<bestD){ bestD=d; best=k; } }
+    if(!zones) zones=MAP_ZONES; for(var k in zones){ var z=zones[k]; var d=Math.sqrt(Math.pow(x-z.cx,2)+Math.pow(y-z.cy,2)); if(d<bestD){ bestD=d; best=k; } }
     return best;
   }
   function tooClose(tx,ty,dist){ return landmarks.some(function(lm){ return Math.abs(lm.x-tx)<dist && Math.abs(lm.y-ty)<dist; }); }
@@ -25053,25 +25072,25 @@ function _mapGenDecorations(rng, islandPts, landmarks, river){
   }
 
   // 城区道路网格
-  var cz = MAP_ZONES.city, gridR = Math.min(cz.rx,cz.ry)*0.65;
+  if(!zones) zones=MAP_ZONES; var cz = zones.city||MAP_ZONES.city, gridR = Math.min(cz.rx,cz.ry)*0.65;
   for(var gi=-1;gi<=1;gi++) addRoad(cz.cx-gridR, cz.cy+gi*26, cz.cx+gridR, cz.cy+gi*26);
   for(var gj=-1;gj<=1;gj++) addRoad(cz.cx+gj*30, cz.cy-gridR, cz.cx+gj*30, cz.cy+gridR);
 
   // 商业区道路
-  var cmz = MAP_ZONES.commercial;
+  var cmz = zones.commercial||MAP_ZONES.commercial;
   addRoad(cmz.cx-cmz.rx*0.55, cmz.cy, cmz.cx+cmz.rx*0.55, cmz.cy);
   addRoad(cmz.cx, cmz.cy-cmz.ry*0.45, cmz.cx, cmz.cy+cmz.ry*0.45);
 
   // 居民区小路
-  var rz = MAP_ZONES.residential;
+  var rz = zones.residential||MAP_ZONES.residential;
   addRoad(rz.cx-35, rz.cy, rz.cx+35, rz.cy);
 
   // 区域间连接（直线小径）
   addTrail(cz.cx+cz.rx*0.45, cz.cy+cz.ry*0.35, cmz.cx-cmz.rx*0.35, cmz.cy-cmz.ry*0.25);
   addTrail(cz.cx+cz.rx*0.25, cz.cy+cz.ry*0.45, rz.cx-rz.rx*0.25, rz.cy-rz.ry*0.35);
-  var nz = MAP_ZONES.nature;
+  var nz = zones.nature||MAP_ZONES.nature;
   addTrail(cz.cx-cz.rx*0.35, cz.cy-cz.ry*0.25, nz.cx+nz.rx*0.25, nz.cy+nz.ry*0.35);
-  var sz = MAP_ZONES.special;
+  var sz = zones.special||MAP_ZONES.special;
   addTrail(rz.cx-rz.rx*0.35, rz.cy+rz.ry*0.25, sz.cx+sz.rx*0.25, sz.cy-sz.ry*0.25);
 
   // 树木（必须在岛内）
@@ -25105,29 +25124,58 @@ var MAP_PALETTES = [
 ];
 
 // ---- 地图生成主函数 ----
+// ---- 区域位置随机化（每次seed不同布局不同）----
+function _mapGenZones(rng){
+  // 5个区域随机分配到岛屿的5个方位，每次不同
+  var positions = _mapShuffle(rng, [
+    { cx:190+rng()*30, cy:165+rng()*20 },  // 中上偏左
+    { cx:320+rng()*30, cy:175+rng()*25 },  // 中上偏右
+    { cx:130+rng()*25, cy:280+rng()*30 },  // 中下偏左
+    { cx:310+rng()*30, cy:330+rng()*25 },  // 中下偏右
+    { cx:220+rng()*30, cy:395+rng()*20 },  // 底部
+  ]);
+  var defs = [
+    { key:'city',        label:'城区',   rx:80+rng()*20, ry:60+rng()*15, color:'#A09070', ground:'urban' },
+    { key:'commercial',  label:'商业区', rx:65+rng()*15, ry:50+rng()*15, color:'#C4A060', ground:'urban' },
+    { key:'nature',      label:'自然区', rx:65+rng()*15, ry:55+rng()*15, color:'#7A9E7A', ground:'green' },
+    { key:'residential', label:'居民区', rx:75+rng()*15, ry:55+rng()*15, color:'#8B7A5A', ground:'suburb' },
+    { key:'special',     label:'海滨区', rx:70+rng()*15, ry:45+rng()*15, color:'#5A8AAA', ground:'green' },
+  ];
+  var zones = {};
+  defs.forEach(function(d, i){
+    zones[d.key] = {
+      label:d.label, cx:positions[i].cx, cy:positions[i].cy,
+      rx:d.rx, ry:d.ry, color:d.color, ground:d.ground
+    };
+  });
+  return zones;
+}
+
 function _mapGenerate(seed){
   var rng = _mapRng(seed);
   var palette = _mapPick(rng, MAP_PALETTES);
   var islandPts = _mapGenIsland(rng);
+  var zones = _mapGenZones(rng);
   var river = _mapGenRiver(rng, islandPts);
-  var landmarks = _mapGenLandmarks(rng, islandPts);
-  var houses = _mapGenHouses(rng, islandPts);
+  var landmarks = _mapGenLandmarks(rng, islandPts, zones);
+  var houses = _mapGenHouses(rng, islandPts, zones);
   var lakes = _mapGenLakes(rng, islandPts);
-  var decos = _mapGenDecorations(rng, islandPts, landmarks, river);
+  var decos = _mapGenDecorations(rng, islandPts, landmarks, river, zones);
 
   var namePool = ['柳叶岛','星月岛','梦鹿岛','云雀岛','萤火湾','晨露岛','风铃岛','蜜桃岛','琥珀岛','蘑菇岛','贝壳岛','松果岛'];
   var mapName = _mapPick(rng, namePool);
 
   return {
-    v: 3,
+    v: 4,
     seed: seed,
     name: mapName,
     generated: true,
     createdAt: Date.now(),
     palette: palette,
     islandPts: islandPts,
+    zones: zones,             // 随机化的区域布局
     river: river,
-    lakes: lakes,             // 湖泊列表
+    lakes: lakes,
     landmarks: landmarks,
     houses: houses,
     myHouseId: null,
@@ -25170,8 +25218,16 @@ function _mapEnsure(){
         data.lakes = _mapGenLakes(rng3, data.islandPts);
       }
       data.v = 3;
-      _mapSave(data);
     }
+    // v3→v4 升级：补上zones字段
+    if(data.v < 4){
+      if(!data.zones){
+        var rng4 = _mapRng(data.seed || Date.now());
+        data.zones = _mapGenZones(rng4);
+      }
+      data.v = 4;
+    }
+    _mapSave(data);
     return data;
   }
   var seed = Date.now() ^ Math.floor(Math.random()*999999);
@@ -26857,7 +26913,7 @@ function _mapOpenRoom(container, mapData, houseId){
 
     // 2.5D 等距房间 SVG
     html += '<div class="mapRoomSvgWrap">';
-    html += '<svg viewBox="0 0 300 220" xmlns="http://www.w3.org/2000/svg" style="width:90%;max-height:180px;">';
+    html += '<svg viewBox="-10 -30 320 230" xmlns="http://www.w3.org/2000/svg" style="width:92%;max-height:200px;" preserveAspectRatio="xMidYMid meet">';
     // 地板（等距菱形）
     html += '<polygon points="150,180 280,110 150,40 20,110" fill="#E8DCC8" stroke="rgba(180,165,140,0.3)" stroke-width="0.5"/>';
     // 地板纹理线
