@@ -3785,9 +3785,9 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID} .mapIslandSvg{ transition:transform 0.08s ease-out; will-change:transform; }
 #${ID} .mapLm circle.mapLmBg{ transition:r 0.15s ease, fill 0.15s ease; }
-#${ID} .mapLm:hover circle.mapLmBg{ r:19; fill:rgba(255,255,255,1); }
+#${ID} .mapLm:hover circle.mapLmBg{ r:13; fill:rgba(255,255,255,1); }
 #${ID} .mapLm .mapLmEmoji{ transition:font-size 0.15s ease; }
-#${ID} .mapLm:hover .mapLmEmoji{ font-size:19px; }
+#${ID} .mapLm:hover .mapLmEmoji{ font-size:13px; }
 #${ID} .mapLmLabel{ transition:opacity 0.15s ease; }
 #${ID} .mapLm:hover .mapLmLabel{ opacity:1; }
 #${ID} .mapLm .mapHomeBadge{ font-size:7px; pointer-events:none; }
@@ -25005,23 +25005,29 @@ function _defaultFurniture(){
   ];
 }
 
-function _mapGenHouses(rng, islandPts, zones){
+function _mapGenHouses(rng, islandPts, zones, river){
   if(!zones) zones = MAP_ZONES;
   var houses = [];
   var hIdx = 0;
 
+  function nearRiver(px,py){
+    return (river||[]).some(function(rp){ return Math.abs(rp.x-px)<22 && Math.abs(rp.y-py)<22; });
+  }
+
   // 每个区域放置适合的建筑类型
   var zoneBuildings = {
     city: { types:['apartment','apartment','tower'], count:3,
-      colors:['#B8C8D8','#C0D0E0','#A8B8C8','#D0D8E0'], roofs:['#8898A8','#9AA8B8','#7888A0'] },
+      colors:['#D8D0C0','#E0D8C8','#D0C8B8','#C8C0B0'], roofs:['#B0A890','#A89880','#C0B098'] },
     commercial: { types:['shop','shop'], count:2,
       colors:['#D8C8A8','#E0D0B8','#C8B898'], roofs:['#C0A878','#B8A070','#D0B888'] },
     residential: { types:['cottage','cottage','cottage'], count:3,
       colors:['#C9A88A','#BFAA90','#D0B89A'], roofs:['#D4896A','#C8806A','#CC8870'] },
-    nature: { types:['villa','japanese'], count:2,
-      colors:['#C8C0A8','#D0C8B0','#B8B098'], roofs:['#A89878','#B0A080','#988868'] },
-    special: { types:['japanese','tower'], count:1,
+    nature: { types:['villa','villa','japanese'], count:3,
+      colors:['#D0C8B0','#D8D0B8','#C8C0A8'], roofs:['#A89878','#B0A080','#988868'] },
+    special: { types:['japanese'], count:1,
       colors:['#B0A890','#C0B8A0'], roofs:['#908070','#A09080'] },
+    villa: { types:['villa','villa'], count:2,
+      colors:['#D0C8B0','#D8D0B8','#E0D8C0'], roofs:['#A89878','#B0A080','#988868'] },
   };
 
   for(var zk in zoneBuildings){
@@ -25031,11 +25037,13 @@ function _mapGenHouses(rng, islandPts, zones){
     var cols = Math.min(3, zb.count);
     for(var i=0; i<zb.count; i++){
       var col = i % cols, row = Math.floor(i/cols);
-      var hx = z.cx - (cols-1)*18 + col*36 + (rng()-0.5)*10;
-      var hy = z.cy + 15 + row*30 + (rng()-0.5)*8;
-      if(!_mapPointInIsland(hx, hy, islandPts)){
-        hx = z.cx + (rng()-0.5)*20; hy = z.cy + (rng()-0.5)*15;
-      }
+      var hx, hy, attempts=0;
+      do {
+        hx = z.cx - (cols-1)*18 + col*36 + (rng()-0.5)*12;
+        hy = z.cy + 12 + row*28 + (rng()-0.5)*10;
+        attempts++;
+      } while(attempts<20 && (!_mapPointInIsland(hx, hy, islandPts) || nearRiver(hx,hy)));
+      if(!_mapPointInIsland(hx, hy, islandPts)){ hx = z.cx+(rng()-0.5)*15; hy = z.cy+(rng()-0.5)*12; }
       var htype = zb.types[i % zb.types.length];
       var htDef = HOUSE_TYPES.find(function(t){ return t.id===htype; }) || HOUSE_TYPES[0];
       houses.push({
@@ -25071,27 +25079,45 @@ function _mapGenDecorations(rng, islandPts, landmarks, river, zones){
     decos.push({type:'trail',x1:x1,y1:y1,cx:(x1+x2)/2,cy:(y1+y2)/2,x2:x2,y2:y2});
   }
 
-  // 城区道路网格
-  if(!zones) zones=MAP_ZONES; var cz = zones.city||MAP_ZONES.city, gridR = Math.min(cz.rx,cz.ry)*0.65;
-  for(var gi=-1;gi<=1;gi++) addRoad(cz.cx-gridR, cz.cy+gi*26, cz.cx+gridR, cz.cy+gi*26);
-  for(var gj=-1;gj<=1;gj++) addRoad(cz.cx+gj*30, cz.cy-gridR, cz.cx+gj*30, cz.cy+gridR);
+  // 城区道路（井字形2×2）
+  if(!zones) zones=MAP_ZONES; var cz = zones.city||MAP_ZONES.city;
+  var cgr = Math.min(cz.rx,cz.ry)*0.55;
+  addRoad(cz.cx-cgr, cz.cy-cgr*0.4, cz.cx+cgr, cz.cy-cgr*0.4);
+  addRoad(cz.cx-cgr, cz.cy+cgr*0.4, cz.cx+cgr, cz.cy+cgr*0.4);
+  addRoad(cz.cx-cgr*0.4, cz.cy-cgr, cz.cx-cgr*0.4, cz.cy+cgr);
+  addRoad(cz.cx+cgr*0.4, cz.cy-cgr, cz.cx+cgr*0.4, cz.cy+cgr);
 
-  // 商业区道路
+  // 商业区道路（十字形）
   var cmz = zones.commercial||MAP_ZONES.commercial;
-  addRoad(cmz.cx-cmz.rx*0.55, cmz.cy, cmz.cx+cmz.rx*0.55, cmz.cy);
-  addRoad(cmz.cx, cmz.cy-cmz.ry*0.45, cmz.cx, cmz.cy+cmz.ry*0.45);
+  var cmgr = Math.min(cmz.rx,cmz.ry)*0.5;
+  addRoad(cmz.cx-cmgr, cmz.cy, cmz.cx+cmgr, cmz.cy);
+  addRoad(cmz.cx, cmz.cy-cmgr, cmz.cx, cmz.cy+cmgr);
 
-  // 居民区小路
+  // 居民区小路（横向一条）
   var rz = zones.residential||MAP_ZONES.residential;
-  addRoad(rz.cx-35, rz.cy, rz.cx+35, rz.cy);
+  addRoad(rz.cx-rz.rx*0.4, rz.cy, rz.cx+rz.rx*0.4, rz.cy);
 
-  // 区域间连接（直线小径）
-  addTrail(cz.cx+cz.rx*0.45, cz.cy+cz.ry*0.35, cmz.cx-cmz.rx*0.35, cmz.cy-cmz.ry*0.25);
-  addTrail(cz.cx+cz.rx*0.25, cz.cy+cz.ry*0.45, rz.cx-rz.rx*0.25, rz.cy-rz.ry*0.35);
+  // 区域间连接（中心到中心的小径，更可控）
   var nz = zones.nature||MAP_ZONES.nature;
-  addTrail(cz.cx-cz.rx*0.35, cz.cy-cz.ry*0.25, nz.cx+nz.rx*0.25, nz.cy+nz.ry*0.35);
   var sz = zones.special||MAP_ZONES.special;
-  addTrail(rz.cx-rz.rx*0.35, rz.cy+rz.ry*0.25, sz.cx+sz.rx*0.25, sz.cy-sz.ry*0.25);
+  var allZ = [cz,cmz,rz,nz,sz];
+  // 别墅区（如果存在）
+  if(zones.villa) allZ.push(zones.villa);
+  // 找最近的两两配对连接（最小生成树思路简化版）
+  var connected = [0]; var edges = [];
+  while(connected.length < allZ.length){
+    var bestD=99999, bestI=-1, bestJ=-1;
+    for(var ci=0;ci<connected.length;ci++){
+      for(var cj=0;cj<allZ.length;cj++){
+        if(connected.indexOf(cj)>=0) continue;
+        var dd = Math.sqrt(Math.pow(allZ[connected[ci]].cx-allZ[cj].cx,2)+Math.pow(allZ[connected[ci]].cy-allZ[cj].cy,2));
+        if(dd<bestD){ bestD=dd; bestI=connected[ci]; bestJ=cj; }
+      }
+    }
+    if(bestJ<0) break;
+    connected.push(bestJ);
+    addTrail(allZ[bestI].cx, allZ[bestI].cy, allZ[bestJ].cx, allZ[bestJ].cy);
+  }
 
   // 树木（必须在岛内）
   for(var i=0;i<_mapRandInt(rng,50,70);i++){
@@ -25126,20 +25152,22 @@ var MAP_PALETTES = [
 // ---- 地图生成主函数 ----
 // ---- 区域位置随机化（每次seed不同布局不同）----
 function _mapGenZones(rng){
-  // 5个区域随机分配到岛屿的5个方位，每次不同
+  // 6个区域随机分配到岛屿方位
   var positions = _mapShuffle(rng, [
-    { cx:190+rng()*30, cy:165+rng()*20 },  // 中上偏左
-    { cx:320+rng()*30, cy:175+rng()*25 },  // 中上偏右
-    { cx:130+rng()*25, cy:280+rng()*30 },  // 中下偏左
-    { cx:310+rng()*30, cy:330+rng()*25 },  // 中下偏右
-    { cx:220+rng()*30, cy:395+rng()*20 },  // 底部
+    { cx:185+rng()*35, cy:160+rng()*25 },
+    { cx:320+rng()*30, cy:170+rng()*25 },
+    { cx:125+rng()*25, cy:275+rng()*30 },
+    { cx:310+rng()*30, cy:325+rng()*25 },
+    { cx:215+rng()*30, cy:390+rng()*20 },
+    { cx:130+rng()*30, cy:385+rng()*20 },
   ]);
   var defs = [
-    { key:'city',        label:'城区',   rx:80+rng()*20, ry:60+rng()*15, color:'#A09070', ground:'urban' },
-    { key:'commercial',  label:'商业区', rx:65+rng()*15, ry:50+rng()*15, color:'#C4A060', ground:'urban' },
-    { key:'nature',      label:'自然区', rx:65+rng()*15, ry:55+rng()*15, color:'#7A9E7A', ground:'green' },
-    { key:'residential', label:'居民区', rx:75+rng()*15, ry:55+rng()*15, color:'#8B7A5A', ground:'suburb' },
-    { key:'special',     label:'海滨区', rx:70+rng()*15, ry:45+rng()*15, color:'#5A8AAA', ground:'green' },
+    { key:'city',        label:'城区',   rx:75+rng()*18, ry:55+rng()*14, color:'#A09070', ground:'urban' },
+    { key:'commercial',  label:'商业区', rx:60+rng()*14, ry:48+rng()*12, color:'#C4A060', ground:'urban' },
+    { key:'nature',      label:'自然区', rx:62+rng()*14, ry:48+rng()*14, color:'#7A9E7A', ground:'green' },
+    { key:'residential', label:'居民区', rx:68+rng()*14, ry:48+rng()*14, color:'#8B7A5A', ground:'suburb' },
+    { key:'special',     label:'海滨区', rx:62+rng()*12, ry:40+rng()*12, color:'#5A8AAA', ground:'green' },
+    { key:'villa',       label:'别墅区', rx:52+rng()*12, ry:38+rng()*12, color:'#9AAA80', ground:'green' },
   ];
   var zones = {};
   defs.forEach(function(d, i){
@@ -25158,7 +25186,7 @@ function _mapGenerate(seed){
   var zones = _mapGenZones(rng);
   var river = _mapGenRiver(rng, islandPts);
   var landmarks = _mapGenLandmarks(rng, islandPts, zones);
-  var houses = _mapGenHouses(rng, islandPts, zones);
+  var houses = _mapGenHouses(rng, islandPts, zones, river);
   var lakes = _mapGenLakes(rng, islandPts);
   var decos = _mapGenDecorations(rng, islandPts, landmarks, river, zones);
 
@@ -25451,9 +25479,9 @@ function _mapBuildSVG(mapData){
   (mapData.landmarks||[]).forEach(function(lm){
     var displayName = lm.customName || lm.name;
     svg += '<g class="mapLm" data-lmid="'+lm.id+'" style="cursor:pointer;" transform="translate('+lm.x.toFixed(1)+','+lm.y.toFixed(1)+')">';
-    svg += '<circle class="mapLmBg" r="16" fill="rgba(255,255,255,0.85)" stroke="rgba(0,0,0,0.1)" stroke-width="0.8"/>';
-    svg += '<text class="mapLmEmoji" font-size="16" text-anchor="middle" dominant-baseline="central" style="pointer-events:none;">'+lm.emoji+'</text>';
-    svg += '<text class="mapLmLabel" y="24" font-size="8" text-anchor="middle" fill="rgba(30,30,30,0.8)" font-weight="600" style="pointer-events:none;text-shadow:0 0.5px 2px rgba(255,255,255,0.9);">'+esc(displayName)+'</text>';
+    svg += '<circle class="mapLmBg" r="11" fill="rgba(255,255,255,0.88)" stroke="rgba(0,0,0,0.08)" stroke-width="0.6"/>';
+    svg += '<text class="mapLmEmoji" font-size="11" text-anchor="middle" dominant-baseline="central" style="pointer-events:none;">'+lm.emoji+'</text>';
+    svg += '<text class="mapLmLabel" y="17" font-size="6.5" text-anchor="middle" fill="rgba(30,30,30,0.75)" font-weight="600" style="pointer-events:none;text-shadow:0 0.5px 2px rgba(255,255,255,0.9);">'+esc(displayName)+'</text>';
     svg += '</g>';
   });
   svg += '</g>';
@@ -26386,7 +26414,7 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
 
     var panelHtml = '<div class="mapEdPanel">';
     if(edMode.tab === 'landmark'){
-      panelHtml += '<div class="mapEdHint">'+(edMode.selectedLm ? '已选中地标，可拖拽移动' : '点击地标选中，拖拽移动。点 ➕ 新增')+'</div>';
+      panelHtml += '<div class="mapEdHint">'+(edMode.selectedLm ? '已选中地标，可拖拽移动' : '点击地标/房子拖拽移动位置。点 ➕ 新增')+'</div>';
       panelHtml += '<div class="mapEdRow">';
       panelHtml += '<button class="mapEdBtn" data-edact="lmAdd">➕ 添加地标</button>';
       if(edMode.selectedLm){
@@ -26747,14 +26775,22 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
       }
     }
 
-    // 地标编辑：选中/拖拽
+    // 地标编辑：选中/拖拽（地标和房子）
     if(edMode.tab === 'landmark'){
       for(var li=0;li<(mapData.landmarks||[]).length;li++){
         var lm2 = mapData.landmarks[li];
-        if(Math.abs(pt.x-lm2.x)<25 && Math.abs(pt.y-lm2.y)<25){
+        if(Math.abs(pt.x-lm2.x)<20 && Math.abs(pt.y-lm2.y)<20){
           edMode.selectedLm = lm2.id;
           dragState = { active:true, type:'landmark', idx:li };
           renderEdBar(); refresh();
+          return true;
+        }
+      }
+      // 也检测房子
+      for(var hi=0;hi<(mapData.houses||[]).length;hi++){
+        var h2 = mapData.houses[hi];
+        if(Math.abs(pt.x-h2.x)<18 && Math.abs(pt.y-h2.y)<18){
+          dragState = { active:true, type:'house', idx:hi };
           return true;
         }
       }
@@ -26810,6 +26846,11 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
       mapData.landmarks[dragState.idx].y = pt.y;
       refresh();
     }
+    if(dragState.type === 'house'){
+      mapData.houses[dragState.idx].x = pt.x;
+      mapData.houses[dragState.idx].y = pt.y;
+      refresh();
+    }
     if(dragState.type === 'drawroad'){
       // 采样点（每 8px 采一个点）
       var last = edMode.drawPts[edMode.drawPts.length-1];
@@ -26832,7 +26873,7 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
       _mapSave(mapData); refresh();
       try{ toast('道路已绘制'); }catch(e){}
     }
-    if(dragState.type === 'island' || dragState.type === 'river' || dragState.type === 'landmark' || dragState.type === 'lake' || dragState.type === 'zone-center' || dragState.type === 'zone-edge-rx' || dragState.type === 'zone-edge-ry'){
+    if(dragState.type === 'island' || dragState.type === 'river' || dragState.type === 'landmark' || dragState.type === 'house' || dragState.type === 'lake' || dragState.type === 'zone-center' || dragState.type === 'zone-edge-rx' || dragState.type === 'zone-edge-ry'){
       _mapSave(mapData);
     }
     dragState.active = false;
