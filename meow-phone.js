@@ -3943,20 +3943,26 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID} .mapRoomLog::-webkit-scrollbar{ display:none; }
 #${ID} .mapRoomZoomBar{
-  position:absolute; right:8px; bottom:8px; z-index:5;
-  display:flex; flex-direction:column; gap:3px; align-items:center;
+  position:absolute; right:6px; bottom:6px; z-index:5;
+  display:flex; flex-direction:column; gap:2px; align-items:center;
 }
 #${ID} .mapRoomZoomBar button{
-  width:28px; height:28px; border:0; border-radius:50%; background:rgba(255,255,255,0.85);
-  box-shadow:0 1px 4px rgba(0,0,0,0.12); font-size:14px; cursor:pointer; color:rgba(20,24,28,0.6);
-  display:flex; align-items:center; justify-content:center; transition:all .15s;
+  width:28px; height:28px; border:0; border-radius:50%; background:rgba(255,255,255,0.88);
+  box-shadow:0 1px 4px rgba(0,0,0,0.12); font-size:13px; cursor:pointer; color:rgba(20,24,28,0.6);
+  display:flex; align-items:center; justify-content:center; transition:all .12s;
 }
-#${ID} .mapRoomZoomBar button:hover{ background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.15); }
-#${ID} .mapRoomZoomBar span{ font-size:9px; color:rgba(20,24,28,0.35); }
+#${ID} .mapRoomZoomBar button:active{ transform:scale(0.9); }
+#${ID} .mapRoomZoomBar .zDirRow{ display:flex; gap:1px; }
+#${ID} .mapRoomZoomBar .zDirRow button{ width:22px; height:22px; font-size:10px; }
 #${ID} .mapRoomTimeLabel{
   position:absolute; left:8px; top:8px; z-index:5;
   font-size:10px; color:rgba(20,24,28,0.4); background:rgba(255,255,255,0.6);
   padding:2px 8px; border-radius:10px; pointer-events:none;
+}
+#${ID} .mapRoomEditHint{
+  position:absolute; bottom:8px; left:8px; z-index:5;
+  font-size:10px; color:rgba(100,160,80,0.8); background:rgba(255,255,255,0.7);
+  padding:3px 10px; border-radius:10px; pointer-events:none;
 }
 /* ===== Map Editor ===== */
 #${ID} .mapEditorBar{
@@ -27136,28 +27142,43 @@ var _roomFurnSVG = {
 
   stove: function(x, y, owned){
     if(!owned) return '';
+    // ALL coordinates manually calculated. Front vertex = bottom-front corner.
+    // RIGHT axis: (dx+1, dy+0.5), LEFT axis: (dx-1, dy+0.5), UP: (dx0, dy-1)
+    // Cabinet: front(0,10) w=20 d=14 h=14
+    //   Bottom: F(0,10) R(20,20) B(6,27) L(-14,17)
+    //   Top:    F(0,-4) R(20,6)  B(6,13) L(-14,3)
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
-    // SketchUp style: all faces follow strict iso axes, no curves
-    // Colors: top=brightest, left=medium, right=darkest
-    // Main cabinet: w=22 along right, d=14 along left, h=14 up
-    s += _isoBox(0, 8, 22, 14, 14, '#F0EAE0','#E2DAD0','#CCC4B8');
-    // Countertop slab (thin overhang): w=24, d=15, h=1.5
-    s += _isoBox(-1, -5.5, 24, 15, 1.5, '#F5F0E8','#EAE2D8','#DAD2C8');
-    // Left burner (iso diamond on top face)
-    s += '<polygon points="-4,-9 2,-12 8,-9 2,-6" fill="none" stroke="#888" stroke-width="0.8"/>';
-    s += '<polygon points="-2,-9 2,-11 6,-9 2,-7" fill="none" stroke="#999" stroke-width="0.4"/>';
-    // Right burner
-    s += '<polygon points="8,-5 13,-7.5 18,-5 13,-2.5" fill="none" stroke="#888" stroke-width="0.7"/>';
-    // Pot (small box on left burner): w=8, d=8, h=4
-    s += _isoBox(-4, -6, 8, 8, 4, '#555','#484848','#3A3A3A');
-    // Pot handle along left axis
-    s += '<line x1="-12" y1="-4" x2="-16" y2="-2" stroke="#555" stroke-width="1.2" stroke-linecap="round"/>';
-    // Steam (vertical lines)
-    s += '<line x1="-1" y1="-12" x2="-2" y2="-18" stroke="rgba(180,180,180,0.25)" stroke-width="0.5" stroke-linecap="round"/>';
-    s += '<line x1="2" y1="-11" x2="1" y2="-16" stroke="rgba(180,180,180,0.2)" stroke-width="0.4" stroke-linecap="round"/>';
-    // Knobs on right face
-    s += '<circle cx="8" cy="2" r="1" fill="#AAA" stroke="#888" stroke-width="0.3"/>';
-    s += '<circle cx="14" cy="5" r="1" fill="#AAA" stroke="#888" stroke-width="0.3"/>';
+    // Left face (medium brightness)
+    s += '<polygon points="0,-4 -14,3 -14,17 0,10" fill="#DDD5C8" stroke="rgba(60,50,30,0.15)" stroke-width="0.5" stroke-linejoin="round"/>';
+    // Right face (darkest)
+    s += '<polygon points="0,-4 20,6 20,20 0,10" fill="#C0B8AB" stroke="rgba(60,50,30,0.15)" stroke-width="0.5" stroke-linejoin="round"/>';
+    // Top face (brightest)
+    s += '<polygon points="0,-4 20,6 6,13 -14,3" fill="#F0EAE0" stroke="rgba(60,50,30,0.15)" stroke-width="0.5" stroke-linejoin="round"/>';
+    // Countertop slab: front(-1,-4) w=22 d=16 h=2
+    //   Bottom: F(-1,-4) R(21,7) B(5,15) L(-17,4)
+    //   Top:    F(-1,-6) R(21,5) B(5,13) L(-17,2)
+    s += '<polygon points="-1,-6 -17,2 -17,4 -1,-4" fill="#E8E0D4" stroke="rgba(60,50,30,0.12)" stroke-width="0.4"/>';
+    s += '<polygon points="-1,-6 21,5 21,7 -1,-4" fill="#D8D0C4" stroke="rgba(60,50,30,0.12)" stroke-width="0.4"/>';
+    s += '<polygon points="-1,-6 21,5 5,13 -17,2" fill="#F5F0E8" stroke="rgba(60,50,30,0.12)" stroke-width="0.4"/>';
+    // Left burner ring (iso diamond centered on top surface)
+    s += '<polygon points="-2,-3 4,-6 10,-3 4,0" fill="none" stroke="#888" stroke-width="0.7"/>';
+    s += '<polygon points="0,-3 4,-5 8,-3 4,-1" fill="none" stroke="#999" stroke-width="0.4"/>';
+    // Right burner ring
+    s += '<polygon points="9,1 14,-1.5 19,1 14,3.5" fill="none" stroke="#888" stroke-width="0.6"/>';
+    // Pot on left burner (small box): front(0,-3) w=7 d=7 h=4
+    //   Bottom: (0,-3)(7,0.5)(0,4)(-7,0.5)
+    //   Top:    (0,-7)(7,-3.5)(0,0)(-7,-3.5)
+    s += '<polygon points="0,-7 -7,-3.5 -7,0.5 0,-3" fill="#505050" stroke="rgba(0,0,0,0.15)" stroke-width="0.4"/>';
+    s += '<polygon points="0,-7 7,-3.5 7,0.5 0,-3" fill="#3E3E3E" stroke="rgba(0,0,0,0.15)" stroke-width="0.4"/>';
+    s += '<polygon points="0,-7 7,-3.5 0,0 -7,-3.5" fill="#5A5A5A" stroke="rgba(0,0,0,0.15)" stroke-width="0.4"/>';
+    // Handle along left axis
+    s += '<line x1="-7" y1="-1.5" x2="-12" y2="1" stroke="#555" stroke-width="1.2" stroke-linecap="round"/>';
+    // Steam
+    s += '<line x1="0" y1="-9" x2="-1" y2="-15" stroke="rgba(180,180,180,0.25)" stroke-width="0.5" stroke-linecap="round"/>';
+    s += '<line x1="3" y1="-8" x2="2" y2="-13" stroke="rgba(180,180,180,0.18)" stroke-width="0.4" stroke-linecap="round"/>';
+    // Knobs on right face (small dots)
+    s += '<circle cx="8" cy="5" r="1" fill="#B0B0B0" stroke="#888" stroke-width="0.3"/>';
+    s += '<circle cx="14" cy="8" r="1" fill="#B0B0B0" stroke="#888" stroke-width="0.3"/>';
     s += '</g>';
     return s;
   },
@@ -27511,42 +27532,36 @@ function _mapOpenRoom(container, mapData, houseId){
     html += '<polygon points="25,80 42,72 42,60 25,68" fill="#7A6040" stroke="#5A4020" stroke-width="0.5"/>';
     html += '<polygon points="27,78 40,71 40,62 27,69" fill="#E8D8C0"/>';
 
-    // === 编辑模式：显示网格（贴合地板） ===
-    if(_editMode){
-      for(var egx=0;egx<5;egx++){
-        for(var egy=0;egy<4;egy++){
-          // 用地板坐标系绘制网格：四角=_isoFloorPt(gx,gy)
-          var c0 = _isoFloorPt(egx, egy);
-          var c1 = _isoFloorPt(egx+1, egy);
-          var c2 = _isoFloorPt(egx+1, egy+1);
-          var c3 = _isoFloorPt(egx, egy+1);
-          html += '<polygon class="rm-grid-cell" data-gx="'+egx+'" data-gy="'+egy+'" points="'+c0.x.toFixed(1)+','+c0.y.toFixed(1)+' '+c1.x.toFixed(1)+','+c1.y.toFixed(1)+' '+c2.x.toFixed(1)+','+c2.y.toFixed(1)+' '+c3.x.toFixed(1)+','+c3.y.toFixed(1)+'" fill="rgba(120,180,80,0.06)" stroke="rgba(120,180,80,0.3)" stroke-width="0.5" stroke-dasharray="3,2"/>';
-        }
-      }
-    }
-
     // === 家具渲染 ===
     var furnItems = [];
     furniture.forEach(function(f){
       if(!f.owned) return;
       var cat = FURNITURE_CATALOG[f.type];
       if(!cat) return;
-      var pos = _defaultFurnPositions[f.type] || { gx:0, gy:0 };
-      var gx = (typeof f.gx === 'number') ? f.gx : pos.gx;
-      var gy = (typeof f.gy === 'number') ? f.gy : pos.gy;
-      var iso = _isoProject(gx, gy);
-      furnItems.push({ f:f, type:f.type, x:iso.x, y:iso.y, gx:gx, gy:gy, sortY: iso.y + iso.x*0.1 });
+      var fx, fy;
+      if(typeof f.roomX === 'number' && typeof f.roomY === 'number'){
+        fx = f.roomX; fy = f.roomY;
+      } else {
+        var pos = _defaultFurnPositions[f.type] || { gx:0, gy:0 };
+        var gx = (typeof f.gx === 'number') ? f.gx : pos.gx;
+        var gy = (typeof f.gy === 'number') ? f.gy : pos.gy;
+        var iso = _isoProject(gx, gy);
+        fx = iso.x; fy = iso.y;
+      }
+      furnItems.push({ f:f, type:f.type, x:fx, y:fy, sortY: fy + fx*0.1 });
     });
     furnItems.sort(function(a,b){ return a.sortY - b.sortY; });
 
     furnItems.forEach(function(item){
+      var isSelected = _editMode && _dragTarget === item.f.id;
       var drawFn = _roomFurnSVG[item.type];
       if(drawFn){
-        // 包裹一层g用于拖拽识别
-        html += '<g class="rm-furn-wrap" data-furnid="'+item.f.id+'" data-furntype="'+item.type+'">';
+        html += '<g class="rm-furn-wrap'+(isSelected?' dragging':'')+'" data-furnid="'+item.f.id+'" data-furntype="'+item.type+'">';
+        if(isSelected){
+          html += '<polygon points="'+(item.x)+','+(item.y-14)+' '+(item.x+14)+','+(item.y-7)+' '+(item.x)+','+(item.y)+' '+(item.x-14)+','+(item.y-7)+'" fill="rgba(100,180,80,0.15)" stroke="rgba(100,180,80,0.5)" stroke-width="0.8" stroke-dasharray="3,2"/>';
+        }
         html += drawFn(item.x, item.y, true);
         if(_editMode){
-          // 编辑模式下显示家具名标签
           html += '<text x="'+item.x+'" y="'+(item.y+18)+'" text-anchor="middle" font-size="7" fill="rgba(100,160,80,0.8)" font-weight="600">'+FURNITURE_CATALOG[item.type].label+'</text>';
         }
         html += '</g>';
@@ -27563,13 +27578,10 @@ function _mapOpenRoom(container, mapData, houseId){
 
     var hasSofa = furniture.some(function(f){ return f.type==='sofa' && f.owned; });
     if(hasSofa){
-      var sp = _isoProject((_defaultFurnPositions.sofa||{}).gx||2, (_defaultFurnPositions.sofa||{}).gy||1);
       var sf = furniture.find(function(ff){return ff.type==='sofa'&&ff.owned;});
-      if(sf){
-        var sgx = sf.gx != null ? sf.gx : (_defaultFurnPositions.sofa||{}).gx||2;
-        var sgy = sf.gy != null ? sf.gy : (_defaultFurnPositions.sofa||{}).gy||1;
-        sp = _isoProject(sgx, sgy);
-      }
+      var sp;
+      if(sf && typeof sf.roomX==='number'){ sp={x:sf.roomX,y:sf.roomY}; }
+      else { var dp=_defaultFurnPositions.sofa||{gx:2,gy:1}; sp=_isoProject(typeof sf.gx==='number'?sf.gx:dp.gx, typeof sf.gy==='number'?sf.gy:dp.gy); }
       html += '<g transform="translate('+(sp.x+28)+','+(sp.y+8)+')" opacity="0.7">';
       html += '<ellipse cx="0" cy="0" rx="5" ry="3" fill="#3A3A3A"/><circle cx="-5" cy="-1" r="3" fill="#3A3A3A"/>';
       html += '<polygon points="-7,-3 -6,-6 -4,-3" fill="#3A3A3A"/><polygon points="-4,-3 -3,-6 -2,-3" fill="#3A3A3A"/>';
@@ -27579,10 +27591,11 @@ function _mapOpenRoom(container, mapData, houseId){
 
     // === 室内灯光（夜间暖光效果） ===
     if(lighting.lampSpread > 0){
-      // 找台灯位置
       var lampF = furniture.find(function(ff){return ff.type==='lamp'&&ff.owned;});
       if(lampF){
-        var lp = _isoProject(lampF.gx!=null?lampF.gx:(_defaultFurnPositions.lamp||{}).gx||1, lampF.gy!=null?lampF.gy:(_defaultFurnPositions.lamp||{}).gy||0);
+        var lp;
+        if(typeof lampF.roomX==='number'){ lp={x:lampF.roomX,y:lampF.roomY}; }
+        else { var ldp=_defaultFurnPositions.lamp||{gx:1,gy:0}; lp=_isoProject(typeof lampF.gx==='number'?lampF.gx:ldp.gx, typeof lampF.gy==='number'?lampF.gy:ldp.gy); }
         html += '<ellipse cx="'+lp.x+'" cy="'+(lp.y+10)+'" rx="50" ry="30" fill="url(#lampLight)" opacity="'+lighting.lampSpread.toFixed(2)+'"/>';
       }
     }
@@ -27595,12 +27608,21 @@ function _mapOpenRoom(container, mapData, houseId){
     }
 
     html += '</svg>';
-    // Compact zoom bar (bottom-right of SVG area)
+    // Controls (zoom + direction)
     html += '<div class="mapRoomZoomBar">';
     html += '<button data-act="roomZoomIn">+</button>';
     html += '<button data-act="roomZoomOut">−</button>';
     html += '<button data-act="roomZoomReset" style="font-size:10px;">↺</button>';
+    html += '<div style="height:2px;"></div>';
+    html += '<button data-act="roomPanUp" style="font-size:10px;">▲</button>';
+    html += '<div class="zDirRow"><button data-act="roomPanLeft">◀</button><button data-act="roomPanRight">▶</button></div>';
+    html += '<button data-act="roomPanDown" style="font-size:10px;">▼</button>';
     html += '</div>';
+    if(_editMode && _dragTarget){
+      var selF = furniture.find(function(ff){return ff.id===_dragTarget;});
+      var selCat = selF ? (FURNITURE_CATALOG[selF.type]||{}) : {};
+      html += '<div class="mapRoomEditHint">选中: '+(selCat.label||'家具')+' — 用 ▲▼◀▶ 移动</div>';
+    }
     html += '</div>';
 
     // 家具网格
@@ -27708,25 +27730,17 @@ function _mapOpenRoom(container, mapData, houseId){
     wrap.addEventListener('mouseup', function(){ isPanning=false; wrap.style.cursor=''; });
     wrap.addEventListener('mouseleave', function(){ isPanning=false; wrap.style.cursor=''; });
 
-    // 编辑模式：网格点击使用事件委托（更可靠）
+    // 编辑模式：点击SVG中的家具可直接选中
     if(_editMode){
       wrap.addEventListener('click', function(ev){
-        if(!_dragTarget) return;
-        var cell = ev.target.closest('.rm-grid-cell');
-        if(!cell) return;
-        var gx = parseInt(cell.getAttribute('data-gx'));
-        var gy = parseInt(cell.getAttribute('data-gy'));
-        if(isNaN(gx)||isNaN(gy)) return;
-        ev.stopPropagation();
-        var f = furniture.find(function(ff){ return ff.id===_dragTarget; });
-        if(f){
-          f.gx = gx; f.gy = gy;
-          house.rooms.furniture = furniture;
-          _mapSave(mapData);
-          try{ toast('✅ 已移动 '+FURNITURE_CATALOG[f.type].label+' → ('+gx+','+gy+')'); }catch(e){}
+        var furnG = ev.target.closest('.rm-furn-wrap');
+        if(!furnG) return;
+        var fid = furnG.getAttribute('data-furnid');
+        if(fid){
+          _dragTarget = fid;
+          try{ toast('🔧 用 ▲▼◀▶ 移动家具'); }catch(e){}
+          renderRoom();
         }
-        _dragTarget = null;
-        renderRoom();
       });
     }
   }
@@ -27748,11 +27762,51 @@ function _mapOpenRoom(container, mapData, houseId){
     if(!tgt) return;
     var act = tgt.getAttribute('data-act');
 
-    if(act==='roomBack'){ clearInterval(_lightTimer); roomEl.remove(); return; }
+    if(act==='roomBack'){
+      clearInterval(_lightTimer);
+      if(_mapZoomBar) _mapZoomBar.style.display = '';
+      roomEl.remove();
+      return;
+    }
 
     if(act==='roomZoomIn'){ _roomZoom=Math.min(4,_roomZoom+0.25); _applyTransform(); return; }
     if(act==='roomZoomOut'){ _roomZoom=Math.max(0.5,_roomZoom-0.25); _applyTransform(); return; }
     if(act==='roomZoomReset'){ _roomZoom=1;_roomPanX=0;_roomPanY=0; _applyTransform(); return; }
+
+    // Direction buttons: move furniture if selected, otherwise pan view
+    var panStep = 25, furnStep = 4;
+    if(act==='roomPanUp'||act==='roomPanDown'||act==='roomPanLeft'||act==='roomPanRight'){
+      if(_editMode && _dragTarget){
+        var mf = furniture.find(function(ff){ return ff.id===_dragTarget; });
+        if(mf){
+          // Ensure roomX/roomY are initialized
+          if(typeof mf.roomX !== 'number'){
+            var dp = _defaultFurnPositions[mf.type] || {gx:2,gy:1};
+            var ip = _isoProject(typeof mf.gx==='number'?mf.gx:dp.gx, typeof mf.gy==='number'?mf.gy:dp.gy);
+            mf.roomX = ip.x; mf.roomY = ip.y;
+          }
+          if(act==='roomPanUp') mf.roomY -= furnStep;
+          if(act==='roomPanDown') mf.roomY += furnStep;
+          if(act==='roomPanLeft') mf.roomX -= furnStep;
+          if(act==='roomPanRight') mf.roomX += furnStep;
+          // Clamp to floor area (rough bounds)
+          mf.roomX = Math.max(20, Math.min(280, mf.roomX));
+          mf.roomY = Math.max(55, Math.min(185, mf.roomY));
+          house.rooms.furniture = furniture;
+          _mapSave(mapData);
+          renderRoom();
+        }
+      } else {
+        if(act==='roomPanUp') _roomPanY += panStep;
+        if(act==='roomPanDown') _roomPanY -= panStep;
+        if(act==='roomPanLeft') _roomPanX += panStep;
+        if(act==='roomPanRight') _roomPanX -= panStep;
+        _roomPanX = Math.max(-200,Math.min(200,_roomPanX));
+        _roomPanY = Math.max(-200,Math.min(200,_roomPanY));
+        _applyTransform();
+      }
+      return;
+    }
 
     if(act==='roomToggleEdit'){
       _editMode = !_editMode;
@@ -27764,7 +27818,7 @@ function _mapOpenRoom(container, mapData, houseId){
     if(act==='roomMove'){
       var fid0 = tgt.getAttribute('data-furnid');
       _dragTarget = fid0;
-      try{ toast('👆 点击房间网格选择新位置'); }catch(e){}
+      try{ toast('🔧 用 ▲▼◀▶ 方向键移动家具'); }catch(e){}
       renderRoom();
       return;
     }
@@ -27857,6 +27911,10 @@ function _mapOpenRoom(container, mapData, houseId){
       return;
     }
   });
+
+  // Hide map zoom bar while room is open
+  var _mapZoomBar = container.querySelector('.mapZoomBar');
+  if(_mapZoomBar) _mapZoomBar.style.display = 'none';
 
   container.appendChild(roomEl);
 }
