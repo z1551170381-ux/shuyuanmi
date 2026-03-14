@@ -3883,6 +3883,46 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .mapLogName{ font-weight:600; color:rgba(20,24,28,0.65); }
 #${ID} .mapLogTime{ color:rgba(20,24,28,0.3); font-size:10px; }
 #${ID} .mapLogAction{ flex:1; }
+/* ===== Map Room (2.5D) ===== */
+#${ID} .mapRoomWrap{
+  position:absolute; inset:0; z-index:20;
+  background:rgba(245,240,230,0.98);
+  display:flex; flex-direction:column;
+  animation:mapFadeIn .2s ease;
+}
+#${ID} .mapRoomHeader{
+  padding:10px 14px; display:flex; align-items:center; gap:8px;
+  border-bottom:1px solid rgba(0,0,0,0.06); flex-shrink:0;
+}
+#${ID} .mapRoomBackBtn{ font-size:18px; cursor:pointer; border:0; background:transparent; padding:4px; }
+#${ID} .mapRoomTitle{ flex:1; font-size:14px; font-weight:600; }
+#${ID} .mapRoomSvgWrap{
+  flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden;
+  position:relative;
+}
+#${ID} .mapRoomGrid{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:10px 14px; flex-shrink:0;
+  max-height:180px; overflow-y:auto; scrollbar-width:none;
+}
+#${ID} .mapRoomGrid::-webkit-scrollbar{ display:none; }
+#${ID} .mapFurnSlot{
+  display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:8px 4px; border-radius:10px; cursor:pointer;
+  background:rgba(255,255,255,0.6); border:1px solid rgba(0,0,0,0.04);
+  transition:background .15s;
+}
+#${ID} .mapFurnSlot:hover{ background:rgba(255,255,255,0.9); }
+#${ID} .mapFurnSlot:active{ transform:scale(0.96); }
+#${ID} .mapFurnSlot .fe{ font-size:24px; }
+#${ID} .mapFurnSlot .fn{ font-size:10px; color:rgba(20,24,28,0.6); }
+#${ID} .mapFurnSlot .fd{ font-size:9px; color:rgba(20,24,28,0.3); }
+#${ID} .mapFurnSlot.locked{ opacity:0.35; }
+#${ID} .mapFurnSlot.locked .fe::after{ content:'🔒'; font-size:10px; position:absolute; }
+#${ID} .mapRoomLog{
+  padding:8px 14px; border-top:1px solid rgba(0,0,0,0.04); flex-shrink:0;
+  max-height:80px; overflow-y:auto; scrollbar-width:none;
+}
+#${ID} .mapRoomLog::-webkit-scrollbar{ display:none; }
 /* ===== Map Editor ===== */
 #${ID} .mapEditorBar{
   position:absolute; bottom:0; left:0; right:0; z-index:22;
@@ -24927,29 +24967,67 @@ function _mapGenLandmarks(rng, islandPts){
   return landmarks;
 }
 
-// ---- 居民区小房子生成 ----
+// ---- 居民区小房子生成（6种建筑类型） ----
+var HOUSE_TYPES = [
+  { id:'cottage',   label:'小木屋',  namePool:['樱花小屋','向日葵宅','蓝莓居','松果小窝','橡果房'] },
+  { id:'apartment', label:'公寓楼',  namePool:['星辰公寓','云端阁','月光楼','晨曦苑','青松公寓'] },
+  { id:'villa',     label:'别墅',    namePool:['湖畔别墅','花园洋房','松林苑','翡翠庄园','白鸽别墅'] },
+  { id:'shop',      label:'商铺',    namePool:['旺角铺','金叶商行','小蜜蜂店','彩虹商铺','星光店'] },
+  { id:'japanese',  label:'和风屋',  namePool:['竹林庵','枫叶亭','桃源居','清风阁','月见堂'] },
+  { id:'tower',     label:'塔楼',    namePool:['瞭望塔','星光塔','钟楼','风铃塔','灯笼塔'] },
+];
+
+// 基础家具（每个房间默认拥有）
+var FURNITURE_CATALOG = {
+  // 基础（默认拥有）
+  bed:    { emoji:'🛏️', label:'床',    cost:0,   fx:{energy:25,mood:3},   desc:'休息恢复精力' },
+  sofa:   { emoji:'🛋️', label:'沙发',  cost:0,   fx:{mood:8,energy:5},    desc:'放松一下' },
+  stove:  { emoji:'🍳', label:'灶台',  cost:0,   fx:{hunger:30,mood:5},   desc:'做饭填饱肚子' },
+  lamp:   { emoji:'💡', label:'台灯',  cost:0,   fx:{mood:3},             desc:'暖暖的光' },
+  // 高级（商场购买）
+  tv:     { emoji:'📺', label:'大电视', cost:200, fx:{fun:15,mood:8},      desc:'看剧追番' },
+  game:   { emoji:'🎮', label:'游戏机', cost:300, fx:{fun:20,mood:10},     desc:'一起打游戏' },
+  bath:   { emoji:'🛁', label:'浴缸',  cost:250, fx:{health:15,mood:12},  desc:'泡个热水澡' },
+  piano:  { emoji:'🎹', label:'钢琴',  cost:500, fx:{mood:20,energy:-5},  desc:'弹一首曲子' },
+  plant:  { emoji:'🌱', label:'盆栽',  cost:50,  fx:{mood:5},             desc:'绿意盎然' },
+  frame:  { emoji:'🖼️', label:'画框',  cost:120, fx:{mood:8},             desc:'欣赏画作' },
+  shelf:  { emoji:'📚', label:'书架',  cost:150, fx:{mood:10,energy:-3},  desc:'读一本好书' },
+  rug:    { emoji:'🧶', label:'地毯',  cost:80,  fx:{mood:6},             desc:'踩上去很舒服' },
+};
+
+function _defaultFurniture(){
+  return [
+    { id:'bed_0', type:'bed', gx:0, gy:0, owned:true },
+    { id:'sofa_0', type:'sofa', gx:1, gy:0, owned:true },
+    { id:'stove_0', type:'stove', gx:0, gy:1, owned:true },
+    { id:'lamp_0', type:'lamp', gx:1, gy:1, owned:true },
+  ];
+}
+
 function _mapGenHouses(rng, islandPts){
   var rz = MAP_ZONES.residential;
   var houses = [];
   var count = _mapRandInt(rng, 6, 9);
-  var namePool = ['樱花小屋','向日葵宅','蓝莓居','松果小窝','橡果房','薄荷阁','栗子屋','蒲公英居','云雀巢'];
-  var shuffledNames = _mapShuffle(rng, namePool);
+  // 随机分配建筑类型
+  var typeOrder = _mapShuffle(rng, ['cottage','cottage','apartment','villa','shop','japanese','tower','cottage','apartment']);
 
-  // 排成松散的网格
   var cols = 3, startX = rz.cx - 45, startY = rz.cy - 25;
   for(var i=0;i<count;i++){
     var col = i % cols, row = Math.floor(i/cols);
     var hx = startX + col*35 + (rng()-0.5)*10;
     var hy = startY + row*32 + (rng()-0.5)*8;
-    // 确保在岛内
     if(!_mapPointInIsland(hx, hy, islandPts)){
       hx = rz.cx + (rng()-0.5)*30; hy = rz.cy + (rng()-0.5)*25;
     }
+    var htype = typeOrder[i % typeOrder.length];
+    var htDef = HOUSE_TYPES.find(function(t){ return t.id===htype; }) || HOUSE_TYPES[0];
     houses.push({
       id: 'house_'+i, x: hx, y: hy,
-      name: shuffledNames[i] || ('小屋'+(i+1)),
+      type: htype,
+      name: _mapPick(rng, htDef.namePool),
       color: _mapPick(rng, ['#C9A88A','#BFAA90','#B8A088','#D0B89A','#C4B090']),
       roofColor: _mapPick(rng, ['#D4896A','#C8806A','#CC8870','#D09070','#C07860']),
+      rooms: { furniture: _defaultFurniture() },
     });
   }
   return houses;
@@ -25222,30 +25300,82 @@ function _mapBuildSVG(mapData){
     }
   });
 
-  // 居民区小房子
+  // 居民区建筑（6种外观）
   var myHId = mapData.myHouseId;
   var npcHs = mapData.npcHouses || {};
   (mapData.houses||[]).forEach(function(h){
     var isMyHouse = (h.id === myHId);
     var npcOwner = null;
     for(var nk in npcHs){ if(npcHs[nk]===h.id) npcOwner=nk; }
+    var x=h.x, y=h.y, c=h.color||'#C9A88A', rc=h.roofColor||'#D4896A';
+    var ht = h.type || 'cottage';
 
-    // 房体
     svg += '<g class="mapHouse" data-houseid="'+h.id+'" style="cursor:pointer;">';
-    svg += '<rect x="'+(h.x-7)+'" y="'+(h.y-4)+'" width="14" height="10" rx="1.5" fill="'+(h.color||'#C4956A')+'" opacity="0.9"/>';
-    // 屋顶
-    svg += '<polygon points="'+(h.x-9)+','+(h.y-4)+' '+h.x+','+(h.y-13)+' '+(h.x+9)+','+(h.y-4)+'" fill="'+(h.roofColor||'#E8734A')+'" opacity="0.85"/>';
-    // 门
-    svg += '<rect x="'+(h.x-2)+'" y="'+(h.y+1)+'" width="4" height="5" rx="0.8" fill="rgba(60,40,20,0.5)"/>';
-    // 窗户
-    svg += '<rect x="'+(h.x-6)+'" y="'+(h.y-2)+'" width="3" height="3" rx="0.5" fill="rgba(180,220,255,0.6)"/>';
-    svg += '<rect x="'+(h.x+3)+'" y="'+(h.y-2)+'" width="3" height="3" rx="0.5" fill="rgba(180,220,255,0.6)"/>';
+
+    if(ht==='cottage'){
+      // 小木屋：三角屋顶
+      svg += '<rect x="'+(x-7)+'" y="'+(y-3)+'" width="14" height="10" rx="1" fill="'+c+'"/>';
+      svg += '<polygon points="'+(x-9)+','+(y-3)+' '+x+','+(y-12)+' '+(x+9)+','+(y-3)+'" fill="'+rc+'"/>';
+      svg += '<rect x="'+(x-1.5)+'" y="'+(y+2)+'" width="3" height="5" rx="0.5" fill="rgba(60,40,20,0.5)"/>';
+      svg += '<rect x="'+(x-6)+'" y="'+(y-1)+'" width="3" height="2.5" rx="0.3" fill="rgba(180,220,255,0.6)"/>';
+      svg += '<rect x="'+(x+3)+'" y="'+(y-1)+'" width="3" height="2.5" rx="0.3" fill="rgba(180,220,255,0.6)"/>';
+    } else if(ht==='apartment'){
+      // 公寓楼：高窄+多排窗
+      svg += '<rect x="'+(x-6)+'" y="'+(y-18)+'" width="12" height="25" rx="1" fill="'+c+'"/>';
+      svg += '<rect x="'+(x-7)+'" y="'+(y-20)+'" width="14" height="3" rx="1" fill="'+rc+'"/>';
+      for(var fi=0;fi<4;fi++){
+        svg += '<rect x="'+(x-4)+'" y="'+(y-16+fi*5)+'" width="2.5" height="2" rx="0.3" fill="rgba(180,220,255,0.7)"/>';
+        svg += '<rect x="'+(x+1.5)+'" y="'+(y-16+fi*5)+'" width="2.5" height="2" rx="0.3" fill="rgba(180,220,255,0.7)"/>';
+      }
+      svg += '<rect x="'+(x-1.5)+'" y="'+(y+3)+'" width="3" height="4" rx="0.5" fill="rgba(60,40,20,0.4)"/>';
+    } else if(ht==='villa'){
+      // 别墅：宽矮+双层+阳台
+      svg += '<rect x="'+(x-11)+'" y="'+(y-4)+'" width="22" height="11" rx="1" fill="'+c+'"/>';
+      svg += '<rect x="'+(x-8)+'" y="'+(y-10)+'" width="16" height="7" rx="1" fill="'+c+'" opacity="0.9"/>';
+      svg += '<polygon points="'+(x-9)+','+(y-10)+' '+x+','+(y-16)+' '+(x+9)+','+(y-10)+'" fill="'+rc+'"/>';
+      svg += '<rect x="'+(x-9)+'" y="'+(y-1)+'" width="4" height="2" rx="0.3" fill="rgba(180,220,255,0.6)"/>';
+      svg += '<rect x="'+(x-3)+'" y="'+(y-1)+'" width="4" height="2" rx="0.3" fill="rgba(180,220,255,0.6)"/>';
+      svg += '<rect x="'+(x+5)+'" y="'+(y-1)+'" width="4" height="2" rx="0.3" fill="rgba(180,220,255,0.6)"/>';
+      svg += '<rect x="'+(x-1.5)+'" y="'+(y+3)+'" width="3" height="4" rx="0.5" fill="rgba(60,40,20,0.5)"/>';
+      // 小花园栅栏
+      svg += '<line x1="'+(x-12)+'" y1="'+(y+7)+'" x2="'+(x+12)+'" y2="'+(y+7)+'" stroke="rgba(160,140,110,0.4)" stroke-width="0.5"/>';
+    } else if(ht==='shop'){
+      // 商铺：矩形+招牌条+遮阳棚
+      svg += '<rect x="'+(x-8)+'" y="'+(y-6)+'" width="16" height="13" rx="1" fill="'+c+'"/>';
+      svg += '<rect x="'+(x-9)+'" y="'+(y-8)+'" width="18" height="3" rx="1" fill="'+rc+'"/>';
+      // 遮阳棚条纹
+      for(var si=0;si<5;si++){
+        svg += '<rect x="'+(x-8+si*3.6)+'" y="'+(y-3)+'" width="1.8" height="2" fill="'+(si%2===0?'rgba(255,255,255,0.4)':rc)+'" opacity="0.6"/>';
+      }
+      svg += '<rect x="'+(x-6)+'" y="'+(y)+'" width="4" height="3.5" rx="0.3" fill="rgba(180,220,255,0.6)"/>';
+      svg += '<rect x="'+(x+2)+'" y="'+(y)+'" width="4" height="3.5" rx="0.3" fill="rgba(180,220,255,0.6)"/>';
+      svg += '<rect x="'+(x-1)+'" y="'+(y+2)+'" width="2" height="5" rx="0.3" fill="rgba(60,40,20,0.4)"/>';
+    } else if(ht==='japanese'){
+      // 和风屋：弧形屋顶
+      svg += '<rect x="'+(x-8)+'" y="'+(y-3)+'" width="16" height="10" rx="1" fill="'+c+'"/>';
+      svg += '<path d="M'+(x-10)+','+(y-3)+' Q'+(x-5)+','+(y-15)+' '+x+','+(y-12)+' Q'+(x+5)+','+(y-15)+' '+(x+10)+','+(y-3)+'" fill="'+rc+'" opacity="0.85"/>';
+      // 格子窗
+      svg += '<rect x="'+(x-6)+'" y="'+(y-1)+'" width="4" height="3" rx="0.3" fill="rgba(220,210,180,0.6)" stroke="rgba(100,80,50,0.3)" stroke-width="0.3"/>';
+      svg += '<line x1="'+(x-4)+'" y1="'+(y-1)+'" x2="'+(x-4)+'" y2="'+(y+2)+'" stroke="rgba(100,80,50,0.3)" stroke-width="0.3"/>';
+      svg += '<rect x="'+(x+2)+'" y="'+(y-1)+'" width="4" height="3" rx="0.3" fill="rgba(220,210,180,0.6)" stroke="rgba(100,80,50,0.3)" stroke-width="0.3"/>';
+      svg += '<rect x="'+(x-1)+'" y="'+(y+2)+'" width="2" height="5" rx="0.3" fill="rgba(80,60,30,0.5)"/>';
+    } else if(ht==='tower'){
+      // 塔楼：细高+尖顶
+      svg += '<rect x="'+(x-4)+'" y="'+(y-20)+'" width="8" height="27" rx="1" fill="'+c+'"/>';
+      svg += '<polygon points="'+(x-5)+','+(y-20)+' '+x+','+(y-28)+' '+(x+5)+','+(y-20)+'" fill="'+rc+'"/>';
+      // 小窗排列
+      for(var wi=0;wi<3;wi++){
+        svg += '<circle cx="'+x+'" cy="'+(y-16+wi*7)+'" r="1.8" fill="rgba(180,220,255,0.7)"/>';
+      }
+      svg += '<rect x="'+(x-1)+'" y="'+(y+3)+'" width="2" height="4" rx="0.3" fill="rgba(60,40,20,0.4)"/>';
+    }
 
     // 标记：我的房子/角色房子
+    var labelY = ht==='tower' ? (y-30) : ht==='apartment' ? (y-22) : (y-14);
     if(isMyHouse){
-      svg += '<text x="'+h.x+'" y="'+(h.y-15)+'" text-anchor="middle" font-size="8" fill="rgba(30,30,30,0.7)" font-weight="600">🏠我</text>';
+      svg += '<text x="'+x+'" y="'+labelY+'" text-anchor="middle" font-size="7" fill="rgba(30,30,30,0.7)" font-weight="600">🏠我</text>';
     } else if(npcOwner){
-      svg += '<text x="'+h.x+'" y="'+(h.y-15)+'" text-anchor="middle" font-size="7" fill="rgba(30,30,30,0.5)">🏠</text>';
+      svg += '<text x="'+x+'" y="'+labelY+'" text-anchor="middle" font-size="6" fill="rgba(30,30,30,0.5)">🏠</text>';
     }
 
     svg += '</g>';
@@ -25899,7 +26029,12 @@ function renderMapApp(body){
     }
 
     var statusText = isMyH ? '🏠 这是你的家！' : (npcOwner ? '🏠 '+esc(npcOwnerName||'角色')+'的家' : '这间小屋还没有主人');
+    var htDef = HOUSE_TYPES.find(function(t){ return t.id===(house.type||'cottage'); });
     var btns = '';
+    // 进入房间按钮（自己的或角色的）
+    if(isMyH || npcOwner){
+      btns += '<div class="mapActRow" data-act="mapEnterRoom" data-houseid="'+houseId+'" style="background:rgba(7,193,96,0.06);border-color:rgba(7,193,96,0.15);"><span class="mapActLabel" style="color:var(--ph-accent,#07c160);font-weight:600;">🚪 进入房间</span><span class="mapActArrow" style="color:var(--ph-accent,#07c160);">›</span></div>';
+    }
     if(!isMyH && !npcOwner){
       btns += '<div class="mapActRow" data-act="mapClaimMyHouse" data-houseid="'+houseId+'"><span class="mapActLabel">🏠 设为我的家</span><span class="mapActArrow">›</span></div>';
       if(npcId){
@@ -25913,7 +26048,7 @@ function renderMapApp(body){
     var html = '<div class="mapDetailCard"><div class="mapDetailClose" data-act="mapDetailClose">✕</div>';
     html += '<div class="mapDetailHead"><span class="mapDetailEmoji">🏡</span>';
     html += '<div class="mapDetailName">'+esc(house.name)+'</div>';
-    html += '<div class="mapDetailAtmo">'+statusText+'</div></div>';
+    html += '<div class="mapDetailAtmo">'+statusText+(htDef?' · '+htDef.label:'')+'</div></div>';
     html += '<div class="mapDetailSection">'+btns+'</div></div>';
 
     var old = wrap.querySelector('.mapDetailOverlay');
@@ -25932,6 +26067,12 @@ function renderMapApp(body){
       if(!actRow) return;
       var act3 = actRow.getAttribute('data-act');
       var hid = actRow.getAttribute('data-houseid');
+
+      if(act3==='mapEnterRoom'){
+        overlay.remove();
+        _mapOpenRoom(wrap, mapData, houseId);
+        return;
+      }
 
       if(act3==='mapClaimMyHouse'){
         mapData.myHouseId = hid;
@@ -26686,6 +26827,228 @@ _mapBuildSVG = function(mapData){
   }
   return svg;
 };
+// ---- 房间系统（2.5D简化版） ----
+function _mapOpenRoom(container, mapData, houseId){
+  var house = (mapData.houses||[]).find(function(h){ return h.id===houseId; });
+  if(!house) return;
+  if(!house.rooms) house.rooms = { furniture: _defaultFurniture() };
+  var furniture = house.rooms.furniture || [];
+
+  // 谁的房子
+  var isMyH = mapData.myHouseId === houseId;
+  var npcOwner = null, npcOwnerName = '';
+  for(var nk in (mapData.npcHouses||{})){ if(mapData.npcHouses[nk]===houseId){ npcOwner=nk; break; } }
+  if(npcOwner){ try{ var db2=loadContactsDB(); var n2=findContactById(db2,npcOwner); if(n2) npcOwnerName=n2.name||''; }catch(e){} }
+  var ownerLabel = isMyH ? '我的家' : (npcOwner ? esc(npcOwnerName)+'的家' : house.name);
+
+  var roomEl = doc.createElement('div');
+  roomEl.className = 'mapRoomWrap';
+
+  function renderRoom(){
+    var wallet = loadWallet();
+    var html = '';
+
+    // 头部
+    html += '<div class="mapRoomHeader">';
+    html += '<button class="mapRoomBackBtn" data-act="roomBack">‹</button>';
+    html += '<div class="mapRoomTitle">'+esc(house.name)+' <span style="font-size:11px;color:rgba(20,24,28,.4);font-weight:400;">'+ownerLabel+'</span></div>';
+    html += '<span style="font-size:11px;color:rgba(20,24,28,.35);">💰 $'+wallet.balance+'</span>';
+    html += '</div>';
+
+    // 2.5D 等距房间 SVG
+    html += '<div class="mapRoomSvgWrap">';
+    html += '<svg viewBox="0 0 300 220" xmlns="http://www.w3.org/2000/svg" style="width:90%;max-height:180px;">';
+    // 地板（等距菱形）
+    html += '<polygon points="150,180 280,110 150,40 20,110" fill="#E8DCC8" stroke="rgba(180,165,140,0.3)" stroke-width="0.5"/>';
+    // 地板纹理线
+    for(var gi=1;gi<5;gi++){
+      var gy1=40+gi*28, gx1L=20+(150-20)*gi/5, gx1R=280-(280-150)*gi/5;
+      html += '<line x1="'+gx1L+'" y1="'+gy1+'" x2="'+gx1R+'" y2="'+gy1+'" stroke="rgba(180,165,140,0.15)" stroke-width="0.5"/>';
+    }
+    // 左墙
+    html += '<polygon points="20,110 150,40 150,-20 20,50" fill="#F0E6D5"/>';
+    html += '<line x1="20" y1="110" x2="20" y2="50" stroke="rgba(160,145,125,0.2)" stroke-width="0.5"/>';
+    // 右墙
+    html += '<polygon points="150,40 280,110 280,50 150,-20" fill="#E5DBCA"/>';
+    // 窗户（左墙上）
+    html += '<polygon points="55,55 95,35 95,10 55,30" fill="rgba(180,215,240,0.5)" stroke="rgba(140,125,105,0.3)" stroke-width="0.5"/>';
+    // 窗户（右墙上）
+    html += '<polygon points="200,35 240,55 240,30 200,10" fill="rgba(180,215,240,0.5)" stroke="rgba(140,125,105,0.3)" stroke-width="0.5"/>';
+
+    // 家具放置在等距网格上（3x2网格）
+    var gridPos = [
+      {x:70, y:130},  {x:150,y:100}, {x:230,y:130},
+      {x:90, y:155},  {x:150,y:140}, {x:210,y:155},
+    ];
+    furniture.forEach(function(f, fi){
+      var cat = FURNITURE_CATALOG[f.type];
+      if(!cat) return;
+      var pos = gridPos[fi % gridPos.length];
+      if(!pos) return;
+      if(f.owned){
+        html += '<text x="'+pos.x+'" y="'+pos.y+'" text-anchor="middle" font-size="22" style="cursor:pointer;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.15));" data-furnid="'+f.id+'">'+cat.emoji+'</text>';
+        html += '<text x="'+pos.x+'" y="'+(pos.y+14)+'" text-anchor="middle" font-size="7" fill="rgba(80,60,40,0.5)">'+cat.label+'</text>';
+      }
+    });
+
+    html += '</svg></div>';
+
+    // 家具网格（可操作的列表）
+    html += '<div class="mapRoomGrid">';
+    furniture.forEach(function(f){
+      var cat = FURNITURE_CATALOG[f.type];
+      if(!cat) return;
+      var fxDesc = [];
+      for(var fk in (cat.fx||{})){ var v=cat.fx[fk]; var names={mood:'心情',energy:'精力',health:'健康',hunger:'饱腹',fun:'娱乐'}; if(v>0)fxDesc.push((names[fk]||fk)+'+'+v); }
+      if(f.owned){
+        html += '<div class="mapFurnSlot" data-act="roomUse" data-furnid="'+f.id+'">';
+        html += '<span class="fe">'+cat.emoji+'</span>';
+        html += '<span class="fn">'+cat.label+'</span>';
+        html += '<span class="fd">'+fxDesc.join(' ')+'</span>';
+        html += '</div>';
+      } else {
+        html += '<div class="mapFurnSlot locked" data-act="roomBuy" data-furntype="'+f.type+'" data-furnid="'+f.id+'">';
+        html += '<span class="fe">'+cat.emoji+'</span>';
+        html += '<span class="fn">'+cat.label+' 🔒</span>';
+        html += '<span class="fd">$'+cat.cost+'</span>';
+        html += '</div>';
+      }
+    });
+    // 添加家具按钮
+    if(isMyH){
+      html += '<div class="mapFurnSlot" data-act="roomShop" style="border-style:dashed;opacity:0.6;">';
+      html += '<span class="fe">➕</span><span class="fn">购买家具</span>';
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // 活动日志
+    var logData = _mapLoadLog();
+    var houseLogs = _safeArr(logData.logs).filter(function(l){
+      return l.npcId===(npcOwner||'me') || l.landmarkId===houseId;
+    }).slice(-5).reverse();
+    if(houseLogs.length){
+      html += '<div class="mapRoomLog"><div style="font-size:10px;color:rgba(20,24,28,.35);margin-bottom:4px;">最近动态</div>';
+      houseLogs.forEach(function(l){
+        html += '<div style="font-size:10px;color:rgba(20,24,28,.45);padding:2px 0;">'+esc(l.npcName||'???')+' · '+esc(l.action||'')+'</div>';
+      });
+      html += '</div>';
+    }
+
+    roomEl.innerHTML = html;
+  }
+  renderRoom();
+
+  // 事件处理
+  roomEl.addEventListener('click', function(ev){
+    var tgt = ev.target.closest('[data-act]');
+    if(!tgt) return;
+    var act = tgt.getAttribute('data-act');
+
+    if(act==='roomBack'){ roomEl.remove(); return; }
+
+    if(act==='roomUse'){
+      var fid = tgt.getAttribute('data-furnid');
+      var f = furniture.find(function(ff){ return ff.id===fid; });
+      if(!f) return;
+      var cat = FURNITURE_CATALOG[f.type];
+      if(!cat) return;
+
+      // 应用效果
+      try{
+        var targetId = npcOwner || (state.chatTarget);
+        if(targetId){
+          var cs = _loadCharState(targetId);
+          if(cs && cs.attrs){
+            for(var fk2 in (cat.fx||{})){
+              if(cs.attrs[fk2]!=null) cs.attrs[fk2] = _clampAttr(fk2, cs.attrs[fk2]+(cat.fx[fk2]||0));
+            }
+            cs.lastCalcAt = Date.now();
+            _saveCharState(targetId, cs);
+          }
+        }
+      }catch(e){}
+
+      // 记日志
+      try{
+        var logData2 = _mapLoadLog();
+        logData2.logs.push({
+          id:'log_room_'+Date.now(), npcId:npcOwner||'me', npcName:npcOwnerName||'我',
+          landmarkId:houseId, time:Date.now(), period:'room',
+          action:'在家里'+cat.desc, cost:0, statusEffect:cat.fx, isAuto:false
+        });
+        if(logData2.logs.length>200) logData2.logs=logData2.logs.slice(-200);
+        _mapSaveLog(logData2);
+      }catch(e){}
+
+      try{ toast(cat.emoji+' '+cat.desc); }catch(e){}
+      renderRoom();
+      return;
+    }
+
+    if(act==='roomBuy'){
+      var ftype = tgt.getAttribute('data-furntype');
+      var fid2 = tgt.getAttribute('data-furnid');
+      var cat2 = FURNITURE_CATALOG[ftype];
+      if(!cat2 || !cat2.cost) return;
+
+      var w = loadWallet();
+      if(w.balance < cat2.cost){
+        try{ toast('💰 余额不足！需要 $'+cat2.cost); }catch(e){}
+        return;
+      }
+      walletSpend(cat2.cost, '购买家具：'+cat2.label);
+      var f2 = furniture.find(function(ff){ return ff.id===fid2; });
+      if(f2) f2.owned = true;
+      _mapSave(mapData);
+      try{ toast('🎉 已购买 '+cat2.emoji+' '+cat2.label); }catch(e){}
+      renderRoom();
+      return;
+    }
+
+    if(act==='roomShop'){
+      // 打开家具商店
+      var shopH = '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">🛋️ 家具商店</div>';
+      shopH += '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:10px;">💰 余额: $'+loadWallet().balance+'</div>';
+      var ownedTypes = furniture.filter(function(f3){return f3.owned;}).map(function(f3){return f3.type;});
+      for(var ck in FURNITURE_CATALOG){
+        var cc = FURNITURE_CATALOG[ck];
+        if(cc.cost <= 0) continue;
+        var alreadyOwned = ownedTypes.indexOf(ck) >= 0;
+        shopH += '<div class="mapActRow" data-act="shopBuy" data-ftype="'+ck+'" style="'+(alreadyOwned?'opacity:0.4;pointer-events:none;':'')+'">';
+        shopH += '<span style="font-size:20px;margin-right:8px;">'+cc.emoji+'</span>';
+        shopH += '<div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+cc.label+'</div><div style="font-size:10px;color:rgba(20,24,28,.4);">'+cc.desc+'</div></div>';
+        shopH += '<span class="mapActCost">'+(alreadyOwned?'已拥有':'$'+cc.cost)+'</span>';
+        shopH += '</div>';
+      }
+      shopH += '<button data-act="shopClose" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:#fff;font-size:13px;cursor:pointer;margin-top:8px;">关闭</button>';
+      var shopOv = _cpShowOverlay(shopH);
+      shopOv.addEventListener('click', function(ev2){
+        var t2 = ev2.target.closest('[data-act]');
+        if(!t2) return;
+        if(t2.getAttribute('data-act')==='shopClose'){ shopOv.remove(); return; }
+        if(t2.getAttribute('data-act')==='shopBuy'){
+          var ft = t2.getAttribute('data-ftype');
+          var cc2 = FURNITURE_CATALOG[ft];
+          if(!cc2) return;
+          var w2 = loadWallet();
+          if(w2.balance < cc2.cost){ try{toast('💰 余额不足');}catch(e){} return; }
+          walletSpend(cc2.cost, '购买家具：'+cc2.label);
+          furniture.push({ id:ft+'_'+Date.now(), type:ft, gx:0, gy:0, owned:true });
+          house.rooms.furniture = furniture;
+          _mapSave(mapData);
+          shopOv.remove();
+          try{ toast('🎉 已购买 '+cc2.emoji+' '+cc2.label); }catch(e){}
+          renderRoom();
+        }
+      });
+      return;
+    }
+  });
+
+  container.appendChild(roomEl);
+}
+
 // ---- 地图设置弹窗（参考论坛设置） ----
 function _openMapFeedSettings(){
   var af = getAutofeedCfg();
