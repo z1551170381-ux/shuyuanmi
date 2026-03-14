@@ -3883,7 +3883,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .mapLogName{ font-weight:600; color:rgba(20,24,28,0.65); }
 #${ID} .mapLogTime{ color:rgba(20,24,28,0.3); font-size:10px; }
 #${ID} .mapLogAction{ flex:1; }
-/* ===== Map Room (2.5D Enhanced) ===== */
+/* ===== Map Room (2.5D Enhanced v2) ===== */
 #${ID} .mapRoomWrap{
   position:absolute; inset:0; z-index:20;
   background:linear-gradient(180deg, #F5F0E5 0%, #EDE6D6 100%);
@@ -3892,27 +3892,41 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   overflow:hidden;
 }
 #${ID} .mapRoomHeader{
-  padding:10px 14px; display:flex; align-items:center; gap:8px;
+  padding:8px 12px; display:flex; align-items:center; gap:6px;
   border-bottom:1px solid rgba(0,0,0,0.06); flex-shrink:0;
   background:rgba(255,255,255,0.5); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  z-index:2;
 }
 #${ID} .mapRoomBackBtn{ font-size:18px; cursor:pointer; border:0; background:transparent; padding:4px; color:rgba(20,24,28,0.6); }
-#${ID} .mapRoomTitle{ flex:1; font-size:14px; font-weight:600; color:rgba(40,35,28,0.85); }
-#${ID} .mapRoomSvgWrap{
-  flex:1; min-height:200px; display:flex; align-items:center; justify-content:center; overflow:visible;
-  position:relative; padding:8px 4px;
+#${ID} .mapRoomTitle{ flex:1; font-size:13px; font-weight:600; color:rgba(40,35,28,0.85); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#${ID} .mapRoomToolbar{
+  display:flex; gap:4px; align-items:center; flex-shrink:0;
 }
+#${ID} .mapRoomToolbar button{
+  border:0; background:rgba(0,0,0,0.05); border-radius:8px; padding:4px 8px;
+  font-size:11px; cursor:pointer; color:rgba(20,24,28,0.6); transition:all .15s;
+}
+#${ID} .mapRoomToolbar button:hover{ background:rgba(0,0,0,0.1); }
+#${ID} .mapRoomToolbar button.active{ background:rgba(100,160,80,0.2); color:#4A8A3A; }
+#${ID} .mapRoomSvgWrap{
+  flex:1; min-height:200px; display:flex; align-items:center; justify-content:center; overflow:hidden;
+  position:relative; touch-action:none; user-select:none; -webkit-user-select:none;
+}
+#${ID} .mapRoomSvgWrap svg{ transition:none; transform-origin:center center; }
 #${ID} .mapRoomSvgWrap svg .rm-furn{ cursor:pointer; transition:filter .15s; }
 #${ID} .mapRoomSvgWrap svg .rm-furn:hover{ filter:brightness(1.08) drop-shadow(0 2px 6px rgba(0,0,0,0.18)); }
 #${ID} .mapRoomSvgWrap svg .rm-furn:active{ filter:brightness(0.95); }
+#${ID} .mapRoomSvgWrap svg .rm-furn.dragging{ filter:brightness(1.15) drop-shadow(0 4px 10px rgba(0,0,0,0.3)); }
+#${ID} .mapRoomSvgWrap svg .rm-grid-cell{ cursor:pointer; }
+#${ID} .mapRoomSvgWrap svg .rm-grid-cell:hover{ fill:rgba(120,180,80,0.2); }
 #${ID} .mapRoomGrid{
-  display:grid; grid-template-columns:repeat(3,1fr); gap:6px; padding:8px 12px; flex-shrink:0;
-  max-height:160px; overflow-y:auto; scrollbar-width:none;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:5px; padding:6px 10px; flex-shrink:0;
+  max-height:150px; overflow-y:auto; scrollbar-width:none;
 }
 #${ID} .mapRoomGrid::-webkit-scrollbar{ display:none; }
 #${ID} .mapFurnSlot{
   display:flex; flex-direction:column; align-items:center; gap:2px;
-  padding:8px 4px; border-radius:12px; cursor:pointer;
+  padding:7px 4px; border-radius:12px; cursor:pointer;
   background:rgba(255,255,255,0.65); border:1px solid rgba(180,165,140,0.15);
   transition:all .15s; box-shadow:0 1px 3px rgba(0,0,0,0.04);
 }
@@ -3924,10 +3938,26 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .mapFurnSlot.locked{ opacity:0.35; }
 #${ID} .mapFurnSlot.locked .fe::after{ content:'🔒'; font-size:10px; position:absolute; }
 #${ID} .mapRoomLog{
-  padding:8px 14px; border-top:1px solid rgba(0,0,0,0.04); flex-shrink:0;
-  max-height:80px; overflow-y:auto; scrollbar-width:none;
+  padding:6px 12px; border-top:1px solid rgba(0,0,0,0.04); flex-shrink:0;
+  max-height:70px; overflow-y:auto; scrollbar-width:none;
 }
 #${ID} .mapRoomLog::-webkit-scrollbar{ display:none; }
+#${ID} .mapRoomZoomBar{
+  position:absolute; right:8px; bottom:8px; z-index:5;
+  display:flex; flex-direction:column; gap:3px; align-items:center;
+}
+#${ID} .mapRoomZoomBar button{
+  width:28px; height:28px; border:0; border-radius:50%; background:rgba(255,255,255,0.85);
+  box-shadow:0 1px 4px rgba(0,0,0,0.12); font-size:14px; cursor:pointer; color:rgba(20,24,28,0.6);
+  display:flex; align-items:center; justify-content:center; transition:all .15s;
+}
+#${ID} .mapRoomZoomBar button:hover{ background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.15); }
+#${ID} .mapRoomZoomBar span{ font-size:9px; color:rgba(20,24,28,0.35); }
+#${ID} .mapRoomTimeLabel{
+  position:absolute; left:8px; top:8px; z-index:5;
+  font-size:10px; color:rgba(20,24,28,0.4); background:rgba(255,255,255,0.6);
+  padding:2px 8px; border-radius:10px; pointer-events:none;
+}
 /* ===== Map Editor ===== */
 #${ID} .mapEditorBar{
   position:absolute; bottom:0; left:0; right:0; z-index:22;
@@ -26934,15 +26964,68 @@ _mapBuildSVG = function(mapData){
 // 等轴测坐标转换：网格坐标 → SVG像素坐标
 // gx: 0-4 (左→右), gy: 0-3 (前→后, 0=靠近观察者)
 function _isoProject(gx, gy){
-  // 地板菱形的四个角: 左(20,110) 前(150,180) 右(280,110) 后(150,40)
-  // 等轴单元格大小
   var cellW = 52, cellH = 28;
-  var originX = 150, originY = 110; // 地板中心
-  var startX = originX - 2*cellW/2 + 0.5*cellH/2;
-  var startY = originY - 0.5*cellH;
+  var originX = 150, originY = 110;
   var px = originX + (gx - 2) * (cellW/2) - (gy - 1.5) * (cellW/2);
   var py = originY + (gx - 2) * (cellH/2) + (gy - 1.5) * (cellH/2) - 10;
   return { x: px, y: py };
+}
+
+// 反向等轴投影：SVG坐标 → 网格坐标（用于拖拽）
+function _isoUnproject(px, py){
+  var originX = 150, originY = 110;
+  var cellW = 52, cellH = 28;
+  py += 10;
+  var dx = px - originX, dy = py - originY;
+  var gx = (dx / (cellW/2) + dy / (cellH/2)) / 2 + 2;
+  var gy = (dy / (cellH/2) - dx / (cellW/2)) / 2 + 1.5;
+  return { gx: Math.round(Math.max(0, Math.min(4, gx))), gy: Math.round(Math.max(0, Math.min(3, gy))) };
+}
+
+// 日夜光照计算
+function _roomGetLighting(){
+  var h = new Date().getHours(), m = new Date().getMinutes();
+  var t = h + m/60;
+  // 6-8 dawn, 8-16 day, 16-19 sunset, 19-22 dusk, 22-6 night
+  var phase, overlay, windowGlow, shadowAlpha, ambientTint;
+  if(t >= 6 && t < 8){
+    var p = (t-6)/2;
+    phase = '清晨';
+    overlay = 'rgba(255,220,160,'+(0.12*(1-p)).toFixed(3)+')';
+    windowGlow = 'rgba(255,240,200,'+(0.3+p*0.2).toFixed(3)+')';
+    shadowAlpha = 0.04 + p*0.04;
+    ambientTint = 'rgba(255,230,180,'+(0.08*(1-p)).toFixed(3)+')';
+  } else if(t >= 8 && t < 16){
+    phase = '白天';
+    overlay = 'rgba(255,255,240,0)';
+    windowGlow = 'rgba(200,230,255,0.5)';
+    shadowAlpha = 0.08;
+    ambientTint = 'rgba(0,0,0,0)';
+  } else if(t >= 16 && t < 19){
+    var p2 = (t-16)/3;
+    phase = '傍晚';
+    overlay = 'rgba(255,160,80,'+(0.06+p2*0.1).toFixed(3)+')';
+    windowGlow = 'rgba(255,180,100,'+(0.4+p2*0.15).toFixed(3)+')';
+    shadowAlpha = 0.08 + p2*0.06;
+    ambientTint = 'rgba(255,140,60,'+(p2*0.1).toFixed(3)+')';
+  } else if(t >= 19 && t < 22){
+    var p3 = (t-19)/3;
+    phase = '夜晚';
+    overlay = 'rgba(30,40,80,'+(0.12+p3*0.18).toFixed(3)+')';
+    windowGlow = 'rgba(60,80,140,'+(0.15+p3*0.1).toFixed(3)+')';
+    shadowAlpha = 0.14 + p3*0.08;
+    ambientTint = 'rgba(20,30,60,'+(0.08+p3*0.12).toFixed(3)+')';
+  } else {
+    phase = '深夜';
+    overlay = 'rgba(20,25,60,0.3)';
+    windowGlow = 'rgba(40,50,100,0.25)';
+    shadowAlpha = 0.22;
+    ambientTint = 'rgba(15,20,50,0.2)';
+  }
+  // 窗户内光（夜间暖黄灯光）
+  var lampGlow = (t>=18 || t<6) ? 'rgba(255,220,140,0.35)' : 'rgba(255,255,255,0)';
+  var lampSpread = (t>=18 || t<6) ? 0.18 : 0;
+  return { phase:phase, overlay:overlay, windowGlow:windowGlow, shadowAlpha:shadowAlpha, ambientTint:ambientTint, lampGlow:lampGlow, lampSpread:lampSpread, hour:h };
 }
 
 // 2.5D家具SVG绘制器 - 手绘扁平风
@@ -27257,7 +27340,6 @@ function _mapOpenRoom(container, mapData, houseId){
   if(!house.rooms) house.rooms = { furniture: _defaultFurniture() };
   var furniture = house.rooms.furniture || [];
 
-  // 谁的房子
   var isMyH = mapData.myHouseId === houseId;
   var npcOwner = null, npcOwnerName = '';
   for(var nk in (mapData.npcHouses||{})){ if(mapData.npcHouses[nk]===houseId){ npcOwner=nk; break; } }
@@ -27267,34 +27349,52 @@ function _mapOpenRoom(container, mapData, houseId){
   var roomEl = doc.createElement('div');
   roomEl.className = 'mapRoomWrap';
 
+  // 状态
+  var _editMode = false;
+  var _dragTarget = null;
+  var _roomZoom = 1, _roomPanX = 0, _roomPanY = 0;
+  var _lightTimer = null;
+
+  function _applyTransform(){
+    var svg = roomEl.querySelector('.mapRoomSvgInner');
+    if(svg) svg.style.transform = 'translate('+_roomPanX+'px,'+_roomPanY+'px) scale('+_roomZoom+')';
+    var zl = roomEl.querySelector('[data-el="zoomLabel"]');
+    if(zl) zl.textContent = Math.round(_roomZoom*100)+'%';
+  }
+
   function renderRoom(){
     var wallet = loadWallet();
+    var lighting = _roomGetLighting();
     var html = '';
 
     // 头部
     html += '<div class="mapRoomHeader">';
     html += '<button class="mapRoomBackBtn" data-act="roomBack">‹</button>';
-    html += '<div class="mapRoomTitle">'+esc(house.name)+' <span style="font-size:11px;color:rgba(20,24,28,.4);font-weight:400;">'+ownerLabel+'</span></div>';
-    html += '<span style="font-size:11px;color:rgba(20,24,28,.35);">💰 $'+wallet.balance+'</span>';
+    html += '<div class="mapRoomTitle">'+esc(house.name)+' <span style="font-size:10px;color:rgba(20,24,28,.4);font-weight:400;">'+ownerLabel+'</span></div>';
+    html += '<div class="mapRoomToolbar">';
+    if(isMyH){
+      html += '<button data-act="roomToggleEdit"'+(_editMode?' class="active"':'')+'>'+(_editMode?'✓ 完成':'🔧 装修')+'</button>';
+    }
+    html += '<span style="font-size:10px;color:rgba(20,24,28,.35);">💰$'+wallet.balance+'</span>';
+    html += '</div>';
     html += '</div>';
 
-    // 2.5D 等距房间 SVG（增强版）
-    html += '<div class="mapRoomSvgWrap">';
-    html += '<svg viewBox="-20 -60 340 280" xmlns="http://www.w3.org/2000/svg" style="width:96%;max-height:240px;" preserveAspectRatio="xMidYMid meet">';
+    // SVG容器
+    html += '<div class="mapRoomSvgWrap" data-el="svgWrap">';
+    html += '<div class="mapRoomTimeLabel">'+lighting.phase+' '+(lighting.hour<10?'0':'')+lighting.hour+':00</div>';
+    html += '<svg class="mapRoomSvgInner" viewBox="-20 -60 340 280" xmlns="http://www.w3.org/2000/svg" style="width:96%;max-height:260px;" preserveAspectRatio="xMidYMid meet">';
 
-    // === 阴影（房间整体投影） ===
+    // === defs ===
     html += '<defs>';
-    html += '<filter id="roomShadow"><feDropShadow dx="2" dy="3" stdDeviation="4" flood-opacity="0.08"/></filter>';
-    html += '<pattern id="floorTile" width="26" height="14" patternUnits="userSpaceOnUse" patternTransform="skewY(-26.57) scale(1,1.2)">';
-    html += '<rect width="13" height="7" fill="#D8CEAA" opacity="0.3"/>';
-    html += '<rect x="13" y="7" width="13" height="7" fill="#D8CEAA" opacity="0.3"/>';
-    html += '</pattern>';
+    html += '<filter id="roomShadow"><feDropShadow dx="2" dy="3" stdDeviation="4" flood-opacity="'+(lighting.shadowAlpha||0.08)+'"/></filter>';
+    // 窗户光束（从窗户打到地板的光斑）
+    html += '<radialGradient id="windowLight" cx="0.3" cy="0.3" r="0.7"><stop offset="0%" stop-color="'+lighting.windowGlow+'" /><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>';
+    html += '<radialGradient id="lampLight" cx="0.5" cy="0.5" r="0.5"><stop offset="0%" stop-color="'+lighting.lampGlow+'" /><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>';
     html += '</defs>';
 
-    // === 地板（等距菱形 + 格子纹理） ===
+    // === 地板 ===
     html += '<polygon points="150,190 290,118 150,46 10,118" fill="#E8DEC8" stroke="rgba(180,168,140,0.2)" stroke-width="0.5" filter="url(#roomShadow)"/>';
-
-    // 格子地板纹理（交替色块 - 类似图1的方格地板）
+    // 格子地板
     var tileW = 28, tileH = 14;
     for(var ty=0;ty<6;ty++){
       for(var tx=0;tx<6;tx++){
@@ -27306,124 +27406,145 @@ function _mapOpenRoom(container, mapData, houseId){
         }
       }
     }
-    // 地板边缘高光线
+    // 窗户光斑投射到地板
+    html += '<ellipse cx="80" cy="135" rx="40" ry="22" fill="url(#windowLight)" opacity="0.6"/>';
     html += '<line x1="150" y1="46" x2="290" y2="118" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>';
     html += '<line x1="150" y1="46" x2="10" y2="118" stroke="rgba(255,255,255,0.2)" stroke-width="0.5"/>';
 
     // === 左墙 ===
     html += '<polygon points="10,118 150,46 150,-24 10,48" fill="#F2EAD8" stroke="rgba(170,158,130,0.15)" stroke-width="0.5"/>';
-    // 左墙壁纸纹理（竖条纹）
     for(var wi=0;wi<6;wi++){
-      var wx1 = 10 + (150-10)*wi/6, wy1 = 118-(118-48)*wi/6;
-      var wx2 = 10 + (150-10)*wi/6, wy2 = 48-(48-(-24))*wi/6 + (118-48)*(1-wi/6);
       html += '<line x1="'+(10+(150-10)*wi/6).toFixed(1)+'" y1="'+(48+(118-48)*(1-wi/6)).toFixed(1)+'" x2="'+(10+(150-10)*wi/6).toFixed(1)+'" y2="'+(-24+(48-(-24))*(1-wi/6)).toFixed(1)+'" stroke="rgba(200,190,165,0.12)" stroke-width="0.5"/>';
     }
-    // 左墙踢脚线
     html += '<line x1="10" y1="118" x2="150" y2="46" stroke="rgba(160,148,120,0.3)" stroke-width="1.5"/>';
     html += '<line x1="10" y1="114" x2="150" y2="42" stroke="rgba(160,148,120,0.15)" stroke-width="0.5"/>';
 
     // === 右墙 ===
     html += '<polygon points="150,46 290,118 290,48 150,-24" fill="#E8E0CE" stroke="rgba(170,158,130,0.15)" stroke-width="0.5"/>';
-    // 右墙踢脚线
     html += '<line x1="150" y1="46" x2="290" y2="118" stroke="rgba(160,148,120,0.3)" stroke-width="1.5"/>';
     html += '<line x1="150" y1="42" x2="290" y2="114" stroke="rgba(160,148,120,0.15)" stroke-width="0.5"/>';
-
-    // 墙角线
     html += '<line x1="150" y1="-24" x2="150" y2="46" stroke="rgba(160,148,120,0.2)" stroke-width="0.8"/>';
 
-    // === 左墙窗户（大窗） ===
+    // === 左墙窗户 ===
     var lwx1=45, lwy1=72, lwx2=105, lwy2=42;
-    // 窗框
-    html += '<polygon points="'+lwx1+','+(lwy1-32)+' '+lwx2+','+(lwy2-32)+' '+lwx2+','+lwy2+' '+lwx1+','+lwy1+'" fill="rgba(180,218,245,0.5)" stroke="#A89878" stroke-width="1.2"/>';
-    // 窗格（十字分格）
+    html += '<polygon points="'+lwx1+','+(lwy1-32)+' '+lwx2+','+(lwy2-32)+' '+lwx2+','+lwy2+' '+lwx1+','+lwy1+'" fill="'+lighting.windowGlow+'" stroke="#A89878" stroke-width="1.2"/>';
     html += '<line x1="'+((lwx1+lwx2)/2)+'" y1="'+((lwy1-32+lwy1)/2)+'" x2="'+((lwx1+lwx2)/2)+'" y2="'+((lwy2-32+lwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
     html += '<line x1="'+lwx1+'" y1="'+(lwy1-16)+'" x2="'+lwx2+'" y2="'+(lwy2-16)+'" stroke="#A89878" stroke-width="0.8"/>';
-    // 窗户高光
     html += '<polygon points="'+(lwx1+3)+','+(lwy1-30)+' '+(lwx1+12)+','+(lwy1-34)+' '+(lwx1+12)+','+(lwy1-20)+' '+(lwx1+3)+','+(lwy1-16)+'" fill="rgba(255,255,255,0.25)"/>';
-    // 窗帘（左侧绿色窗帘 - 参考图1）
     html += '<path d="M'+(lwx1-2)+','+(lwy1-34)+' Q'+(lwx1+5)+','+(lwy1-20)+' '+(lwx1+2)+','+(lwy1+2)+'" fill="none" stroke="#8BAE6E" stroke-width="3" opacity="0.5" stroke-linecap="round"/>';
     html += '<path d="M'+(lwx2+2)+','+(lwy2-34)+' Q'+(lwx2-5)+','+(lwy2-20)+' '+(lwx2-2)+','+(lwy2+2)+'" fill="none" stroke="#8BAE6E" stroke-width="3" opacity="0.5" stroke-linecap="round"/>';
 
     // === 右墙窗户 ===
     var rwx1=195, rwy1=42, rwx2=255, rwy2=72;
-    html += '<polygon points="'+rwx1+','+(rwy1-32)+' '+rwx2+','+(rwy2-32)+' '+rwx2+','+rwy2+' '+rwx1+','+rwy1+'" fill="rgba(180,218,245,0.5)" stroke="#A89878" stroke-width="1.2"/>';
+    html += '<polygon points="'+rwx1+','+(rwy1-32)+' '+rwx2+','+(rwy2-32)+' '+rwx2+','+rwy2+' '+rwx1+','+rwy1+'" fill="'+lighting.windowGlow+'" stroke="#A89878" stroke-width="1.2"/>';
     html += '<line x1="'+((rwx1+rwx2)/2)+'" y1="'+((rwy1-32+rwy1)/2)+'" x2="'+((rwx1+rwx2)/2)+'" y2="'+((rwy2-32+rwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
     html += '<line x1="'+rwx1+'" y1="'+(rwy1-16)+'" x2="'+rwx2+'" y2="'+(rwy2-16)+'" stroke="#A89878" stroke-width="0.8"/>';
-    html += '<polygon points="'+(rwx1+3)+','+(rwy1-30)+' '+(rwx1+12)+','+(rwy1-26)+' '+(rwx1+12)+','+(rwy1-14)+' '+(rwx1+3)+','+(rwy1-18)+'" fill="rgba(255,255,255,0.25)"/>';
 
-    // === 门（右墙上） ===
-    html += '<polygon points="252,72 280,86 280,42 252,28" fill="#A08A6A" stroke="#8A7454" stroke-width="0.8"/>';
-    html += '<polygon points="254,70 278,83 278,44 254,30" fill="#B89A7A" stroke="none"/>';
-    // 门把手
-    html += '<circle cx="258" cy="58" r="1.5" fill="#D0B888" stroke="#A08A6A" stroke-width="0.4"/>';
+    // === 门（贴地！右墙从150,46到290,118） ===
+    // 门底边在墙底线上：x=258时 y=46+(258-150)/(290-150)*(118-46)=101.5, x=284时 y=112.5
+    html += '<polygon points="258,101 284,114 284,56 258,44" fill="#A08A6A" stroke="#8A7454" stroke-width="0.8"/>';
+    html += '<polygon points="260,100 282,112 282,58 260,46" fill="#B89A7A" stroke="none"/>';
+    html += '<circle cx="264" cy="82" r="1.5" fill="#D0B888" stroke="#A08A6A" stroke-width="0.4"/>';
 
-    // === 装饰：墙上相框（左墙） ===
+    // === 墙上装饰 ===
     html += '<polygon points="118,16 138,6 138,-10 118,0" fill="#8B7050" stroke="#6B5030" stroke-width="0.6"/>';
     html += '<polygon points="120,14 136,5 136,-8 120,-1" fill="#E8C8A8"/>';
     html += '<polygon points="122,12 134,4 134,-6 122,1" fill="#D0E8C8"/>';
-
-    // 小相框
     html += '<polygon points="25,80 42,72 42,60 25,68" fill="#7A6040" stroke="#5A4020" stroke-width="0.5"/>';
     html += '<polygon points="27,78 40,71 40,62 27,69" fill="#E8D8C0"/>';
 
-    // === 家具渲染（按 y坐标排序实现遮挡） ===
+    // === 编辑模式：显示网格 ===
+    if(_editMode){
+      for(var egx=0;egx<=4;egx++){
+        for(var egy=0;egy<=3;egy++){
+          var ep = _isoProject(egx, egy);
+          var occupied = furniture.some(function(ff){ return ff.owned && ((_defaultFurnPositions[ff.type]||{}).gx===egx || ff.gx===egx) && ((_defaultFurnPositions[ff.type]||{}).gy===egy || ff.gy===egy); });
+          html += '<polygon class="rm-grid-cell" data-gx="'+egx+'" data-gy="'+egy+'" points="'+(ep.x)+','+(ep.y-12)+' '+(ep.x+22)+','+(ep.y)+' '+(ep.x)+','+(ep.y+12)+' '+(ep.x-22)+','+(ep.y)+'" fill="rgba(120,180,80,0.08)" stroke="rgba(120,180,80,0.25)" stroke-width="0.5" stroke-dasharray="3,2"/>';
+        }
+      }
+    }
+
+    // === 家具渲染 ===
     var furnItems = [];
     furniture.forEach(function(f){
       if(!f.owned) return;
       var cat = FURNITURE_CATALOG[f.type];
       if(!cat) return;
-      var pos = _defaultFurnPositions[f.type] || { gx: f.gx||0, gy: f.gy||0 };
-      // 使用家具自身的gx/gy如果已设置，否则用默认
-      var gx = (f.gx != null && f.gx !== 0) ? f.gx : pos.gx;
-      var gy = (f.gy != null && f.gy !== 0) ? f.gy : pos.gy;
+      var pos = _defaultFurnPositions[f.type] || { gx:0, gy:0 };
+      var gx = (f.gx != null && (f.gx !== 0 || pos.gx===0)) ? f.gx : pos.gx;
+      var gy = (f.gy != null && (f.gy !== 0 || pos.gy===0)) ? f.gy : pos.gy;
       var iso = _isoProject(gx, gy);
-      furnItems.push({ f:f, type:f.type, x:iso.x, y:iso.y, sortY: iso.y + iso.x*0.1 });
+      furnItems.push({ f:f, type:f.type, x:iso.x, y:iso.y, gx:gx, gy:gy, sortY: iso.y + iso.x*0.1 });
     });
-    // 按y排序（远处先画）
     furnItems.sort(function(a,b){ return a.sortY - b.sortY; });
 
     furnItems.forEach(function(item){
       var drawFn = _roomFurnSVG[item.type];
       if(drawFn){
+        // 包裹一层g用于拖拽识别
+        html += '<g class="rm-furn-wrap" data-furnid="'+item.f.id+'" data-furntype="'+item.type+'">';
         html += drawFn(item.x, item.y, true);
+        if(_editMode){
+          // 编辑模式下显示家具名标签
+          html += '<text x="'+item.x+'" y="'+(item.y+18)+'" text-anchor="middle" font-size="7" fill="rgba(100,160,80,0.8)" font-weight="600">'+FURNITURE_CATALOG[item.type].label+'</text>';
+        }
+        html += '</g>';
       } else {
-        // 未定义SVG的家具用emoji回退
-        var cat = FURNITURE_CATALOG[item.type];
-        if(cat){
-          html += '<text x="'+item.x+'" y="'+item.y+'" text-anchor="middle" font-size="20" style="cursor:pointer;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.15));" class="rm-furn" data-furnid="'+item.f.id+'">'+cat.emoji+'</text>';
-          html += '<text x="'+item.x+'" y="'+(item.y+12)+'" text-anchor="middle" font-size="6" fill="rgba(80,60,40,0.5)">'+cat.label+'</text>';
+        var cat3 = FURNITURE_CATALOG[item.type];
+        if(cat3){
+          html += '<text x="'+item.x+'" y="'+item.y+'" text-anchor="middle" font-size="20" style="cursor:pointer;filter:drop-shadow(0 2px 3px rgba(0,0,0,0.15));" class="rm-furn" data-furnid="'+item.f.id+'">'+cat3.emoji+'</text>';
         }
       }
     });
 
-    // === 常驻装饰（不依赖购买） ===
-    // 墙角小盆栽装饰
-    html += '<g transform="translate(22,108)" opacity="0.6">';
-    html += '<ellipse cx="0" cy="2" rx="3" ry="1.5" fill="#C4956A"/>';
-    html += '<ellipse cx="0" cy="0" rx="2.5" ry="4" fill="#6A9A5A"/>';
-    html += '<ellipse cx="-2" cy="-2" rx="2" ry="3" fill="#7AAA6A"/>';
-    html += '</g>';
+    // === 常驻装饰 ===
+    html += '<g transform="translate(22,108)" opacity="0.6"><ellipse cx="0" cy="2" rx="3" ry="1.5" fill="#C4956A"/><ellipse cx="0" cy="0" rx="2.5" ry="4" fill="#6A9A5A"/><ellipse cx="-2" cy="-2" rx="2" ry="3" fill="#7AAA6A"/></g>';
 
-    // 猫（如果有沙发就在旁边画只猫）
     var hasSofa = furniture.some(function(f){ return f.type==='sofa' && f.owned; });
     if(hasSofa){
-      var sofaPos = _isoProject(_defaultFurnPositions.sofa.gx, _defaultFurnPositions.sofa.gy);
-      html += '<g transform="translate('+(sofaPos.x+28)+','+(sofaPos.y+8)+')" opacity="0.7">';
-      // 猫身体
-      html += '<ellipse cx="0" cy="0" rx="5" ry="3" fill="#3A3A3A"/>';
-      // 猫头
-      html += '<circle cx="-5" cy="-1" r="3" fill="#3A3A3A"/>';
-      // 猫耳朵
-      html += '<polygon points="-7,-3 -6,-6 -4,-3" fill="#3A3A3A"/>';
-      html += '<polygon points="-4,-3 -3,-6 -2,-3" fill="#3A3A3A"/>';
-      // 猫尾巴
+      var sp = _isoProject((_defaultFurnPositions.sofa||{}).gx||2, (_defaultFurnPositions.sofa||{}).gy||1);
+      var sf = furniture.find(function(ff){return ff.type==='sofa'&&ff.owned;});
+      if(sf){
+        var sgx = sf.gx != null ? sf.gx : (_defaultFurnPositions.sofa||{}).gx||2;
+        var sgy = sf.gy != null ? sf.gy : (_defaultFurnPositions.sofa||{}).gy||1;
+        sp = _isoProject(sgx, sgy);
+      }
+      html += '<g transform="translate('+(sp.x+28)+','+(sp.y+8)+')" opacity="0.7">';
+      html += '<ellipse cx="0" cy="0" rx="5" ry="3" fill="#3A3A3A"/><circle cx="-5" cy="-1" r="3" fill="#3A3A3A"/>';
+      html += '<polygon points="-7,-3 -6,-6 -4,-3" fill="#3A3A3A"/><polygon points="-4,-3 -3,-6 -2,-3" fill="#3A3A3A"/>';
       html += '<path d="M5,0 Q8,-2 10,1" fill="none" stroke="#3A3A3A" stroke-width="1.2" stroke-linecap="round"/>';
       html += '</g>';
     }
 
-    html += '</svg></div>';
+    // === 室内灯光（夜间暖光效果） ===
+    if(lighting.lampSpread > 0){
+      // 找台灯位置
+      var lampF = furniture.find(function(ff){return ff.type==='lamp'&&ff.owned;});
+      if(lampF){
+        var lp = _isoProject(lampF.gx!=null?lampF.gx:(_defaultFurnPositions.lamp||{}).gx||1, lampF.gy!=null?lampF.gy:(_defaultFurnPositions.lamp||{}).gy||0);
+        html += '<ellipse cx="'+lp.x+'" cy="'+(lp.y+10)+'" rx="50" ry="30" fill="url(#lampLight)" opacity="'+lighting.lampSpread.toFixed(2)+'"/>';
+      }
+    }
 
-    // 家具网格（可操作的列表）
+    // === 全局光照叠加 ===
+    html += '<polygon points="-20,-60 320,-60 320,220 -20,220" fill="'+lighting.overlay+'" style="pointer-events:none;"/>';
+    if(lighting.ambientTint && lighting.ambientTint !== 'rgba(0,0,0,0)'){
+      html += '<polygon points="10,118 150,46 150,-24 10,48" fill="'+lighting.ambientTint+'" style="pointer-events:none;"/>';
+      html += '<polygon points="150,46 290,118 290,48 150,-24" fill="'+lighting.ambientTint+'" style="pointer-events:none;"/>';
+    }
+
+    html += '</svg>';
+
+    // 缩放控制按钮
+    html += '<div class="mapRoomZoomBar">';
+    html += '<button data-act="roomZoomIn">+</button>';
+    html += '<span data-el="zoomLabel">100%</span>';
+    html += '<button data-act="roomZoomOut">−</button>';
+    html += '<button data-act="roomZoomReset" style="font-size:10px;margin-top:2px;">↺</button>';
+    html += '</div>';
+    html += '</div>';
+
+    // 家具网格
     html += '<div class="mapRoomGrid">';
     furniture.forEach(function(f){
       var cat = FURNITURE_CATALOG[f.type];
@@ -27431,10 +27552,10 @@ function _mapOpenRoom(container, mapData, houseId){
       var fxDesc = [];
       for(var fk in (cat.fx||{})){ var v=cat.fx[fk]; var names={mood:'心情',energy:'精力',health:'健康',hunger:'饱腹',fun:'娱乐'}; if(v>0)fxDesc.push((names[fk]||fk)+'+'+v); }
       if(f.owned){
-        html += '<div class="mapFurnSlot" data-act="roomUse" data-furnid="'+f.id+'">';
+        html += '<div class="mapFurnSlot" data-act="'+(_editMode?'roomMove':'roomUse')+'" data-furnid="'+f.id+'" data-furntype="'+f.type+'">';
         html += '<span class="fe">'+cat.emoji+'</span>';
-        html += '<span class="fn">'+cat.label+'</span>';
-        html += '<span class="fd">'+fxDesc.join(' ')+'</span>';
+        html += '<span class="fn">'+cat.label+(_editMode?' 📍':'')+'</span>';
+        html += '<span class="fd">'+(_editMode?'点击后拖到新位置':fxDesc.join(' '))+'</span>';
         html += '</div>';
       } else {
         html += '<div class="mapFurnSlot locked" data-act="roomBuy" data-furntype="'+f.type+'" data-furnid="'+f.id+'">';
@@ -27444,29 +27565,121 @@ function _mapOpenRoom(container, mapData, houseId){
         html += '</div>';
       }
     });
-    // 添加家具按钮
     if(isMyH){
-      html += '<div class="mapFurnSlot" data-act="roomShop" style="border-style:dashed;opacity:0.6;">';
-      html += '<span class="fe">➕</span><span class="fn">购买家具</span>';
-      html += '</div>';
+      html += '<div class="mapFurnSlot" data-act="roomShop" style="border-style:dashed;opacity:0.6;"><span class="fe">➕</span><span class="fn">购买家具</span></div>';
     }
     html += '</div>';
 
-    // 活动日志
+    // 日志
     var logData = _mapLoadLog();
-    var houseLogs = _safeArr(logData.logs).filter(function(l){
-      return l.npcId===(npcOwner||'me') || l.landmarkId===houseId;
-    }).slice(-5).reverse();
+    var houseLogs = _safeArr(logData.logs).filter(function(l){ return l.npcId===(npcOwner||'me') || l.landmarkId===houseId; }).slice(-5).reverse();
     if(houseLogs.length){
-      html += '<div class="mapRoomLog"><div style="font-size:10px;color:rgba(20,24,28,.35);margin-bottom:4px;">最近动态</div>';
+      html += '<div class="mapRoomLog"><div style="font-size:10px;color:rgba(20,24,28,.35);margin-bottom:3px;">最近动态</div>';
       houseLogs.forEach(function(l){
-        html += '<div style="font-size:10px;color:rgba(20,24,28,.45);padding:2px 0;">'+esc(l.npcName||'???')+' · '+esc(l.action||'')+'</div>';
+        html += '<div style="font-size:10px;color:rgba(20,24,28,.45);padding:1px 0;">'+esc(l.npcName||'???')+' · '+esc(l.action||'')+'</div>';
       });
       html += '</div>';
     }
 
     roomEl.innerHTML = html;
+    _applyTransform();
+    _initRoomGestures();
   }
+
+  // === 缩放拖拽手势 ===
+  function _initRoomGestures(){
+    var wrap = roomEl.querySelector('[data-el="svgWrap"]');
+    if(!wrap) return;
+    var isPanning = false, lastX=0, lastY=0, lastDist=0;
+
+    wrap.addEventListener('wheel', function(e){
+      e.preventDefault();
+      var delta = e.deltaY > 0 ? -0.1 : 0.1;
+      _roomZoom = Math.max(0.5, Math.min(4, _roomZoom + delta));
+      _applyTransform();
+    }, {passive:false});
+
+    wrap.addEventListener('touchstart', function(e){
+      if(e.touches.length===1){
+        isPanning = true;
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+      } else if(e.touches.length===2){
+        isPanning = false;
+        lastDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+      }
+    }, {passive:true});
+
+    wrap.addEventListener('touchmove', function(e){
+      if(e.touches.length===1 && isPanning && !_editMode){
+        var dx = e.touches[0].clientX - lastX, dy = e.touches[0].clientY - lastY;
+        _roomPanX += dx; _roomPanY += dy;
+        _roomPanX = Math.max(-150,Math.min(150,_roomPanX));
+        _roomPanY = Math.max(-150,Math.min(150,_roomPanY));
+        lastX = e.touches[0].clientX; lastY = e.touches[0].clientY;
+        _applyTransform();
+      } else if(e.touches.length===2){
+        var dist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+        if(lastDist>0){
+          var scale = dist/lastDist;
+          _roomZoom = Math.max(0.5, Math.min(4, _roomZoom * scale));
+          _applyTransform();
+        }
+        lastDist = dist;
+      }
+    }, {passive:true});
+
+    wrap.addEventListener('touchend', function(){ isPanning=false; lastDist=0; }, {passive:true});
+
+    // 鼠标拖拽
+    wrap.addEventListener('mousedown', function(e){
+      if(_editMode) return;
+      isPanning = true;
+      lastX = e.clientX; lastY = e.clientY;
+      wrap.style.cursor = 'grabbing';
+    });
+    wrap.addEventListener('mousemove', function(e){
+      if(!isPanning || _editMode) return;
+      _roomPanX += e.clientX - lastX; _roomPanY += e.clientY - lastY;
+      _roomPanX = Math.max(-150,Math.min(150,_roomPanX));
+      _roomPanY = Math.max(-150,Math.min(150,_roomPanY));
+      lastX = e.clientX; lastY = e.clientY;
+      _applyTransform();
+    });
+    wrap.addEventListener('mouseup', function(){ isPanning=false; wrap.style.cursor=''; });
+    wrap.addEventListener('mouseleave', function(){ isPanning=false; wrap.style.cursor=''; });
+
+    // 编辑模式下的网格点击放置
+    if(_editMode && _dragTarget){
+      var cells = wrap.querySelectorAll('.rm-grid-cell');
+      cells.forEach(function(cell){
+        cell.addEventListener('click', function(){
+          var gx = parseInt(cell.getAttribute('data-gx'));
+          var gy = parseInt(cell.getAttribute('data-gy'));
+          if(isNaN(gx)||isNaN(gy)) return;
+          var f = furniture.find(function(ff){ return ff.id===_dragTarget; });
+          if(f){
+            f.gx = gx; f.gy = gy;
+            house.rooms.furniture = furniture;
+            _mapSave(mapData);
+            try{ toast('✅ 已移动 '+FURNITURE_CATALOG[f.type].label); }catch(e){}
+          }
+          _dragTarget = null;
+          renderRoom();
+        });
+      });
+    }
+  }
+
+  // 定时更新光照（每5分钟）
+  _lightTimer = setInterval(function(){
+    if(!roomEl.parentNode){ clearInterval(_lightTimer); return; }
+    // 轻量更新光照overlay
+    var lighting2 = _roomGetLighting();
+    var tl = roomEl.querySelector('.mapRoomTimeLabel');
+    if(tl) tl.textContent = lighting2.phase+' '+(lighting2.hour<10?'0':'')+lighting2.hour+':00';
+  }, 300000);
+
   renderRoom();
 
   // 事件处理
@@ -27475,7 +27688,26 @@ function _mapOpenRoom(container, mapData, houseId){
     if(!tgt) return;
     var act = tgt.getAttribute('data-act');
 
-    if(act==='roomBack'){ roomEl.remove(); return; }
+    if(act==='roomBack'){ clearInterval(_lightTimer); roomEl.remove(); return; }
+
+    if(act==='roomZoomIn'){ _roomZoom = Math.min(4, _roomZoom + 0.2); _applyTransform(); return; }
+    if(act==='roomZoomOut'){ _roomZoom = Math.max(0.5, _roomZoom - 0.2); _applyTransform(); return; }
+    if(act==='roomZoomReset'){ _roomZoom=1; _roomPanX=0; _roomPanY=0; _applyTransform(); return; }
+
+    if(act==='roomToggleEdit'){
+      _editMode = !_editMode;
+      _dragTarget = null;
+      renderRoom();
+      return;
+    }
+
+    if(act==='roomMove'){
+      var fid0 = tgt.getAttribute('data-furnid');
+      _dragTarget = fid0;
+      try{ toast('👆 点击房间网格选择新位置'); }catch(e){}
+      renderRoom();
+      return;
+    }
 
     if(act==='roomUse'){
       var fid = tgt.getAttribute('data-furnid');
@@ -27483,8 +27715,6 @@ function _mapOpenRoom(container, mapData, houseId){
       if(!f) return;
       var cat = FURNITURE_CATALOG[f.type];
       if(!cat) return;
-
-      // 应用效果
       try{
         var targetId = npcOwner || (state.chatTarget);
         if(targetId){
@@ -27498,8 +27728,6 @@ function _mapOpenRoom(container, mapData, houseId){
           }
         }
       }catch(e){}
-
-      // 记日志
       try{
         var logData2 = _mapLoadLog();
         logData2.logs.push({
@@ -27510,7 +27738,6 @@ function _mapOpenRoom(container, mapData, houseId){
         if(logData2.logs.length>200) logData2.logs=logData2.logs.slice(-200);
         _mapSaveLog(logData2);
       }catch(e){}
-
       try{ toast(cat.emoji+' '+cat.desc); }catch(e){}
       renderRoom();
       return;
@@ -27521,12 +27748,8 @@ function _mapOpenRoom(container, mapData, houseId){
       var fid2 = tgt.getAttribute('data-furnid');
       var cat2 = FURNITURE_CATALOG[ftype];
       if(!cat2 || !cat2.cost) return;
-
       var w = loadWallet();
-      if(w.balance < cat2.cost){
-        try{ toast('💰 余额不足！需要 $'+cat2.cost); }catch(e){}
-        return;
-      }
+      if(w.balance < cat2.cost){ try{ toast('💰 余额不足！需要 $'+cat2.cost); }catch(e){} return; }
       walletSpend(cat2.cost, '购买家具：'+cat2.label);
       var f2 = furniture.find(function(ff){ return ff.id===fid2; });
       if(f2) f2.owned = true;
@@ -27537,7 +27760,6 @@ function _mapOpenRoom(container, mapData, houseId){
     }
 
     if(act==='roomShop'){
-      // 打开家具商店
       var shopH = '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">🛋️ 家具商店</div>';
       shopH += '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:10px;">💰 余额: $'+loadWallet().balance+'</div>';
       var ownedTypes = furniture.filter(function(f3){return f3.owned;}).map(function(f3){return f3.type;});
@@ -27578,6 +27800,7 @@ function _mapOpenRoom(container, mapData, houseId){
 
   container.appendChild(roomEl);
 }
+
 
 // ---- 地图设置弹窗（参考论坛设置） ----
 function _openMapFeedSettings(){
