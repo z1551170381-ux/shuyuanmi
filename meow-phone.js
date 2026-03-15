@@ -16360,21 +16360,27 @@ const npc = _wxGetChatTargetMeta(npcId);
               var _offlineLogBridge = _getLogForModeBranch(npcId, 'offline');
               var _offBridgeN2 = (typeof _getOfflineChatContextN==='function') ? _getOfflineChatContextN() : 5;
               var _offTailBridge = _offlineLogBridge.slice(-_offBridgeN2).filter(function(m){ return m.role!=='system'&&!m.recalled; });
+              console.log('[online-bridge] offlineLog total:', _offlineLogBridge.length, 'tail:', _offTailBridge.length, 'N:', _offBridgeN2, 'setting:', _bridgeCfgSP.onlineIncludeOfflineCtx);
               if(_offTailBridge.length > 0){
                 var _myNameBridge = '用户';
                 try{ var _psBridge=phoneLoadSettings(); if(_psBridge&&_psBridge.phoneName) _myNameBridge=_psBridge.phoneName; }catch(e){}
                 var _offBridgeLines = _offTailBridge.map(function(m){
                   return (m.role==='me'?'['+_myNameBridge+'说]':'[你('+( npc.name||'角色')+')说]')+': '+String(m.text||'').slice(0,200);
                 });
-                parts.push(
+                var _bridgeBlock =
                   '【★★★线下经历记录（你们面对面发生的事，在线聊天时必须记住）★★★】\n' +
                   '"['+_myNameBridge+'说]"=用户，"[你('+( npc.name||'角色')+')说]"=你自己。\n\n' +
-                  _offBridgeLines.join('\n')
-                );
+                  _offBridgeLines.join('\n');
+                parts.push(_bridgeBlock);
+                console.log('[online-bridge] injected block:\n', _bridgeBlock.slice(0, 300));
+              } else {
+                console.log('[online-bridge] NO offline messages found - offlineLog is empty');
               }
+            } else {
+              console.log('[online-bridge] toggle OFF');
             }
           }
-        }catch(e){}
+        }catch(e){ console.error('[online-bridge] error:', e); }
 
         if (_isOfflineMode){
           parts.push('---\n【回复格式（线下模式）】\n直接写小说段落，无需任何特殊标记。\n- 旁白/动作/环境：用 *星号包裹*\n- 台词：用"引号"\n- 不要输出任何代码、标签或符号，只有纯文字\n- 2~4段，段间空行\n\n【状态同步（末尾必加）】\n[状态:穿着=...,正在=...,心声=...]\n[属性:心情+5]（只写变化的）' + _attrHint + _customEntryHint);
