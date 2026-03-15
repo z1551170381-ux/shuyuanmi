@@ -15256,12 +15256,15 @@ const npc = _wxGetChatTargetMeta(npcId);
                              .replace(/\[状态[:：][^\]]*\]?/gi, '')
                              .replace(/\[发语音\]/gi, '')
                              .replace(/\[发表情[:：][^\]]*\]?/gi, '')
-                             // ★ 清理 rpAction 等伪标签（不管有没有>或引号）
-                             .replace(/"rpAction"\s*>?/g, '')
-                             .replace(/"rpDialog"\s*>?/g, '')
-                             .replace(/"rpSpeaker"\s*>?/g, '')
-                             .replace(/"rpText"\s*>?/g, '')
-                             .replace(/^>\s*/gm, '')  // 清理行首的 markdown blockquote >
+                             // ★ 清理 rpAction 等伪标签（所有变体：有无引号、有无>、跨行）
+                             .replace(/"rpAction"\s*>?\s*/g, '')
+                             .replace(/"rpDialog"\s*>?\s*/g, '')
+                             .replace(/"rpSpeaker"\s*>?\s*/g, '')
+                             .replace(/"rpText"\s*>?\s*/g, '')
+                             .replace(/rpAction\s*>?\s*/g, '')
+                             .replace(/rpDialog\s*>?\s*/g, '')
+                             // 清理行首的 markdown blockquote >（AI有时用>开头代替旁白）
+                             .replace(/^>\s*/gm, '')
                              .trim() || '…';
 
         // ★ 自动更新穿着/正在/心声/自定义条目（如果AI输出了[状态:...]标记）
@@ -16340,7 +16343,7 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         if (_isOfflineMode){
           // 线下模式：不用 ||| 分隔，改用连续文本 + 状态标记
-          parts.push('---\n【回复格式要求（线下模式）】\n你的回复是一段连续的文字，不使用"|||"分隔。\n像一幕话剧/舞台剧那样书写，环境描写+动作+对话自然穿插。\n保持2-4段，不要太长。\n\n【状态同步（必须执行）】\n在回复的最末尾附加两个标记（标记不会显示给用户）。\n\n标记1 - 状态描述：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。\n\n标记2 - 属性变化：\n[属性:属性名+数值,属性名-数值]\n可用属性：精力、心情、健康、饱腹、如厕、娱乐（值域0-100，只写有变化的）' + _attrHint + _customEntryHint);
+          parts.push('---\n【回复格式要求（线下模式）】\n用自然流畅的文字写出场景，像小说段落一样。\n规则只有两条：\n1. 旁白/动作/环境描写 用 *星号* 包裹，例：*他抬起头看了看窗外*\n2. 说话的台词 用引号，例："今天天气不错。"\n不需要任何其他标记、标签、符号或代码片段。保持2-4段，段间空行。\n\n【状态同步（必须执行）】\n在回复的最末尾附加两个标记（标记不会显示给用户）。\n\n标记1 - 状态描述：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。\n\n标记2 - 属性变化：\n[属性:属性名+数值,属性名-数值]\n可用属性：精力、心情、健康、饱腹、如厕、娱乐（值域0-100，只写有变化的）' + _attrHint + _customEntryHint);
         } else {
           parts.push('---\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息的长度随机变化：有的很短（1-5字，如"嗯""好的""？"），有的中等（一两句话），偶尔有一条较长的。\n模拟真实手机聊天的节奏感——不要把所有内容压缩成一段话。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长\n\n示例格式：\n嗯|||怎么了？|||你今天怎么这么安静\n\n【状态同步（必须执行）】\n每次回复时，你必须在最后一条消息的末尾附加两个标记（标记不会显示给用户）。\n\n标记1 - 状态描述：根据当前对话内容和场景，更新你的穿着、正在做什么、以及内心独白：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。\n\n标记2 - 属性变化：根据对话中发生的事情，输出属性的变化量（正数为增加，负数为减少）：\n[属性:属性名+数值,属性名-数值]\n可用属性：精力、心情、健康、饱腹、如厕、娱乐（值域0-100，只写有变化的）\n变化量要合理：吃饭→饱腹+30~50，聊天开心→心情+5~15，运动→精力-10~20、健康+5\n如果对话没有涉及属性变化（纯闲聊），可以只写 [属性:心情+3] 之类的微调。' + _attrHint + '\n\n完整示例：\n吃饱了，舒服～ [状态:穿着=家居服,正在=收拾碗筷,心声=泡面也还行] [属性:饱腹+40,心情+5,娱乐-3]' + _customEntryHint + voiceInstructions + stkForAI);
         }
@@ -23061,7 +23064,7 @@ function renderSettingsUIApp(container){
           '<div class="settingSubTitle">📝 上下文条数</div>' +
 
           // 线上
-          '<div style="margin-top:16px;font-size:13px;font-weight:600;color:var(--ph-text);margin-bottom:6px;">💬 线上模式（短消息气泡）</div>' +
+          '<div style="margin-top:16px;font-size:13px;color:var(--ph-text);margin-bottom:6px;">💬 线上模式（短消息气泡）</div>' +
           '<div class="settingSubDesc" style="margin-bottom:10px;">AI 回复时参考最近多少条在线聊天记录。</div>' +
           '<div style="display:flex;align-items:center;gap:12px;">' +
             '<input type="range" min="3" max="50" value="' + currentOnline + '" data-ph="ctxNSlider" style="flex:1;accent-color:var(--ph-accent,#07c160);" />' +
@@ -23073,7 +23076,7 @@ function renderSettingsUIApp(container){
           '</div>' +
 
           // 线下
-          '<div style="margin-top:20px;font-size:13px;font-weight:600;color:var(--ph-text);margin-bottom:6px;">📖 线下模式（长文小说段落）</div>' +
+          '<div style="margin-top:20px;font-size:13px;color:var(--ph-text);margin-bottom:6px;">📖 线下模式（长文小说段落）</div>' +
           '<div class="settingSubDesc" style="margin-bottom:10px;">线下消息字数多，建议设少一点避免超出 Token 限制。</div>' +
           '<div style="display:flex;align-items:center;gap:12px;">' +
             '<input type="range" min="1" max="30" value="' + currentOffline + '" data-ph="ctxNOfflineSlider" style="flex:1;accent-color:var(--ph-accent,#07c160);" />' +
@@ -24637,15 +24640,19 @@ function _injectCustomCSS(npcId){
 // ========== Phase 3D：线下模式渲染器（话剧/舞台剧风格） ==========
 function _renderOfflineParagraph(container, npc, role, text, ts, meta){
   var displayText = String(text || '').trim();
-  // 清理 AI 可能输出的伪标签（如 "rpAction"> 等）
+  // 清理 AI 可能输出的伪标签（所有变体）
   displayText = displayText
-    .replace(/"rpAction"\s*>/g, '')
-    .replace(/"rpDialog"\s*>/g, '')
-    .replace(/"rpSpeaker"\s*>/g, '')
-    .replace(/"rpText"\s*>/g, '')
+    .replace(/"rpAction"\s*>?\s*/g, '')
+    .replace(/"rpDialog"\s*>?\s*/g, '')
+    .replace(/"rpSpeaker"\s*>?\s*/g, '')
+    .replace(/"rpText"\s*>?\s*/g, '')
+    .replace(/rpAction\s*>?\s*/g, '')
+    .replace(/rpDialog\s*>?\s*/g, '')
+    .replace(/^>\s*/gm, '')
     .replace(/<\/?em[^>]*>/g, '')
     .replace(/<\/?span[^>]*>/g, '')
-    .replace(/class="[^"]*"/g, '');
+    .replace(/class="[^"]*"/g, '')
+    .trim();
   var speaker = role === 'me' ? '你' : (npc.name || '对方');
 
   // 获取头像
