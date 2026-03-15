@@ -3106,6 +3106,13 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   font-style:italic; display:block; margin:4px 0;
   color:rgba(255,255,200,.65); font-size:12.5px; line-height:1.7;
 }
+#${ID} .wxOfflineTimeSep{
+  text-align:center; font-size:11px; color:rgba(255,255,255,.45);
+  margin:12px 0 4px; letter-spacing:.5px; user-select:none;
+}
+#${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineTimeSep{
+  color:rgba(100,80,60,.45);
+}
 #${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph .rpAction{
   color:rgba(120,100,70,.65);
 }
@@ -13639,8 +13646,19 @@ const npc = _wxGetChatTargetMeta(npcId);
           tip.innerHTML = '<em class="rpAction">（场景就绪，等待你的行动…）</em>';
           msgs.appendChild(tip);
         } else {
+          var lastTimeLabel = '';
           for (var i = 0; i < log.length; i++){
             var x = log[i];
+            // ★ 时间分隔线：每隔一段时间或每条消息都显示时间+地点
+            var _msgTime = _fmtTime(x.t || _now());
+            if(_msgTime !== lastTimeLabel){
+              var timeSep = doc.createElement('div');
+              timeSep.className = 'wxOfflineTimeSep';
+              var _sceneLabel = (scene && scene.name) ? ' · ' + scene.name : '';
+              timeSep.textContent = _msgTime + _sceneLabel;
+              msgs.appendChild(timeSep);
+              lastTimeLabel = _msgTime;
+            }
             _renderOfflineParagraph(msgs, npc, x.role, x.text, x.t, x);
           }
         }
@@ -15319,6 +15337,19 @@ const npc = _wxGetChatTargetMeta(npcId);
         // ★ 线下模式：用话剧渲染器，不用气泡
         var _wMode = (typeof _getChatMode === 'function') ? _getChatMode(npcId) : 'online';
         if(_wMode === 'offline'){
+          // 新消息前插入时间+地点分隔线
+          try{
+            var _lastSep = msgsEl.querySelector('.wxOfflineTimeSep:last-of-type');
+            var _curTimeLabel = _fmtTime(ts);
+            var _curScene = (typeof _loadSceneData==='function') ? _loadSceneData(npcId) : null;
+            var _sceneLabel = (_curScene && _curScene.name) ? ' · ' + _curScene.name : '';
+            if(!_lastSep || _lastSep.textContent !== _curTimeLabel+_sceneLabel){
+              var _sep = doc.createElement('div');
+              _sep.className = 'wxOfflineTimeSep';
+              _sep.textContent = _curTimeLabel + _sceneLabel;
+              msgsEl.appendChild(_sep);
+            }
+          }catch(e){}
           try{ _renderOfflineParagraph(msgsEl, npc, 'them', cleanText, ts); }catch(e){
             _wxAppendBubble(msgsEl, npc, 'them', cleanText, ts);
           }
@@ -16328,8 +16359,11 @@ const npc = _wxGetChatTargetMeta(npcId);
             if(_onlineTail2.length > 0){
               var _myName2 = '用户';
               try{ var _ps2 = phoneLoadSettings(); if(_ps2&&_ps2.phoneName) _myName2 = _ps2.phoneName; }catch(e){}
+              var _nowTs2 = Date.now();
               var _onlineLines2 = _onlineTail2.map(function(m){
-                return (m.role==='me' ? '['+_myName2+'说]' : '[你('+( npc.name||'角色')+')说]') +
+                var _minsAgo2 = Math.round((_nowTs2 - (m.t||_nowTs2)) / 60000);
+                var _timeStr2 = _minsAgo2 <= 1 ? '刚刚' : _minsAgo2 < 60 ? _minsAgo2+'分钟前' : Math.round(_minsAgo2/60)+'小时前';
+                return '['+_timeStr2+'] '+(m.role==='me' ? '['+_myName2+'说]' : '[你('+( npc.name||'角色')+')说]') +
                   ': ' + String(m.text||'').slice(0, 200);
               });
               var _keyFacts2 = [];
@@ -16364,11 +16398,16 @@ const npc = _wxGetChatTargetMeta(npcId);
               if(_offTailBridge.length > 0){
                 var _myNameBridge = '用户';
                 try{ var _psBridge=phoneLoadSettings(); if(_psBridge&&_psBridge.phoneName) _myNameBridge=_psBridge.phoneName; }catch(e){}
+                var _nowBridge = Date.now();
                 var _offBridgeLines = _offTailBridge.map(function(m){
-                  return (m.role==='me'?'['+_myNameBridge+'说]':'[你('+( npc.name||'角色')+')说]')+': '+String(m.text||'').slice(0,200);
+                  // 计算距今多少时间
+                  var _minsAgo = Math.round((_nowBridge - (m.t||_nowBridge)) / 60000);
+                  var _timeStr = _minsAgo <= 1 ? '刚刚' : _minsAgo < 60 ? _minsAgo+'分钟前' : Math.round(_minsAgo/60)+'小时前';
+                  return '['+_timeStr+'] '+(m.role==='me'?'['+_myNameBridge+'说]':'[你('+( npc.name||'角色')+')说]')+': '+String(m.text||'').slice(0,200);
                 });
                 var _bridgeBlock =
-                  '【★★★线下经历记录（你们面对面发生的事，在线聊天时必须记住）★★★】\n' +
+                  '【★★★今天线下经历记录（就在刚才，在线聊天时必须记住）★★★】\n' +
+                  '以下是你们今天面对面发生的事，时间戳显示距今多久，这些都是今天刚发生的，不是很久以前的事：\n' +
                   '"['+_myNameBridge+'说]"=用户，"[你('+( npc.name||'角色')+')说]"=你自己。\n\n' +
                   _offBridgeLines.join('\n');
                 parts.push(_bridgeBlock);
@@ -19785,6 +19824,18 @@ const npc = _wxGetChatTargetMeta(npcId);
         if (msgs){
           var _sendMode = (typeof _getChatMode === 'function') ? _getChatMode(npcId) : 'online';
           if(_sendMode === 'offline'){
+            try{
+              var _lastSepSend = msgs.querySelector('.wxOfflineTimeSep:last-of-type');
+              var _curTimeSend = _fmtTime(userMsgTs);
+              var _curSceneSend = (typeof _loadSceneData==='function') ? _loadSceneData(npcId) : null;
+              var _sceneLabelSend = (_curSceneSend && _curSceneSend.name) ? ' · ' + _curSceneSend.name : '';
+              if(!_lastSepSend || _lastSepSend.textContent !== _curTimeSend+_sceneLabelSend){
+                var _sepSend = doc.createElement('div');
+                _sepSend.className = 'wxOfflineTimeSep';
+                _sepSend.textContent = _curTimeSend + _sceneLabelSend;
+                msgs.appendChild(_sepSend);
+              }
+            }catch(e){}
             try{ _renderOfflineParagraph(msgs, npc, 'me', hasQuote ? quoteDisplay : text, userMsgTs); }catch(e){
               _wxAppendBubble(msgs, npc, 'me', hasQuote ? quoteDisplay : text, userMsgTs);
             }
