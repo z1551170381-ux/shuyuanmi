@@ -28405,9 +28405,10 @@ function _mapOpenRoom(container, mapData, houseId){
     // 窗户位置数据（装修模式可调）
     var wL = house._winLeft || {ox:75, oy:50, sc:1};
     var wR = house._winRight || {ox:225, oy:68, sc:1};
+    // 经典格窗多边形坐标（left wall）
+    var lwx1=80, lwy1=40, lwx2=120, lwy2=60;
 
     if(_winStyle === 'modern'){
-      // ---- 左墙：用户自制窗户SVG ----
       var _wlSel = _editMode && _winTarget==='left';
       // Left wall window highlight: isometric left-face quad (w=2,d=60,h=40)
       html += '<g transform="translate('+wL.ox+','+wL.oy+') scale('+wL.sc+')" data-win="left" style="cursor:'+(_editMode?'pointer':'default')+';">';
