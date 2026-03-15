@@ -27120,6 +27120,7 @@ function renderMapApp(body){
         });
         return;
       }
+      if(act3==='mapUnclaim'){
         if(mapData.myHouseId===hid) mapData.myHouseId = null;
         for(var uk in (mapData.npcHouses||{})){ if(mapData.npcHouses[uk]===hid) delete mapData.npcHouses[uk]; }
         _mapSave(mapData);
