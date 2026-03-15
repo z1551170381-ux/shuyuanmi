@@ -26131,7 +26131,12 @@ function _mapLoad(){
   return raw;
 }
 function _mapSave(data){
-  _phSave(PHONE_CHAT_KEYS.map, data);
+  try{
+    _phSave(PHONE_CHAT_KEYS.map, data);
+    // 诊断日志：确认保存被调用，含房子列表中的家具数量
+    var houseInfo = (data&&data.houses||[]).map(function(h){ return h.id+':'+(h.rooms&&h.rooms.furniture?h.rooms.furniture.length:'no-rooms'); }).join(',');
+    console.log('[mapSave] 已保存 houses='+houseInfo+' npcBalances='+JSON.stringify(data&&data.npcBalances||{}));
+  }catch(e){ console.error('[mapSave] 保存失败:', e); }
 }
 function _mapLoadLog(){
   return _phLoad(PHONE_CHAT_KEYS.maplog, { v:1, lastAutoGen:0, logs:[] });
@@ -26142,23 +26147,6 @@ function _mapSaveLog(data){
 
 function _mapEnsure(){
   var data = _mapLoad();
-
-  // Safety: if impl-based load returned null, try direct phoneGetC with common UIDs
-  // This prevents accidental regeneration due to UID mismatch
-  if(!data || !data.generated){
-    var tryUIDs = ['fallback'];
-    try{
-      var cu = (typeof phoneGetChatUID==='function') ? String(phoneGetChatUID()||'').trim() : '';
-      if(cu && cu !== 'fallback') tryUIDs.unshift(cu);
-    }catch(e){}
-    for(var ti=0; ti<tryUIDs.length; ti++){
-      try{
-        var candidate = phoneGetC(tryUIDs[ti], PHONE_CHAT_KEYS.map, null);
-        if(candidate && candidate.generated){ data = candidate; break; }
-      }catch(e){}
-    }
-  }
-
   if(data && data.generated){
     // v1→v2 升级：缺少河流/房子的旧地图重新生成
     if(!data.v || data.v < 2){
@@ -28565,19 +28553,10 @@ async function _showNpcFurnPanel(container, mapData, houseId, npcId, npcName, fu
 }
 
 function _mapOpenRoom(container, mapData, houseId){
-  // Always reload mapData fresh to avoid stale-closure bugs after re-renders
-  try{ mapData = _mapLoad() || mapData; }catch(e){}
   var house = (mapData.houses||[]).find(function(h){ return h.id===houseId; });
   if(!house) return;
-  // Ensure rooms structure is valid
-  if(!house.rooms || typeof house.rooms !== 'object') house.rooms = { furniture: _defaultFurniture() };
-  if(!Array.isArray(house.rooms.furniture)) house.rooms.furniture = _defaultFurniture();
-  // Ensure each furniture item has required fields
-  house.rooms.furniture.forEach(function(f){
-    if(!f.id) f.id = f.type + '_' + Math.random().toString(36).substr(2,4);
-    if(f.owned == null) f.owned = true;
-  });
-  var furniture = house.rooms.furniture;
+  if(!house.rooms) house.rooms = { furniture: _defaultFurniture() };
+  var furniture = house.rooms.furniture || [];
 
   var isMyH = mapData.myHouseId === houseId;
   var npcOwner = null, npcOwnerName = '';
