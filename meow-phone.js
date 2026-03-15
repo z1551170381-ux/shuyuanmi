@@ -5466,10 +5466,22 @@ function buildHTML(){
             return;
           }
           if (act === 'wxUserStatusToDetail'){
-            var _uCard = root.querySelector('.wxUserStatusCard'); if(_uCard) _uCard.remove();
-            state._innerStack.push(function(){ var _bd = root.querySelector('[data-ph="chatTabContent"]'); if(_bd) _renderUserStatusPage(_bd); });
-            var _bd2 = root.querySelector('[data-ph="chatTabContent"]');
-            if (_bd2){ setAppBarTitle('我的状态'); _renderUserStatusPage(_bd2); }
+            var _uCard2 = root.querySelector('.wxUserStatusCard'); if(_uCard2) _uCard2.remove();
+            // 优先用 appBody（从聊天页弹出的卡片进来时）；否则用 chatTabContent（从「我」页进来时）
+            var _uDetailBody = root.querySelector('[data-ph="appBody"]') || root.querySelector('[data-ph="chatTabContent"]');
+            if (!_uDetailBody) return;
+            // 如果是从聊天页来的，需要设置 state.app 并压栈以便返回
+            if (state.app === 'chatDetail' || state.app === 'charSettings'){
+              var _prevApp = state.app;
+              var _prevTarget = state.chatTarget;
+              state._innerStack.push(function(){
+                state.app = _prevApp;
+                if (_prevTarget) renderChatDetail(_prevTarget);
+              });
+              state.app = 'charSettings';
+            }
+            setAppBarTitle('我的状态');
+            _renderUserStatusPage(_uDetailBody);
             return;
           }
           if (act === 'wxSPCClose'){
@@ -10302,12 +10314,12 @@ ${lines}
           </div>
           <div class="wxDiscoverGroup">
             <div class="wxDiscoverItem" data-act="wxMeNav" data-page="myStatus">
-              <div class="wxDIco wxDIcoThemed"><svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
+              <div class="wxDIco wxDIcoThemed"><svg class="phIco" viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
               <div class="wxDName">我的状态</div>
               <div class="wxDArrow">›</div>
             </div>
             <div class="wxDiscoverItem" data-act="wxMeNav" data-page="mySchedule">
-              <div class="wxDIco wxDIcoThemed"><svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg></div>
+              <div class="wxDIco wxDIcoThemed"><svg class="phIco" viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg></div>
               <div class="wxDName">我的作息</div>
               <div class="wxDArrow">›</div>
             </div>
@@ -17182,17 +17194,30 @@ const npc = _wxGetChatTargetMeta(npcId);
           try{
             var settings2 = phoneLoadSettings();
             var persona = '';
-            try{ var ap = _loadActivePersona(); if(ap&&ap.text) persona = ap.text.trim().slice(0,500); }catch(e){}
-            var prompt = '请为以下用户生成一份24小时作息时间表。\n用户名：'+(settings2&&settings2.phoneName||'我')+'\n'+(persona?'用户简介：'+persona+'\n':'')+'要求：\n- 生成12-15个时段，覆盖00:00-24:00\n- 每个时段用JSON格式: {"hour":起始小时,"startMin":起始分钟,"endHour":结束小时,"endMin":结束分钟,"tag":"标签","activity":"活动描述"}\n- tag只能是: rest,wake,eat,work,free,social,exercise\n- 只返回JSON数组，不要返回其他内容';
-            var result = await PhoneAI.chat({ messages:[{role:'user',content:prompt}], system:'你是一个作息规划助手。只返回JSON数组，不加任何解释。', channel:'background' });
-            var txt = String(result&&result.text||'').trim().replace(/```json?|```/g,'').trim();
+            try{ var ap = _loadActivePersona(); if(ap&&ap.text) persona = ap.text.trim().slice(0,600); }catch(e){}
+            var prompt = '请为以下用户生成一份24小时作息时间表。\n用户名：'+(settings2&&settings2.phoneName||'我')+'\n'+(persona?'用户人设简介：'+persona+'\n':'')+'要求：\n- 生成12-15个时段，覆盖00:00-24:00\n- 每个时段用JSON格式: {"hour":起始小时,"startMin":起始分钟,"endHour":结束小时,"endMin":结束分钟,"tag":"标签","activity":"活动描述"}\n- tag只能是: rest,wake,eat,work,free,social,exercise\n- 只返回JSON数组，不要返回其他内容\n示例：[{"hour":0,"startMin":0,"endHour":8,"endMin":0,"tag":"rest","activity":"睡觉"},{"hour":8,"startMin":0,"endHour":9,"endMin":0,"tag":"wake","activity":"起床洗漱"}]';
+            var result = await PhoneAI.chat({
+              messages:[{role:'user',content:prompt}],
+              system:'你是一个作息规划助手。只返回JSON数组，不加任何解释或markdown。',
+              channel:'background',
+              maxTokens: 1200,
+              timeout: 60
+            });
+            if (!result || !result.ok) throw new Error(result ? (result.error||'请求失败') : 'AI请求失败');
+            var txt = String(result.data||'').trim().replace(/```json[\s\S]*?```|```[\s\S]*?```/g, function(m){ return m.replace(/```json?/,'').replace(/```/,''); }).trim();
+            // 提取第一个 JSON 数组
+            var m = txt.match(/\[[\s\S]*\]/);
+            if (m) txt = m[0];
             var arr = JSON.parse(txt);
-            if (Array.isArray(arr) && arr.length > 3){
-              var us2 = _loadUserState(); us2.schedule = arr; _saveUserState(us2);
-              toast('作息表已生成'); _renderUserSchedulePage(container);
-            } else { toast('生成失败，请重试'); }
-          }catch(e){ toast('生成失败: '+(e.message||e)); }
-          btn.disabled=false; btn.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25zM9 12l-2-4.5L2.5 9l4.5-2L9 2.5l2 4.5 4.5 2-4.5 2zm10 1l-1.25 2.75L15 17l2.75 1.25L19 21l1.25-2.75L23 17l-2.75-1.25z"/></svg> ✦ AI 生成';
+            var validArr = Array.isArray(arr) ? arr.filter(function(item){
+              return typeof item.hour === 'number' && typeof item.endHour === 'number' && item.activity && item.tag;
+            }) : [];
+            if (validArr.length > 3){
+              var us2 = _loadUserState(); us2.schedule = validArr; us2.scheduleEnabled = true; _saveUserState(us2);
+              toast('作息表已生成，已自动开启驱动'); _renderUserSchedulePage(container);
+            } else { toast('生成失败，时段数不足，请重试'); }
+          }catch(e){ toast('生成失败: '+(e.message||String(e))); }
+          try{ btn.disabled=false; btn.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25zM9 12l-2-4.5L2.5 9l4.5-2L9 2.5l2 4.5 4.5 2-4.5 2zm10 1l-1.25 2.75L15 17l2.75 1.25L19 21l1.25-2.75L23 17l-2.75-1.25z"/></svg> ✦ AI 生成'; }catch(e){}
         });
 
         // 手动编辑
