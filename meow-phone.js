@@ -20645,29 +20645,40 @@ const npc = _wxGetChatTargetMeta(npcId);
             const type = el.getAttribute('data-type');
             const idx = parseInt(el.getAttribute('data-idx'));
             if(type === 'map'){
-              // 地图地标：切换场景
               const lmInfo = mapLandmarks[idx];
               if(!lmInfo) return;
               var tagMap = {trees:'绿树环绕',flowers:'鲜花盛开',coffee:'咖啡飘香',cozy:'氛围温馨',sea:'海风轻拂',quiet:'安静祥和',art:'充满艺术气息',books:'书香满溢',campfire:'篝火温暖',stars:'星空璀璨',food:'美食飘香',sing:'音乐萦绕',exercise:'充满活力',fun:'热闹非凡',steam:'雾气缭绕',sand:'细沙柔软',water:'水波荡漾'};
               var descWords = lmInfo.tags.slice(0,3).map(function(t){ return tagMap[t]||''; }).filter(Boolean).join('，');
-              var autoDesc = lmInfo.name + '，' + (descWords || '是地图上的一处地标') + '。';
-              var newScene = { name:lmInfo.name, location:lmInfo.name, description:autoDesc, bgImage:'', customPrompt:'' };
-              try{ _saveSceneData(npcId, newScene); }catch(e){}
-              try{
-                if(_getChatMode(npcId) !== 'offline') _saveCharMode(npcId, 'offline');
-                var titleEl = root.querySelector('[data-ph="appTitle"]');
-                if(titleEl) titleEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ph-accent,#07c160);margin-right:4px;vertical-align:middle;"></span>线下 · '+esc(lmInfo.name);
-                var sceneCard = root.querySelector('.wxOfflineSceneCard');
-                if(sceneCard){
-                  var sn = sceneCard.querySelector('[data-ph="offlineSceneName"]');
-                  var sd = sceneCard.querySelector('[data-ph="offlineSceneDesc"]');
-                  if(sn) sn.textContent = lmInfo.name;
-                  if(sd) sd.textContent = autoDesc;
-                }
-              }catch(e){}
+              var autoDesc = lmInfo.name + (descWords ? '，'+descWords : '') + '。';
               ov.remove();
-              _cpSendSpecial(npcId, '[📍 '+lmInfo.name+']', { type:'landmark', landmarkId:lmInfo.lmId, landmarkName:lmInfo.name, desc:autoDesc, _logText:'[前往地标：'+lmInfo.name+']' });
-              try{toast('📍 已切换到「'+lmInfo.name+'」');}catch(e){}
+
+              var curMode = 'online';
+              try{ curMode = _getChatMode(npcId) || 'online'; }catch(e){}
+
+              if(curMode === 'offline'){
+                // ★ 线下模式：切换场景到该地标（不触发AI回复，静默切换）
+                var newScene = { name:lmInfo.name, location:lmInfo.name, description:autoDesc, bgImage:'', customPrompt:'' };
+                try{ _saveSceneData(npcId, newScene); }catch(e){}
+                try{
+                  var titleEl = root.querySelector('[data-ph="appTitle"]');
+                  if(titleEl) titleEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ph-accent,#07c160);margin-right:4px;vertical-align:middle;"></span>线下 · '+esc(lmInfo.name);
+                  var sceneCard = root.querySelector('.wxOfflineSceneCard');
+                  if(sceneCard){
+                    var sn = sceneCard.querySelector('[data-ph="offlineSceneName"]');
+                    var sd = sceneCard.querySelector('[data-ph="offlineSceneDesc"]');
+                    if(sn) sn.textContent = lmInfo.name;
+                    if(sd) sd.textContent = autoDesc;
+                  }
+                }catch(e){}
+                try{ toast('📍 场景已切换到「'+lmInfo.name+'」'); }catch(e){}
+              } else {
+                // ★ 在线模式：只发地标消息让角色自然回应，不切换模式
+                _cpSendSpecial(npcId,
+                  lmInfo.emoji+' '+lmInfo.name,
+                  { type:'landmark', landmarkId:lmInfo.lmId, landmarkName:lmInfo.name, desc:autoDesc,
+                    _logText:'[地标] '+lmInfo.name+'（'+autoDesc+'）' }
+                );
+              }
             } else {
               // 静态位置
               const loc = staticLocs[idx];
