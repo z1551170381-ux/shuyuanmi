@@ -13583,6 +13583,7 @@ const npc = _wxGetChatTargetMeta(npcId);
               <div class="wxCPItem" data-act="wxCPAction" data-cpact="gift"><div class="wxCPIco"><svg class="phIco" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 12 7.4l3.38 4.6L17 10.83 14.92 8H20v6z"/></svg></div><div class="wxCPLabel">礼物</div></div>
               <div class="wxCPItem" data-act="wxCPAction" data-cpact="transfer"><div class="wxCPIco"><svg class="phIco" viewBox="0 0 24 24" fill="currentColor"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></div><div class="wxCPLabel">转账</div></div>
               <div class="wxCPItem" data-act="wxCPAction" data-cpact="music"><div class="wxCPIco">${_phFlatIcon('🎵')}</div><div class="wxCPLabel">音乐</div></div>
+              <div class="wxCPItem" data-act="wxCPAction" data-cpact="maplandmark"><div class="wxCPIco">${_phFlatIcon('📍')}</div><div class="wxCPLabel">地标</div></div>
             </div>
           </div>`;
         } // end if-else offline/online
@@ -19976,16 +19977,96 @@ const npc = _wxGetChatTargetMeta(npcId);
       // ====== 路由分发 ======
       function _handleChatPlusAction(cpact, npcId){
         switch(cpact){
-          case 'photo':    _cpPhoto(npcId); break;
-          case 'camera':   _cpCamera(npcId); break;
-          case 'videocall':_cpVideoCall(npcId); break;
-          case 'location': _cpLocation(npcId); break;
-          case 'redpack':  _cpRedPack(npcId); break;
-          case 'gift':     _cpGift(npcId); break;
-          case 'transfer': _cpTransfer(npcId); break;
-          case 'music':    _cpMusic(npcId); break;
+          case 'photo':       _cpPhoto(npcId); break;
+          case 'camera':      _cpCamera(npcId); break;
+          case 'videocall':   _cpVideoCall(npcId); break;
+          case 'location':    _cpLocation(npcId); break;
+          case 'redpack':     _cpRedPack(npcId); break;
+          case 'gift':        _cpGift(npcId); break;
+          case 'transfer':    _cpTransfer(npcId); break;
+          case 'music':       _cpMusic(npcId); break;
+          case 'maplandmark': _cpMapLandmark(npcId); break;
           default: try{toast('功能开发中…');}catch(e){} break;
         }
+      }
+
+      // ====== 地图地标：切换线下场景 ======
+      function _cpMapLandmark(npcId){
+        var mapData = _mapLoad();
+        if(!mapData || !mapData.landmarks || !mapData.landmarks.length){
+          try{toast('地图还没有生成，请先打开地图 App');}catch(e){} return;
+        }
+        var lmH = '<div style="font-size:14px;font-weight:600;margin-bottom:12px;">📍 选择地标</div>';
+        lmH += '<div style="max-height:50vh;overflow-y:auto;scrollbar-width:none;">';
+        mapData.landmarks.forEach(function(lm){
+          var dn = lm.customName || lm.name;
+          lmH += '<div class="mapActRow" data-act="cpLmPick" data-lmid="'+lm.id+'" style="padding:10px 12px;margin-bottom:3px;">';
+          lmH += '<span style="font-size:20px;margin-right:10px;">'+lm.emoji+'</span>';
+          lmH += '<div style="flex:1;"><div style="font-size:13px;font-weight:500;color:var(--ph-text);">'+esc(dn)+'</div>';
+          if(lm.tags && lm.tags.length) lmH += '<div style="font-size:10px;color:rgba(20,24,28,.4);margin-top:1px;">'+lm.tags.slice(0,3).join(' · ')+'</div>';
+          lmH += '</div><span class="mapActArrow">›</span></div>';
+        });
+        lmH += '</div>';
+        lmH += '<button data-act="cpLmCancel" style="width:100%;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:transparent;font-size:13px;cursor:pointer;margin-top:8px;color:rgba(20,24,28,.5);">取消</button>';
+        var lmOv = _cpShowOverlay(lmH);
+        lmOv.addEventListener('click', function(ev2){
+          var t2 = ev2.target.closest('[data-act]');
+          if(!t2) return;
+          if(t2.getAttribute('data-act')==='cpLmCancel'){ lmOv.remove(); return; }
+          if(t2.getAttribute('data-act')==='cpLmPick'){
+            var lmId = t2.getAttribute('data-lmid');
+            var lm2 = mapData.landmarks.find(function(l){ return l.id===lmId; });
+            if(!lm2){ lmOv.remove(); return; }
+            var dn2 = lm2.customName || lm2.name;
+            // 生成场景描述
+            var tagMap = {trees:'绿树环绕',flowers:'鲜花盛开',coffee:'咖啡飘香',cozy:'氛围温馨',sea:'海风轻拂',quiet:'安静祥和',art:'充满艺术气息',books:'书香满溢',campfire:'篝火温暖',stars:'星空璀璨',food:'美食飘香',sing:'音乐萦绕',exercise:'充满活力',fun:'热闹非凡',steam:'雾气缭绕',sand:'细沙柔软',water:'水波荡漾'};
+            var descWords = (lm2.tags||[]).slice(0,3).map(function(t){ return tagMap[t]||''; }).filter(Boolean).join('，');
+            var desc = dn2 + '，' + (descWords || '是地图上的一处地标') + '。';
+            // ★ 保存场景数据（与地图app互动完全一致）
+            var newScene = {
+              name: dn2,
+              location: dn2,
+              description: desc,
+              bgImage: lm2.bgImage || '',
+              customPrompt: ''
+            };
+            _saveSceneData(npcId, newScene);
+            // 切换为线下模式（如果还没切换）
+            try{
+              var curMode = _getChatMode(npcId);
+              if(curMode !== 'offline'){
+                _saveCharMode(npcId, 'offline');
+              }
+            }catch(e){}
+            // 更新标题
+            try{
+              var titleEl = root.querySelector('[data-ph="appTitle"]');
+              if(titleEl) titleEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ph-accent,#07c160);margin-right:4px;vertical-align:middle;"></span>线下 · '+esc(dn2);
+            }catch(e){}
+            // 发送一条「前往地标」消息
+            var db3 = loadContactsDB();
+            var npc3 = findContactById(db3, npcId) || {name:String(npcId)};
+            var msgText = '[前往地标：'+dn2+'] 你和'+esc(npc3.name)+'来到了'+esc(dn2)+'。'+desc;
+            _cpSendSpecial(npcId, '[📍 '+dn2+']', { type:'landmark', landmarkId:lmId, landmarkName:dn2, desc:desc, _logText:'[前往地标：'+dn2+']' });
+            lmOv.remove();
+            try{toast('📍 已切换到「'+dn2+'」');}catch(e){}
+            // 刷新聊天界面场景描述
+            try{
+              var msgsEl = root.querySelector('[data-ph="chatMsgs"]');
+              if(msgsEl && newScene.bgImage){
+                msgsEl.style.backgroundImage = "url('"+newScene.bgImage+"')";
+                msgsEl.style.backgroundSize = 'cover';
+                msgsEl.style.backgroundPosition = 'center';
+              }
+              // 刷新线下模式顶部场景卡
+              var sceneCard = root.querySelector('.wxOfflineSceneCard');
+              if(sceneCard){
+                sceneCard.querySelector('[data-ph="offlineSceneName"]') && (sceneCard.querySelector('[data-ph="offlineSceneName"]').textContent = dn2);
+                sceneCard.querySelector('[data-ph="offlineSceneDesc"]') && (sceneCard.querySelector('[data-ph="offlineSceneDesc"]').textContent = desc);
+              }
+            }catch(e){}
+          }
+        });
       }
 
       // ====== 通用：发送特殊气泡 + 记录日志 ======
@@ -24594,15 +24675,37 @@ function _openSceneEditor(npcId){
           // 用tags生成描述
           var tagDesc3 = {trees:'绿树环绕',flowers:'鲜花盛开',coffee:'咖啡飘香',cozy:'氛围温馨',sea:'海风轻拂',quiet:'安静祥和',art:'充满艺术气息',books:'书香满溢',campfire:'篝火温暖',stars:'星空璀璨',food:'美食飘香',sing:'音乐萦绕',exercise:'充满活力',fun:'热闹非凡',steam:'雾气缭绕',sand:'细沙柔软',water:'水波荡漾'};
           var descWords = (lm2.tags||[]).slice(0,3).map(function(t){ return tagDesc3[t]||''; }).filter(Boolean).join('，');
-          if(descInp) descInp.value = dn2+'，'+(descWords||'一个有趣的地方')+'。';
+          var autoDesc = dn2+'，'+(descWords||'一个有趣的地方')+'。';
+          if(descInp) descInp.value = autoDesc;
           lmOv.remove();
-          try{ toast('已选择「'+dn2+'」'); }catch(e){}
+          // ★ 立即保存场景（与地图app互动行为一致，不需要再点保存）
+          var bgInp = ov.querySelector('[data-el="sceneBgUrl"]');
+          var promptInp = ov.querySelector('[data-el="scenePrompt"]');
+          var savedScene = {
+            name: dn2,
+            location: dn2,
+            description: autoDesc,
+            bgImage: (bgInp&&bgInp.value||'').trim(),
+            customPrompt: (promptInp&&promptInp.value||'').trim()
+          };
+          _saveSceneData(npcId, savedScene);
+          try{ toast('📍 已选择「'+dn2+'」并保存场景'); }catch(e){}
 
           // ★ 同步更新标题栏（与地图地标互动保持一致）
           try{
             var titleEl = root.querySelector('[data-ph="appTitle"]');
             if (titleEl && _getChatMode(npcId) === 'offline'){
               titleEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ph-accent,#07c160);margin-right:4px;vertical-align:middle;"></span>线下 · ' + esc(dn2);
+            }
+          }catch(e){}
+          // 更新线下场景卡
+          try{
+            var sceneCard2 = root.querySelector('.wxOfflineSceneCard');
+            if(sceneCard2){
+              var sn2 = sceneCard2.querySelector('[data-ph="offlineSceneName"]');
+              var sd2 = sceneCard2.querySelector('[data-ph="offlineSceneDesc"]');
+              if(sn2) sn2.textContent = dn2;
+              if(sd2) sd2.textContent = autoDesc;
             }
           }catch(e){}
         }
