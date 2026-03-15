@@ -16414,9 +16414,9 @@ const npc = _wxGetChatTargetMeta(npcId);
                   return '[今天'+_hh+':'+_mm+'] '+(m.role==='me'?'['+_myNameBridge+'说]':'[你('+( npc.name||'角色')+')说]')+': '+String(m.text||'').slice(0,200);
                 });
                 var _bridgeBlock =
-                  '【★★★今天线下经历记录（必须记住，与当前在线聊天是同一天）★★★】\n' +
+                  '【★★★刚才线下经历记录（必须记住，是当前在线聊天的线下补充的活动）★★★】\n' +
                   '当前时间：今天'+_nowHHBridge+':'+_nowMMBridge+'。\n' +
-                  '以下是今天同一天内你们面对面发生的事——不是昨天，不是更早，就是今天：\n' +
+                  '以下是刚才你们面对面发生的事——不是昨天，不是更早，就是刚才：\n' +
                   '"['+_myNameBridge+'说]"=用户，"[你('+( npc.name||'角色')+')说]"=你自己。\n\n' +
                   _offBridgeLines.join('\n');
                 parts.push(_bridgeBlock);
