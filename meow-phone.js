@@ -28315,6 +28315,7 @@ function _mapOpenRoom(container, mapData, houseId){
   // 状态
   var _editMode = false;
   var _dragTarget = null;
+  var _winTarget = null; // 'left' | 'right' | null — 当前编辑中的窗户
   var _roomZoom = 1, _roomPanX = 0, _roomPanY = 0;
   var _lightTimer = null;
 
@@ -28332,7 +28333,6 @@ function _mapOpenRoom(container, mapData, houseId){
 
     // 头部
     html += '<div class="mapRoomHeader">';
-    html += '<button class="mapRoomBackBtn" data-act="roomBack">‹</button>';
     html += '<div class="mapRoomTitle">'+esc(house.name)+' <span style="font-size:10px;color:rgba(20,24,28,.4);font-weight:400;">'+ownerLabel+'</span></div>';
     html += '<div class="mapRoomToolbar">';
     if(isMyH){
@@ -28396,7 +28396,8 @@ function _mapOpenRoom(container, mapData, houseId){
 
     if(_winStyle === 'modern'){
       // ---- 左墙：用户自制窗户SVG ----
-      html += '<g transform="translate('+wL.ox+','+wL.oy+') scale('+wL.sc+')">';
+      var _wlSel = _editMode && _winTarget==='left';
+      html += '<g transform="translate('+wL.ox+','+wL.oy+') scale('+wL.sc+')" data-win="left" style="cursor:'+(_editMode?'pointer':'default')+';">'+((_wlSel)?'<rect x="-4" y="-45" width="72" height="52" fill="rgba(100,180,80,.12)" rx="2"/>':'');
       // 窗框 w=2,d=60,h=40 (挂左墙)
       html += '<g transform="translate(0,0)">';
       html += '<rect x="0" y="-40" width="2" height="40" class="wht-r" transform="translate(-60,30) matrix(1,0.5,0,1,0,0)"/>';
@@ -28416,7 +28417,8 @@ function _mapOpenRoom(container, mapData, houseId){
       html += '</g>';
 
       // ---- 右墙：镜像版本（用右面matrix） ----
-      html += '<g transform="translate('+wR.ox+','+wR.oy+') scale('+wR.sc+')">';
+      var _wrSel = _editMode && _winTarget==='right';
+      html += '<g transform="translate('+wR.ox+','+wR.oy+') scale('+wR.sc+')" data-win="right" style="cursor:'+(_editMode?'pointer':'default')+';">'+((_wrSel)?'<rect x="-4" y="-45" width="72" height="52" fill="rgba(100,180,80,.12)" rx="2"/>':'');
       // 窗框 w=60,d=2,h=40 (挂右墙)
       html += '<g transform="translate(0,0)">';
       html += '<rect x="0" y="-40" width="60" height="40" class="wht-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>';
@@ -28435,14 +28437,16 @@ function _mapOpenRoom(container, mapData, houseId){
       html += '</g>';
     } else {
       // 经典格窗 - 左墙
-      html += '<g transform="translate('+((wL.ox||75)-75)+','+((wL.oy||50)-50)+') scale('+(wL.sc||1)+')">';
+      var _wlSel2 = _editMode && _winTarget==='left';
+      html += '<g transform="translate('+((wL.ox||75)-75)+','+((wL.oy||50)-50)+') scale('+(wL.sc||1)+')" data-win="left" style="cursor:'+(_editMode?'pointer':'default')+';">'+(_wlSel2?'<rect x="'+lwx1+'" y="'+(lwy1-36)+'" width="'+(lwx2-lwx1)+'" height="40" fill="rgba(100,180,80,.12)" rx="2"/>':'');
       html += '<polygon points="'+lwx1+','+(lwy1-32)+' '+lwx2+','+(lwy2-32)+' '+lwx2+','+lwy2+' '+lwx1+','+lwy1+'" fill="'+lighting.windowGlow+'" stroke="#A89878" stroke-width="1.2"/>';
       html += '<line x1="'+((lwx1+lwx2)/2)+'" y1="'+((lwy1-32+lwy1)/2)+'" x2="'+((lwx1+lwx2)/2)+'" y2="'+((lwy2-32+lwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
       html += '<line x1="'+lwx1+'" y1="'+(lwy1-16)+'" x2="'+lwx2+'" y2="'+(lwy2-16)+'" stroke="#A89878" stroke-width="0.8"/>';
       html += '</g>';
       // 经典格窗 - 右墙
       var rwx1=195, rwy1=42, rwx2=255, rwy2=72;
-      html += '<g transform="translate('+((wR.ox||225)-225)+','+((wR.oy||68)-68)+') scale('+(wR.sc||1)+')">';
+      var _wrSel2 = _editMode && _winTarget==='right';
+      html += '<g transform="translate('+((wR.ox||225)-225)+','+((wR.oy||68)-68)+') scale('+(wR.sc||1)+')" data-win="right" style="cursor:'+(_editMode?'pointer':'default')+';">'+(_wrSel2?'<rect x="'+rwx1+'" y="'+(rwy1-36)+'" width="'+(rwx2-rwx1)+'" height="40" fill="rgba(100,180,80,.12)" rx="2"/>':'');
       html += '<polygon points="'+rwx1+','+(rwy1-32)+' '+rwx2+','+(rwy2-32)+' '+rwx2+','+rwy2+' '+rwx1+','+rwy1+'" fill="'+lighting.windowGlow+'" stroke="#A89878" stroke-width="1.2"/>';
       html += '<line x1="'+((rwx1+rwx2)/2)+'" y1="'+((rwy1-32+rwy1)/2)+'" x2="'+((rwx1+rwx2)/2)+'" y2="'+((rwy2-32+rwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
       html += '</g>';
@@ -28612,42 +28616,26 @@ function _mapOpenRoom(container, mapData, houseId){
     }
     if(_editMode){
       html += '<div style="height:3px;border-top:1px solid rgba(0,0,0,0.1);margin:2px 0;width:22px;"></div>';
-      html += '<button data-act="winScaleUp" style="font-size:7px;">窗+</button>';
-      html += '<button data-act="winScaleDown" style="font-size:7px;">窗−</button>';
-      html += '<div style="font-size:5.5px;color:rgba(100,150,80,0.7);text-align:center;line-height:1.2;margin-top:1px;">两窗同移</div>';
-      html += '<div class="zDirRow">';
-      html += '<button data-act="winMoveL" style="font-size:7px;">◀</button>';
-      html += '<button data-act="winMoveR" style="font-size:7px;">▶</button>';
-      html += '</div>';
-      html += '<div class="zDirRow">';
-      html += '<button data-act="winMoveU" style="font-size:7px;">▲</button>';
-      html += '<button data-act="winMoveD" style="font-size:7px;">▼</button>';
-      html += '</div>';
-      html += '<div style="font-size:5.5px;color:rgba(100,150,80,0.7);text-align:center;line-height:1.2;margin-top:2px;">左窗</div>';
-      html += '<div class="zDirRow">';
-      html += '<button data-act="winLMoveL" style="font-size:7px;">◀</button>';
-      html += '<button data-act="winLMoveR" style="font-size:7px;">▶</button>';
-      html += '</div>';
-      html += '<div class="zDirRow">';
-      html += '<button data-act="winLMoveU" style="font-size:7px;">▲</button>';
-      html += '<button data-act="winLMoveD" style="font-size:7px;">▼</button>';
-      html += '</div>';
-      html += '<div style="font-size:5.5px;color:rgba(100,150,80,0.7);text-align:center;line-height:1.2;margin-top:2px;">右窗</div>';
-      html += '<div class="zDirRow">';
-      html += '<button data-act="winRMoveL" style="font-size:7px;">◀</button>';
-      html += '<button data-act="winRMoveR" style="font-size:7px;">▶</button>';
-      html += '</div>';
-      html += '<div class="zDirRow">';
-      html += '<button data-act="winRMoveU" style="font-size:7px;">▲</button>';
-      html += '<button data-act="winRMoveD" style="font-size:7px;">▼</button>';
-      html += '</div>';
+      html += '<button data-act="winScaleUp" style="font-size:7px;" title="窗户放大">窗+</button>';
+      html += '<button data-act="winScaleDown" style="font-size:7px;" title="窗户缩小">窗−</button>';
+      if(_winTarget){
+        html += '<div style="font-size:5px;color:rgba(100,150,80,0.8);text-align:center;line-height:1.2;margin-top:1px;">'+(_winTarget==='left'?'左窗':'右窗')+'已选</div>';
+      } else {
+        html += '<div style="font-size:5px;color:rgba(20,24,28,0.35);text-align:center;line-height:1.2;margin-top:1px;">点击<br/>选窗</div>';
+      }
     }
     html += '</div>';
-    if(_editMode && _dragTarget){
-      var selF = furniture.find(function(ff){return ff.id===_dragTarget;});
+    if(_editMode && (_dragTarget || _winTarget)){
+      var selF = _dragTarget ? furniture.find(function(ff){return ff.id===_dragTarget;}) : null;
       var selCat = selF ? (FURNITURE_CATALOG[selF.type]||{}) : {};
       var curScale = selF ? (selF.furnScale||0.6) : 0.6;
-      html += '<div class="mapRoomEditHint">'+esc(selCat.label||'家具')+' ('+Math.round(curScale*100)+'%'+(selF&&selF.flipped?' 已翻转':'')+') — ▲▼◀▶移动 🔍缩放 ↔翻转</div>';
+      if(_winTarget){
+        html += '<div class="mapRoomEditHint">'+(_winTarget==='left'?'左窗':'右窗')+'已选 — ▲▼◀▶移动 窗+/−缩放 · 点击另一窗切换</div>';
+      } else {
+        html += '<div class="mapRoomEditHint">'+esc(selCat.label||'家具')+' ('+Math.round(curScale*100)+'%'+(selF&&selF.flipped?' 已翻转':'')+') — ▲▼◀▶移动 🔍缩放 ↔翻转</div>';
+      }
+    } else if(_editMode){
+      html += '<div class="mapRoomEditHint">点击家具或窗户进行编辑 · 点击空白取消选择</div>';
     }
     html += '</div>';
 
@@ -28764,16 +28752,33 @@ function _mapOpenRoom(container, mapData, houseId){
     wrap.addEventListener('mouseup', function(){ isPanning=false; wrap.style.cursor=''; });
     wrap.addEventListener('mouseleave', function(){ isPanning=false; wrap.style.cursor=''; });
 
-    // 编辑模式：点击SVG中的家具可直接选中
+    // 编辑模式：点击SVG中的家具或窗户可直接选中
     if(_editMode){
       wrap.addEventListener('click', function(ev){
-        var furnG = ev.target.closest('.rm-furn-wrap');
-        if(!furnG) return;
-        var fid = furnG.getAttribute('data-furnid');
-        if(fid){
-          _dragTarget = fid;
-          try{ toast('🔧 用 ▲▼◀▶ 移动家具'); }catch(e){}
+        // 检查是否点击了窗户
+        var winG = ev.target.closest('[data-win]');
+        if(winG){
+          var wSide = winG.getAttribute('data-win'); // 'left' or 'right'
+          _winTarget = (_winTarget === wSide) ? null : wSide; // toggle
+          _dragTarget = null; // 取消家具选择
+          try{ toast('🪟 '+((_winTarget==='left')?'左窗':'右窗')+'已选中，用 ▲▼◀▶ 移动'); }catch(e){}
           renderRoom();
+          return;
+        }
+        var furnG = ev.target.closest('.rm-furn-wrap');
+        if(furnG){
+          var fid = furnG.getAttribute('data-furnid');
+          if(fid){
+            _dragTarget = fid;
+            _winTarget = null; // 取消窗户选择
+            try{ toast('🔧 用 ▲▼◀▶ 移动家具'); }catch(e){}
+            renderRoom();
+          }
+          return;
+        }
+        // 点击空白取消所有选择
+        if(ev.target.tagName === 'polygon' || ev.target.tagName === 'rect' || ev.target === wrap){
+          if(_dragTarget || _winTarget){ _dragTarget = null; _winTarget = null; renderRoom(); }
         }
       });
     }
@@ -28829,27 +28834,19 @@ function _mapOpenRoom(container, mapData, houseId){
     if(act==='winScaleUp'||act==='winScaleDown'){
       if(!house._winLeft) house._winLeft = {ox:75,oy:50,sc:1};
       if(!house._winRight) house._winRight = {ox:225,oy:68,sc:1};
-      var ws = act==='winScaleUp' ? 0.1 : -0.1;
-      house._winLeft.sc = Math.max(0.3, Math.min(2.5, (house._winLeft.sc||1)+ws));
-      house._winRight.sc = Math.max(0.3, Math.min(2.5, (house._winRight.sc||1)+ws));
+      var wsD = act==='winScaleUp' ? 0.1 : -0.1;
+      // scale only selected window (or both if none selected)
+      if(_winTarget==='left'){
+        house._winLeft.sc = Math.max(0.3, Math.min(2.5, (house._winLeft.sc||1)+wsD));
+      } else if(_winTarget==='right'){
+        house._winRight.sc = Math.max(0.3, Math.min(2.5, (house._winRight.sc||1)+wsD));
+      } else {
+        house._winLeft.sc = Math.max(0.3, Math.min(2.5, (house._winLeft.sc||1)+wsD));
+        house._winRight.sc = Math.max(0.3, Math.min(2.5, (house._winRight.sc||1)+wsD));
+      }
       _mapSave(mapData); renderRoom(); return;
     }
-    if(act==='winMoveL'||act==='winMoveR'||act==='winMoveU'||act==='winMoveD'||
-       act==='winLMoveL'||act==='winLMoveR'||act==='winLMoveU'||act==='winLMoveD'||
-       act==='winRMoveL'||act==='winRMoveR'||act==='winRMoveU'||act==='winRMoveD'){
-      if(!house._winLeft) house._winLeft = {ox:75,oy:50,sc:1};
-      if(!house._winRight) house._winRight = {ox:225,oy:68,sc:1};
-      var wd = 5;
-      // 移动左窗
-      var moveL = act==='winMoveL'||act==='winMoveR'||act==='winMoveU'||act==='winMoveD'||act==='winLMoveL'||act==='winLMoveR'||act==='winLMoveU'||act==='winLMoveD';
-      // 移动右窗
-      var moveR = act==='winMoveL'||act==='winMoveR'||act==='winMoveU'||act==='winMoveD'||act==='winRMoveL'||act==='winRMoveR'||act==='winRMoveU'||act==='winRMoveD';
-      var dx = (act==='winMoveL'||act==='winLMoveL'||act==='winRMoveL') ? -wd : (act==='winMoveR'||act==='winLMoveR'||act==='winRMoveR') ? wd : 0;
-      var dy = (act==='winMoveU'||act==='winLMoveU'||act==='winRMoveU') ? -wd : (act==='winMoveD'||act==='winLMoveD'||act==='winRMoveD') ? wd : 0;
-      if(moveL){ house._winLeft.ox += dx; house._winLeft.oy += dy; }
-      if(moveR){ house._winRight.ox += dx; house._winRight.oy += dy; }
-      _mapSave(mapData); renderRoom(); return;
-    }
+    // Legacy: remove old individual win move actions (now handled via roomPan + _winTarget)
 
     // Scale furniture
     if(act==='roomScaleUp'||act==='roomScaleDown'){
@@ -28867,6 +28864,18 @@ function _mapOpenRoom(container, mapData, houseId){
     }
 
     if(act==='roomPanUp'||act==='roomPanDown'||act==='roomPanLeft'||act==='roomPanRight'){
+      // ★ 如果选中了窗户，方向键移动窗户
+      if(_editMode && _winTarget){
+        if(!house._winLeft) house._winLeft = {ox:75,oy:50,sc:1};
+        if(!house._winRight) house._winRight = {ox:225,oy:68,sc:1};
+        var winStep = 5;
+        var wdx = act==='roomPanLeft' ? -winStep : act==='roomPanRight' ? winStep : 0;
+        var wdy = act==='roomPanUp' ? -winStep : act==='roomPanDown' ? winStep : 0;
+        if(_winTarget==='left'){ house._winLeft.ox += wdx; house._winLeft.oy += wdy; }
+        else { house._winRight.ox += wdx; house._winRight.oy += wdy; }
+        _mapSave(mapData); renderRoom();
+        return;
+      }
       if(_editMode && _dragTarget){
         var mf = furniture.find(function(ff){ return ff.id===_dragTarget; });
         if(mf){
@@ -28902,6 +28911,7 @@ function _mapOpenRoom(container, mapData, houseId){
     if(act==='roomToggleEdit'){
       _editMode = !_editMode;
       _dragTarget = null;
+      _winTarget = null;
       renderRoom();
       return;
     }
@@ -29182,6 +29192,33 @@ function _mapOpenRoom(container, mapData, houseId){
   if(_mapZoomBar) _mapZoomBar.style.display = 'none';
 
   container.appendChild(roomEl);
+
+  // ★ 把房间标题注入顶部 AppBar，让全局「‹」按钮关闭房间
+  try{
+    var _titleEl = root.querySelector('[data-ph="appTitle"]');
+    if(_titleEl) _titleEl.textContent = house.name;
+    var _spEl = root.querySelector('.phAppBarSpacer');
+    if(_spEl) _spEl.innerHTML = '';
+  }catch(e){}
+
+  // 拦截全局 back 动作：如果房间存在就关闭房间而不是退出地图
+  function _roomGlobalBackHook(e){
+    var t = e.target && e.target.closest ? e.target.closest('[data-act="back"]') : null;
+    if(!t) return;
+    if(!root.contains(roomEl)) return;
+    e.stopPropagation();
+    clearInterval(_lightTimer);
+    if(_mapZoomBar) _mapZoomBar.style.display = '';
+    roomEl.remove();
+    // 恢复地图标题
+    try{
+      var _titleEl2 = root.querySelector('[data-ph="appTitle"]');
+      if(_titleEl2) _titleEl2.textContent = '地图';
+    }catch(e2){}
+    // 解除拦截
+    root.removeEventListener('click', _roomGlobalBackHook, true);
+  }
+  root.addEventListener('click', _roomGlobalBackHook, true);
 }
 
 
