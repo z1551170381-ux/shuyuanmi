@@ -15899,25 +15899,8 @@ const npc = _wxGetChatTargetMeta(npcId);
             var content2 = (role2==='user') ? _convertSpecialTags(y.text) : String(y.text||'');
             out.push({role:role2, content:content2});
           }
-          // ★ 开关开启时：线上模式也读取线下经历，让AI知道线下发生的事
-          try{
-            var _bridgeCfg = phoneLoadSettings();
-            if(_bridgeCfg.onlineIncludeOfflineCtx !== false){
-              var _offBridgeN = (typeof _getOfflineChatContextN==='function') ? _getOfflineChatContextN() : 5;
-              var _offBridgeLog = _getLogForModeBranch(npcId,'offline').slice(-_offBridgeN)
-                .filter(function(m){ return m.role!=='system'&&!m.recalled; });
-              if(_offBridgeLog.length){
-                // 以 user/assistant 格式插到前面作为背景
-                var _bridgeOut = [];
-                _offBridgeLog.forEach(function(m){
-                  var r = (m.role==='me')?'user':'assistant';
-                  var c = (r==='user')?_convertSpecialTags(m.text):String(m.text||'');
-                  _bridgeOut.push({role:r, content:c});
-                });
-                out = _bridgeOut.concat(out);
-              }
-            }
-          }catch(e){}
+          // 注意：线下经历不混入 messages 数组（避免 role 混淆）
+          // 线下经历通过 buildSystemPrompt 的 system prompt 注入（有明确说话人标注）
         }
         return out;
       }
@@ -16365,6 +16348,30 @@ const npc = _wxGetChatTargetMeta(npcId);
                 '"['+_myName2+'说]"= 用户说的，"[你('+( npc.name||'角色')+')说]"= 你自己说的。必须完整记住：\n\n' +
                 _onlineLines2.join('\n') + _factBlock2
               );
+            }
+          }
+        }catch(e){}
+
+        // === ★★★ 线上模式开关：注入线下经历记录（紧贴格式指令前，权重最高）===
+        try{
+          if(!_isOfflineMode){
+            var _bridgeCfgSP = phoneLoadSettings();
+            if(_bridgeCfgSP.onlineIncludeOfflineCtx !== false){
+              var _offlineLogBridge = _getLogForModeBranch(npcId, 'offline');
+              var _offBridgeN2 = (typeof _getOfflineChatContextN==='function') ? _getOfflineChatContextN() : 5;
+              var _offTailBridge = _offlineLogBridge.slice(-_offBridgeN2).filter(function(m){ return m.role!=='system'&&!m.recalled; });
+              if(_offTailBridge.length > 0){
+                var _myNameBridge = '用户';
+                try{ var _psBridge=phoneLoadSettings(); if(_psBridge&&_psBridge.phoneName) _myNameBridge=_psBridge.phoneName; }catch(e){}
+                var _offBridgeLines = _offTailBridge.map(function(m){
+                  return (m.role==='me'?'['+_myNameBridge+'说]':'[你('+( npc.name||'角色')+')说]')+': '+String(m.text||'').slice(0,200);
+                });
+                parts.push(
+                  '【★★★线下经历记录（你们面对面发生的事，在线聊天时必须记住）★★★】\n' +
+                  '"['+_myNameBridge+'说]"=用户，"[你('+( npc.name||'角色')+')说]"=你自己。\n\n' +
+                  _offBridgeLines.join('\n')
+                );
+              }
             }
           }
         }catch(e){}
