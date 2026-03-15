@@ -15854,27 +15854,16 @@ const npc = _wxGetChatTargetMeta(npcId);
       function _getRecentMessagesForAPI(npcId, n){
         var mode = _getChatMode(npcId);
         var out = [];
+        var totalN = Math.max(1, n || 10);
 
         if(mode === 'offline'){
-          // ★ 线下模式：先注入在线聊天消息（小手机聊天泡泡上下文），再注入线下消息
-          // 这样AI能读到线上说的「我找好了重庆火锅店，请你吃」等重要背景
-          var onlineLog = _getLogForModeBranch(npcId, 'online');
+          // ★ 线下模式：messages 数组只放线下消息
+          // 在线上下文已在 buildSystemPrompt 的 3.4 块里以 [用户说]/[你说] 格式注入 system prompt
+          // 混入 messages 数组会因 role:user/assistant 让 AI 分不清谁是谁
           var offlineLog = _getLogForModeBranch(npcId, 'offline');
-
-          var totalN = Math.max(1, n || 10);
-          // 在线消息：取 60%（约 30 条，如果你设了50），线下消息取剩余 40%（约 20 条）
-          // 不设硬编码上限，完全遵从用户在小手机设置里设置的上下文条数
-          var onlineN = Math.ceil(totalN * 0.6);
-          var offlineN = Math.max(3, totalN - onlineN);
-
-          var onlineTail = onlineLog.slice(-onlineN);
-          var offlineTail = offlineLog.slice(-Math.max(offlineN, 3));
-
-          // 合并：在线在前（背景），线下在后（当前场景）
-          var combined = onlineTail.concat(offlineTail);
-
-          for(var i=0; i<combined.length; i++){
-            var x = combined[i];
+          var offlineTail = offlineLog.slice(-totalN);
+          for(var i=0; i<offlineTail.length; i++){
+            var x = offlineTail[i];
             if(x.role==='system'||x.recalled) continue;
             var role = (x.role==='me') ? 'user' : 'assistant';
             var content = (role==='user') ? _convertSpecialTags(x.text) : String(x.text||'');
@@ -15883,7 +15872,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         } else {
           // 在线模式：正常读在线日志
           var log = _getLogForModeBranch(npcId, mode);
-          log = log.slice(Math.max(0, log.length - Math.max(1, n||10)));
+          log = log.slice(Math.max(0, log.length - totalN));
           for(var j=0; j<log.length; j++){
             var y = log[j];
             if(y.role==='system'||y.recalled) continue;
@@ -16073,16 +16062,43 @@ const npc = _wxGetChatTargetMeta(npcId);
         }catch(e){}
 
         // === 3.4 [★小手机线上聊天上下文 权重9] 线下模式时，注入线上手机对话作为最重要背景 ===
+        // 注意：在线消息只放在 system prompt 里（带明确的说话人标注），不混入 messages 数组
+        // 避免 role:user/assistant 让 AI 分不清谁是谁
         try{
           if(_getChatMode(npcId) === 'offline'){
             var phoneOnlineLog = _getLogForModeBranch(npcId, 'online');
-            var phoneOnlineTail = phoneOnlineLog.slice(-12).filter(function(m){ return m.role!=='system'&&!m.recalled; });
+            // 取最近20条，足够覆盖关键背景
+            var phoneOnlineTail = phoneOnlineLog.slice(-20).filter(function(m){ return m.role!=='system'&&!m.recalled; });
             if(phoneOnlineTail.length > 0){
+              var myName = '用户';
+              try{ var _pset = phoneLoadSettings(); if(_pset&&_pset.phoneName) myName = _pset.phoneName; }catch(e){}
               var phoneOnlineLines = phoneOnlineTail.map(function(m){
-                var who = m.role === 'me' ? '用户' : (npc.name||'角色');
-                return who + ': ' + String(m.text||'').slice(0, 200);
+                // 明确标注：是用户说的还是角色自己说的
+                if(m.role === 'me'){
+                  return '[' + myName + '说]: ' + String(m.text||'').slice(0, 200);
+                } else {
+                  return '[你(' + (npc.name||'角色') + ')说]: ' + String(m.text||'').slice(0, 200);
+                }
               });
-              parts.push('【★重要·小手机线上聊天记录（切换到线下前的对话，权重最高）】\n以下是你们在手机上聊天的最近对话，你必须记住这些内容并在线下场景中体现：\n' + phoneOnlineLines.join('\n'));
+              // 提取关键事实
+              var keyFacts = [];
+              phoneOnlineTail.forEach(function(m){
+                var t = String(m.text||'');
+                if(m.role==='me' && (t.indexOf('请你')>=0||t.indexOf('我请')>=0||t.indexOf('请客')>=0||t.indexOf('我来请')>=0||t.indexOf('我做东')>=0||t.indexOf('我说请')>=0)){
+                  keyFacts.push('⚠ 是'+myName+'（用户）主动提出请你吃饭——你是被请的一方，不要反过来抢着请客。');
+                }
+                if(m.role==='me' && (t.indexOf('找好了')>=0||t.indexOf('选好了')>=0||t.indexOf('订好了')>=0||t.indexOf('看好了')>=0)){
+                  keyFacts.push('⚠ 是'+myName+'（用户）已经找好/选好了去处，不是你安排的。');
+                }
+              });
+              var factBlock = keyFacts.length > 0 ? '\n\n关键事实（必须遵守）：\n' + [...new Set(keyFacts)].join('\n') : '';
+              parts.push(
+                '【★线上聊天记录（权重最高，线下场景的前情背景）】\n' +
+                '以下是你们切换到线下场景之前，在小手机上的对话记录。\n' +
+                '格式：[说话人] 内容。"['+myName+'说]"是用户发的，"[你('+( npc.name||'角色')+')说]"是你自己发的。\n\n' +
+                phoneOnlineLines.join('\n') +
+                factBlock
+              );
             }
           }
         }catch(e){}
