@@ -28299,6 +28299,145 @@ var _defaultFurnPositions = {
   toilet: { gx:0, gy:3 },
 };
 
+// ★ NPC 家具互动面板：动态日志 + 隐藏秘密 + 连接 AI 生成
+async function _showNpcFurnPanel(container, mapData, houseId, npcId, npcName, furn, cat){
+  // 记录一条动态日志
+  try{
+    var cs2 = _loadCharState(npcId);
+    if(cs2 && cs2.attrs){
+      for(var fk in (cat.fx||{})){
+        if(cs2.attrs[fk]!=null) cs2.attrs[fk] = _clampAttr(fk, cs2.attrs[fk]+(cat.fx[fk]||0));
+      }
+      cs2.lastCalcAt = Date.now(); _saveCharState(npcId, cs2);
+    }
+    var logD = _mapLoadLog();
+    logD.logs.push({ id:'log_room_'+Date.now(), npcId:npcId, npcName:npcName,
+      landmarkId:houseId, time:Date.now(), period:'room',
+      action:'在家里'+cat.desc, cost:0, statusEffect:cat.fx, isAuto:false });
+    if(logD.logs.length>200) logD.logs=logD.logs.slice(-200);
+    _mapSaveLog(logD);
+  }catch(e){}
+
+  // 构建面板
+  var npcAvSrc = (typeof phoneGetAvatar==='function') ? phoneGetAvatar(npcId) : '';
+  var avH = npcAvSrc ? '<img src="'+esc(npcAvSrc)+'" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"/>' : esc((npcName||'?').charAt(0));
+
+  // 已有日志（最近5条）
+  var existLogs = [];
+  try{
+    var logD2 = _mapLoadLog();
+    existLogs = (logD2.logs||[]).filter(function(l){ return l.npcId===npcId; }).slice(-5).reverse();
+  }catch(e){}
+
+  function logHtml(logs){
+    if(!logs.length) return '<div style="font-size:11px;color:rgba(20,24,28,.3);text-align:center;padding:8px 0;">暂无动态</div>';
+    return logs.map(function(l){
+      var t = l.time ? new Date(l.time) : null;
+      var ts = t ? (t.getHours()<10?'0':'')+t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes() : '';
+      return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.04);">' +
+        '<span style="font-size:13px;">'+((l.period==='room'?cat.emoji:'')||'📍')+'</span>' +
+        '<span style="font-size:11px;color:rgba(20,24,28,.75);flex:1;">'+esc(l.action||'')+'</span>' +
+        '<span style="font-size:9px;color:rgba(20,24,28,.3);">'+ts+'</span></div>';
+    }).join('');
+  }
+
+  var attrFx = [];
+  var attrNames = {mood:'心情',energy:'精力',health:'健康',hunger:'饱腹',fun:'娱乐'};
+  for(var fk2 in (cat.fx||{})){ var v=cat.fx[fk2]; if(v>0) attrFx.push((attrNames[fk2]||fk2)+'+'+v); }
+
+  var inner =
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
+      '<div style="width:40px;height:40px;border-radius:50%;overflow:hidden;background:rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">'+avH+'</div>' +
+      '<div><div style="font-size:14px;font-weight:600;color:var(--ph-text);">'+esc(npcName)+'</div>' +
+      '<div style="font-size:11px;color:var(--ph-text-sub);">'+cat.emoji+' '+esc(cat.label)+(attrFx.length?' · '+attrFx.join(' '):'')+'</div></div>' +
+    '</div>' +
+    '<div style="font-size:11px;color:var(--ph-text-sub);margin-bottom:6px;opacity:.7;">📋 最近动态</div>' +
+    '<div data-el="furnLogList" style="margin-bottom:12px;">'+logHtml(existLogs)+'</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">' +
+      '<button data-el="genMore" style="padding:9px 6px;border-radius:10px;border:0;background:var(--ph-accent-grad,linear-gradient(135deg,#07c160,#06a050));color:#fff;font-size:12px;font-weight:600;cursor:pointer;">✦ 生成更多日志</button>' +
+      '<button data-el="genSecret" style="padding:9px 6px;border-radius:10px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.08));background:var(--ph-glass,rgba(255,255,255,.85));font-size:12px;cursor:pointer;color:var(--ph-text);">🔍 查找隐藏秘密</button>' +
+    '</div>' +
+    '<div data-el="secretArea" style="display:none;margin-bottom:8px;padding:10px 12px;background:rgba(243,156,18,.06);border:1px solid rgba(243,156,18,.2);border-radius:10px;font-size:12px;color:var(--ph-text);line-height:1.6;"></div>' +
+    '<button data-el="panelClose" style="width:100%;padding:9px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:transparent;font-size:12px;cursor:pointer;color:var(--ph-text-sub);">关闭</button>';
+
+  var ov = _cpShowOverlay(inner);
+  ov.querySelector('[data-el="panelClose"]')?.addEventListener('click', function(){ ov.remove(); });
+
+  // 生成更多动态日志
+  ov.querySelector('[data-el="genMore"]')?.addEventListener('click', async function(){
+    var btn = this; btn.disabled=true; btn.textContent='生成中…';
+    try{
+      var db3 = loadContactsDB();
+      var npc3 = findContactById(db3, npcId) || { name:npcName };
+      var charEx = _loadCharExtra(npcId);
+      var mapD = _mapLoad();
+      var lmNames = (mapD&&mapD.landmarks||[]).map(function(lm){ return (lm.customName||lm.name); }).join('、');
+      var sysP = '你是角色「'+npcName+'」的生活模拟器。只返回 JSON 数组，不要任何其他内容。\n'+
+        '格式：[{"action":"描述（15字内，第一人称角度写角色正在做的事）","emoji":"对应emoji","mood":"心情变化词（如：放松、满足、期待等）"}]\n'+
+        (charEx&&charEx.profile?'角色设定：'+charEx.profile.slice(0,300)+'\n':'');
+      var userM = '角色「'+npcName+'」在家里，刚使用了「'+cat.label+'」（'+cat.desc+'）。\n'+
+        '请生成3条接下来发生的生动生活动态，要符合角色性格，有真实感。';
+      var res = await PhoneAI.chat({ system:sysP, messages:[{role:'user',content:userM}], channel:'background', maxTokens:400, timeout:30 });
+      if(!res||!res.ok) throw new Error(res&&res.error||'请求失败');
+      var raw3 = String(res.data||'').replace(/```json[\s\S]*?```|```[\s\S]*?```/g,function(m){return m.replace(/```json?/,'').replace(/```/,'');}).trim();
+      var arr3 = JSON.parse((raw3.match(/\[[\s\S]*\]/)||['[]'])[0]);
+      var now3 = Date.now();
+      var logD3 = _mapLoadLog();
+      var newLogs3 = [];
+      arr3.forEach(function(item){
+        if(!item.action) return;
+        var log3 = { id:'log_ai_'+now3+'_'+Math.random().toString(36).substr(2,4), npcId:npcId, npcName:npcName,
+          landmarkId:houseId, time:now3+newLogs3.length*120000, period:'room',
+          action:item.action, cost:0, statusEffect:{mood:5}, isAuto:true, emoji:item.emoji||cat.emoji };
+        logD3.logs.push(log3); newLogs3.push(log3);
+      });
+      if(logD3.logs.length>200) logD3.logs=logD3.logs.slice(-200);
+      _mapSaveLog(logD3);
+      var allLogs = logD3.logs.filter(function(l){ return l.npcId===npcId; }).slice(-6).reverse();
+      var listEl = ov.querySelector('[data-el="furnLogList"]');
+      if(listEl) listEl.innerHTML = logHtml(allLogs);
+      try{toast('✦ 已生成 '+newLogs3.length+' 条动态');}catch(e){}
+    }catch(e){ try{toast('生成失败: '+(e.message||e));}catch(e2){} }
+    btn.disabled=false; btn.textContent='✦ 生成更多日志';
+  });
+
+  // 查找隐藏秘密（日记/私藏/心愿等）
+  ov.querySelector('[data-el="genSecret"]')?.addEventListener('click', async function(){
+    var btn = this; btn.disabled=true; btn.textContent='搜寻中…';
+    var secretArea = ov.querySelector('[data-el="secretArea"]');
+    if(secretArea) secretArea.style.display='none';
+    try{
+      var db4 = loadContactsDB();
+      var npc4 = findContactById(db4, npcId) || { name:npcName };
+      var charEx4 = _loadCharExtra(npcId);
+      var furnSecretTypes = {
+        bed:'床头柜里可能藏着一本日记或私人信件',
+        sofa:'沙发垫下有时会夹着随手写的便条或零钱',
+        stove:'冰箱上贴的便利贴、锅里残留的味道',
+        lamp:'床头灯旁的书签、夹在书里的字条',
+        wardrobe:'衣柜最里面可能有珍藏的照片或旧物',
+        tv:'电视机旁的遥控器夹着一张电话号码',
+        piano:'琴谱里夹着一首写给某人的曲子',
+        plant:'花盆底部藏着一个小纸条或纪念物',
+        coffeetable:'茶几抽屉里有一叠没寄出的信',
+        bookshelf:'书架最高处有一本特别的书'
+      };
+      var furnHint = furnSecretTypes[furn.type] || '这件家具旁可能藏着什么小秘密';
+      var sysP4 = '你在帮玩家探索角色「'+npcName+'」家中的秘密。根据角色设定，生成一段真实感强的「发现」场景描述（80-150字），第二人称视角，像在讲故事。\n不要生成任何有害内容，保持温馨、感动或有趣的基调。\n'+
+        (charEx4&&charEx4.profile?'角色设定：'+charEx4.profile.slice(0,400)+'\n':'');
+      var userM4 = '你在「'+npcName+'」的家里，检视了「'+cat.label+'」。\n'+furnHint+'。\n请根据角色性格生成一段发现场景（不需要标题，直接开始叙述）。';
+      var res4 = await PhoneAI.chat({ system:sysP4, messages:[{role:'user',content:userM4}], channel:'background', maxTokens:300, timeout:30 });
+      if(!res4||!res4.ok) throw new Error(res4&&res4.error||'请求失败');
+      var secretText = String(res4.data||'').trim().replace(/^["「]|["」]$/g,'');
+      if(secretText && secretArea){
+        secretArea.style.display='block';
+        secretArea.innerHTML = '🔍 <strong>发现</strong><br><span style="font-size:11px;line-height:1.7;color:rgba(20,24,28,.7);">'+esc(secretText)+'</span>';
+      }
+    }catch(e){ try{toast('未发现秘密…');}catch(e2){} }
+    btn.disabled=false; btn.textContent='🔍 查找隐藏秘密';
+  });
+}
+
 function _mapOpenRoom(container, mapData, houseId){
   // Always reload mapData fresh to avoid stale-closure bugs after re-renders
   try{ mapData = _mapLoad() || mapData; }catch(e){}
@@ -28405,8 +28544,9 @@ function _mapOpenRoom(container, mapData, houseId){
     // 窗户位置数据（装修模式可调）
     var wL = house._winLeft || {ox:75, oy:50, sc:1};
     var wR = house._winRight || {ox:225, oy:68, sc:1};
-    // 经典格窗多边形坐标（left wall）
-    var lwx1=80, lwy1=40, lwx2=120, lwy2=60;
+    // 经典格窗多边形坐标 — 左墙方向 (前→后 = 左下→右上，dx≈140,dy≈-72 per full width)
+    // 窗口占左墙中段：从 t=0.22 到 t=0.52 处
+    var lwx1=40, lwy1=86, lwx2=82, lwy2=65;
 
     if(_winStyle === 'modern'){
       var _wlSel = _editMode && _winTarget==='left';
@@ -28940,31 +29080,30 @@ function _mapOpenRoom(container, mapData, houseId){
       if(!f) return;
       var cat = FURNITURE_CATALOG[f.type];
       if(!cat) return;
-      try{
-        var targetId = npcOwner || (state.chatTarget);
-        if(targetId){
-          var cs = _loadCharState(targetId);
-          if(cs && cs.attrs){
-            for(var fk2 in (cat.fx||{})){
-              if(cs.attrs[fk2]!=null) cs.attrs[fk2] = _clampAttr(fk2, cs.attrs[fk2]+(cat.fx[fk2]||0));
-            }
-            cs.lastCalcAt = Date.now();
-            _saveCharState(targetId, cs);
+
+      if(npcOwner){
+        // ★ NPC 房间：点击家具 → 显示角色互动面板（日志 + 隐藏秘密）
+        _showNpcFurnPanel(container, mapData, houseId, npcOwner, npcOwnerName, f, cat);
+      } else {
+        // 自己的房间：直接使用
+        try{
+          var us2 = _loadUserState();
+          for(var fk3 in (cat.fx||{})){
+            var ak3 = fk3; if(us2.attrs[ak3]!=null) us2.attrs[ak3] = _clampUserAttr(ak3, us2.attrs[ak3]+(cat.fx[fk3]||0));
           }
-        }
-      }catch(e){}
-      try{
-        var logData2 = _mapLoadLog();
-        logData2.logs.push({
-          id:'log_room_'+Date.now(), npcId:npcOwner||'me', npcName:npcOwnerName||'我',
-          landmarkId:houseId, time:Date.now(), period:'room',
-          action:'在家里'+cat.desc, cost:0, statusEffect:cat.fx, isAuto:false
-        });
-        if(logData2.logs.length>200) logData2.logs=logData2.logs.slice(-200);
-        _mapSaveLog(logData2);
-      }catch(e){}
-      try{ toast(cat.emoji+' '+cat.desc); }catch(e){}
-      renderRoom();
+          us2.lastCalcAt = Date.now(); _saveUserState(us2);
+        }catch(e){}
+        try{
+          var logData2 = _mapLoadLog();
+          logData2.logs.push({ id:'log_room_'+Date.now(), npcId:'me', npcName:'我',
+            landmarkId:houseId, time:Date.now(), period:'room',
+            action:'在家里'+cat.desc, cost:0, statusEffect:cat.fx, isAuto:false });
+          if(logData2.logs.length>200) logData2.logs=logData2.logs.slice(-200);
+          _mapSaveLog(logData2);
+        }catch(e){}
+        try{ toast(cat.emoji+' '+cat.desc); }catch(e){}
+        renderRoom();
+      }
       return;
     }
 
