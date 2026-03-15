@@ -16392,7 +16392,9 @@ const npc = _wxGetChatTargetMeta(npcId);
             var _bridgeCfgSP = phoneLoadSettings();
             if(_bridgeCfgSP.onlineIncludeOfflineCtx !== false){
               var _offlineLogBridge = _getLogForModeBranch(npcId, 'offline');
-              var _offBridgeN2 = (typeof _getOfflineChatContextN==='function') ? _getOfflineChatContextN() : 5;
+              // ★ 向线上注入线下背景时，用线上的N（50条），不用线下的N（5条）
+              // 线下N小是为省token，但这里是给线上AI提供完整背景，需要足够的历史
+              var _offBridgeN2 = (typeof _getChatContextN==='function') ? _getChatContextN() : 20;
               var _offTailBridge = _offlineLogBridge.slice(-_offBridgeN2).filter(function(m){ return m.role!=='system'&&!m.recalled; });
               console.log('[online-bridge] offlineLog total:', _offlineLogBridge.length, 'tail:', _offTailBridge.length, 'N:', _offBridgeN2, 'setting:', _bridgeCfgSP.onlineIncludeOfflineCtx);
               if(_offTailBridge.length > 0){
