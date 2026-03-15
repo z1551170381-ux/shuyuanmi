@@ -7758,6 +7758,12 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
         try{ return phoneSetC(_phUID(), key, val); }catch(e){}
       }
 
+      // ★ Wire outer-scope map save/load to use THIS closure's _phLoad/_phSave
+      _mapLoadImpl    = function(){ return _phLoad(PHONE_CHAT_KEYS.map, null); };
+      _mapSaveImpl    = function(d){ _phSave(PHONE_CHAT_KEYS.map, d); };
+      _mapLoadLogImpl = function(){ return _phLoad(PHONE_CHAT_KEYS.maplog, {v:1,lastAutoGen:0,logs:[]}); };
+      _mapSaveLogImpl = function(d){ _phSave(PHONE_CHAT_KEYS.maplog, d); };
+
       // ====== 钱包数据层 ======
       function loadWallet(){
         const w = _phLoad(PHONE_IM_KEYS.wallet, null);
@@ -26126,24 +26132,13 @@ function _mapGenerate(seed){
 }
 
 // ---- 数据存取 ----
-// ---- 数据存取 ----
-// These functions are at outer-IIFE scope (outside MEOW.phone inner closure).
-// Use phoneGetC/phoneSetC + phoneGetChatUID directly with same fallback as _phUID.
-function _mapUID(){
-  try{ var u = (typeof phoneGetChatUID==='function') ? String(phoneGetChatUID()||'').trim() : ''; return u||'fallback'; }catch(e){ return 'fallback'; }
-}
-function _mapLoad(){
-  try{ return phoneGetC(_mapUID(), PHONE_CHAT_KEYS.map, null); }catch(e){ return null; }
-}
-function _mapSave(data){
-  try{ phoneSetC(_mapUID(), PHONE_CHAT_KEYS.map, data); }catch(e){ console.warn('[mapSave]',e); }
-}
-function _mapLoadLog(){
-  try{ return phoneGetC(_mapUID(), PHONE_CHAT_KEYS.maplog, { v:1, lastAutoGen:0, logs:[] }); }catch(e){ return { v:1, lastAutoGen:0, logs:[] }; }
-}
-function _mapSaveLog(data){
-  try{ phoneSetC(_mapUID(), PHONE_CHAT_KEYS.maplog, data); }catch(e){}
-}
+// _mapSaveImpl/_mapLoadImpl are SET from inside the inner closure (where _phSave/_phLoad live).
+// This is the only correct way — the outer scope cannot call inner closure functions directly.
+var _mapSaveImpl = null, _mapLoadImpl = null, _mapSaveLogImpl = null, _mapLoadLogImpl = null;
+function _mapLoad(){ return _mapLoadImpl ? _mapLoadImpl() : null; }
+function _mapSave(data){ if(_mapSaveImpl) _mapSaveImpl(data); }
+function _mapLoadLog(){ return _mapLoadLogImpl ? _mapLoadLogImpl() : {v:1,lastAutoGen:0,logs:[]}; }
+function _mapSaveLog(data){ if(_mapSaveLogImpl) _mapSaveLogImpl(data); }
 
 function _mapEnsure(){
   var data = _mapLoad();
@@ -28712,32 +28707,27 @@ function _mapOpenRoom(container, mapData, houseId){
       html += '</g>';
       html += '</g>';
     } else {
-      // 经典格窗 - 左墙：使用左面 matrix(-1,0.5,0,1)，外观与右窗对称
-      // 锚点：左墙中部偏后 (75,50)，窗宽60，高40，与右窗尺寸一致
+      // 经典格窗 — 左窗用 polygon 坐标直接绘制，与右窗完全对称
+      // 右窗：宽60，高32(rwy1-32=10, rwy1=42 → 高=32)，斜率+0.5
+      // 左窗：宽60，高32，斜率-0.5（左墙方向）
+      // 锚点近端底(45,100)，远端底(105,70)，近端顶(45,68)，远端顶(105,38)
+      var lwx1=45, lwy1=100, lwx2=105, lwy2=70;
       var _wlSel2 = _editMode && _winTarget==='left';
-      html += '<g transform="translate('+((wL.ox||75))+','+((wL.oy||50))+') scale('+(wL.sc||1)+')" data-win="left" style="cursor:'+(_editMode?'pointer':'default')+';">';
-      if(_wlSel2) html += '<polygon points="-60,-40 0,-10 0,0 -60,-30" fill="rgba(100,180,80,.18)" stroke="rgba(100,180,80,.6)" stroke-width="0.8" stroke-dasharray="3,2"/>';
-      // 窗框（左面：translate(-2,1) matrix(-1,0.5,0,1)）
-      html += '<g transform="translate(0,1) matrix(-1,0.5,0,1,0,0)">';
-      // 主窗面（暖橙色 = 室外光，与右窗一致）
-      html += '<rect x="2" y="-38" width="56" height="36" fill="'+lighting.windowGlow+'" stroke="#A89878" stroke-width="1.0"/>';
-      // 横向中分线
-      html += '<line x1="2" y1="-20" x2="58" y2="-20" stroke="#A89878" stroke-width="0.8"/>';
-      // 竖向中分线
-      html += '<line x1="30" y1="-38" x2="30" y2="-2" stroke="#A89878" stroke-width="0.8"/>';
-      // 高光
-      html += '<rect x="4" y="-36" width="8" height="16" fill="rgba(255,255,255,0.12)"/>';
-      html += '</g>';
-      // 外框
-      html += '<rect x="0" y="-40" width="2" height="40" fill="#D0BEA0" transform="translate(-60,30) matrix(1,0.5,0,1,0,0)"/>';
-      html += '<rect x="0" y="0" width="2" height="60" fill="#C8B898" transform="translate(0,-40) matrix(1,0.5,-1,0.5,0,0)"/>';
+      html += '<g transform="translate('+((wL.ox||75)-75)+','+((wL.oy||50)-50)+') scale('+(wL.sc||1)+')" data-win="left" style="cursor:'+(_editMode?'pointer':'default')+';">';
+      if(_wlSel2) html += '<polygon points="'+lwx1+','+(lwy1-36)+' '+lwx2+','+(lwy2-36)+' '+lwx2+','+(lwy2+4)+' '+lwx1+','+(lwy1+4)+'" fill="rgba(100,180,80,.18)" stroke="rgba(100,180,80,.6)" stroke-width="0.8" stroke-dasharray="3,2"/>';
+      // 主窗面 polygon（近端顶→远端顶→远端底→近端底）
+      html += '<polygon points="'+lwx1+','+(lwy1-32)+' '+lwx2+','+(lwy2-32)+' '+lwx2+','+lwy2+' '+lwx1+','+lwy1+'" fill="'+lighting.windowGlow+'" stroke="#A89878" stroke-width="1.2"/>';
+      // 竖向中线（x中点，从顶边中点到底边中点）
+      html += '<line x1="'+((lwx1+lwx2)/2)+'" y1="'+((lwy1-32+lwy1)/2)+'" x2="'+((lwx1+lwx2)/2)+'" y2="'+((lwy2-32+lwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
+      // 横向中线（近端y-16 → 远端y-16）
+      html += '<line x1="'+lwx1+'" y1="'+(lwy1-16)+'" x2="'+lwx2+'" y2="'+(lwy2-16)+'" stroke="#A89878" stroke-width="0.8"/>';
       html += '</g>';
 
-      // 经典格窗 - 右墙
+      // 经典格窗 - 右墙（不变）
       var rwx1=195, rwy1=42, rwx2=255, rwy2=72;
       var _wrSel2 = _editMode && _winTarget==='right';
       html += '<g transform="translate('+((wR.ox||225)-225)+','+((wR.oy||68)-68)+') scale('+(wR.sc||1)+')" data-win="right" style="cursor:'+(_editMode?'pointer':'default')+';">';
-      if(_wrSel2) html += '<polygon points="'+rwx1+','+(rwy1-36)+' '+rwx2+','+(rwy2-36)+' '+rwx2+','+(rwy2+2)+' '+rwx1+','+(rwy1+2)+'" fill="rgba(100,180,80,.18)" stroke="rgba(100,180,80,.6)" stroke-width="0.8" stroke-dasharray="3,2"/>';
+      if(_wrSel2) html += '<polygon points="'+rwx1+','+(rwy1-36)+' '+rwx2+','+(rwy2-36)+' '+rwx2+','+(rwy2+4)+' '+rwx1+','+(rwy1+4)+'" fill="rgba(100,180,80,.18)" stroke="rgba(100,180,80,.6)" stroke-width="0.8" stroke-dasharray="3,2"/>';
       html += '<polygon points="'+rwx1+','+(rwy1-32)+' '+rwx2+','+(rwy2-32)+' '+rwx2+','+rwy2+' '+rwx1+','+rwy1+'" fill="'+lighting.windowGlow+'" stroke="#A89878" stroke-width="1.2"/>';
       html += '<line x1="'+((rwx1+rwx2)/2)+'" y1="'+((rwy1-32+rwy1)/2)+'" x2="'+((rwx1+rwx2)/2)+'" y2="'+((rwy2-32+rwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
       html += '<line x1="'+rwx1+'" y1="'+(rwy1-16)+'" x2="'+rwx2+'" y2="'+(rwy2-16)+'" stroke="#A89878" stroke-width="0.8"/>';
@@ -28953,15 +28943,17 @@ function _mapOpenRoom(container, mapData, houseId){
     }
     html += '</div>';
 
-    // 日志
-    var logData = _mapLoadLog();
-    var houseLogs = _safeArr(logData.logs).filter(function(l){ return l.npcId===(npcOwner||'me') || l.landmarkId===houseId; }).slice(-5).reverse();
-    if(houseLogs.length){
-      html += '<div class="mapRoomLog"><div style="font-size:10px;color:rgba(20,24,28,.35);margin-bottom:3px;">最近动态</div>';
-      houseLogs.forEach(function(l){
-        html += '<div style="font-size:10px;color:rgba(20,24,28,.45);padding:1px 0;">'+esc(l.npcName||'???')+' · '+esc(l.action||'')+'</div>';
-      });
-      html += '</div>';
+    // 日志 — 只在自己的房间底部显示，NPC房间靠点击家具发现（有惊喜感）
+    if(isMyH){
+      var logData = _mapLoadLog();
+      var houseLogs = _safeArr(logData.logs).filter(function(l){ return l.npcId==='me' || l.landmarkId===houseId; }).slice(-3).reverse();
+      if(houseLogs.length){
+        html += '<div class="mapRoomLog"><div style="font-size:10px;color:rgba(20,24,28,.35);margin-bottom:3px;">最近动态</div>';
+        houseLogs.forEach(function(l){
+          html += '<div style="font-size:10px;color:rgba(20,24,28,.45);padding:1px 0;">'+esc(l.npcName||'???')+' · '+esc(l.action||'')+'</div>';
+        });
+        html += '</div>';
+      }
     }
 
     roomEl.innerHTML = html;
@@ -29483,30 +29475,36 @@ function _mapOpenRoom(container, mapData, houseId){
     if(_titleEl) _titleEl.textContent = house.name;
     var _spEl = root.querySelector('.phAppBarSpacer');
     if(_spEl){
-      // 注入⚙️按钮到AppBar右侧（同地图设置位置）
       if(npcOwner){
-        _spEl.innerHTML = '<button class="phBarRBtn" data-act="roomSettings" title="房间设置">'+_phFlatIcon('⚙️')+'</button>';
+        _spEl.innerHTML = '<button class="phBarRBtn" data-act="roomSettings" title="房间设置" style="font-size:16px;">⚙️</button>';
       } else {
         _spEl.innerHTML = '';
       }
     }
   }catch(e){}
 
-  // 拦截全局 back 动作：如果房间存在就关闭房间而不是退出地图
+  // 拦截全局 back 动作 + app bar 按钮（gear在spacer里，在roomEl外）
   function _roomGlobalBackHook(e){
-    var t = e.target && e.target.closest ? e.target.closest('[data-act="back"]') : null;
+    var t = e.target && e.target.closest ? e.target.closest('[data-act]') : null;
     if(!t) return;
+    var a = t.getAttribute('data-act');
+    if(a === 'roomSettings'){
+      _openRoomSettings(container, mapData, houseId, npcOwner, npcOwnerName);
+      return;
+    }
+    if(a !== 'back') return;
     if(!root.contains(roomEl)) return;
     e.stopPropagation();
     clearInterval(_lightTimer);
     if(_mapZoomBar) _mapZoomBar.style.display = '';
     roomEl.remove();
-    // 恢复地图标题
+    // 恢复地图标题和右侧按钮
     try{
       var _titleEl2 = root.querySelector('[data-ph="appTitle"]');
       if(_titleEl2) _titleEl2.textContent = '地图';
+      var _spEl2 = root.querySelector('.phAppBarSpacer');
+      if(_spEl2) _spEl2.innerHTML = '';
     }catch(e2){}
-    // 解除拦截
     root.removeEventListener('click', _roomGlobalBackHook, true);
   }
   root.addEventListener('click', _roomGlobalBackHook, true);
