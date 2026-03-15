@@ -13558,7 +13558,16 @@ const npc = _wxGetChatTargetMeta(npcId);
               <div class="wxChatInputBar wxOfflineInputBar">
                 <button class="wxChatExBtn wxOffSceneBtn" data-act="wxSceneEdit" data-npcid="${esc(contactId)}">☕</button>
                 <textarea rows="1" placeholder="描述你的行动…" data-ph="chatInput" inputmode="text" enterkeyhint="send" autocomplete="off"></textarea>
+                <button class="wxChatExBtn" data-act="wxChatPlusToggle" title="更多">${_phFlatIcon('➕')}</button>
                 <button class="wxChatSendBtn" data-act="wxSendChat" title="发送" style="flex-shrink:0;">发送</button>
+              </div>
+              <div class="wxChatPlusGrid" style="display:none;" data-ph="chatPlusGrid">
+                <div class="wxCPItem" data-act="wxCPAction" data-cpact="maplandmark"><div class="wxCPIco">${_phFlatIcon('📍')}</div><div class="wxCPLabel">地标</div></div>
+                <div class="wxCPItem" data-act="wxCPAction" data-cpact="photo"><div class="wxCPIco">${_phFlatIcon('🖼')}</div><div class="wxCPLabel">照片</div></div>
+                <div class="wxCPItem" data-act="wxCPAction" data-cpact="location"><div class="wxCPIco"><svg class="phIco" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg></div><div class="wxCPLabel">位置</div></div>
+                <div class="wxCPItem" data-act="wxCPAction" data-cpact="gift"><div class="wxCPIco"><svg class="phIco" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 12 7.4l3.38 4.6L17 10.83 14.92 8H20v6z"/></svg></div><div class="wxCPLabel">礼物</div></div>
+                <div class="wxCPItem" data-act="wxCPAction" data-cpact="transfer"><div class="wxCPIco"><svg class="phIco" viewBox="0 0 24 24" fill="currentColor"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></div><div class="wxCPLabel">转账</div></div>
+                <div class="wxCPItem" data-act="wxCPAction" data-cpact="music"><div class="wxCPIco">${_phFlatIcon('🎵')}</div><div class="wxCPLabel">音乐</div></div>
               </div>
             </div>`;
         } else {
