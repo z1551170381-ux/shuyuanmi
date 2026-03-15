@@ -18644,7 +18644,8 @@ const npc = _wxGetChatTargetMeta(npcId);
         var contextMessages = _getRecentMessagesForAPI(npcId, contextN);
         var systemPrompt = buildSystemPrompt(npcId);
 
-        var result = await PhoneAI.chat({ messages: contextMessages, system: systemPrompt });
+        var _triggerIsOffline = (typeof _getChatMode === 'function') && _getChatMode(npcId) === 'offline';
+        var result = await PhoneAI.chat({ messages: contextMessages, system: systemPrompt, timeout: _triggerIsOffline ? 180 : 60 });
 
         if (mySeqId !== PhoneAI._replySeqId || state.chatTarget !== myChatId){
           _hideTypingIndicator(); return;
@@ -19614,7 +19615,8 @@ const npc = _wxGetChatTargetMeta(npcId);
 
           const result = await PhoneAI.chat({
             messages: contextMessages,
-            system: systemPrompt
+            system: systemPrompt,
+            timeout: (_getChatMode(npcId) === 'offline') ? 180 : 60
           });
 
           if (mySeqId !== PhoneAI._replySeqId || state.chatTarget !== myChatId){
@@ -19772,11 +19774,12 @@ const npc = _wxGetChatTargetMeta(npcId);
           const contextMessages = _getRecentMessagesForAPI(npcId, contextN);
           const systemPrompt = buildSystemPrompt(npcId);
 
-          // 3. 调用 API
+          // 3. 调用 API（线下模式回复像小说，字数多，超时时间加长）
+          var _isOffline = (typeof _getChatMode === 'function') && _getChatMode(npcId) === 'offline';
           const result = await PhoneAI.chat({
             messages: contextMessages,
             system: systemPrompt,
-            timeout: 60
+            timeout: _isOffline ? 180 : 60
           });
 
           // 检查序列是否仍有效（未切换会话/关闭）
@@ -19963,7 +19966,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           var contextN = _getChatContextN();
           var contextMessages = _getRecentMessagesForAPI(npcId, contextN);
           var systemPrompt = buildSystemPrompt(npcId);
-          var result = await PhoneAI.chat({ messages: contextMessages, system: systemPrompt, timeout: 60 });
+          var result = await PhoneAI.chat({ messages: contextMessages, system: systemPrompt, timeout: (_getChatMode(npcId) === 'offline') ? 180 : 60 });
           try{ _hideTypingIndicator(); }catch(e){}
           if (!result || !result.ok || !result.data){
             var err = (result && result.error) ? String(result.error) : 'AI 请求失败';
@@ -21070,6 +21073,10 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         try{
           var ps = _loadPokeSettings(npcId);
+
+          // 线下模式不触发戳一戳和引用（这些是线上功能）
+          var _pokeMode = (typeof _getChatMode === 'function') ? _getChatMode(npcId) : 'online';
+          if(_pokeMode === 'offline') return;
 
           // AI 自动戳一戳
           if (ps.aiAutoPoke && ps.enabled){
