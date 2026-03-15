@@ -757,7 +757,9 @@ function ensureTuneStyle(){
 #${ID} .wxDIcoThemed svg.phIco,
 #${ID} .wxCHIco svg.phIco,
 #${ID} .wxCSIco svg.phIco,
-#${ID} .wxCIAvatar svg.phIco{ fill: var(--ph-icon-inner-tint, var(--ph-text-sub)) !important; }
+#${ID} .wxCIAvatar svg.phIco,
+#${ID} .wxSDAttrIcon svg.phIco,
+#${ID} .wxUAttrIcon svg.phIco{ fill: var(--ph-icon-inner-tint, var(--ph-text-sub)) !important; }
 /* 红色删除图标 */
 #${ID} .wxCSItem[data-act="wxDelChat"] .wxCSIco svg.phIco,
 #${ID} .wxCSItem[data-act="wxDelFriend"] .wxCSIco svg.phIco{ fill:rgba(231,76,60,.85) !important; }
@@ -2913,7 +2915,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   padding:7px 14px; border-bottom:1px solid rgba(0,0,0,.04);
 }
 #${ID} .wxSDAttrRow:last-child{ border-bottom:0; }
-#${ID} .wxSDAttrIcon{ font-size:14px; width:20px; text-align:center; flex-shrink:0; opacity:.7; }
+#${ID} .wxSDAttrIcon{ font-size:14px; width:20px; text-align:center; flex-shrink:0; opacity:.7; color:var(--ph-icon-inner-tint, currentColor); }
 #${ID} .wxSDAttrLabel{ font-size:12px; color:var(--ph-text-sub); min-width:30px; flex-shrink:0; }
 #${ID} .wxSDAttrTrack{
   flex:1; height:5px; background:rgba(0,0,0,.07); border-radius:3px; overflow:hidden;
@@ -4747,10 +4749,12 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
             // 我的头像（桌面/我的页）
             if (el.classList.contains('pwAvatar') || el.classList.contains('wxMeAvatar')) return 'me';
 
-            // 微信聊天气泡头像：根据气泡 me/them
+            // 微信聊天气泡头像：根据气泡 me/them（含线下模式 wxOfflineParagraph）
             if (el.classList.contains('wxCBAvatar')){
               const bubble = el.closest('.wxChatBubble');
               if (bubble && bubble.classList.contains('me')) return 'me';
+              const offlinePara = el.closest('.wxOfflineParagraph');
+              if (offlinePara && offlinePara.classList.contains('me')) return 'me';
               const tid = (state && state.chatTarget) ? String(state.chatTarget).trim() : '';
               if (tid) return tid;
             }
@@ -4948,8 +4952,10 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
             if (el.classList.contains('pwAvatar') || el.classList.contains('wxMeAvatar')) key = 'me';
             else if (el.classList.contains('wxCBAvatar')){
               const bubble = el.closest('.wxChatBubble');
-              key = (bubble && bubble.classList.contains('me')) ? 'me'
-                : (el.getAttribute('data-npcid') || (state && state.chatTarget ? String(state.chatTarget).trim() : ''));
+              const offlinePara = el.closest('.wxOfflineParagraph');
+              if (bubble && bubble.classList.contains('me')) key = 'me';
+              else if (offlinePara && offlinePara.classList.contains('me')) key = 'me';
+              else key = (el.getAttribute('data-npcid') || (state && state.chatTarget ? String(state.chatTarget).trim() : ''));
             } else {
               key = el.getAttribute('data-npcid') || el.getAttribute('data-chatid') || '';
               if (!key){ const row = el.closest('[data-chatid],[data-npcid]'); key = row?.getAttribute('data-chatid') || row?.getAttribute('data-npcid') || ''; }
@@ -14288,7 +14294,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             ? 'transition:width 1.2s cubic-bezier(.4,0,.2,1);'
             : 'transition:width .3s;';
           return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;">
-            <span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;color:rgba(20,24,28,.5);">${_phFlatIcon(def.icon||'🔵')}</span>
+            <span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;color:var(--ph-icon-inner-tint, rgba(20,24,28,.5));">${_phFlatIcon(def.icon||'🔵')}</span>
             <span style="font-size:12px;color:rgba(20,24,28,.6);min-width:28px;">${def.label}</span>
             <div style="flex:1;height:6px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden;">
               <div id="${barId}" style="height:100%;width:${fromPct}%;background:${color};border-radius:3px;${animStyle}"></div>
@@ -16778,7 +16784,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           var pct = Math.max(0, Math.min(100, val||0));
           var color = pct > 60 ? 'var(--ph-accent, #07c160)' : pct > 30 ? '#f39c12' : '#e74c3c';
           return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;">' +
-            '<span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;color:rgba(20,24,28,.5);">' + _phFlatIcon(def.icon||'🔵') + '</span>' +
+            '<span class="wxUAttrIcon" style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;color:var(--ph-icon-inner-tint, rgba(20,24,28,.5));">' + _phFlatIcon(def.icon||'🔵') + '</span>' +
             '<span style="font-size:12px;color:rgba(20,24,28,.6);min-width:28px;">' + def.label + '</span>' +
             '<div style="flex:1;height:6px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden;">' +
             '<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:3px;transition:width .3s;"></div>' +
@@ -16877,7 +16883,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             var s4=((sl.hour||0)*60+(sl.startMin||0)), e4=((sl.endHour||0)*60+(sl.endMin||0));
             var isCur = e4<=s4 ? (_ctm3>=s4||_ctm3<e4) : (_ctm3>=s4&&_ctm3<e4);
             html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.04);'+(isCur?'background:rgba(7,193,96,.05);':'')+'">';
-            html += '<span style="color:rgba(20,24,28,.4);font-size:13px;">'+((tInfo&&tInfo.icon)||'·')+'</span>';
+            html += '<span style="color:var(--ph-icon-inner-tint, rgba(20,24,28,.4));font-size:13px;">'+((tInfo&&tInfo.icon)||'·')+'</span>';
             html += '<span style="font-size:12px;color:rgba(20,24,28,.45);min-width:80px;">'+sT+' - '+eT+'</span>';
             html += '<span style="font-size:13px;font-weight:600;color:var(--ph-text);flex:1;">'+esc(sl.activity||sl.tag)+'</span>';
             if (isCur) html += '<span style="font-size:10px;color:var(--ph-accent,#07c160);background:rgba(7,193,96,.1);padding:2px 6px;border-radius:4px;">现在</span>';
