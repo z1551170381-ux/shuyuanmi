@@ -28680,22 +28680,48 @@ async function _openRoomSettings(container, mapData, houseId, npcId, npcName){
       var furnList = (house3&&house3.rooms&&house3.rooms.furniture) ?
         house3.rooms.furniture.filter(function(f3){ return f3.owned; }).map(function(f3){ return f3.type; }).join('、') : '';
 
+      // ★ 用 buildSystemPrompt 获取完整角色上下文（含世界书/行为参数/性格/作息/总结/聊天记录等）
+      var fullSysPrompt = '';
+      try{ fullSysPrompt = buildSystemPrompt(npcId); }catch(e){}
+
+      // ★ 最近聊天记录（线上+线下，权重9）——条数用用户在小手机设置里定的N
+      var recentChatLines = '';
+      try{
+        var _ctxN = (typeof _getChatContextN==='function') ? _getChatContextN() : 10;
+        var _onLog = _getLogForModeBranch(npcId,'online').slice(-_ctxN);
+        var _offLog = _getLogForModeBranch(npcId,'offline').slice(-_ctxN);
+        var _allRecent = _onLog.concat(_offLog).filter(function(m){ return m.role!=='system'&&!m.recalled; });
+        if(_allRecent.length){
+          recentChatLines = '【最近聊天记录（线上+线下，权重最高）】\n' +
+            _allRecent.map(function(m){
+              return (m.role==='me'?'用户':'你('+npcName+')')+': '+String(m.text||'').slice(0,100);
+            }).join('\n');
+        }
+      }catch(e){}
+
       var sysP3 =
-        '你是角色「'+npcName+'」在家中的生活日志生成器。只返回 JSON 数组，不要任何其他内容。\n'+
-        '格式：[{"action":"角色正在做什么（15字内，第一人称，具体生动）","emoji":"对应emoji（1个）","mood":"情绪词（轻松/专注/惬意等）","time_hint":"时间描述如早晨/傍晚"}]\n'+
-        '要求：生成4-6条，覆盖一天不同时段，符合角色性格，有生活细节感。\n'+
-        (charEx3&&charEx3.profile?'角色设定：'+charEx3.profile.slice(0,400)+'\n':'');
+        (fullSysPrompt ? fullSysPrompt + '\n\n' : '') +
+        (recentChatLines ? recentChatLines + '\n\n' : '') +
+        '---\n' +
+        '【任务：生成角色在家中的生活日志】\n' +
+        '你现在要生成「'+npcName+'」独自在家时的生活动态日志。\n' +
+        '要求：\n' +
+        '- 严格贴合角色性格、口癖、生活习惯（从上方角色设定和聊天记录中提取）\n' +
+        '- 体现角色真实的日常细节，不要泛泛而谈\n' +
+        '- 如果聊天记录里有相关事件（如刚吃过火锅、刚见过用户），日志里可以自然呼应\n' +
+        '- 只返回 JSON 数组，不要任何其他内容\n' +
+        '格式：[{"action":"角色正在做什么（15字内，第一人称，具体生动）","emoji":"对应emoji（1个）","mood":"情绪词（轻松/专注/惬意等）","time_hint":"时间描述如早晨/傍晚"}]';
 
       var userM3 =
         attrLine+
         '房间家具：'+furnList+'。\n'+
         (customPrompt?'特别要求：'+customPrompt+'\n':'')+
-        '请生成「'+npcName+'」在家中的4-6条生活动态日志。';
+        '请生成「'+npcName+'」在家中的4-6条生活动态日志，必须符合上方角色性格和近期经历。';
 
       var res3 = await PhoneAI.chat({
         system: sysP3,
         messages: [{role:'user',content:userM3}],
-        channel:'background', maxTokens:500, timeout:40
+        channel:'background', maxTokens:600, timeout:60
       });
       if(!res3||!res3.ok) throw new Error(res3&&res3.error||'请求失败');
       var raw3 = String(res3.data||'').replace(/```json[\s\S]*?```|```[\s\S]*?```/g,function(m){return m.replace(/```json?/,'').replace(/```/,'');}).trim();
