@@ -25633,7 +25633,14 @@ function _openTimelineViewer(npcId){
     return _safeArr((_getTimelineModeState(tl, viewMode, true) || {}).entries);
   }
   function _getChunkSize(){
-    try{ var ce = _loadCharExtra(npcId); return Math.max(5, ce.autoSumEvery || 20); }catch(e){ return 20; }
+    try{
+      var ce = _loadCharExtra(npcId);
+      var targetMode = _normChatMode(viewMode);
+      if(targetMode === 'offline'){
+        return Math.max(5, ce.autoSumEveryOffline || 30);
+      }
+      return Math.max(5, ce.autoSumEvery || 20);
+    }catch(e){ return viewMode === 'offline' ? 30 : 20; }
   }
   function _getPendingInfo(){
     var chunkSize = _getChunkSize();
@@ -25732,8 +25739,8 @@ function _openTimelineViewer(npcId){
       + '<div style="font-size:10px;color:rgba(20,24,28,.35);margin:2px 0;">'+statusText+'</div>'
       + '<div style="display:flex;align-items:center;gap:6px;margin:6px 0 4px;">'
       + '<span style="font-size:10px;color:rgba(20,24,28,.4);">每次总结</span>'
-      + '<input data-el="chunkInput" type="number" min="5" max="200" value="'+_getChunkSize()+'" style="width:50px;padding:2px 4px;border-radius:4px;border:1px solid rgba(0,0,0,.1);font-size:11px;text-align:center;" />'
-      + '<span style="font-size:10px;color:rgba(20,24,28,.4);">条消息</span>'
+      + '<input data-el="chunkInput" type="number" min="5" max="'+(viewMode==='offline'?'100':'200')+'" value="'+_getChunkSize()+'" style="width:50px;padding:2px 4px;border-radius:4px;border:1px solid rgba(0,0,0,.1);font-size:11px;text-align:center;" />'
+      + '<span style="font-size:10px;color:rgba(20,24,28,.4);">条消息'+(viewMode==='offline'?' (线下建议30)':'')+' </span>'
       + '<button data-act="chunkSave" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);cursor:pointer;">保存</button>'
       + (entries.length > 0 ? '<button data-act="tlClearAll" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.9);color:rgba(20,24,28,.4);cursor:pointer;margin-left:auto;">清除全部</button>' : '')
       + '</div>'
@@ -25932,9 +25939,14 @@ function _openTimelineViewer(npcId){
     if (act === 'chunkSave'){
       var inp = modal.querySelector('[data-el="chunkInput"]');
       if (!inp) return;
-      var v = Math.max(5, Math.min(200, parseInt(inp.value) || 20));
+      var _maxChunk = (viewMode === 'offline') ? 100 : 200;
+      var v = Math.max(5, Math.min(_maxChunk, parseInt(inp.value) || (viewMode === 'offline' ? 30 : 20)));
       var ce = _loadCharExtra(npcId);
-      ce.autoSumEvery = v;
+      if(viewMode === 'offline'){
+        ce.autoSumEveryOffline = v;
+      } else {
+        ce.autoSumEvery = v;
+      }
       _saveCharExtra(npcId, ce);
       try{ toast('已保存：每次 '+v+' 条'); }catch(e){}
       refresh();
