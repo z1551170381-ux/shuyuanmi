@@ -13562,9 +13562,8 @@ const npc = _wxGetChatTargetMeta(npcId);
                 <button class="wxChatSendBtn" data-act="wxSendChat" title="发送" style="flex-shrink:0;">发送</button>
               </div>
               <div class="wxChatPlusGrid" style="display:none;" data-ph="chatPlusGrid">
-                <div class="wxCPItem" data-act="wxCPAction" data-cpact="maplandmark"><div class="wxCPIco">${_phFlatIcon('📍')}</div><div class="wxCPLabel">地标</div></div>
-                <div class="wxCPItem" data-act="wxCPAction" data-cpact="photo"><div class="wxCPIco">${_phFlatIcon('🖼')}</div><div class="wxCPLabel">照片</div></div>
                 <div class="wxCPItem" data-act="wxCPAction" data-cpact="location"><div class="wxCPIco"><svg class="phIco" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg></div><div class="wxCPLabel">位置</div></div>
+                <div class="wxCPItem" data-act="wxCPAction" data-cpact="photo"><div class="wxCPIco">${_phFlatIcon('🖼')}</div><div class="wxCPLabel">照片</div></div>
                 <div class="wxCPItem" data-act="wxCPAction" data-cpact="gift"><div class="wxCPIco"><svg class="phIco" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 12 7.4l3.38 4.6L17 10.83 14.92 8H20v6z"/></svg></div><div class="wxCPLabel">礼物</div></div>
                 <div class="wxCPItem" data-act="wxCPAction" data-cpact="transfer"><div class="wxCPIco"><svg class="phIco" viewBox="0 0 24 24" fill="currentColor"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></div><div class="wxCPLabel">转账</div></div>
                 <div class="wxCPItem" data-act="wxCPAction" data-cpact="music"><div class="wxCPIco">${_phFlatIcon('🎵')}</div><div class="wxCPLabel">音乐</div></div>
@@ -13592,7 +13591,6 @@ const npc = _wxGetChatTargetMeta(npcId);
               <div class="wxCPItem" data-act="wxCPAction" data-cpact="gift"><div class="wxCPIco"><svg class="phIco" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 12 7.4l3.38 4.6L17 10.83 14.92 8H20v6z"/></svg></div><div class="wxCPLabel">礼物</div></div>
               <div class="wxCPItem" data-act="wxCPAction" data-cpact="transfer"><div class="wxCPIco"><svg class="phIco" viewBox="0 0 24 24" fill="currentColor"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg></div><div class="wxCPLabel">转账</div></div>
               <div class="wxCPItem" data-act="wxCPAction" data-cpact="music"><div class="wxCPIco">${_phFlatIcon('🎵')}</div><div class="wxCPLabel">音乐</div></div>
-              <div class="wxCPItem" data-act="wxCPAction" data-cpact="maplandmark"><div class="wxCPIco">${_phFlatIcon('📍')}</div><div class="wxCPLabel">地标</div></div>
             </div>
           </div>`;
         } // end if-else offline/online
@@ -20593,7 +20591,7 @@ const npc = _wxGetChatTargetMeta(npcId);
 
       // ====== 4. 位置：模拟发送虚拟位置 ======
       function _cpLocation(npcId){
-        const locations = [
+        const staticLocs = [
           {name:'东京塔', lat:'35.658', lng:'139.745'},
           {name:'上海外滩', lat:'31.240', lng:'121.490'},
           {name:'巴黎铁塔', lat:'48.858', lng:'2.294'},
@@ -20601,38 +20599,94 @@ const npc = _wxGetChatTargetMeta(npcId);
           {name:'伦敦大本钟', lat:'51.500', lng:'-0.124'},
           {name:'自定义位置…', lat:'', lng:'', custom:true},
         ];
+
+        // 读取地图地标，优先放在顶部
+        var mapLandmarks = [];
+        try{
+          var mapData = _mapLoad();
+          if(mapData && mapData.landmarks && mapData.landmarks.length){
+            mapLandmarks = mapData.landmarks.map(function(lm){
+              return { name: lm.customName||lm.name, emoji: lm.emoji, isMapLandmark:true, lmId:lm.id, tags:lm.tags||[], lm:lm };
+            });
+          }
+        }catch(e){}
+
         let optHtml = '';
-        locations.forEach((loc,i)=>{
-          optHtml += `<div data-act="cpLocPick" data-idx="${i}" style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;${loc.custom?'color:var(--ph-accent, #07c160);font-weight:600;':''}">
+
+        // 地图地标分组（如果有）
+        if(mapLandmarks.length){
+          optHtml += `<div style="font-size:10px;color:rgba(20,24,28,.4);padding:6px 12px 3px;font-weight:500;">🗺 地图地标</div>`;
+          mapLandmarks.forEach((loc, i) => {
+            optHtml += `<div data-act="cpLocPick" data-type="map" data-idx="${i}" style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;">
+              <span style="font-size:16px;">${loc.emoji||'📍'}</span><span>${esc(loc.name)}</span>
+            </div>`;
+          });
+          optHtml += `<div style="font-size:10px;color:rgba(20,24,28,.4);padding:6px 12px 3px;font-weight:500;margin-top:4px;">📌 其他位置</div>`;
+        }
+
+        // 静态位置
+        staticLocs.forEach((loc, i) => {
+          optHtml += `<div data-act="cpLocPick" data-type="static" data-idx="${i}" style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;${loc.custom?'color:var(--ph-accent,#07c160);font-weight:600;':''}">
             <span>📍</span><span>${esc(loc.name)}</span>
           </div>`;
         });
+
         const ov = _cpShowOverlay(`
           <div style="font-size:14px;font-weight:600;margin-bottom:10px;">📍 发送位置</div>
-          <div style="max-height:200px;overflow-y:auto;border-radius:10px;border:1px solid rgba(0,0,0,.06);">${optHtml}</div>
+          <div style="max-height:260px;overflow-y:auto;border-radius:10px;border:1px solid rgba(0,0,0,.06);">${optHtml}</div>
           <div data-el="customInput" style="display:none;margin-top:10px;">
             <input type="text" placeholder="输入位置名称…" data-el="locNameInput" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(0,0,0,.1);font-size:13px;box-sizing:border-box;"/>
-            <button data-act="cpLocSendCustom" style="margin-top:8px;width:100%;padding:8px;border-radius:8px;background:var(--ph-accent, #07c160);color:#fff;border:none;font-size:13px;cursor:pointer;">发送</button>
+            <button data-act="cpLocSendCustom" style="margin-top:8px;width:100%;padding:8px;border-radius:8px;background:var(--ph-accent,#07c160);color:#fff;border:none;font-size:13px;cursor:pointer;">发送</button>
           </div>
         `);
-        ov.querySelectorAll('[data-act="cpLocPick"]').forEach(el=>{
-          el.addEventListener('click', ()=>{
+
+        ov.querySelectorAll('[data-act="cpLocPick"]').forEach(el => {
+          el.addEventListener('click', () => {
+            const type = el.getAttribute('data-type');
             const idx = parseInt(el.getAttribute('data-idx'));
-            const loc = locations[idx];
-            if (loc && loc.custom){
-              const ci = ov.querySelector('[data-el="customInput"]');
-              if (ci) ci.style.display = 'block';
-              return;
+            if(type === 'map'){
+              // 地图地标：切换场景
+              const lmInfo = mapLandmarks[idx];
+              if(!lmInfo) return;
+              var tagMap = {trees:'绿树环绕',flowers:'鲜花盛开',coffee:'咖啡飘香',cozy:'氛围温馨',sea:'海风轻拂',quiet:'安静祥和',art:'充满艺术气息',books:'书香满溢',campfire:'篝火温暖',stars:'星空璀璨',food:'美食飘香',sing:'音乐萦绕',exercise:'充满活力',fun:'热闹非凡',steam:'雾气缭绕',sand:'细沙柔软',water:'水波荡漾'};
+              var descWords = lmInfo.tags.slice(0,3).map(function(t){ return tagMap[t]||''; }).filter(Boolean).join('，');
+              var autoDesc = lmInfo.name + '，' + (descWords || '是地图上的一处地标') + '。';
+              var newScene = { name:lmInfo.name, location:lmInfo.name, description:autoDesc, bgImage:'', customPrompt:'' };
+              try{ _saveSceneData(npcId, newScene); }catch(e){}
+              try{
+                if(_getChatMode(npcId) !== 'offline') _saveCharMode(npcId, 'offline');
+                var titleEl = root.querySelector('[data-ph="appTitle"]');
+                if(titleEl) titleEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ph-accent,#07c160);margin-right:4px;vertical-align:middle;"></span>线下 · '+esc(lmInfo.name);
+                var sceneCard = root.querySelector('.wxOfflineSceneCard');
+                if(sceneCard){
+                  var sn = sceneCard.querySelector('[data-ph="offlineSceneName"]');
+                  var sd = sceneCard.querySelector('[data-ph="offlineSceneDesc"]');
+                  if(sn) sn.textContent = lmInfo.name;
+                  if(sd) sd.textContent = autoDesc;
+                }
+              }catch(e){}
+              ov.remove();
+              _cpSendSpecial(npcId, '[📍 '+lmInfo.name+']', { type:'landmark', landmarkId:lmInfo.lmId, landmarkName:lmInfo.name, desc:autoDesc, _logText:'[前往地标：'+lmInfo.name+']' });
+              try{toast('📍 已切换到「'+lmInfo.name+'」');}catch(e){}
+            } else {
+              // 静态位置
+              const loc = staticLocs[idx];
+              if(loc && loc.custom){
+                const ci = ov.querySelector('[data-el="customInput"]');
+                if(ci) ci.style.display = 'block';
+                return;
+              }
+              ov.remove();
+              _cpSendSpecial(npcId, `[位置] ${loc.name}`, { type:'location', locName:loc.name, _logText:`[位置] ${loc.name}` });
             }
-            ov.remove();
-            _cpSendSpecial(npcId, `[位置] ${loc.name}`, { type:'location', locName:loc.name, _logText:`[位置] ${loc.name}` });
           });
         });
+
         const sendCustomBtn = ov.querySelector('[data-act="cpLocSendCustom"]');
-        if (sendCustomBtn) sendCustomBtn.addEventListener('click', ()=>{
+        if(sendCustomBtn) sendCustomBtn.addEventListener('click', () => {
           const inp = ov.querySelector('[data-el="locNameInput"]');
           const name = inp ? String(inp.value||'').trim() : '';
-          if (!name){ try{toast('请输入位置名称');}catch(e){} return; }
+          if(!name){ try{toast('请输入位置名称');}catch(e){} return; }
           ov.remove();
           _cpSendSpecial(npcId, `[位置] ${name}`, { type:'location', locName:name, _logText:`[位置] ${name}` });
         });
