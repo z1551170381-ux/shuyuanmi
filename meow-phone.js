@@ -15256,6 +15256,12 @@ const npc = _wxGetChatTargetMeta(npcId);
                              .replace(/\[状态[:：][^\]]*\]?/gi, '')
                              .replace(/\[发语音\]/gi, '')
                              .replace(/\[发表情[:：][^\]]*\]?/gi, '')
+                             // ★ 清理 rpAction 等伪标签（不管有没有>或引号）
+                             .replace(/"rpAction"\s*>?/g, '')
+                             .replace(/"rpDialog"\s*>?/g, '')
+                             .replace(/"rpSpeaker"\s*>?/g, '')
+                             .replace(/"rpText"\s*>?/g, '')
+                             .replace(/^>\s*/gm, '')  // 清理行首的 markdown blockquote >
                              .trim() || '…';
 
         // ★ 自动更新穿着/正在/心声/自定义条目（如果AI输出了[状态:...]标记）
@@ -15306,6 +15312,16 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         var msgsEl = root.querySelector('[data-ph="chatMsgs"]');
         if (!msgsEl) return;
+
+        // ★ 线下模式：用话剧渲染器，不用气泡
+        var _wMode = (typeof _getChatMode === 'function') ? _getChatMode(npcId) : 'online';
+        if(_wMode === 'offline'){
+          try{ _renderOfflineParagraph(msgsEl, npc, 'them', cleanText, ts); }catch(e){
+            _wxAppendBubble(msgsEl, npc, 'them', cleanText, ts);
+          }
+          requestAnimationFrame(function(){ msgsEl.scrollTop = msgsEl.scrollHeight; });
+          return;
+        }
 
         var vaData = loadVoiceApi();
         var useVoice = parsed.sendVoice && vaData && vaData.autoVoice && vaData.apiUrl && vaData.apiKey;
@@ -19706,7 +19722,14 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         const msgs = root.querySelector('[data-ph="chatMsgs"]');
         if (msgs){
-          _wxAppendBubble(msgs, npc, 'me', hasQuote ? quoteDisplay : text, userMsgTs);
+          var _sendMode = (typeof _getChatMode === 'function') ? _getChatMode(npcId) : 'online';
+          if(_sendMode === 'offline'){
+            try{ _renderOfflineParagraph(msgs, npc, 'me', hasQuote ? quoteDisplay : text, userMsgTs); }catch(e){
+              _wxAppendBubble(msgs, npc, 'me', hasQuote ? quoteDisplay : text, userMsgTs);
+            }
+          } else {
+            _wxAppendBubble(msgs, npc, 'me', hasQuote ? quoteDisplay : text, userMsgTs);
+          }
           requestAnimationFrame(()=>{ msgs.scrollTop = msgs.scrollHeight; });
         }
 
