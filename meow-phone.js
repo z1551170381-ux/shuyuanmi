@@ -15873,11 +15873,11 @@ const npc = _wxGetChatTargetMeta(npcId);
         var totalN = Math.max(1, n || 10);
 
         if(mode === 'offline'){
-          // ★ 线下模式：messages 数组只放线下消息
-          // 在线上下文已在 buildSystemPrompt 的 3.4 块里以 [用户说]/[你说] 格式注入 system prompt
-          // 混入 messages 数组会因 role:user/assistant 让 AI 分不清谁是谁
+          // ★ 线下模式：messages 数组只放线下消息，用线下专属N（长文少取）
+          // 在线上下文已在 buildSystemPrompt 的最高优先级块里以文本形式注入
           var offlineLog = _getLogForModeBranch(npcId, 'offline');
-          var offlineTail = offlineLog.slice(-totalN);
+          var offlineN = (typeof _getOfflineChatContextN==='function') ? _getOfflineChatContextN() : 5;
+          var offlineTail = offlineLog.slice(-offlineN);
           for(var i=0; i<offlineTail.length; i++){
             var x = offlineTail[i];
             if(x.role==='system'||x.recalled) continue;
@@ -15908,6 +15908,16 @@ const npc = _wxGetChatTargetMeta(npcId);
           if (n && n > 0 && n <= 50) return n;
         }catch(e){}
         return 10;
+      }
+
+      // ===== 线下模式专用上下文条数（默认5，长文少取） =====
+      function _getOfflineChatContextN(){
+        try{
+          var cfg = phoneLoadSettings();
+          var n = Number(cfg.chatContextNOffline);
+          if (n && n > 0 && n <= 30) return n;
+        }catch(e){}
+        return 5;
       }
 
       // ===== C2: 酒馆世界书内容缓存（因为读取是异步的，buildSystemPrompt 需要同步访问）=====
@@ -16299,7 +16309,8 @@ const npc = _wxGetChatTargetMeta(npcId);
         try{
           if(_isOfflineMode){
             var _onlineLog2 = _getLogForModeBranch(npcId, 'online');
-            var _onlineTail2 = _onlineLog2.slice(-20).filter(function(m){ return m.role!=='system'&&!m.recalled; });
+            var _onlineN2 = (typeof _getChatContextN==='function') ? _getChatContextN() : 20;
+            var _onlineTail2 = _onlineLog2.slice(-_onlineN2).filter(function(m){ return m.role!=='system'&&!m.recalled; });
             if(_onlineTail2.length > 0){
               var _myName2 = '用户';
               try{ var _ps2 = phoneLoadSettings(); if(_ps2&&_ps2.phoneName) _myName2 = _ps2.phoneName; }catch(e){}
@@ -23041,36 +23052,65 @@ function renderSettingsUIApp(container){
         });
       }
 
-      // ===== 【上下文条数设置子页面】新增 =====
+      // ===== 【上下文条数设置子页面】线上/线下分开 =====
       function renderSettingsChatContextN(container){
         var cfg = phoneLoadSettings();
-        var current = Number(cfg.chatContextN) || 10;
-        if (current < 3) current = 3;
-        if (current > 50) current = 50;
+        var currentOnline = Math.min(50, Math.max(3, Number(cfg.chatContextN) || 10));
+        var currentOffline = Math.min(30, Math.max(1, Number(cfg.chatContextNOffline) || 5));
         var html = '<div class="settingSubPage">' +
           '<div class="settingSubTitle">📝 上下文条数</div>' +
-          '<div class="settingSubDesc">AI 回复时参考最近多少条聊天记录。数值越大效果越好但消耗更多 Token。</div>' +
-          '<div style="display:flex;align-items:center;gap:12px;margin-top:18px;">' +
-            '<input type="range" min="3" max="50" value="' + current + '" data-ph="ctxNSlider" style="flex:1;accent-color:var(--ph-accent, #07c160);" />' +
-            '<span data-ph="ctxNVal" style="font-size:15px;font-weight:600;color:var(--ph-text);min-width:36px;text-align:center;">' + current + '</span>' +
+
+          // 线上
+          '<div style="margin-top:16px;font-size:13px;font-weight:600;color:var(--ph-text);margin-bottom:6px;">💬 线上模式（短消息气泡）</div>' +
+          '<div class="settingSubDesc" style="margin-bottom:10px;">AI 回复时参考最近多少条在线聊天记录。</div>' +
+          '<div style="display:flex;align-items:center;gap:12px;">' +
+            '<input type="range" min="3" max="50" value="' + currentOnline + '" data-ph="ctxNSlider" style="flex:1;accent-color:var(--ph-accent,#07c160);" />' +
+            '<span data-ph="ctxNVal" style="font-size:15px;font-weight:600;color:var(--ph-text);min-width:36px;text-align:center;">' + currentOnline + '</span>' +
           '</div>' +
           '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ph-text-dim);margin-top:4px;padding:0 2px;"><span>3条</span><span>50条</span></div>' +
-          '<div style="margin-top:16px;padding:10px 12px;border-radius:10px;background:var(--ph-glass);font-size:12px;color:var(--ph-text-sub);line-height:1.6;">' +
-            '💡 建议：日常闲聊 8~15 条即可；深度对话或复杂剧情可调至 20~30。' +
+          '<div style="margin-top:8px;padding:8px 12px;border-radius:10px;background:var(--ph-glass);font-size:12px;color:var(--ph-text-sub);line-height:1.6;">' +
+            '💡 建议：日常闲聊 8~15 条；深度对话 20~30 条。' +
           '</div>' +
+
+          // 线下
+          '<div style="margin-top:20px;font-size:13px;font-weight:600;color:var(--ph-text);margin-bottom:6px;">📖 线下模式（长文小说段落）</div>' +
+          '<div class="settingSubDesc" style="margin-bottom:10px;">线下消息字数多，建议设少一点避免超出 Token 限制。</div>' +
+          '<div style="display:flex;align-items:center;gap:12px;">' +
+            '<input type="range" min="1" max="30" value="' + currentOffline + '" data-ph="ctxNOfflineSlider" style="flex:1;accent-color:var(--ph-accent,#07c160);" />' +
+            '<span data-ph="ctxNOfflineVal" style="font-size:15px;font-weight:600;color:var(--ph-text);min-width:36px;text-align:center;">' + currentOffline + '</span>' +
+          '</div>' +
+          '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ph-text-dim);margin-top:4px;padding:0 2px;"><span>1条</span><span>30条</span></div>' +
+          '<div style="margin-top:8px;padding:8px 12px;border-radius:10px;background:var(--ph-glass);font-size:12px;color:var(--ph-text-sub);line-height:1.6;">' +
+            '💡 建议：3~8 条即可，每段内容长，少量就足够连贯。' +
+          '</div>' +
+
         '</div>';
         container.innerHTML = html;
+
+        // 线上滑块
         var slider = container.querySelector('[data-ph="ctxNSlider"]');
         var valSpan = container.querySelector('[data-ph="ctxNVal"]');
-        if (slider){
+        if(slider){
           slider.addEventListener('input', function(){
-            var v = Number(slider.value) || 10;
-            if (valSpan) valSpan.textContent = String(v);
+            if(valSpan) valSpan.textContent = slider.value;
           });
           slider.addEventListener('change', function(){
-            var v = Number(slider.value) || 10;
             var cfg2 = phoneLoadSettings();
-            cfg2.chatContextN = v;
+            cfg2.chatContextN = Number(slider.value) || 10;
+            phoneSaveSettings(cfg2);
+          });
+        }
+
+        // 线下滑块
+        var sliderOff = container.querySelector('[data-ph="ctxNOfflineSlider"]');
+        var valSpanOff = container.querySelector('[data-ph="ctxNOfflineVal"]');
+        if(sliderOff){
+          sliderOff.addEventListener('input', function(){
+            if(valSpanOff) valSpanOff.textContent = sliderOff.value;
+          });
+          sliderOff.addEventListener('change', function(){
+            var cfg2 = phoneLoadSettings();
+            cfg2.chatContextNOffline = Number(sliderOff.value) || 5;
             phoneSaveSettings(cfg2);
           });
         }
@@ -28688,8 +28728,9 @@ async function _openRoomSettings(container, mapData, houseId, npcId, npcName){
       var recentChatLines = '';
       try{
         var _ctxN = (typeof _getChatContextN==='function') ? _getChatContextN() : 10;
+        var _ctxNOff = (typeof _getOfflineChatContextN==='function') ? _getOfflineChatContextN() : 5;
         var _onLog = _getLogForModeBranch(npcId,'online').slice(-_ctxN);
-        var _offLog = _getLogForModeBranch(npcId,'offline').slice(-_ctxN);
+        var _offLog = _getLogForModeBranch(npcId,'offline').slice(-_ctxNOff);
         var _allRecent = _onLog.concat(_offLog).filter(function(m){ return m.role!=='system'&&!m.recalled; });
         if(_allRecent.length){
           recentChatLines = '【最近聊天记录（线上+线下，权重最高）】\n' +
