@@ -10283,6 +10283,18 @@ ${lines}
             </div>
           </div>
           <div class="wxDiscoverGroup">
+            <div class="wxDiscoverItem" data-act="wxMeNav" data-page="myStatus">
+              <div class="wxDIco wxDIcoThemed"><svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
+              <div class="wxDName">我的状态</div>
+              <div class="wxDArrow">›</div>
+            </div>
+            <div class="wxDiscoverItem" data-act="wxMeNav" data-page="mySchedule">
+              <div class="wxDIco wxDIcoThemed"><svg viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px;"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg></div>
+              <div class="wxDName">我的作息</div>
+              <div class="wxDArrow">›</div>
+            </div>
+          </div>
+          <div class="wxDiscoverGroup">
             <div class="wxDiscoverItem" data-act="wxMeNav" data-page="favorites">
               <div class="wxDIco wxDIcoThemed">${_phFlatIcon('⭐')}</div>
               <div class="wxDName">收藏</div>
@@ -10315,8 +10327,19 @@ ${lines}
         const body = root.querySelector('[data-ph="chatTabContent"]');
         if (!body) return;
 
-        const titles = { wallet:'钱包', favorites:'收藏', persona:'人设', stickers:'表情', meSettings:'设置' };
+        const titles = { wallet:'钱包', favorites:'收藏', persona:'人设', stickers:'表情', meSettings:'设置', myStatus:'我的状态', mySchedule:'我的作息' };
         setAppBarTitle(titles[page] || page);
+
+        // ====== 我的状态 ======
+        if (page === 'myStatus'){
+          _renderUserStatusPage(body);
+          return;
+        }
+        // ====== 我的作息 ======
+        if (page === 'mySchedule'){
+          _renderUserSchedulePage(body);
+          return;
+        }
 
         // ====== 钱包页面特殊渲染 ======
         if (page === 'wallet'){
@@ -16682,6 +16705,251 @@ const npc = _wxGetChatTargetMeta(npcId);
       }
       function _saveCharState(npcId, s){
         _phSave('charstate_'+String(npcId), s);
+      }
+
+      // ========== 用户（玩家）状态系统 ==========
+      function _loadUserState(){
+        var raw = phoneGetG('userstate_v1', null);
+        if (!raw){
+          var attrs = {};
+          for (var i = 0; i < ATTR_DEFS_DEFAULT.length; i++){
+            attrs[ATTR_DEFS_DEFAULT[i].key] = ATTR_DEFS_DEFAULT[i].init;
+          }
+          return { _v:1, attrs:attrs, schedule:[], lastCalcAt:Date.now() };
+        }
+        if (!raw.attrs) raw.attrs = {};
+        for (var j = 0; j < ATTR_DEFS_DEFAULT.length; j++){
+          var d = ATTR_DEFS_DEFAULT[j];
+          if (raw.attrs[d.key] == null) raw.attrs[d.key] = d.init;
+        }
+        return raw;
+      }
+      function _saveUserState(s){ phoneSetG('userstate_v1', s); }
+
+      function _clampUserAttr(key, val){
+        var d = ATTR_DEFS_DEFAULT.find(function(x){ return x.key === key; });
+        var mn = d ? d.min : 0, mx = d ? d.max : 100;
+        return Math.max(mn, Math.min(mx, Math.round(val)));
+      }
+
+      // 用户属性：应用效果（fx = {mood:5, energy:-10, ...}）
+      function _applyUserFx(fx){
+        if (!fx) return;
+        var us = _loadUserState();
+        var attrMap = { mood:'mood', energy:'energy', health:'health', hunger:'hunger', fun:'fun', bladder:'bladder' };
+        for (var fk in fx){
+          if (fk === 'money') continue;
+          var ak = attrMap[fk] || fk;
+          if (us.attrs[ak] != null){
+            us.attrs[ak] = _clampUserAttr(ak, us.attrs[ak] + (fx[fk]||0));
+          }
+        }
+        us.lastCalcAt = Date.now();
+        _saveUserState(us);
+      }
+
+      // ---- 用户状态详情页 ----
+      function _renderUserStatusPage(container){
+        var us = _loadUserState();
+        var settings = phoneLoadSettings();
+        var userName = (settings && settings.phoneName) || '我';
+        var wallet = loadWallet();
+        var defs = ATTR_DEFS_DEFAULT;
+        var attrs = us.attrs || {};
+
+        // 当前作息
+        var scheduleNow = '';
+        if (us.schedule && us.schedule.length){
+          var _ch2 = new Date().getHours(), _cm2 = new Date().getMinutes(), _ctm2 = _ch2*60+_cm2;
+          for (var _si2 = 0; _si2 < us.schedule.length; _si2++){
+            var _sl2 = us.schedule[_si2];
+            var _slS2 = (_sl2.hour||0)*60+(_sl2.startMin||0), _slE2 = (_sl2.endHour||0)*60+(_sl2.endMin||0);
+            var _inS2 = _slE2<=_slS2 ? (_ctm2>=_slS2||_ctm2<_slE2) : (_ctm2>=_slS2&&_ctm2<_slE2);
+            if (_inS2){
+              var _tI2 = SCHEDULE_TAGS.find(function(tt){return tt.tag===_sl2.tag;});
+              scheduleNow = (_tI2?_tI2.icon:'·') + ' 当前：' + (_sl2.activity||_sl2.tag) + ' (' + String(_sl2.hour||0).padStart(2,'0')+':'+String(_sl2.startMin||0).padStart(2,'0') + '-' + String(_sl2.endHour||0).padStart(2,'0')+':'+String(_sl2.endMin||0).padStart(2,'0') + ')';
+              break;
+            }
+          }
+        }
+
+        function _uAttrBar(def, val){
+          if (def.hideBar) return '';
+          var pct = Math.max(0, Math.min(100, val||0));
+          var color = pct > 60 ? 'var(--ph-accent, #07c160)' : pct > 30 ? '#f39c12' : '#e74c3c';
+          return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;">' +
+            '<span style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;color:rgba(20,24,28,.5);">' + _phFlatIcon(def.icon||'🔵') + '</span>' +
+            '<span style="font-size:12px;color:rgba(20,24,28,.6);min-width:28px;">' + def.label + '</span>' +
+            '<div style="flex:1;height:6px;background:rgba(0,0,0,.08);border-radius:3px;overflow:hidden;">' +
+            '<div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:3px;transition:width .3s;"></div>' +
+            '</div>' +
+            '<span style="font-size:11px;color:rgba(20,24,28,.4);min-width:24px;text-align:right;">'+Math.round(pct)+'</span>' +
+            '</div>';
+        }
+
+        var attrBars = defs.map(function(d){ return _uAttrBar(d, attrs[d.key]); }).join('');
+        var meAvSrc = (typeof phoneGetAvatar === 'function') ? phoneGetAvatar('me') : '';
+        var avatarH = meAvSrc
+          ? '<img src="'+esc(meAvSrc)+'" style="width:56px;height:56px;border-radius:50%;object-fit:cover;"/>'
+          : '<div style="width:56px;height:56px;border-radius:50%;background:rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-size:24px;">👤</div>';
+
+        var html = '<div style="padding:12px 14px 20px;">';
+        // 头部卡片
+        html += '<div style="background:var(--ph-glass, rgba(255,255,255,.75));border-radius:14px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.07));padding:16px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">';
+        html += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">' + avatarH;
+        html += '<div><div style="font-size:16px;font-weight:700;color:var(--ph-text);">' + esc(userName) + '</div>';
+        html += '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-top:2px;">💰 余额: $' + (wallet.balance||0) + '</div></div></div>';
+        if (scheduleNow) html += '<div style="padding:5px 10px;background:rgba(0,0,0,.03);border-radius:8px;font-size:11.5px;color:rgba(20,24,28,.55);margin-bottom:8px;">' + esc(scheduleNow) + '</div>';
+        html += '</div>';
+
+        // 属性条
+        html += '<div style="margin-top:12px;font-size:11px;color:rgba(20,24,28,.4);padding:0 0 4px;">多维状态</div>';
+        html += '<div style="background:var(--ph-glass, rgba(255,255,255,.75));border-radius:14px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.07));padding:10px 14px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">' + attrBars + '</div>';
+
+        // 手动调整按钮
+        html += '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">';
+        html += '<button data-act="userStateReset" style="flex:1;padding:10px;border-radius:12px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));background:var(--ph-glass, rgba(255,255,255,.8));font-size:12px;cursor:pointer;color:var(--ph-text-sub);display:flex;align-items:center;justify-content:center;gap:4px;"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg> 重置</button>';
+        html += '<button data-act="userStateAdjust" style="flex:1;padding:10px;border-radius:12px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));background:var(--ph-glass, rgba(255,255,255,.8));font-size:12px;cursor:pointer;color:var(--ph-text-sub);display:flex;align-items:center;justify-content:center;gap:4px;"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/></svg> 手动调整</button>';
+        html += '</div>';
+
+        html += '</div>';
+        container.innerHTML = html;
+
+        // 事件绑定
+        container.querySelector('[data-act="userStateReset"]')?.addEventListener('click', function(){
+          var fresh = { _v:1, attrs:{}, schedule:(_loadUserState().schedule||[]), lastCalcAt:Date.now() };
+          for (var i=0;i<ATTR_DEFS_DEFAULT.length;i++) fresh.attrs[ATTR_DEFS_DEFAULT[i].key]=ATTR_DEFS_DEFAULT[i].init;
+          _saveUserState(fresh);
+          toast('状态已重置'); _renderUserStatusPage(container);
+        });
+        container.querySelector('[data-act="userStateAdjust"]')?.addEventListener('click', function(){
+          var us2 = _loadUserState();
+          var inner = '<div style="font-size:14px;font-weight:600;margin-bottom:10px;">手动调整属性</div>';
+          ATTR_DEFS_DEFAULT.forEach(function(d){
+            if (d.hideBar) return;
+            inner += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;"><span style="font-size:12px;min-width:32px;">'+d.label+'</span><input type="range" min="0" max="100" value="'+Math.round(us2.attrs[d.key]||0)+'" data-uattr="'+d.key+'" style="flex:1;accent-color:var(--ph-accent);"/><span data-uval="'+d.key+'" style="font-size:11px;min-width:24px;text-align:right;">'+Math.round(us2.attrs[d.key]||0)+'</span></div>';
+          });
+          inner += '<div style="display:flex;gap:8px;margin-top:10px;"><button data-el="uAdjSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button><button data-el="uAdjCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button></div>';
+          var ov = _cpShowOverlay(inner);
+          ov.querySelectorAll('[data-uattr]').forEach(function(inp){
+            inp.addEventListener('input', function(){ var vl = ov.querySelector('[data-uval="'+inp.getAttribute('data-uattr')+'"]'); if(vl) vl.textContent = inp.value; });
+          });
+          ov.querySelector('[data-el="uAdjCancel"]')?.addEventListener('click', function(){ ov.remove(); });
+          ov.querySelector('[data-el="uAdjSave"]')?.addEventListener('click', function(){
+            var us3 = _loadUserState();
+            ov.querySelectorAll('[data-uattr]').forEach(function(inp){ us3.attrs[inp.getAttribute('data-uattr')] = Number(inp.value); });
+            us3.lastCalcAt = Date.now();
+            _saveUserState(us3); ov.remove(); toast('已保存'); _renderUserStatusPage(container);
+          });
+        });
+      }
+
+      // ---- 用户作息表页 ----
+      function _renderUserSchedulePage(container){
+        var us = _loadUserState();
+        var schedule = us.schedule || [];
+
+        var html = '<div style="padding:12px 14px 20px;">';
+        // AI生成 + 手动编辑按钮
+        html += '<div style="display:flex;gap:8px;margin-bottom:12px;">';
+        html += '<button data-act="userSchedAI" style="flex:1;padding:12px;border-radius:12px;border:0;background:var(--ph-accent-grad, linear-gradient(135deg,#07c160,#06a050));color:#fff;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25zM9 12l-2-4.5L2.5 9l4.5-2L9 2.5l2 4.5 4.5 2-4.5 2zm10 1l-1.25 2.75L15 17l2.75 1.25L19 21l1.25-2.75L23 17l-2.75-1.25z"/></svg> AI 生成</button>';
+        html += '<button data-act="userSchedManual" style="flex:1;padding:12px;border-radius:12px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.08));background:var(--ph-glass, rgba(255,255,255,.8));font-size:13px;cursor:pointer;color:var(--ph-text-sub);display:flex;align-items:center;justify-content:center;gap:4px;">✏️ 手动编辑</button>';
+        html += '</div>';
+
+        // 当前时段
+        var _ch3 = new Date().getHours(), _cm3 = new Date().getMinutes(), _ctm3 = _ch3*60+_cm3;
+        var curLabel = '';
+        for (var i=0;i<schedule.length;i++){
+          var sl3=schedule[i], s3=((sl3.hour||0)*60+(sl3.startMin||0)), e3=((sl3.endHour||0)*60+(sl3.endMin||0));
+          var in3 = e3<=s3 ? (_ctm3>=s3||_ctm3<e3) : (_ctm3>=s3&&_ctm3<e3);
+          if(in3){ curLabel = sl3.activity||sl3.tag; break; }
+        }
+        if (curLabel) html += '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:8px;">时段安排 · 当前：'+esc(curLabel)+'</div>';
+        else html += '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:8px;">时段安排</div>';
+
+        // 时段列表
+        if (schedule.length){
+          html += '<div style="background:var(--ph-glass, rgba(255,255,255,.75));border-radius:14px;border:1px solid var(--ph-glass-border, rgba(0,0,0,.07));overflow:hidden;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">';
+          schedule.forEach(function(sl, idx){
+            var tInfo = SCHEDULE_TAGS.find(function(t){return t.tag===sl.tag;});
+            var sT = String(sl.hour||0).padStart(2,'0')+':'+String(sl.startMin||0).padStart(2,'0');
+            var eT = String(sl.endHour||0).padStart(2,'0')+':'+String(sl.endMin||0).padStart(2,'0');
+            var s4=((sl.hour||0)*60+(sl.startMin||0)), e4=((sl.endHour||0)*60+(sl.endMin||0));
+            var isCur = e4<=s4 ? (_ctm3>=s4||_ctm3<e4) : (_ctm3>=s4&&_ctm3<e4);
+            html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.04);'+(isCur?'background:rgba(7,193,96,.05);':'')+'">';
+            html += '<span style="color:rgba(20,24,28,.4);font-size:13px;">'+((tInfo&&tInfo.icon)||'·')+'</span>';
+            html += '<span style="font-size:12px;color:rgba(20,24,28,.45);min-width:80px;">'+sT+' - '+eT+'</span>';
+            html += '<span style="font-size:13px;font-weight:600;color:var(--ph-text);flex:1;">'+esc(sl.activity||sl.tag)+'</span>';
+            if (isCur) html += '<span style="font-size:10px;color:var(--ph-accent,#07c160);background:rgba(7,193,96,.1);padding:2px 6px;border-radius:4px;">现在</span>';
+            html += '</div>';
+          });
+          html += '</div>';
+        } else {
+          html += '<div style="text-align:center;padding:40px 20px;color:rgba(20,24,28,.3);font-size:13px;">还没有设置作息，点击「AI 生成」自动创建</div>';
+        }
+        html += '</div>';
+        container.innerHTML = html;
+
+        // AI生成按钮
+        container.querySelector('[data-act="userSchedAI"]')?.addEventListener('click', async function(){
+          var btn = container.querySelector('[data-act="userSchedAI"]');
+          if(btn){ btn.disabled=true; btn.textContent='生成中…'; }
+          try{
+            var settings2 = phoneLoadSettings();
+            var persona = '';
+            try{ var ap = _loadActivePersona(); if(ap&&ap.text) persona = ap.text.trim().slice(0,500); }catch(e){}
+            var prompt = '请为以下用户生成一份24小时作息时间表。\n用户名：'+(settings2&&settings2.phoneName||'我')+'\n'+(persona?'用户简介：'+persona+'\n':'')+'要求：\n- 生成12-15个时段，覆盖00:00-24:00\n- 每个时段用JSON格式: {"hour":起始小时,"startMin":起始分钟,"endHour":结束小时,"endMin":结束分钟,"tag":"标签","activity":"活动描述"}\n- tag只能是: rest,wake,eat,work,free,social,exercise\n- 只返回JSON数组，不要返回其他内容\n示例：[{"hour":0,"startMin":0,"endHour":8,"endMin":0,"tag":"rest","activity":"睡觉"},{"hour":8,"startMin":0,"endHour":9,"endMin":0,"tag":"wake","activity":"起床洗漱"}]';
+            var result = await PhoneAI.chat({
+              messages:[{role:'user',content:prompt}],
+              system:'你是一个作息规划助手。只返回JSON数组，不加任何解释。',
+              channel:'background'
+            });
+            var txt = String(result&&result.text||'').trim().replace(/```json?|```/g,'').trim();
+            var arr = JSON.parse(txt);
+            if (Array.isArray(arr) && arr.length > 3){
+              var us2 = _loadUserState();
+              us2.schedule = arr;
+              _saveUserState(us2);
+              toast('作息表已生成');
+              _renderUserSchedulePage(container);
+            } else { toast('生成失败，请重试'); }
+          }catch(e){ console.warn('[UserSchedule]',e); toast('生成失败: '+(e.message||e)); }
+          if(btn){ btn.disabled=false; btn.innerHTML='<svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;"><path d="M19 9l1.25-2.75L23 5l-2.75-1.25L19 1l-1.25 2.75L15 5l2.75 1.25zM9 12l-2-4.5L2.5 9l4.5-2L9 2.5l2 4.5 4.5 2-4.5 2zm10 1l-1.25 2.75L15 17l2.75 1.25L19 21l1.25-2.75L23 17l-2.75-1.25z"/></svg> AI 生成'; }
+        });
+
+        // 手动编辑
+        container.querySelector('[data-act="userSchedManual"]')?.addEventListener('click', function(){
+          var inner = '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">手动编辑作息</div>';
+          inner += '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:8px;">每行一个时段，格式：HH:MM-HH:MM 活动名称</div>';
+          var existText = (us.schedule||[]).map(function(sl){ return String(sl.hour||0).padStart(2,'0')+':'+String(sl.startMin||0).padStart(2,'0')+'-'+String(sl.endHour||0).padStart(2,'0')+':'+String(sl.endMin||0).padStart(2,'0')+' '+(sl.activity||sl.tag); }).join('\n');
+          inner += '<textarea data-el="userSchedText" rows="12" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;font-family:monospace;outline:none;resize:vertical;box-sizing:border-box;line-height:1.6;">'+esc(existText)+'</textarea>';
+          inner += '<div style="display:flex;gap:8px;margin-top:10px;"><button data-el="schedSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button><button data-el="schedCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button></div>';
+          var ov = _cpShowOverlay(inner);
+          ov.querySelector('[data-el="schedCancel"]')?.addEventListener('click', function(){ ov.remove(); });
+          ov.querySelector('[data-el="schedSave"]')?.addEventListener('click', function(){
+            var txt2 = (ov.querySelector('[data-el="userSchedText"]')?.value||'').trim();
+            var lines = txt2.split('\n').filter(function(l){return l.trim();});
+            var newSched = [];
+            lines.forEach(function(line){
+              var m = line.trim().match(/^(\d{1,2}):(\d{2})\s*[-–]\s*(\d{1,2}):(\d{2})\s+(.+)$/);
+              if(m){
+                var bestTag = 'free';
+                var act = m[5].trim().toLowerCase();
+                if(/睡|休息|入睡/.test(act)) bestTag='rest';
+                else if(/起床|洗漱|醒/.test(act)) bestTag='wake';
+                else if(/吃|餐|饭|食/.test(act)) bestTag='eat';
+                else if(/工作|上班|办公|学习/.test(act)) bestTag='work';
+                else if(/运动|健身|跑步|锻炼/.test(act)) bestTag='exercise';
+                else if(/社交|聚|朋友|约/.test(act)) bestTag='social';
+                newSched.push({hour:parseInt(m[1]),startMin:parseInt(m[2]),endHour:parseInt(m[3]),endMin:parseInt(m[4]),tag:bestTag,activity:m[5].trim()});
+              }
+            });
+            if(newSched.length){
+              var us4=_loadUserState(); us4.schedule=newSched; _saveUserState(us4);
+              toast('作息表已保存'); ov.remove(); _renderUserSchedulePage(container);
+            } else { toast('格式不对，请检查'); }
+          });
+        });
       }
 
       function _getSchedule(state){ return (state.isKeyNPC && state.schedule && state.schedule.length > 0) ? state.schedule : []; }
@@ -23747,14 +24015,23 @@ function _renderOfflineParagraph(container, npc, role, text, ts, meta){
     .replace(/class="[^"]*"/g, '');
   var speaker = role === 'me' ? '你' : (npc.name || '对方');
 
-  // 获取头像（使用 phoneGetAvatar 获取自定义头像图片）
+  // 获取头像
   var avatarContent = '';
   var npcId = (npc && npc.id) || state.chatTarget || '';
-  if (role === 'them'){
+  if (role === 'me'){
+    // 用户头像
+    try{
+      var _myAvImg = (typeof phoneGetAvatar === 'function') ? phoneGetAvatar('me') : null;
+      if (_myAvImg){
+        avatarContent = '<img src="' + esc(_myAvImg) + '"/>';
+      } else { avatarContent = '👤'; }
+    }catch(e){ avatarContent = '👤'; }
+  } else {
+    // NPC头像
     try{
       var _avImg = (typeof phoneGetAvatar === 'function') ? phoneGetAvatar(npcId) : null;
       if (_avImg){
-        avatarContent = '<img src="' + esc(_avImg) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>';
+        avatarContent = '<img src="' + esc(_avImg) + '"/>';
       } else {
         var avRaw = npc.avatar || (npc.name||'?').charAt(0);
         avatarContent = (typeof avRaw === 'string' && avRaw.startsWith('<img')) ? avRaw : esc(avRaw);
@@ -23762,8 +24039,6 @@ function _renderOfflineParagraph(container, npc, role, text, ts, meta){
     }catch(e){
       avatarContent = esc((npc.name||'?').charAt(0));
     }
-  } else {
-    avatarContent = '👤';
   }
   var avatarHtml = '<div class="wxCBAvatar wxOfflineAvatar' + (role === 'them' ? '" data-act="wxAvatarTap" data-npcid="' + esc(npcId) + '" style="cursor:pointer;"' : '"') + '>' + avatarContent + '</div>';
 
@@ -26045,6 +26320,9 @@ function _mapDoTriggerSolo(mapData, landmark, action){
     walletSpend(cost, '独自在'+displayName+' '+action.label);
   }
 
+  // 用户状态效果
+  try{ _applyUserFx(action.fx || {}); }catch(e){}
+
   // 记录访问
   landmark.visits.push({ npcId:'me', time:Date.now(), actionId:action.id });
   if(landmark.visits.length>50) landmark.visits = landmark.visits.slice(-50);
@@ -26109,6 +26387,9 @@ function _mapDoTrigger(mapData, landmark, action, npcId){
       _saveCharState(npcId, charState);
     }
   }catch(e){ console.warn('[Map] status effect error:', e); }
+
+  // === 用户状态效果 ===
+  try{ _applyUserFx(fx); }catch(e){}
 
   // === 氛围描述 ===
   var tagDescMap2 = {
