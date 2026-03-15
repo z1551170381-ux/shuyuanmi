@@ -26112,18 +26112,32 @@ function _mapGenerate(seed){
 }
 
 // ---- 数据存取 ----
+// ---- 数据存取 ----
+// NOTE: These functions are outside the MEOW.phone inner closure, so they cannot
+// use _phLoad/_phSave. Use phoneGetC/phoneSetC + phoneGetChatUID directly.
 function _mapLoad(){
-  var raw = _phLoad(PHONE_CHAT_KEYS.map, null);
-  return raw;
+  try{
+    var uid = phoneGetChatUID();
+    return phoneGetC(uid, PHONE_CHAT_KEYS.map, null);
+  }catch(e){ return null; }
 }
 function _mapSave(data){
-  _phSave(PHONE_CHAT_KEYS.map, data);
+  try{
+    var uid = phoneGetChatUID();
+    phoneSetC(uid, PHONE_CHAT_KEYS.map, data);
+  }catch(e){ console.warn('[mapSave]', e); }
 }
 function _mapLoadLog(){
-  return _phLoad(PHONE_CHAT_KEYS.maplog, { v:1, lastAutoGen:0, logs:[] });
+  try{
+    var uid = phoneGetChatUID();
+    return phoneGetC(uid, PHONE_CHAT_KEYS.maplog, { v:1, lastAutoGen:0, logs:[] });
+  }catch(e){ return { v:1, lastAutoGen:0, logs:[] }; }
 }
 function _mapSaveLog(data){
-  _phSave(PHONE_CHAT_KEYS.maplog, data);
+  try{
+    var uid = phoneGetChatUID();
+    phoneSetC(uid, PHONE_CHAT_KEYS.maplog, data);
+  }catch(e){}
 }
 
 function _mapEnsure(){
@@ -28299,7 +28313,119 @@ var _defaultFurnPositions = {
   toilet: { gx:0, gy:3 },
 };
 
-// ★ NPC 家具互动面板：动态日志 + 隐藏秘密 + 连接 AI 生成
+// ★ 房间设置：角色房间的生活日志生成（独立于地图NPC日志）
+async function _openRoomSettings(container, mapData, houseId, npcId, npcName){
+  var savedPrompt = '';
+  try{
+    var uid = phoneGetChatUID();
+    var rsCfg = phoneGetC(uid, 'room_settings_v1', {});
+    savedPrompt = (rsCfg && rsCfg[houseId] && rsCfg[houseId].customPrompt) || '';
+  }catch(e){}
+
+  var logD = _mapLoadLog();
+  var roomLogs = (logD.logs||[]).filter(function(l){ return l.npcId===npcId && l.period==='room'; });
+  var logCount = roomLogs.length;
+
+  var inner =
+    '<div style="font-size:14px;font-weight:600;color:var(--ph-text);margin-bottom:4px;">🏠 '+esc(npcName)+'的房间日志</div>' +
+    '<div style="font-size:11px;color:var(--ph-text-sub);margin-bottom:12px;">当前已有 '+logCount+' 条房间动态</div>' +
+    '<div style="font-size:11px;color:var(--ph-text-sub);margin-bottom:6px;">自定义生成提示词（可选）</div>' +
+    '<textarea data-el="rsPrompt" rows="4" placeholder="留空使用默认，例如：重点描写角色的兴趣爱好和日常习惯，语气要细腻温柔…" style="width:100%;padding:8px 10px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.1));border-radius:10px;font-size:12px;font-family:inherit;outline:none;resize:vertical;box-sizing:border-box;background:var(--ph-glass);color:var(--ph-text);line-height:1.6;">'+esc(savedPrompt)+'</textarea>' +
+    '<button data-el="rsGenerate" style="width:100%;margin-top:10px;padding:11px;border-radius:12px;border:0;background:var(--ph-accent-grad,linear-gradient(135deg,#07c160,#06a050));color:#fff;font-size:13px;font-weight:600;cursor:pointer;">✦ 生成角色房间日志</button>' +
+    '<div data-el="rsResult" style="margin-top:8px;display:none;padding:10px;background:rgba(7,193,96,.05);border:1px solid rgba(7,193,96,.15);border-radius:10px;font-size:11px;color:var(--ph-text);line-height:1.7;"></div>' +
+    '<button data-el="rsClear" style="width:100%;margin-top:8px;padding:9px;border-radius:10px;border:1px solid rgba(231,76,60,.2);background:transparent;color:#e74c3c;font-size:12px;cursor:pointer;">🗑 清空房间日志</button>' +
+    '<button data-el="rsClose" style="width:100%;margin-top:6px;padding:9px;border-radius:10px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.08));background:transparent;font-size:12px;cursor:pointer;color:var(--ph-text-sub);">关闭</button>';
+
+  var ov = (typeof _cpShowOverlay === 'function') ? _cpShowOverlay(inner) : null;
+  if(!ov) return;
+
+  ov.querySelector('[data-el="rsClose"]')?.addEventListener('click', function(){ ov.remove(); });
+
+  ov.querySelector('[data-el="rsClear"]')?.addEventListener('click', function(){
+    var ld2 = _mapLoadLog();
+    ld2.logs = (ld2.logs||[]).filter(function(l){ return !(l.npcId===npcId && l.period==='room'); });
+    _mapSaveLog(ld2);
+    try{ toast('已清空房间日志'); }catch(e){}
+    ov.remove();
+  });
+
+  ov.querySelector('[data-el="rsGenerate"]')?.addEventListener('click', async function(){
+    var btn = this; btn.disabled=true; btn.textContent='生成中…';
+    var customPrompt = (ov.querySelector('[data-el="rsPrompt"]')?.value||'').trim();
+    // Save prompt
+    try{
+      var uid2 = phoneGetChatUID();
+      var rsCfg2 = phoneGetC(uid2,'room_settings_v1',{});
+      if(!rsCfg2[houseId]) rsCfg2[houseId]={};
+      rsCfg2[houseId].customPrompt = customPrompt;
+      phoneSetC(uid2,'room_settings_v1',rsCfg2);
+    }catch(e){}
+
+    try{
+      var db3 = (typeof loadContactsDB==='function') ? loadContactsDB() : null;
+      var npc3 = (db3 && typeof findContactById==='function') ? (findContactById(db3,npcId)||{name:npcName}) : {name:npcName};
+      var charEx3 = (typeof _loadCharExtra==='function') ? _loadCharExtra(npcId) : {};
+      var cs3 = (typeof _loadCharState==='function') ? _loadCharState(npcId) : null;
+      var attrLine = '';
+      if(cs3&&cs3.attrs){ var a=cs3.attrs; attrLine='当前状态：精力'+Math.round(a.energy||0)+' 心情'+Math.round(a.mood||0)+' 饱腹'+Math.round(a.hunger||0)+'\n'; }
+      var mapD3 = _mapLoad();
+      var house3 = mapD3 ? (mapD3.houses||[]).find(function(h){ return h.id===houseId; }) : null;
+      var furnList = (house3&&house3.rooms&&house3.rooms.furniture) ?
+        house3.rooms.furniture.filter(function(f3){ return f3.owned; }).map(function(f3){ return f3.type; }).join('、') : '';
+
+      var sysP3 =
+        '你是角色「'+npcName+'」在家中的生活日志生成器。只返回 JSON 数组，不要任何其他内容。\n'+
+        '格式：[{"action":"角色正在做什么（15字内，第一人称，具体生动）","emoji":"对应emoji（1个）","mood":"情绪词（轻松/专注/惬意等）","time_hint":"时间描述如早晨/傍晚"}]\n'+
+        '要求：生成4-6条，覆盖一天不同时段，符合角色性格，有生活细节感。\n'+
+        (charEx3&&charEx3.profile?'角色设定：'+charEx3.profile.slice(0,400)+'\n':'');
+
+      var userM3 =
+        attrLine+
+        '房间家具：'+furnList+'。\n'+
+        (customPrompt?'特别要求：'+customPrompt+'\n':'')+
+        '请生成「'+npcName+'」在家中的4-6条生活动态日志。';
+
+      var res3 = await PhoneAI.chat({
+        system: sysP3,
+        messages: [{role:'user',content:userM3}],
+        channel:'background', maxTokens:500, timeout:40
+      });
+      if(!res3||!res3.ok) throw new Error(res3&&res3.error||'请求失败');
+      var raw3 = String(res3.data||'').replace(/```json[\s\S]*?```|```[\s\S]*?```/g,function(m){return m.replace(/```json?/,'').replace(/```/,'');}).trim();
+      var arr3 = JSON.parse((raw3.match(/\[[\s\S]*\]/)||['[]'])[0]);
+      var now3 = Date.now();
+      var logD3 = _mapLoadLog();
+      var added3 = 0;
+      arr3.forEach(function(item, idx){
+        if(!item.action) return;
+        logD3.logs.push({
+          id:'log_room_ai_'+now3+'_'+idx, npcId:npcId, npcName:npcName,
+          landmarkId:houseId, time:now3 - (arr3.length-1-idx)*1800000,
+          period:'room', action:item.action,
+          cost:0, statusEffect:{mood:3}, isAuto:true,
+          emoji:item.emoji||'🏠', mood:item.mood, time_hint:item.time_hint
+        });
+        added3++;
+      });
+      if(logD3.logs.length>300) logD3.logs=logD3.logs.slice(-300);
+      _mapSaveLog(logD3);
+
+      var resEl = ov.querySelector('[data-el="rsResult"]');
+      if(resEl){
+        resEl.style.display='block';
+        resEl.innerHTML = '✅ 已生成 <strong>'+added3+'</strong> 条房间日志：<br>' +
+          arr3.slice(0,added3).map(function(item){ return (item.emoji||'•')+' '+esc(item.action); }).join('<br>');
+      }
+      try{ toast('✦ 已生成 '+added3+' 条房间日志'); }catch(e){}
+    }catch(e){
+      try{ toast('生成失败: '+(e.message||e)); }catch(e2){}
+    }
+    btn.disabled=false; btn.textContent='✦ 生成角色房间日志';
+  });
+}
+
+// ★ NPC 家具互动面板（前置声明）
+
 async function _showNpcFurnPanel(container, mapData, houseId, npcId, npcName, furn, cat){
   // 记录一条动态日志
   try{
@@ -28489,6 +28615,9 @@ function _mapOpenRoom(container, mapData, houseId){
     if(isMyH || npcOwner){
       html += '<button data-act="roomToggleEdit"'+(_editMode?' class="active"':'')+'>'+(_editMode?'✓ 完成':'🔧 装修')+'</button>';
     }
+    if(npcOwner){
+      html += '<button data-act="roomSettings" style="font-size:14px;background:transparent;border:0;cursor:pointer;padding:4px 6px;color:rgba(20,24,28,.4);">⚙️</button>';
+    }
     html += '<span style="font-size:10px;color:rgba(20,24,28,.35);">💰$'+wallet.balance+'</span>';
     html += '</div>';
     html += '</div>';
@@ -28544,9 +28673,10 @@ function _mapOpenRoom(container, mapData, houseId){
     // 窗户位置数据（装修模式可调）
     var wL = house._winLeft || {ox:75, oy:50, sc:1};
     var wR = house._winRight || {ox:225, oy:68, sc:1};
-    // 经典格窗多边形坐标 — 左墙方向 (前→后 = 左下→右上，dx≈140,dy≈-72 per full width)
-    // 窗口占左墙中段：从 t=0.22 到 t=0.52 处
-    var lwx1=40, lwy1=86, lwx2=82, lwy2=65;
+    // 经典格窗多边形坐标 — 左墙方向 (left wall: front-corner → back-corner = lower-left → upper-right)
+    // Left wall slope: dx≈+140, dy≈-72 per full width (150,118 → 10,46)
+    // Place window mid-left-wall at t≈0.25-0.55: (10+0.25*140=45, 118-0.25*72=100) to (10+0.55*140=87, 118-0.55*72=78)
+    var lwx1=45, lwy1=100, lwx2=87, lwy2=78;
 
     if(_winStyle === 'modern'){
       var _wlSel = _editMode && _winTarget==='left';
@@ -29055,6 +29185,11 @@ function _mapOpenRoom(container, mapData, houseId){
         _roomPanY = Math.max(-200,Math.min(200,_roomPanY));
         _applyTransform();
       }
+      return;
+    }
+
+    if(act==='roomSettings'){
+      _openRoomSettings(container, mapData, houseId, npcOwner, npcOwnerName);
       return;
     }
 
