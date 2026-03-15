@@ -26133,15 +26133,45 @@ function _mapGenerate(seed){
 
 // ---- 数据存取 ----
 // _mapSaveImpl/_mapLoadImpl are SET from inside the inner closure (where _phSave/_phLoad live).
-// This is the only correct way — the outer scope cannot call inner closure functions directly.
+// Fallback to direct phoneGetC/phoneSetC so data is never lost if impl isn't wired yet.
 var _mapSaveImpl = null, _mapLoadImpl = null, _mapSaveLogImpl = null, _mapLoadLogImpl = null;
-function _mapLoad(){ return _mapLoadImpl ? _mapLoadImpl() : null; }
-function _mapSave(data){ if(_mapSaveImpl) _mapSaveImpl(data); }
-function _mapLoadLog(){ return _mapLoadLogImpl ? _mapLoadLogImpl() : {v:1,lastAutoGen:0,logs:[]}; }
-function _mapSaveLog(data){ if(_mapSaveLogImpl) _mapSaveLogImpl(data); }
+function _mapUID(){ try{ var u=(typeof phoneGetChatUID==='function')?String(phoneGetChatUID()||'').trim():''; return u||'fallback'; }catch(e){ return 'fallback'; } }
+function _mapLoad(){
+  if(_mapLoadImpl) return _mapLoadImpl();
+  try{ return phoneGetC(_mapUID(), PHONE_CHAT_KEYS.map, null); }catch(e){ return null; }
+}
+function _mapSave(data){
+  if(_mapSaveImpl){ _mapSaveImpl(data); return; }
+  try{ phoneSetC(_mapUID(), PHONE_CHAT_KEYS.map, data); }catch(e){}
+}
+function _mapLoadLog(){
+  if(_mapLoadLogImpl) return _mapLoadLogImpl();
+  try{ return phoneGetC(_mapUID(), PHONE_CHAT_KEYS.maplog, {v:1,lastAutoGen:0,logs:[]}); }catch(e){ return {v:1,lastAutoGen:0,logs:[]}; }
+}
+function _mapSaveLog(data){
+  if(_mapSaveLogImpl){ _mapSaveLogImpl(data); return; }
+  try{ phoneSetC(_mapUID(), PHONE_CHAT_KEYS.maplog, data); }catch(e){}
+}
 
 function _mapEnsure(){
   var data = _mapLoad();
+
+  // Safety: if impl-based load returned null, try direct phoneGetC with common UIDs
+  // This prevents accidental regeneration due to UID mismatch
+  if(!data || !data.generated){
+    var tryUIDs = ['fallback'];
+    try{
+      var cu = (typeof phoneGetChatUID==='function') ? String(phoneGetChatUID()||'').trim() : '';
+      if(cu && cu !== 'fallback') tryUIDs.unshift(cu);
+    }catch(e){}
+    for(var ti=0; ti<tryUIDs.length; ti++){
+      try{
+        var candidate = phoneGetC(tryUIDs[ti], PHONE_CHAT_KEYS.map, null);
+        if(candidate && candidate.generated){ data = candidate; break; }
+      }catch(e){}
+    }
+  }
+
   if(data && data.generated){
     // v1→v2 升级：缺少河流/房子的旧地图重新生成
     if(!data.v || data.v < 2){
