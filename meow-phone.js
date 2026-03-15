@@ -28337,7 +28337,7 @@ async function _openRoomSettings(container, mapData, houseId, npcId, npcName){
     '<div style="font-size:11px;color:var(--ph-text-sub);margin-bottom:6px;">自定义生成提示词（可选）</div>' +
     '<textarea data-el="rsPrompt" rows="4" placeholder="留空使用默认，例如：重点描写角色的兴趣爱好和日常习惯，语气要细腻温柔…" style="width:100%;padding:8px 10px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.1));border-radius:10px;font-size:12px;font-family:inherit;outline:none;resize:vertical;box-sizing:border-box;background:var(--ph-glass);color:var(--ph-text);line-height:1.6;">'+esc(savedPrompt)+'</textarea>' +
     '<button data-el="rsGenerate" style="width:100%;margin-top:10px;padding:11px;border-radius:12px;border:0;background:var(--ph-accent-grad,linear-gradient(135deg,#07c160,#06a050));color:#fff;font-size:13px;font-weight:600;cursor:pointer;">✦ 生成角色房间日志</button>' +
-    '<div data-el="rsResult" style="margin-top:8px;display:none;padding:10px;background:rgba(7,193,96,.05);border:1px solid rgba(7,193,96,.15);border-radius:10px;font-size:11px;color:var(--ph-text);line-height:1.7;"></div>' +
+    '<div style="font-size:11px;color:var(--ph-text-sub);text-align:center;margin-top:6px;opacity:.6;">生成后从房间内点击家具发现</div>' +
     '<button data-el="rsClear" style="width:100%;margin-top:8px;padding:9px;border-radius:10px;border:1px solid rgba(231,76,60,.2);background:transparent;color:#e74c3c;font-size:12px;cursor:pointer;">🗑 清空房间日志</button>' +
     '<button data-el="rsClose" style="width:100%;margin-top:6px;padding:9px;border-radius:10px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.08));background:transparent;font-size:12px;cursor:pointer;color:var(--ph-text-sub);">关闭</button>';
 
@@ -28414,18 +28414,12 @@ async function _openRoomSettings(container, mapData, houseId, npcId, npcName){
       });
       if(logD3.logs.length>300) logD3.logs=logD3.logs.slice(-300);
       _mapSaveLog(logD3);
-
-      var resEl = ov.querySelector('[data-el="rsResult"]');
-      if(resEl){
-        resEl.style.display='block';
-        resEl.innerHTML = '✅ 已生成 <strong>'+added3+'</strong> 条房间日志：<br>' +
-          arr3.slice(0,added3).map(function(item){ return (item.emoji||'•')+' '+esc(item.action); }).join('<br>');
-      }
-      try{ toast('✦ 已生成 '+added3+' 条房间日志'); }catch(e){}
+      try{ toast('✦ 已为'+esc(npcName||'角色')+'生成 '+added3+' 条房间日志，点击家具发现'); }catch(e){}
+      ov.remove(); // 关闭面板，保持惊喜感
     }catch(e){
       try{ toast('生成失败: '+(e.message||e)); }catch(e2){}
+      btn.disabled=false; btn.textContent='✦ 生成角色房间日志';
     }
-    btn.disabled=false; btn.textContent='✦ 生成角色房间日志';
   });
 }
 
@@ -29040,39 +29034,50 @@ function _mapOpenRoom(container, mapData, houseId){
     wrap.addEventListener('mouseup', function(){ isPanning=false; wrap.style.cursor=''; });
     wrap.addEventListener('mouseleave', function(){ isPanning=false; wrap.style.cursor=''; });
 
-    // 编辑模式：点击SVG中的家具或窗户可直接选中
+    // SVG点击：普通模式触发家具使用/发现，编辑模式选中拖拽
     if(_editMode){
       wrap.addEventListener('click', function(ev){
-        // 检查是否点击了窗户
         var winG = ev.target.closest('[data-win]');
         if(winG){
-          var wSide = winG.getAttribute('data-win'); // 'left' or 'right'
-          _winTarget = (_winTarget === wSide) ? null : wSide; // toggle
-          _dragTarget = null; // 取消家具选择
+          var wSide = winG.getAttribute('data-win');
+          _winTarget = (_winTarget === wSide) ? null : wSide;
+          _dragTarget = null;
           try{ toast('🪟 '+((_winTarget==='left')?'左窗':'右窗')+'已选中，用 ▲▼◀▶ 移动'); }catch(e){}
-          renderRoom();
+          renderRoom(); return;
+        }
+        var furnG2 = ev.target.closest('.rm-furn-wrap');
+        if(furnG2){
+          var fid2 = furnG2.getAttribute('data-furnid');
+          if(fid2){ _dragTarget=fid2; _winTarget=null; try{toast('🔧 用 ▲▼◀▶ 移动家具');}catch(e){} renderRoom(); }
           return;
         }
+        if(ev.target.tagName==='polygon'||ev.target.tagName==='rect'||ev.target===wrap){
+          if(_dragTarget||_winTarget){ _dragTarget=null; _winTarget=null; renderRoom(); }
+        }
+      });
+    } else {
+      wrap.addEventListener('click', function(ev){
         var furnG = ev.target.closest('.rm-furn-wrap');
         if(furnG){
           var fid = furnG.getAttribute('data-furnid');
-          if(fid){
-            _dragTarget = fid;
-            _winTarget = null; // 取消窗户选择
-            try{ toast('🔧 用 ▲▼◀▶ 移动家具'); }catch(e){}
-            renderRoom();
+          var ftype = furnG.getAttribute('data-furntype');
+          if(fid && ftype){
+            var fObj = furniture.find(function(ff){ return ff.id===fid; });
+            var catObj = FURNITURE_CATALOG[ftype];
+            if(fObj && catObj && fObj.owned){
+              if(npcOwner){
+                _showNpcFurnPanel(container, mapData, houseId, npcOwner, npcOwnerName, fObj, catObj);
+              } else {
+                try{ var us3=_loadUserState(); for(var k in (catObj.fx||{})){ if(us3.attrs[k]!=null) us3.attrs[k]=_clampUserAttr(k,us3.attrs[k]+(catObj.fx[k]||0)); } us3.lastCalcAt=Date.now(); _saveUserState(us3); }catch(e){}
+                try{ toast(catObj.emoji+' '+catObj.desc); }catch(e){}
+                renderRoom();
+              }
+            }
           }
-          return;
-        }
-        // 点击空白取消所有选择
-        if(ev.target.tagName === 'polygon' || ev.target.tagName === 'rect' || ev.target === wrap){
-          if(_dragTarget || _winTarget){ _dragTarget = null; _winTarget = null; renderRoom(); }
         }
       });
     }
   }
-
-  // 定时更新光照（每5分钟）
   _lightTimer = setInterval(function(){
     if(!roomEl.parentNode){ clearInterval(_lightTimer); return; }
     // 轻量更新光照overlay
