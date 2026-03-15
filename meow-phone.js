@@ -2980,6 +2980,12 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .wxChatBubble.wxBubbleSelected .wxCBContent{
   opacity:.85;
 }
+#${ID} .wxOfflineParagraph.wxBubbleSelected{
+  opacity:.85; outline:1px solid rgba(255,255,255,.3); outline-offset:2px;
+}
+#${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph.wxBubbleSelected{
+  outline-color:rgba(0,0,0,.15);
+}
 #${ID} .wxQuoteBar{
   display:flex; align-items:center; gap:8px;
   padding:6px 10px; background:rgba(0,0,0,.04);
@@ -3109,16 +3115,16 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID} .wxOfflineParagraph.me .rpText{ }
 #${ID} .wxOfflineParagraph.me{
-  border-left:3px solid rgba(130,170,255,.5);
+  border-left:0; border-right:3px solid rgba(130,170,255,.5);
 }
 #${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph.me{
-  border-left-color:rgba(70,90,130,.3);
+  border-right-color:rgba(70,90,130,.3); border-left:0;
 }
 #${ID} .wxOfflineParagraph.them{
-  border-left:3px solid rgba(255,200,130,.5);
+  border-left:3px solid rgba(255,200,130,.5); border-right:0;
 }
 #${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph.them{
-  border-left-color:rgba(180,140,80,.3);
+  border-left-color:rgba(180,140,80,.3); border-right:0;
 }
 /* 环境描写块（舞台指示） */
 #${ID} .wxOfflineParagraph.rpStageDir{
@@ -3129,6 +3135,22 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph.rpStageDir{
   color:rgba(100,90,70,.55); background:rgba(0,0,0,.03);
 }
+/* 线下头像 */
+#${ID} .wxOfflineAvatar{
+  width:32px; height:32px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; overflow:hidden;
+  background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.1);
+}
+#${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineAvatar{
+  background:rgba(0,0,0,.06); border-color:rgba(0,0,0,.06);
+}
+#${ID} .wxOfflineAvatar img{ width:100%; height:100%; object-fit:cover; border-radius:50%; }
+#${ID} .wxOfflineParagraph.me .wxOfflineAvatar,
+#${ID} .wxOfflineParagraph.them .wxOfflineAvatar{ margin-top:2px; }
+#${ID} .wxOfflineParagraph.me{ display:flex; flex-direction:row-reverse; gap:8px; align-items:flex-start; }
+#${ID} .wxOfflineParagraph.them{ display:flex; flex-direction:row; gap:8px; align-items:flex-start; }
+#${ID} .wxOfflineContent{ flex:1; min-width:0; }
 #${ID} .wxSceneBanner{
   text-align:center; padding:22px 14px 16px; margin-bottom:16px;
   border-bottom:1px solid rgba(255,255,255,.1);
@@ -3151,6 +3173,26 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID} .wxOfflineWrap:not([style*="background-image"]) .wxSceneBanner .wxSceneDesc{
   color:rgba(46,38,26,.4);
+}
+/* 线下头像 */
+#${ID} .wxOfflineParagraph .wxOfflineAvatar{
+  width:32px; height:32px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; overflow:hidden;
+  background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.1);
+}
+#${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph .wxOfflineAvatar{
+  background:rgba(0,0,0,.06); border-color:rgba(0,0,0,.06);
+}
+#${ID} .wxOfflineParagraph .wxOfflineAvatar img{
+  width:100%; height:100%; object-fit:cover; border-radius:50%;
+}
+/* 头像+内容区域flex布局 */
+#${ID} .wxOfflineParagraph:not(.rpStageDir){
+  display:flex; align-items:flex-start; gap:8px;
+}
+#${ID} .wxOfflineParagraph .wxOfflineContent{
+  flex:1; min-width:0;
 }
 #${ID} .wxOfflineInputBar{
   /* inherits from wxChatInputBar base styles */
@@ -16124,14 +16166,19 @@ const npc = _wxGetChatTargetMeta(npcId);
           _attrHint = '\n当前属性值：精力=' + Math.round(_a.energy||0) + ' 心情=' + Math.round(_a.mood||0) + ' 健康=' + Math.round(_a.health||0) + ' 饱腹=' + Math.round(_a.hunger||0) + ' 如厕=' + Math.round(_a.bladder||0) + ' 娱乐=' + Math.round(_a.fun||0);
         }
 
-        parts.push('---\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息的长度随机变化：有的很短（1-5字，如"嗯""好的""？"），有的中等（一两句话），偶尔有一条较长的。\n模拟真实手机聊天的节奏感——不要把所有内容压缩成一段话。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长\n\n示例格式：\n嗯|||怎么了？|||你今天怎么这么安静\n\n【状态同步（必须执行）】\n每次回复时，你必须在最后一条消息的末尾附加两个标记（标记不会显示给用户）。\n\n标记1 - 状态描述：根据当前对话内容和场景，更新你的穿着、正在做什么、以及内心独白：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。\n\n标记2 - 属性变化：根据对话中发生的事情，输出属性的变化量（正数为增加，负数为减少）：\n[属性:属性名+数值,属性名-数值]\n可用属性：精力、心情、健康、饱腹、如厕、娱乐（值域0-100，只写有变化的）\n变化量要合理：吃饭→饱腹+30~50，聊天开心→心情+5~15，运动→精力-10~20、健康+5\n如果对话没有涉及属性变化（纯闲聊），可以只写 [属性:心情+3] 之类的微调。' + _attrHint + '\n\n完整示例：\n吃饱了，舒服～ [状态:穿着=家居服,正在=收拾碗筷,心声=泡面也还行] [属性:饱腹+40,心情+5,娱乐-3]' + _customEntryHint + voiceInstructions + stkForAI);
+        // ★ Phase 3: 线下模式追加 prompt（在格式指令之前，确保高权重）
+        var _isOfflineMode = false;
+        try{ _isOfflineMode = _getChatMode(npcId) === 'offline'; }catch(e){}
+        if (_isOfflineMode){
+          try{ parts.push(_buildOfflinePromptAddition(npcId)); }catch(e){}
+        }
 
-        // ★ Phase 3: 线下模式追加 prompt
-        try{
-          if (_getChatMode(npcId) === 'offline'){
-            parts.push(_buildOfflinePromptAddition(npcId));
-          }
-        }catch(e){}
+        if (_isOfflineMode){
+          // 线下模式：不用 ||| 分隔，改用连续文本 + 状态标记
+          parts.push('---\n【回复格式要求（线下模式）】\n你的回复是一段连续的文字，不使用"|||"分隔。\n像一幕话剧/舞台剧那样书写，环境描写+动作+对话自然穿插。\n保持2-4段，不要太长。\n\n【状态同步（必须执行）】\n在回复的最末尾附加两个标记（标记不会显示给用户）。\n\n标记1 - 状态描述：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。\n\n标记2 - 属性变化：\n[属性:属性名+数值,属性名-数值]\n可用属性：精力、心情、健康、饱腹、如厕、娱乐（值域0-100，只写有变化的）' + _attrHint + _customEntryHint);
+        } else {
+          parts.push('---\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息的长度随机变化：有的很短（1-5字，如"嗯""好的""？"），有的中等（一两句话），偶尔有一条较长的。\n模拟真实手机聊天的节奏感——不要把所有内容压缩成一段话。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长\n\n示例格式：\n嗯|||怎么了？|||你今天怎么这么安静\n\n【状态同步（必须执行）】\n每次回复时，你必须在最后一条消息的末尾附加两个标记（标记不会显示给用户）。\n\n标记1 - 状态描述：根据当前对话内容和场景，更新你的穿着、正在做什么、以及内心独白：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。\n\n标记2 - 属性变化：根据对话中发生的事情，输出属性的变化量（正数为增加，负数为减少）：\n[属性:属性名+数值,属性名-数值]\n可用属性：精力、心情、健康、饱腹、如厕、娱乐（值域0-100，只写有变化的）\n变化量要合理：吃饭→饱腹+30~50，聊天开心→心情+5~15，运动→精力-10~20、健康+5\n如果对话没有涉及属性变化（纯闲聊），可以只写 [属性:心情+3] 之类的微调。' + _attrHint + '\n\n完整示例：\n吃饱了，舒服～ [状态:穿着=家居服,正在=收拾碗筷,心声=泡面也还行] [属性:饱腹+40,心情+5,娱乐-3]' + _customEntryHint + voiceInstructions + stkForAI);
+        }
 
         return parts.join('\n\n');
       }
@@ -17527,9 +17574,12 @@ const npc = _wxGetChatTargetMeta(npcId);
         var MOVE_THRESHOLD = 10;
 
         function onDown(e){
-          var bubble = (e.target.closest ? e.target.closest('.wxChatBubble') : null);
+          // 支持线上气泡和线下段落
+          var bubble = (e.target.closest ? (e.target.closest('.wxChatBubble') || e.target.closest('.wxOfflineParagraph')) : null);
           if (!bubble) return;
           if (bubble.classList.contains('wxTypingIndicator')) return;
+          // 舞台指示段不弹菜单
+          if (bubble.classList.contains('rpStageDir')) return;
 
           var p = e.touches ? e.touches[0] : e;
           _bmState.startX = p.clientX;
@@ -17576,7 +17626,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           // 只响应对方头像
           var avatar = e.target.closest ? e.target.closest('.wxCBAvatar') : null;
           if (!avatar) return;
-          var bubble = avatar.closest('.wxChatBubble');
+          var bubble = avatar.closest('.wxChatBubble') || avatar.closest('.wxOfflineParagraph');
           if (!bubble) return;
           if (!bubble.classList.contains('them')) return;
           if (bubble.classList.contains('wxTypingIndicator')) return;
@@ -23686,10 +23736,40 @@ function _injectCustomCSS(npcId){
 // ========== Phase 3D：线下模式渲染器（话剧/舞台剧风格） ==========
 function _renderOfflineParagraph(container, npc, role, text, ts, meta){
   var displayText = String(text || '').trim();
+  // 清理 AI 可能输出的伪标签（如 "rpAction"> 等）
+  displayText = displayText
+    .replace(/"rpAction"\s*>/g, '')
+    .replace(/"rpDialog"\s*>/g, '')
+    .replace(/"rpSpeaker"\s*>/g, '')
+    .replace(/"rpText"\s*>/g, '')
+    .replace(/<\/?em[^>]*>/g, '')
+    .replace(/<\/?span[^>]*>/g, '')
+    .replace(/class="[^"]*"/g, '');
   var speaker = role === 'me' ? '你' : (npc.name || '对方');
 
-  // 解析舞台剧格式：拆分环境描写（*...*整段）和对话/动作混合段
+  // 获取头像（使用 phoneGetAvatar 获取自定义头像图片）
+  var avatarContent = '';
+  var npcId = (npc && npc.id) || state.chatTarget || '';
+  if (role === 'them'){
+    try{
+      var _avImg = (typeof phoneGetAvatar === 'function') ? phoneGetAvatar(npcId) : null;
+      if (_avImg){
+        avatarContent = '<img src="' + esc(_avImg) + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>';
+      } else {
+        var avRaw = npc.avatar || (npc.name||'?').charAt(0);
+        avatarContent = (typeof avRaw === 'string' && avRaw.startsWith('<img')) ? avRaw : esc(avRaw);
+      }
+    }catch(e){
+      avatarContent = esc((npc.name||'?').charAt(0));
+    }
+  } else {
+    avatarContent = '👤';
+  }
+  var avatarHtml = '<div class="wxCBAvatar wxOfflineAvatar' + (role === 'them' ? '" data-act="wxAvatarTap" data-npcid="' + esc(npcId) + '" style="cursor:pointer;"' : '"') + '>' + avatarContent + '</div>';
+
+  // 解析舞台剧格式
   var segments = _parseTheaterSegments(displayText, speaker, role);
+  var isFirst = true;
 
   segments.forEach(function(seg){
     var p = doc.createElement('div');
@@ -23699,7 +23779,17 @@ function _renderOfflineParagraph(container, npc, role, text, ts, meta){
     p.setAttribute('data-msgtext', String(text||''));
     if (meta && meta.mode) p.setAttribute('data-mode', meta.mode);
     if (meta && meta.branch) p.setAttribute('data-branch', meta.branch);
-    p.innerHTML = seg.html;
+
+    // 只在第一个非舞台指示段显示头像
+    if (seg.type !== 'stage' && isFirst){
+      p.innerHTML = avatarHtml + '<div class="wxOfflineContent">' + seg.html + '</div>';
+      isFirst = false;
+    } else if (seg.type === 'stage') {
+      p.innerHTML = seg.html;
+    } else {
+      // 后续对话段：缩进对齐头像宽度
+      p.innerHTML = '<div class="wxOfflineContent" style="margin-left:40px;">' + seg.html + '</div>';
+    }
     container.appendChild(p);
   });
 }
@@ -23797,30 +23887,38 @@ function _renderSceneBanner(container, sceneName, sceneDesc){
 function _buildOfflinePromptAddition(npcId){
   var scene = _loadSceneData(npcId);
   var lines = [
-    '\n\n【当前模式：线下面对面 · 话剧/舞台剧风格】',
-    '⚠ 重要：线下模式下请忽略上面的"|||"分隔消息格式要求。线下模式只输出一整段连续的文字，不使用"|||"分隔。',
-    '你现在和用户面对面，不是在手机上聊天。',
-    '请用话剧/舞台剧风格来描写，格式规范如下：',
-    '1. 先用 *环境/动作描写* 描述场景氛围和角色肢体语言（如 *海风拂过你的脸颊，远处灯塔的光在雾中若隐若现*）',
-    '2. 然后用对话格式写角色的台词，用引号标注（如 "你看，那边有只海鸥。"）',
-    '3. 对话中穿插 *动作* 描写来体现角色的表情、动作、语气变化',
-    '4. 每段回复遵循「环境描写 → 动作描写 → 对话」的节奏，像一幕短剧',
-    '5. 保持2-4段，不要太长。每段之间用换行分隔。',
-    '示例格式：',
-    '*夕阳把海面染成了橘红色。你们并肩坐在灯塔下的石阶上，海风带着咸味掠过。*',
+    '【⚠ 线下面对面模式 — 话剧/舞台剧风格（此部分优先级高于其他格式指令）】',
+    '你现在和用户面对面互动，不是在手机上聊天。',
+    '必须严格按以下话剧/舞台剧风格来写：',
+    '',
+    '■ 人称规则（最高优先级）：',
+    '- 角色（你自己）的动作描写用第一人称（"我"），如 *我侧过头看着你*',
+    '- 用户的动作用第二人称（"你"），如 *你伸手接过咖啡*',
+    '- 纯环境/场景描写用客观旁白视角，如 *海风拂过，远处灯塔的光闪烁着*',
+    '',
+    '■ 格式规则：',
+    '1. 环境描写独立成段，用 *星号* 包裹整段',
+    '2. 角色的动作描写也用 *星号* 包裹',
+    '3. 对话台词用引号（如 "今天的晚霞真好看。"）',
+    '4. 每段回复遵循「环境描写 → 动作 → 对话」的节奏',
+    '5. 保持2-4段，段与段之间空行分隔',
+    '6. ⚠ 绝对不要输出 rpAction、rpDialog、rpSpeaker、"rpAction"> 等任何标签/代码片段，只输出纯文字、星号和引号',
+    '',
+    '■ 正确示例：',
+    '*夕阳把海面染成了橘红色，海风带着咸味掠过石阶。*',
     '',
     '*我侧过头看着你，嘴角不自觉地微微上扬。*',
-    '"今天的晚霞真好看。"',
+    '"今天的晚霞……真好看。"',
     '',
-    '*我把手里的咖啡递给你，目光落在远处的海平线上。*',
-    '"下次……我们还来这里吧。"'
+    '*我把手里温热的咖啡递向你，目光落在远处的海平线上。*',
+    '"下次，我们还来这里吧。"'
   ];
   if (scene.location) lines.push('\n当前地点：' + scene.location);
   if (scene.description) lines.push('场景描述：' + scene.description);
 
-  // 追加自定义提示词预设
+  // 追加自定义提示词预设（最高优先级标注）
   if (scene.customPrompt && String(scene.customPrompt).trim()){
-    lines.push('\n【场景自定义提示词】');
+    lines.push('\n【⚠⚠⚠ 用户指定的场景专属指令 — 最高优先级，必须逐条严格执行，不可忽略或变通 ⚠⚠⚠】');
     lines.push(String(scene.customPrompt).trim());
   }
 
