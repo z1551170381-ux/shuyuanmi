@@ -7758,12 +7758,6 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
         try{ return phoneSetC(_phUID(), key, val); }catch(e){}
       }
 
-      // ★ Wire outer-scope map save/load to use THIS closure's _phLoad/_phSave
-      _mapLoadImpl    = function(){ return _phLoad(PHONE_CHAT_KEYS.map, null); };
-      _mapSaveImpl    = function(d){ _phSave(PHONE_CHAT_KEYS.map, d); };
-      _mapLoadLogImpl = function(){ return _phLoad(PHONE_CHAT_KEYS.maplog, {v:1,lastAutoGen:0,logs:[]}); };
-      _mapSaveLogImpl = function(d){ _phSave(PHONE_CHAT_KEYS.maplog, d); };
-
       // ====== 钱包数据层 ======
       function loadWallet(){
         const w = _phLoad(PHONE_IM_KEYS.wallet, null);
@@ -26132,25 +26126,18 @@ function _mapGenerate(seed){
 }
 
 // ---- 数据存取 ----
-// _mapSaveImpl/_mapLoadImpl are SET from inside the inner closure (where _phSave/_phLoad live).
-// Fallback to direct phoneGetC/phoneSetC so data is never lost if impl isn't wired yet.
-var _mapSaveImpl = null, _mapLoadImpl = null, _mapSaveLogImpl = null, _mapLoadLogImpl = null;
-function _mapUID(){ try{ var u=(typeof phoneGetChatUID==='function')?String(phoneGetChatUID()||'').trim():''; return u||'fallback'; }catch(e){ return 'fallback'; } }
 function _mapLoad(){
-  if(_mapLoadImpl) return _mapLoadImpl();
-  try{ return phoneGetC(_mapUID(), PHONE_CHAT_KEYS.map, null); }catch(e){ return null; }
+  var raw = _phLoad(PHONE_CHAT_KEYS.map, null);
+  return raw;
 }
 function _mapSave(data){
-  if(_mapSaveImpl){ _mapSaveImpl(data); return; }
-  try{ phoneSetC(_mapUID(), PHONE_CHAT_KEYS.map, data); }catch(e){}
+  _phSave(PHONE_CHAT_KEYS.map, data);
 }
 function _mapLoadLog(){
-  if(_mapLoadLogImpl) return _mapLoadLogImpl();
-  try{ return phoneGetC(_mapUID(), PHONE_CHAT_KEYS.maplog, {v:1,lastAutoGen:0,logs:[]}); }catch(e){ return {v:1,lastAutoGen:0,logs:[]}; }
+  return _phLoad(PHONE_CHAT_KEYS.maplog, { v:1, lastAutoGen:0, logs:[] });
 }
 function _mapSaveLog(data){
-  if(_mapSaveLogImpl){ _mapSaveLogImpl(data); return; }
-  try{ phoneSetC(_mapUID(), PHONE_CHAT_KEYS.maplog, data); }catch(e){}
+  _phSave(PHONE_CHAT_KEYS.maplog, data);
 }
 
 function _mapEnsure(){
@@ -28598,6 +28585,23 @@ function _mapOpenRoom(container, mapData, houseId){
   if(npcOwner){ try{ var db2=loadContactsDB(); var n2=findContactById(db2,npcOwner); if(n2) npcOwnerName=n2.name||''; }catch(e){} }
   var ownerLabel = isMyH ? '我的家' : (npcOwner ? esc(npcOwnerName)+'的家' : house.name);
 
+  // ★ NPC 余额辅助函数 — 存在 mapData.npcBalances[npcId] 里，与家具同条保存路径
+  function _roomGetBalance(){
+    if(!npcOwner) return loadWallet().balance;
+    if(!mapData.npcBalances) mapData.npcBalances = {};
+    if(mapData.npcBalances[npcOwner] == null) mapData.npcBalances[npcOwner] = 3000; // NPC初始余额
+    return mapData.npcBalances[npcOwner];
+  }
+  function _roomSpend(amount, desc){
+    if(!npcOwner){ walletSpend(amount, desc); return; }
+    if(!mapData.npcBalances) mapData.npcBalances = {};
+    if(mapData.npcBalances[npcOwner] == null) mapData.npcBalances[npcOwner] = 3000;
+    mapData.npcBalances[npcOwner] = Math.max(0, mapData.npcBalances[npcOwner] - amount);
+  }
+  function _roomCanAfford(amount){
+    return _roomGetBalance() >= amount;
+  }
+
   var roomEl = doc.createElement('div');
   roomEl.className = 'mapRoomWrap';
   if(npcOwner) roomEl.setAttribute('data-npc-owner', npcOwner);
@@ -28620,7 +28624,6 @@ function _mapOpenRoom(container, mapData, houseId){
 
   function renderRoom(){
     try{
-    var wallet = loadWallet();
     var lighting = _roomGetLighting();
     var html = '';
 
@@ -28631,7 +28634,7 @@ function _mapOpenRoom(container, mapData, houseId){
     if(isMyH || npcOwner){
       html += '<button data-act="roomToggleEdit"'+(_editMode?' class="active"':'')+'>'+(_editMode?'✓ 完成':'🔧 装修')+'</button>';
     }
-    html += '<span style="font-size:10px;color:rgba(20,24,28,.35);">💰$'+wallet.balance+'</span>';
+    html += '<span style="font-size:10px;color:rgba(20,24,28,.35);">💰$'+_roomGetBalance()+'</span>';
     html += '</div>';
     html += '</div>';
 
@@ -29269,9 +29272,8 @@ function _mapOpenRoom(container, mapData, houseId){
       var fid2 = tgt.getAttribute('data-furnid');
       var cat2 = FURNITURE_CATALOG[ftype];
       if(!cat2 || !cat2.cost) return;
-      var w = loadWallet();
-      if(w.balance < cat2.cost){ try{ toast('💰 余额不足！需要 $'+cat2.cost); }catch(e){} return; }
-      walletSpend(cat2.cost, '购买家具：'+cat2.label);
+      if(!_roomCanAfford(cat2.cost)){ try{ toast('💰 '+(npcOwner?esc(npcOwnerName)+'余额不足':'余额不足')+'！需要 $'+cat2.cost); }catch(e){} return; }
+      _roomSpend(cat2.cost, '购买家具：'+cat2.label);
       var f2 = furniture.find(function(ff){ return ff.id===fid2; });
       if(f2){ f2.owned = true; f2.boughtAt = Date.now(); }
       _mapSave(mapData);
@@ -29322,7 +29324,7 @@ function _mapOpenRoom(container, mapData, houseId){
 
     if(act==='roomShop'){
       var shopH = '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">🛋️ 家具商店</div>';
-      shopH += '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:10px;">💰 余额: $'+loadWallet().balance+'</div>';
+      shopH += '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:10px;">💰 余额: $'+_roomGetBalance()+'</div>';
 
       // ====== 窗户装修 ======
       var curWinStyle = house._windowStyle || 'default';
@@ -29388,9 +29390,8 @@ function _mapOpenRoom(container, mapData, houseId){
           var ws = t2.getAttribute('data-winstyle');
           if(ws === house._windowStyle || (!house._windowStyle && ws==='default')){ return; }
           if(ws === 'modern' && house._windowStyle !== 'modern'){
-            var ww = loadWallet();
-            if(ww.balance < 100){ try{toast('💰 余额不足');}catch(e){} return; }
-            walletSpend(100, '窗户装修：现代落地窗');
+            if(!_roomCanAfford(100)){ try{toast('💰 '+(npcOwner?esc(npcOwnerName)+'余额不足':'余额不足'));}catch(e){} return; }
+            _roomSpend(100, '窗户装修：现代落地窗');
           }
           house._windowStyle = ws;
           // 切换款式时重置窗户位置，避免位置错乱
@@ -29426,7 +29427,14 @@ function _mapOpenRoom(container, mapData, houseId){
             if(tc.getAttribute('data-act')==='cfmOk'){
               furniture.splice(sellIdx, 1);
               house.rooms.furniture = furniture;
-              walletEarn(sellP, '出售家具：'+(sellCat.label||''));
+              if(npcOwner){
+                // 出售归还给角色余额
+                if(!mapData.npcBalances) mapData.npcBalances = {};
+                if(mapData.npcBalances[npcOwner] == null) mapData.npcBalances[npcOwner] = 3000;
+                mapData.npcBalances[npcOwner] += sellP;
+              } else {
+                walletEarn(sellP, '出售家具：'+(sellCat.label||''));
+              }
               _mapSave(mapData);
               cfmOv.remove();
               try{ toast('💰 已出售，获得 $'+sellP); }catch(e){}
@@ -29441,8 +29449,7 @@ function _mapOpenRoom(container, mapData, houseId){
           var ft = t2.getAttribute('data-ftype');
           var cc2 = FURNITURE_CATALOG[ft];
           if(!cc2) return;
-          var w2 = loadWallet();
-          if(w2.balance < cc2.cost){ try{toast('💰 余额不足');}catch(e){} return; }
+          if(!_roomCanAfford(cc2.cost)){ try{toast('💰 '+(npcOwner?esc(npcOwnerName)+'余额不足':'余额不足'));}catch(e){} return; }
           if(cc2.styles && cc2.styles.length > 1){
             shopOv.remove();
             var stH = '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">🎨 选择款式 — '+cc2.label+'</div>';
@@ -29467,9 +29474,8 @@ function _mapOpenRoom(container, mapData, houseId){
               if(t3.getAttribute('data-act')==='stylePick'){
                 var cc3 = FURNITURE_CATALOG[t3.getAttribute('data-ftype')];
                 if(!cc3) return;
-                var w3 = loadWallet();
-                if(w3.balance < cc3.cost){ try{toast('💰 余额不足');}catch(e){} return; }
-                walletSpend(cc3.cost, '购买家具：'+cc3.label);
+                if(!_roomCanAfford(cc3.cost)){ try{toast('💰 '+(npcOwner?esc(npcOwnerName)+'余额不足':'余额不足'));}catch(e){} return; }
+                _roomSpend(cc3.cost, '购买家具：'+cc3.label);
                 furniture.push({ id:t3.getAttribute('data-ftype')+'_'+Date.now(), type:t3.getAttribute('data-ftype'), gx:0, gy:0, owned:true, styleId:t3.getAttribute('data-styleid'), boughtAt:Date.now() });
                 house.rooms.furniture = furniture;
                 _mapSave(mapData);
@@ -29480,7 +29486,7 @@ function _mapOpenRoom(container, mapData, houseId){
             });
             return;
           }
-          walletSpend(cc2.cost, '购买家具：'+cc2.label);
+          _roomSpend(cc2.cost, '购买家具：'+cc2.label);
           furniture.push({ id:ft+'_'+Date.now(), type:ft, gx:0, gy:0, owned:true, boughtAt:Date.now() });
           house.rooms.furniture = furniture;
           _mapSave(mapData);
