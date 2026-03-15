@@ -18648,7 +18648,14 @@ const npc = _wxGetChatTargetMeta(npcId);
           var msgsEl = root.querySelector('[data-ph="chatMsgs"]');
           if (msgsEl){ msgsEl.innerHTML = ''; msgsEl._bmBound = false; }
           var body = root.querySelector('[data-ph="appBody"]');
-          if (body) _chatDetail_fillHistory(body, npc, npcId);
+          if (!body) return;
+          // ★ 根据当前模式选择渲染器，避免线下模式重回后变成线上气泡
+          var _rMode = (typeof _getChatMode === 'function') ? _getChatMode(npcId) : 'online';
+          if(_rMode === 'offline'){
+            _chatDetail_fillHistoryOffline(body, npc, npcId);
+          } else {
+            _chatDetail_fillHistory(body, npc, npcId);
+          }
           _initBubbleLongPress();
         }catch(e){}
       }
