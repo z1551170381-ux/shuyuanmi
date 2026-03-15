@@ -5467,10 +5467,10 @@ function buildHTML(){
           }
           if (act === 'wxUserStatusToDetail'){
             var _uCard2 = root.querySelector('.wxUserStatusCard'); if(_uCard2) _uCard2.remove();
-            // 优先用 appBody（从聊天页弹出的卡片进来时）；否则用 chatTabContent（从「我」页进来时）
+            // Strip chat-mode overflow lock so the status page can scroll
+            try{ var _ab3 = root.querySelector('.phAppBody'); if(_ab3){ _ab3.classList.remove('phAppBodyChat'); _ab3.style.overflow=''; _ab3.style.overflowY='auto'; } }catch(e){}
             var _uDetailBody = root.querySelector('[data-ph="appBody"]') || root.querySelector('[data-ph="chatTabContent"]');
             if (!_uDetailBody) return;
-            // 如果是从聊天页来的，需要设置 state.app 并压栈以便返回
             if (state.app === 'chatDetail' || state.app === 'charSettings'){
               var _prevApp = state.app;
               var _prevTarget = state.chatTarget;
@@ -17170,8 +17170,8 @@ const npc = _wxGetChatTargetMeta(npcId);
             var isCur = e4<=s4 ? (_ctm3>=s4||_ctm3<e4) : (_ctm3>=s4&&_ctm3<e4);
             html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(0,0,0,.04);'+(isCur?'background:rgba(7,193,96,.05);':'')+'">';
             html += '<span style="color:var(--ph-icon-inner-tint,rgba(20,24,28,.4));font-size:13px;width:16px;text-align:center;">'+((tInfo&&tInfo.icon)||'·')+'</span>';
-            html += '<span style="font-size:12px;color:var(--ph-text-sub);min-width:80px;">'+sT+' - '+eT+'</span>';
-            html += '<span style="font-size:13px;font-weight:600;color:var(--ph-text);flex:1;">'+esc(sl.activity||sl.tag)+'</span>';
+            html += '<span style="font-size:12px;color:var(--ph-text-sub);opacity:.75;min-width:80px;">'+sT+' - '+eT+'</span>';
+            html += '<span style="font-size:13px;font-weight:400;color:var(--ph-text);flex:1;letter-spacing:.01em;">'+esc(sl.activity||sl.tag)+'</span>';
             if (isCur) html += '<span style="font-size:10px;color:var(--ph-accent,#07c160);background:rgba(7,193,96,.1);padding:2px 6px;border-radius:4px;">现在</span>';
             html += '</div>';
           });
@@ -27028,6 +27028,8 @@ function renderMapApp(body){
       if(npcId){
         btns += '<div class="mapActRow" data-act="mapClaimNpcHouse" data-houseid="'+houseId+'"><span class="mapActLabel">🏠 设为'+esc(npcName||'角色')+'的家</span><span class="mapActArrow">›</span></div>';
       }
+      // 帮任意好友选房（显示联系人列表）
+      btns += '<div class="mapActRow" data-act="mapPickFriendHouse" data-houseid="'+houseId+'"><span class="mapActLabel">👥 帮好友选房…</span><span class="mapActArrow">›</span></div>';
     }
     if(isMyH || npcOwner){
       btns += '<div class="mapActRow" data-act="mapUnclaim" data-houseid="'+houseId+'"><span class="mapActLabel" style="color:rgba(200,60,60,0.7);">取消选择</span><span class="mapActArrow">›</span></div>';
@@ -27079,7 +27081,45 @@ function renderMapApp(body){
         renderMapApp(body);
         try{ toast('🏠 已选择「'+house.name+'」作为'+esc(npcName||'角色')+'的家'); }catch(e){}
       }
-      if(act3==='mapUnclaim'){
+      if(act3==='mapPickFriendHouse'){
+        // 显示联系人选择器
+        var _db3 = loadContactsDB();
+        var _clist = _safeArr(_db3.list);
+        if(!_clist.length){ try{toast('暂无联系人');}catch(e){} return; }
+        var pickerH = '<div style="font-size:14px;font-weight:600;margin-bottom:10px;color:var(--ph-text);">👥 帮好友选房</div>';
+        pickerH += '<div style="font-size:11px;color:var(--ph-text-sub);margin-bottom:8px;">选择要搬来这里的角色</div>';
+        pickerH += '<div style="max-height:200px;overflow-y:auto;">';
+        _clist.forEach(function(c){
+          var alreadyHas = Object.values(mapData.npcHouses||{}).indexOf(houseId) >= 0 && mapData.npcHouses[c.id]===houseId;
+          pickerH += '<div data-act="pickerPickFriend" data-cid="'+esc(c.id)+'" data-cname="'+esc(c.name||c.id)+'" style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;cursor:pointer;'+(alreadyHas?'opacity:.4;pointer-events:none;':'')+'background:var(--ph-glass,rgba(255,255,255,.8));margin-bottom:4px;">';
+          var _avP = (typeof phoneGetAvatar==='function') ? phoneGetAvatar(c.id) : '';
+          pickerH += '<div style="width:32px;height:32px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:14px;background:rgba(0,0,0,.06);flex-shrink:0;">';
+          pickerH += _avP ? '<img src="'+_avP+'" style="width:100%;height:100%;object-fit:cover;"/>' : esc((c.name||'?').charAt(0));
+          pickerH += '</div>';
+          pickerH += '<span style="font-size:13px;color:var(--ph-text);">'+esc(c.name||c.id)+'</span>';
+          pickerH += '</div>';
+        });
+        pickerH += '</div>';
+        pickerH += '<button data-el="pickerClose" style="width:100%;margin-top:8px;padding:9px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:var(--ph-glass);font-size:13px;cursor:pointer;color:var(--ph-text);">取消</button>';
+        overlay.remove();
+        var pickerOv = _cpShowOverlay(pickerH);
+        pickerOv.querySelector('[data-el="pickerClose"]')?.addEventListener('click', function(){ pickerOv.remove(); });
+        pickerOv.addEventListener('click', function(pe){
+          var pt = pe.target.closest('[data-act="pickerPickFriend"]');
+          if(!pt) return;
+          var cid = pt.getAttribute('data-cid');
+          var cname = pt.getAttribute('data-cname');
+          if(!mapData.npcHouses) mapData.npcHouses = {};
+          // 清除该角色的旧房子
+          for(var pk in mapData.npcHouses){ if(pk===cid) delete mapData.npcHouses[pk]; }
+          mapData.npcHouses[cid] = houseId;
+          _mapSave(mapData);
+          pickerOv.remove();
+          renderMapApp(body);
+          try{ toast('🏠 已为「'+cname+'」选定「'+house.name+'」'); }catch(e){}
+        });
+        return;
+      }
         if(mapData.myHouseId===hid) mapData.myHouseId = null;
         for(var uk in (mapData.npcHouses||{})){ if(mapData.npcHouses[uk]===hid) delete mapData.npcHouses[uk]; }
         _mapSave(mapData);
@@ -28573,13 +28613,32 @@ function _mapOpenRoom(container, mapData, houseId){
       html += '<div style="height:3px;border-top:1px solid rgba(0,0,0,0.1);margin:2px 0;width:22px;"></div>';
       html += '<button data-act="winScaleUp" style="font-size:7px;">窗+</button>';
       html += '<button data-act="winScaleDown" style="font-size:7px;">窗−</button>';
+      html += '<div style="font-size:5.5px;color:rgba(100,150,80,0.7);text-align:center;line-height:1.2;margin-top:1px;">两窗同移</div>';
       html += '<div class="zDirRow">';
-      html += '<button data-act="winMoveL" style="font-size:7px;">窗◀</button>';
-      html += '<button data-act="winMoveR" style="font-size:7px;">窗▶</button>';
+      html += '<button data-act="winMoveL" style="font-size:7px;">◀</button>';
+      html += '<button data-act="winMoveR" style="font-size:7px;">▶</button>';
       html += '</div>';
       html += '<div class="zDirRow">';
-      html += '<button data-act="winMoveU" style="font-size:7px;">窗▲</button>';
-      html += '<button data-act="winMoveD" style="font-size:7px;">窗▼</button>';
+      html += '<button data-act="winMoveU" style="font-size:7px;">▲</button>';
+      html += '<button data-act="winMoveD" style="font-size:7px;">▼</button>';
+      html += '</div>';
+      html += '<div style="font-size:5.5px;color:rgba(100,150,80,0.7);text-align:center;line-height:1.2;margin-top:2px;">左窗</div>';
+      html += '<div class="zDirRow">';
+      html += '<button data-act="winLMoveL" style="font-size:7px;">◀</button>';
+      html += '<button data-act="winLMoveR" style="font-size:7px;">▶</button>';
+      html += '</div>';
+      html += '<div class="zDirRow">';
+      html += '<button data-act="winLMoveU" style="font-size:7px;">▲</button>';
+      html += '<button data-act="winLMoveD" style="font-size:7px;">▼</button>';
+      html += '</div>';
+      html += '<div style="font-size:5.5px;color:rgba(100,150,80,0.7);text-align:center;line-height:1.2;margin-top:2px;">右窗</div>';
+      html += '<div class="zDirRow">';
+      html += '<button data-act="winRMoveL" style="font-size:7px;">◀</button>';
+      html += '<button data-act="winRMoveR" style="font-size:7px;">▶</button>';
+      html += '</div>';
+      html += '<div class="zDirRow">';
+      html += '<button data-act="winRMoveU" style="font-size:7px;">▲</button>';
+      html += '<button data-act="winRMoveD" style="font-size:7px;">▼</button>';
       html += '</div>';
     }
     html += '</div>';
@@ -28774,14 +28833,20 @@ function _mapOpenRoom(container, mapData, houseId){
       house._winRight.sc = Math.max(0.3, Math.min(2.5, (house._winRight.sc||1)+ws));
       _mapSave(mapData); renderRoom(); return;
     }
-    if(act==='winMoveL'||act==='winMoveR'||act==='winMoveU'||act==='winMoveD'){
+    if(act==='winMoveL'||act==='winMoveR'||act==='winMoveU'||act==='winMoveD'||
+       act==='winLMoveL'||act==='winLMoveR'||act==='winLMoveU'||act==='winLMoveD'||
+       act==='winRMoveL'||act==='winRMoveR'||act==='winRMoveU'||act==='winRMoveD'){
       if(!house._winLeft) house._winLeft = {ox:75,oy:50,sc:1};
       if(!house._winRight) house._winRight = {ox:225,oy:68,sc:1};
       var wd = 5;
-      if(act==='winMoveL'){ house._winLeft.ox-=wd; house._winRight.ox-=wd; }
-      if(act==='winMoveR'){ house._winLeft.ox+=wd; house._winRight.ox+=wd; }
-      if(act==='winMoveU'){ house._winLeft.oy-=wd; house._winRight.oy-=wd; }
-      if(act==='winMoveD'){ house._winLeft.oy+=wd; house._winRight.oy+=wd; }
+      // 移动左窗
+      var moveL = act==='winMoveL'||act==='winMoveR'||act==='winMoveU'||act==='winMoveD'||act==='winLMoveL'||act==='winLMoveR'||act==='winLMoveU'||act==='winLMoveD';
+      // 移动右窗
+      var moveR = act==='winMoveL'||act==='winMoveR'||act==='winMoveU'||act==='winMoveD'||act==='winRMoveL'||act==='winRMoveR'||act==='winRMoveU'||act==='winRMoveD';
+      var dx = (act==='winMoveL'||act==='winLMoveL'||act==='winRMoveL') ? -wd : (act==='winMoveR'||act==='winLMoveR'||act==='winRMoveR') ? wd : 0;
+      var dy = (act==='winMoveU'||act==='winLMoveU'||act==='winRMoveU') ? -wd : (act==='winMoveD'||act==='winLMoveD'||act==='winRMoveD') ? wd : 0;
+      if(moveL){ house._winLeft.ox += dx; house._winLeft.oy += dy; }
+      if(moveR){ house._winRight.ox += dx; house._winRight.oy += dy; }
       _mapSave(mapData); renderRoom(); return;
     }
 
@@ -29011,6 +29076,9 @@ function _mapOpenRoom(container, mapData, houseId){
             walletSpend(100, '窗户装修：现代落地窗');
           }
           house._windowStyle = ws;
+          // 切换款式时重置窗户位置，避免位置错乱
+          house._winLeft = {ox:75, oy:50, sc:1};
+          house._winRight = {ox:225, oy:68, sc:1};
           _mapSave(mapData);
           shopOv.remove();
           try{ toast('🪟 窗户已更换'); }catch(e){}
@@ -29176,8 +29244,8 @@ async function _mapGenerateNpcLogs(opts){
 
     // 获取联系人列表
     var db = loadContactsDB();
-    var contacts = _safeArr(db.list).slice(0, 8); // 最多8个角色
-    if(!contacts.length) return;
+    var contacts = _safeArr(db.list).slice(0, 8);
+    if(!contacts.length){ try{toast('暂无联系人，无法生成日志');}catch(e){} return; }
 
     // 获取地标列表
     var lmNames = (mapData.landmarks||[]).map(function(lm){
@@ -29189,48 +29257,43 @@ async function _mapGenerateNpcLogs(opts){
     var period = hour < 11 ? 'morning' : (hour < 17 ? 'afternoon' : 'evening');
     var periodCN = { morning:'上午', afternoon:'下午', evening:'晚上' }[period];
 
-    // 构建 prompt
+    // 构建角色列表（含属性快照）
     var npcList = contacts.map(function(c){
       var s = '';
-      try{ var st = catchUpStats(c.id); if(st.attrs) s = ' 精力:'+Math.round(st.attrs.energy||0)+' 心情:'+Math.round(st.attrs.mood||0)+' 饱腹:'+Math.round(st.attrs.hunger||0); }catch(e){}
-      return (c.name||'?') + s;
+      try{ var st = catchUpStats(c.id); if(st.attrs) s = '（精力:'+Math.round(st.attrs.energy||0)+' 心情:'+Math.round(st.attrs.mood||0)+' 饱腹:'+Math.round(st.attrs.hunger||0)+'）'; }catch(e){}
+      return '- '+(c.name||'?')+s;
     }).join('\n');
 
-    var sysPrompt = '你是虚拟小镇「'+esc(mapData.name)+'」的生活模拟器。\n' +
-      '当前时段：'+periodCN+'\n' +
-      '小镇地标：'+lmNames+'\n' +
-      '角色列表：\n'+npcList+'\n\n' +
-      '请为其中 '+count+' 个角色各生成一条当前时段的活动日志。\n' +
-      '以 JSON 数组格式回复，每条格式：\n' +
-      '{"name":"角色名","landmark":"地标名","action":"描述（20字以内）","cost":数字}\n' +
-      '注意：action 要具体生动（如"在咖啡厅点了一杯热拿铁"），cost 为消费金额（0-50之间）。\n' +
-      '只输出 JSON 数组，不要其他内容。' +
+    var sysPrompt = '你是虚拟小镇「'+esc(mapData.name)+'」的生活模拟器。只返回 JSON 数组，不要任何其他内容或 markdown。\n格式：[{"name":"角色名","landmark":"地标名","action":"具体行为（20字内）","cost":数字}]\n其中 cost 为消费金额（0-50的整数）。action 要具体生动，如"在咖啡厅点了拿铁"。';
+
+    var userMsg = '当前时段：'+periodCN+'。\n小镇地标：'+lmNames+'。\n角色列表：\n'+npcList+'\n\n请为其中 '+Math.min(count, contacts.length)+' 个角色各生成一条活动日志。'+
       (mc.customPrompt ? '\n补充要求：'+mc.customPrompt : '');
 
-    var result = await PhoneAI.generateFeed({
-      systemPrompt: sysPrompt,
-      userMessage: '请生成 '+periodCN+' 的 NPC 活动日志',
-      channel: 'background'
+    var result = await PhoneAI.chat({
+      system: sysPrompt,
+      messages: [{ role:'user', content: userMsg }],
+      maxTokens: 800,
+      temperature: 0.85,
+      channel: 'background',
+      timeout: 45
     });
 
-    if(!result) return;
+    if(!result || !result.ok) throw new Error(result ? (result.error||'AI请求失败') : 'AI请求失败');
 
     // 解析结果
-    var text = String(result.text || result);
-    var jsonMatch = text.match(/\[[\s\S]*\]/);
-    if(!jsonMatch) return;
+    var raw = String(result.data || '').trim().replace(/```json[\s\S]*?```|```[\s\S]*?```/g, function(m){ return m.replace(/```json?/,'').replace(/```/,''); }).trim();
+    var jsonMatch = raw.match(/\[[\s\S]*\]/);
+    if(!jsonMatch) throw new Error('AI未返回JSON数组');
 
     var parsed = JSON.parse(jsonMatch[0]);
-    if(!Array.isArray(parsed)) return;
+    if(!Array.isArray(parsed) || !parsed.length) throw new Error('解析结果为空');
 
     var now = Date.now();
+    var added = 0;
     parsed.forEach(function(item){
       if(!item.name || !item.action) return;
-      // 找到对应角色
       var contact = contacts.find(function(c){ return c.name === item.name; });
-      // 找到对应地标
       var lm = (mapData.landmarks||[]).find(function(l){ return (l.customName||l.name) === item.landmark; });
-
       logData.logs.push({
         id: 'log_'+now+'_'+Math.random().toString(36).substr(2,4),
         npcId: contact ? contact.id : item.name,
@@ -29239,10 +29302,11 @@ async function _mapGenerateNpcLogs(opts){
         time: now + Math.floor(Math.random()*60000),
         period: period,
         action: item.action,
-        cost: item.cost || 0,
-        statusEffect: { mood: Math.floor(Math.random()*8)+2, money: -(item.cost||0) },
+        cost: Math.max(0, parseInt(item.cost)||0),
+        statusEffect: { mood: Math.floor(Math.random()*8)+2, money: -(Math.max(0,parseInt(item.cost)||0)) },
         isAuto: !(opts && opts.isManual)
       });
+      added++;
     });
 
     // 限制日志总量
@@ -29250,10 +29314,10 @@ async function _mapGenerateNpcLogs(opts){
     logData.lastAutoGen = now;
     _mapSaveLog(logData);
 
-    try{ toast('🗺️ 已生成 '+parsed.length+' 条活动日志'); }catch(e){}
+    try{ toast('🗺️ 已生成 '+added+' 条活动日志'); }catch(e){}
   }catch(e){
     console.error('[Map] NPC log gen error:', e);
-    try{ toast('日志生成失败: '+(e.message||'')); }catch(e2){}
+    try{ toast('日志生成失败: '+(e.message||String(e))); }catch(e2){}
   }
 }
 
