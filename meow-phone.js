@@ -16062,6 +16062,13 @@ const npc = _wxGetChatTargetMeta(npcId);
           if (summaryData && summaryData.summaryText && summaryData.summaryText.trim()){
             parts.push('【之前的对话摘要】\n' + summaryData.summaryText.trim().slice(0, 2000));
           }
+          // ★ 线下模式：同时附加在线模式的总结，让AI知道之前在线聊了什么
+          if (_getChatMode(npcId) === 'offline'){
+            var onlineSummary = getChatSummary(npcId, 'online');
+            if (onlineSummary && onlineSummary.summaryText && onlineSummary.summaryText.trim()){
+              parts.push('【在线聊天背景（线下互动前的对话内容）】\n' + onlineSummary.summaryText.trim().slice(0, 1500));
+            }
+          }
         }catch(e){}
 
         // === 3.6 [朋友圈互动]：让AI知道朋友圈里发生的事 ===
