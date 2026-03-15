@@ -15852,11 +15852,24 @@ const npc = _wxGetChatTargetMeta(npcId);
 
       // ===== getRecentMessages：获取最近 N 条消息，转为 API 格式 =====
       function _getRecentMessagesForAPI(npcId, n){
-        var log = _getLogForModeBranch(npcId, _getChatMode(npcId));
-        var tail = log.slice(Math.max(0, log.length - Math.max(1, n || 10)));
+        var mode = _getChatMode(npcId);
+        var log = _getLogForModeBranch(npcId, mode);
+
+        // ★ 线下模式：把最近的在线消息也纳入上下文，让AI知道之前聊了什么
+        if(mode === 'offline'){
+          var onlineLog = _getLogForModeBranch(npcId, 'online');
+          // 取在线日志最后 min(n/2, 10) 条作为背景
+          var onlineTail = onlineLog.slice(Math.max(0, onlineLog.length - Math.min(Math.ceil((n||10)/2), 10)));
+          // 合并：在线消息在前，线下消息在后，共取 n 条
+          var combined = onlineTail.concat(log);
+          log = combined.slice(Math.max(0, combined.length - Math.max(1, n || 10)));
+        } else {
+          log = log.slice(Math.max(0, log.length - Math.max(1, n || 10)));
+        }
+
         var out = [];
-        for (var i=0; i<tail.length; i++){
-          var x = tail[i];
+        for (var i=0; i<log.length; i++){
+          var x = log[i];
           if (x.role === 'system') continue;
           if (x.recalled) continue;
           var role = (x.role === 'me') ? 'user' : 'assistant';
@@ -20678,6 +20691,15 @@ const npc = _wxGetChatTargetMeta(npcId);
                   { type:'landmark', landmarkId:lmInfo.lmId, landmarkName:lmInfo.name, desc:autoDesc,
                     _logText:'[地标] '+lmInfo.name+'（'+autoDesc+'）' }
                 );
+                // 触发AI自然回复
+                setTimeout(function(){
+                  _aiReplyForSpecial(npcId, [
+                    lmInfo.name+'？好，我马上过去。',
+                    lmInfo.name+'……我还没去过那里。',
+                    '那里不错，你先过去吧。',
+                    '好，等我一下。'
+                  ]);
+                }, 600);
               }
             } else {
               // 静态位置
