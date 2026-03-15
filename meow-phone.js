@@ -28895,10 +28895,41 @@ async function _showNpcFurnPanel(container, mapData, houseId, npcId, npcName, fu
     if(secretArea) secretArea.style.display='none';
     if(logArea) logArea.style.display='none';
     try{
-      var charEx4=_loadCharExtra(npcId);
-      var sysP4='你在帮玩家探索角色「'+npcName+'」家中的秘密。根据角色设定，用第二人称视角生成一段真实感强的发现场景（80-150字），直接叙述，不要标题。保持温馨感人或有趣的基调。\n'+(charEx4&&charEx4.profile?'角色设定：'+charEx4.profile.slice(0,400)+'\n':'');
-      var userM4='你检视了「'+esc(npcName)+'」家中的「'+cat.label+'」。'+secretHint+'。请根据角色性格写出发现场景。';
-      var res4=await PhoneAI.chat({system:sysP4,messages:[{role:'user',content:userM4}],channel:'background',maxTokens:300,timeout:30});
+      // ★ 用 buildSystemPrompt 获取完整角色上下文（世界书/行为参数/性格/作息/总结等）
+      var fullSysSecret = '';
+      try{ fullSysSecret = buildSystemPrompt(npcId); }catch(e){}
+
+      // ★ 最近聊天记录（线上+线下，用用户设置的N条）
+      var recentSecretLines = '';
+      try{
+        var _ctxNs = (typeof _getChatContextN==='function') ? _getChatContextN() : 10;
+        var _ctxNsOff = (typeof _getOfflineChatContextN==='function') ? _getOfflineChatContextN() : 5;
+        var _onLogS = _getLogForModeBranch(npcId,'online').slice(-_ctxNs);
+        var _offLogS = _getLogForModeBranch(npcId,'offline').slice(-_ctxNsOff);
+        var _allS = _onLogS.concat(_offLogS).filter(function(m){ return m.role!=='system'&&!m.recalled; });
+        if(_allS.length){
+          recentSecretLines = '【最近聊天记录（权重最高）】\n' +
+            _allS.map(function(m){
+              return (m.role==='me'?'用户':'你('+npcName+')')+': '+String(m.text||'').slice(0,100);
+            }).join('\n');
+        }
+      }catch(e){}
+
+      var sysP4 =
+        (fullSysSecret ? fullSysSecret + '\n\n' : '') +
+        (recentSecretLines ? recentSecretLines + '\n\n' : '') +
+        '---\n' +
+        '【任务：生成家具秘密发现场景】\n' +
+        '玩家正在探索「'+npcName+'」家中的「'+cat.label+'」，发现了一个隐藏的秘密。\n' +
+        '要求：\n' +
+        '- 严格贴合角色性格和近期经历（从上方聊天记录和角色设定提取细节）\n' +
+        '- 用第二人称视角叙述（"你发现……"），80-150字，直接叙述无需标题\n' +
+        '- 秘密要有真实感和细节，能反映角色内心或生活习惯\n' +
+        '- 如果近期有相关事件（如刚一起吃饭、某句话、某个约定），可以呼应\n' +
+        '- 温馨感人或有趣的基调，不要刻意煽情';
+
+      var userM4='玩家检视了「'+esc(npcName)+'」家中的「'+cat.label+'」。'+secretHint+'。请根据角色性格和近期经历写出发现场景。';
+      var res4=await PhoneAI.chat({system:sysP4,messages:[{role:'user',content:userM4}],channel:'background',maxTokens:400,timeout:60});
       if(!res4||!res4.ok) throw new Error('请求失败');
       var txt=String(res4.data||'').trim().replace(/^["「『]|["」』]$/g,'');
       if(txt&&secretArea){
