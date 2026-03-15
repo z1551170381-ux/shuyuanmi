@@ -16361,8 +16361,10 @@ const npc = _wxGetChatTargetMeta(npcId);
               try{ var _ps2 = phoneLoadSettings(); if(_ps2&&_ps2.phoneName) _myName2 = _ps2.phoneName; }catch(e){}
               var _nowTs2 = Date.now();
               var _onlineLines2 = _onlineTail2.map(function(m){
-                var _minsAgo2 = Math.round((_nowTs2 - (m.t||_nowTs2)) / 60000);
-                var _timeStr2 = _minsAgo2 <= 1 ? '刚刚' : _minsAgo2 < 60 ? _minsAgo2+'分钟前' : Math.round(_minsAgo2/60)+'小时前';
+                var _d2 = new Date(m.t || _nowTs2);
+                var _hh2 = _d2.getHours().toString().padStart(2,'0');
+                var _mm2 = _d2.getMinutes().toString().padStart(2,'0');
+                var _timeStr2 = '今天'+_hh2+':'+_mm2;
                 return '['+_timeStr2+'] '+(m.role==='me' ? '['+_myName2+'说]' : '[你('+( npc.name||'角色')+')说]') +
                   ': ' + String(m.text||'').slice(0, 200);
               });
@@ -16401,15 +16403,20 @@ const npc = _wxGetChatTargetMeta(npcId);
                 var _myNameBridge = '用户';
                 try{ var _psBridge=phoneLoadSettings(); if(_psBridge&&_psBridge.phoneName) _myNameBridge=_psBridge.phoneName; }catch(e){}
                 var _nowBridge = Date.now();
+                var _nowDBridge = new Date(_nowBridge);
+                var _nowHHBridge = _nowDBridge.getHours().toString().padStart(2,'0');
+                var _nowMMBridge = _nowDBridge.getMinutes().toString().padStart(2,'0');
                 var _offBridgeLines = _offTailBridge.map(function(m){
-                  // 计算距今多少时间
-                  var _minsAgo = Math.round((_nowBridge - (m.t||_nowBridge)) / 60000);
-                  var _timeStr = _minsAgo <= 1 ? '刚刚' : _minsAgo < 60 ? _minsAgo+'分钟前' : Math.round(_minsAgo/60)+'小时前';
-                  return '['+_timeStr+'] '+(m.role==='me'?'['+_myNameBridge+'说]':'[你('+( npc.name||'角色')+')说]')+': '+String(m.text||'').slice(0,200);
+                  // 用绝对时间"今天HH:MM"，避免跨午夜后相对时间被AI理解为"昨天"
+                  var _d = new Date(m.t || _nowBridge);
+                  var _hh = _d.getHours().toString().padStart(2,'0');
+                  var _mm = _d.getMinutes().toString().padStart(2,'0');
+                  return '[今天'+_hh+':'+_mm+'] '+(m.role==='me'?'['+_myNameBridge+'说]':'[你('+( npc.name||'角色')+')说]')+': '+String(m.text||'').slice(0,200);
                 });
                 var _bridgeBlock =
-                  '【★★★今天线下经历记录（就在刚才，在线聊天时必须记住）★★★】\n' +
-                  '以下是你们今天面对面发生的事，时间戳显示距今多久，这些都是今天刚发生的，不是很久以前的事：\n' +
+                  '【★★★今天线下经历记录（必须记住，与当前在线聊天是同一天）★★★】\n' +
+                  '当前时间：今天'+_nowHHBridge+':'+_nowMMBridge+'。\n' +
+                  '以下是今天同一天内你们面对面发生的事——不是昨天，不是更早，就是今天：\n' +
                   '"['+_myNameBridge+'说]"=用户，"[你('+( npc.name||'角色')+')说]"=你自己。\n\n' +
                   _offBridgeLines.join('\n');
                 parts.push(_bridgeBlock);
