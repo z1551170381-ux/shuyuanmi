@@ -27060,7 +27060,7 @@ function renderMapApp(body){
 
       if(act3==='mapEnterRoom'){
         overlay.remove();
-        _mapOpenRoom(wrap, mapData, houseId);
+        try{ _mapOpenRoom(wrap, mapData, houseId); }catch(e){ console.error('[Room] open error:', e); try{toast('进入房间失败: '+(e.message||e));}catch(e2){} }
         return;
       }
 
@@ -28167,6 +28167,8 @@ var _roomFurnSVG = {
   piano: function(x, y, owned){
     if(!owned) return '';
     var s = '<g class="rm-furn" transform="translate('+x+','+y+')">';
+    // Enlarged transparent hit area covering full piano footprint (w=18,d=44,h=58)
+    s += '<rect x="0" y="0" width="18" height="44" fill="transparent" transform="translate(-43,-27) matrix(1,0.5,-1,0.5,0,0)"/>';
     s += _iShadow(18, 44, 4, 6);
     // Legs (4 small boxes)
     s += _iR(3, 3, 5, 'blk', 0, 0);
@@ -28298,10 +28300,19 @@ var _defaultFurnPositions = {
 };
 
 function _mapOpenRoom(container, mapData, houseId){
+  // Always reload mapData fresh to avoid stale-closure bugs after re-renders
+  try{ mapData = _mapLoad() || mapData; }catch(e){}
   var house = (mapData.houses||[]).find(function(h){ return h.id===houseId; });
   if(!house) return;
-  if(!house.rooms) house.rooms = { furniture: _defaultFurniture() };
-  var furniture = house.rooms.furniture || [];
+  // Ensure rooms structure is valid
+  if(!house.rooms || typeof house.rooms !== 'object') house.rooms = { furniture: _defaultFurniture() };
+  if(!Array.isArray(house.rooms.furniture)) house.rooms.furniture = _defaultFurniture();
+  // Ensure each furniture item has required fields
+  house.rooms.furniture.forEach(function(f){
+    if(!f.id) f.id = f.type + '_' + Math.random().toString(36).substr(2,4);
+    if(f.owned == null) f.owned = true;
+  });
+  var furniture = house.rooms.furniture;
 
   var isMyH = mapData.myHouseId === houseId;
   var npcOwner = null, npcOwnerName = '';
@@ -28327,6 +28338,7 @@ function _mapOpenRoom(container, mapData, houseId){
   }
 
   function renderRoom(){
+    try{
     var wallet = loadWallet();
     var lighting = _roomGetLighting();
     var html = '';
@@ -28335,7 +28347,7 @@ function _mapOpenRoom(container, mapData, houseId){
     html += '<div class="mapRoomHeader">';
     html += '<div class="mapRoomTitle">'+esc(house.name)+' <span style="font-size:10px;color:rgba(20,24,28,.4);font-weight:400;">'+ownerLabel+'</span></div>';
     html += '<div class="mapRoomToolbar">';
-    if(isMyH){
+    if(isMyH || npcOwner){
       html += '<button data-act="roomToggleEdit"'+(_editMode?' class="active"':'')+'>'+(_editMode?'✓ 完成':'🔧 装修')+'</button>';
     }
     html += '<span style="font-size:10px;color:rgba(20,24,28,.35);">💰$'+wallet.balance+'</span>';
@@ -28397,7 +28409,9 @@ function _mapOpenRoom(container, mapData, houseId){
     if(_winStyle === 'modern'){
       // ---- 左墙：用户自制窗户SVG ----
       var _wlSel = _editMode && _winTarget==='left';
-      html += '<g transform="translate('+wL.ox+','+wL.oy+') scale('+wL.sc+')" data-win="left" style="cursor:'+(_editMode?'pointer':'default')+';">'+((_wlSel)?'<rect x="-4" y="-45" width="72" height="52" fill="rgba(100,180,80,.12)" rx="2"/>':'');
+      // Left wall window highlight: isometric left-face quad (w=2,d=60,h=40)
+      html += '<g transform="translate('+wL.ox+','+wL.oy+') scale('+wL.sc+')" data-win="left" style="cursor:'+(_editMode?'pointer':'default')+';">';
+      if(_wlSel) html += '<polygon points="-62,-39 0,-9 0,1 -62,-29" fill="rgba(100,180,80,.18)" stroke="rgba(100,180,80,.6)" stroke-width="0.8" stroke-dasharray="3,2"/>';
       // 窗框 w=2,d=60,h=40 (挂左墙)
       html += '<g transform="translate(0,0)">';
       html += '<rect x="0" y="-40" width="2" height="40" class="wht-r" transform="translate(-60,30) matrix(1,0.5,0,1,0,0)"/>';
@@ -28418,7 +28432,9 @@ function _mapOpenRoom(container, mapData, houseId){
 
       // ---- 右墙：镜像版本（用右面matrix） ----
       var _wrSel = _editMode && _winTarget==='right';
-      html += '<g transform="translate('+wR.ox+','+wR.oy+') scale('+wR.sc+')" data-win="right" style="cursor:'+(_editMode?'pointer':'default')+';">'+((_wrSel)?'<rect x="-4" y="-45" width="72" height="52" fill="rgba(100,180,80,.12)" rx="2"/>':'');
+      // Right wall window highlight: isometric right-face quad (w=60,d=2,h=40)
+      html += '<g transform="translate('+wR.ox+','+wR.oy+') scale('+wR.sc+')" data-win="right" style="cursor:'+(_editMode?'pointer':'default')+';">';
+      if(_wrSel) html += '<polygon points="0,-39 62,-9 62,1 0,-29" fill="rgba(100,180,80,.18)" stroke="rgba(100,180,80,.6)" stroke-width="0.8" stroke-dasharray="3,2"/>';
       // 窗框 w=60,d=2,h=40 (挂右墙)
       html += '<g transform="translate(0,0)">';
       html += '<rect x="0" y="-40" width="60" height="40" class="wht-r" transform="translate(-2,1) matrix(1,0.5,0,1,0,0)"/>';
@@ -28438,7 +28454,8 @@ function _mapOpenRoom(container, mapData, houseId){
     } else {
       // 经典格窗 - 左墙
       var _wlSel2 = _editMode && _winTarget==='left';
-      html += '<g transform="translate('+((wL.ox||75)-75)+','+((wL.oy||50)-50)+') scale('+(wL.sc||1)+')" data-win="left" style="cursor:'+(_editMode?'pointer':'default')+';">'+(_wlSel2?'<rect x="'+lwx1+'" y="'+(lwy1-36)+'" width="'+(lwx2-lwx1)+'" height="40" fill="rgba(100,180,80,.12)" rx="2"/>':'');
+      html += '<g transform="translate('+((wL.ox||75)-75)+','+((wL.oy||50)-50)+') scale('+(wL.sc||1)+')" data-win="left" style="cursor:'+(_editMode?'pointer':'default')+';">';
+      if(_wlSel2) html += '<polygon points="'+lwx1+','+(lwy1-36)+' '+lwx2+','+(lwy2-36)+' '+lwx2+','+(lwy2+2)+' '+lwx1+','+(lwy1+2)+'" fill="rgba(100,180,80,.18)" stroke="rgba(100,180,80,.6)" stroke-width="0.8" stroke-dasharray="3,2"/>';
       html += '<polygon points="'+lwx1+','+(lwy1-32)+' '+lwx2+','+(lwy2-32)+' '+lwx2+','+lwy2+' '+lwx1+','+lwy1+'" fill="'+lighting.windowGlow+'" stroke="#A89878" stroke-width="1.2"/>';
       html += '<line x1="'+((lwx1+lwx2)/2)+'" y1="'+((lwy1-32+lwy1)/2)+'" x2="'+((lwx1+lwx2)/2)+'" y2="'+((lwy2-32+lwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
       html += '<line x1="'+lwx1+'" y1="'+(lwy1-16)+'" x2="'+lwx2+'" y2="'+(lwy2-16)+'" stroke="#A89878" stroke-width="0.8"/>';
@@ -28446,7 +28463,8 @@ function _mapOpenRoom(container, mapData, houseId){
       // 经典格窗 - 右墙
       var rwx1=195, rwy1=42, rwx2=255, rwy2=72;
       var _wrSel2 = _editMode && _winTarget==='right';
-      html += '<g transform="translate('+((wR.ox||225)-225)+','+((wR.oy||68)-68)+') scale('+(wR.sc||1)+')" data-win="right" style="cursor:'+(_editMode?'pointer':'default')+';">'+(_wrSel2?'<rect x="'+rwx1+'" y="'+(rwy1-36)+'" width="'+(rwx2-rwx1)+'" height="40" fill="rgba(100,180,80,.12)" rx="2"/>':'');
+      html += '<g transform="translate('+((wR.ox||225)-225)+','+((wR.oy||68)-68)+') scale('+(wR.sc||1)+')" data-win="right" style="cursor:'+(_editMode?'pointer':'default')+';">';
+      if(_wrSel2) html += '<polygon points="'+rwx1+','+(rwy1-36)+' '+rwx2+','+(rwy2-36)+' '+rwx2+','+(rwy2+2)+' '+rwx1+','+(rwy1+2)+'" fill="rgba(100,180,80,.18)" stroke="rgba(100,180,80,.6)" stroke-width="0.8" stroke-dasharray="3,2"/>';
       html += '<polygon points="'+rwx1+','+(rwy1-32)+' '+rwx2+','+(rwy2-32)+' '+rwx2+','+rwy2+' '+rwx1+','+rwy1+'" fill="'+lighting.windowGlow+'" stroke="#A89878" stroke-width="1.2"/>';
       html += '<line x1="'+((rwx1+rwx2)/2)+'" y1="'+((rwy1-32+rwy1)/2)+'" x2="'+((rwx1+rwx2)/2)+'" y2="'+((rwy2-32+rwy2)/2)+'" stroke="#A89878" stroke-width="0.8"/>';
       html += '</g>';
@@ -28596,7 +28614,7 @@ function _mapOpenRoom(container, mapData, houseId){
     }
 
     html += '</svg>';
-    // Controls (zoom + direction)
+    // Controls: always show zoom + pan. In edit mode add selected-target controls only.
     html += '<div class="mapRoomZoomBar">';
     html += '<button data-act="roomZoomIn">+</button>';
     html += '<button data-act="roomZoomOut">−</button>';
@@ -28605,23 +28623,14 @@ function _mapOpenRoom(container, mapData, houseId){
     html += '<button data-act="roomPanUp" style="font-size:10px;">▲</button>';
     html += '<div class="zDirRow"><button data-act="roomPanLeft">◀</button><button data-act="roomPanRight">▶</button></div>';
     html += '<button data-act="roomPanDown" style="font-size:10px;">▼</button>';
-    if(_editMode && _dragTarget){
-      html += '<div style="height:3px;border-top:1px solid rgba(0,0,0,0.1);margin:2px 0;width:20px;"></div>';
-      html += '<button data-act="roomScaleUp" style="font-size:9px;" title="放大家具">🔍+</button>';
-      html += '<button data-act="roomScaleDown" style="font-size:9px;" title="缩小家具">🔍−</button>';
-      html += '<button data-act="roomFlip" style="font-size:9px;" title="翻转家具">↔</button>';
-      html += '<div style="height:2px;border-top:1px solid rgba(0,0,0,0.08);margin:1px 0;width:20px;"></div>';
-      html += '<button data-act="roomZUp" style="font-size:8px;" title="前面">前</button>';
-      html += '<button data-act="roomZDown" style="font-size:8px;" title="后面">后</button>';
-    }
-    if(_editMode){
-      html += '<div style="height:3px;border-top:1px solid rgba(0,0,0,0.1);margin:2px 0;width:22px;"></div>';
-      html += '<button data-act="winScaleUp" style="font-size:7px;" title="窗户放大">窗+</button>';
-      html += '<button data-act="winScaleDown" style="font-size:7px;" title="窗户缩小">窗−</button>';
-      if(_winTarget){
-        html += '<div style="font-size:5px;color:rgba(100,150,80,0.8);text-align:center;line-height:1.2;margin-top:1px;">'+(_winTarget==='left'?'左窗':'右窗')+'已选</div>';
-      } else {
-        html += '<div style="font-size:5px;color:rgba(20,24,28,0.35);text-align:center;line-height:1.2;margin-top:1px;">点击<br/>选窗</div>';
+    if(_editMode && (_dragTarget || _winTarget)){
+      html += '<div style="height:2px;border-top:1px solid rgba(0,0,0,0.08);margin:2px 0;width:20px;"></div>';
+      html += '<button data-act="roomScaleUp" style="font-size:9px;" title="放大">+</button>';
+      html += '<button data-act="roomScaleDown" style="font-size:9px;" title="缩小">−</button>';
+      if(_dragTarget){
+        html += '<button data-act="roomFlip" style="font-size:9px;" title="翻转">↔</button>';
+        html += '<button data-act="roomZUp" style="font-size:8px;" title="前面">前</button>';
+        html += '<button data-act="roomZDown" style="font-size:8px;" title="后面">后</button>';
       }
     }
     html += '</div>';
@@ -28687,6 +28696,10 @@ function _mapOpenRoom(container, mapData, houseId){
     roomEl.innerHTML = html;
     _applyTransform();
     _initRoomGestures();
+    }catch(err){
+      console.error('[Room] renderRoom error:', err);
+      roomEl.innerHTML = '<div style="padding:20px;text-align:center;color:rgba(20,24,28,.5);font-size:13px;">房间加载失败，请重试<br><small style="font-size:10px;opacity:.5;">'+String(err&&err.message||err)+'</small><br><button onclick="this.closest(\'.mapRoomWrap\').remove()" style="margin-top:12px;padding:8px 16px;border-radius:10px;border:0;background:rgba(0,0,0,.06);cursor:pointer;font-size:12px;">返回</button></div>';
+    }
   }
 
   // === 缩放拖拽手势 ===
@@ -28831,30 +28844,26 @@ function _mapOpenRoom(container, mapData, houseId){
       return;
     }
 
-    if(act==='winScaleUp'||act==='winScaleDown'){
-      if(!house._winLeft) house._winLeft = {ox:75,oy:50,sc:1};
-      if(!house._winRight) house._winRight = {ox:225,oy:68,sc:1};
-      var wsD = act==='winScaleUp' ? 0.1 : -0.1;
-      // scale only selected window (or both if none selected)
-      if(_winTarget==='left'){
-        house._winLeft.sc = Math.max(0.3, Math.min(2.5, (house._winLeft.sc||1)+wsD));
-      } else if(_winTarget==='right'){
-        house._winRight.sc = Math.max(0.3, Math.min(2.5, (house._winRight.sc||1)+wsD));
-      } else {
-        house._winLeft.sc = Math.max(0.3, Math.min(2.5, (house._winLeft.sc||1)+wsD));
-        house._winRight.sc = Math.max(0.3, Math.min(2.5, (house._winRight.sc||1)+wsD));
-      }
-      _mapSave(mapData); renderRoom(); return;
-    }
     // Legacy: remove old individual win move actions (now handled via roomPan + _winTarget)
 
     // Scale furniture
     if(act==='roomScaleUp'||act==='roomScaleDown'){
+      var scaleDir = act==='roomScaleUp' ? 1 : -1;
+      // window selected → scale window
+      if(_editMode && _winTarget){
+        if(!house._winLeft) house._winLeft = {ox:75,oy:50,sc:1};
+        if(!house._winRight) house._winRight = {ox:225,oy:68,sc:1};
+        var wsD2 = scaleDir * 0.1;
+        if(_winTarget==='left') house._winLeft.sc = Math.max(0.3, Math.min(2.5, (house._winLeft.sc||1)+wsD2));
+        else house._winRight.sc = Math.max(0.3, Math.min(2.5, (house._winRight.sc||1)+wsD2));
+        _mapSave(mapData); renderRoom(); return;
+      }
+      // furniture selected → scale furniture
       if(_editMode && _dragTarget){
         var sf2 = furniture.find(function(ff){ return ff.id===_dragTarget; });
         if(sf2){
           var cur = sf2.furnScale || 0.6;
-          sf2.furnScale = act==='roomScaleUp' ? Math.min(1.5, cur+0.05) : Math.max(0.2, cur-0.05);
+          sf2.furnScale = scaleDir > 0 ? Math.min(1.5, cur+0.05) : Math.max(0.2, cur-0.05);
           house.rooms.furniture = furniture;
           _mapSave(mapData);
           renderRoom();
