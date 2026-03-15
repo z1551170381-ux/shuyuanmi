@@ -15853,29 +15853,44 @@ const npc = _wxGetChatTargetMeta(npcId);
       // ===== getRecentMessages：获取最近 N 条消息，转为 API 格式 =====
       function _getRecentMessagesForAPI(npcId, n){
         var mode = _getChatMode(npcId);
-        var log = _getLogForModeBranch(npcId, mode);
-
-        // ★ 线下模式：把最近的在线消息也纳入上下文，让AI知道之前聊了什么
-        if(mode === 'offline'){
-          var onlineLog = _getLogForModeBranch(npcId, 'online');
-          // 取在线日志最后 min(n/2, 10) 条作为背景
-          var onlineTail = onlineLog.slice(Math.max(0, onlineLog.length - Math.min(Math.ceil((n||10)/2), 10)));
-          // 合并：在线消息在前，线下消息在后，共取 n 条
-          var combined = onlineTail.concat(log);
-          log = combined.slice(Math.max(0, combined.length - Math.max(1, n || 10)));
-
-        } else {
-          log = log.slice(Math.max(0, log.length - Math.max(1, n || 10)));
-        }
-
         var out = [];
-        for (var i=0; i<log.length; i++){
-          var x = log[i];
-          if (x.role === 'system') continue;
-          if (x.recalled) continue;
-          var role = (x.role === 'me') ? 'user' : 'assistant';
-          var content = (role === 'user') ? _convertSpecialTags(x.text) : String(x.text || '');
-          out.push({ role:role, content:content });
+
+        if(mode === 'offline'){
+          // ★ 线下模式：先注入在线聊天消息（小手机聊天泡泡上下文），再注入线下消息
+          // 这样AI能读到线上说的「我找好了重庆火锅店，请你吃」等重要背景
+          var onlineLog = _getLogForModeBranch(npcId, 'online');
+          var offlineLog = _getLogForModeBranch(npcId, 'offline');
+
+          var totalN = Math.max(1, n || 10);
+          // 在线消息：取 60%（约 30 条，如果你设了50），线下消息取剩余 40%（约 20 条）
+          // 不设硬编码上限，完全遵从用户在小手机设置里设置的上下文条数
+          var onlineN = Math.ceil(totalN * 0.6);
+          var offlineN = Math.max(3, totalN - onlineN);
+
+          var onlineTail = onlineLog.slice(-onlineN);
+          var offlineTail = offlineLog.slice(-Math.max(offlineN, 3));
+
+          // 合并：在线在前（背景），线下在后（当前场景）
+          var combined = onlineTail.concat(offlineTail);
+
+          for(var i=0; i<combined.length; i++){
+            var x = combined[i];
+            if(x.role==='system'||x.recalled) continue;
+            var role = (x.role==='me') ? 'user' : 'assistant';
+            var content = (role==='user') ? _convertSpecialTags(x.text) : String(x.text||'');
+            out.push({role:role, content:content});
+          }
+        } else {
+          // 在线模式：正常读在线日志
+          var log = _getLogForModeBranch(npcId, mode);
+          log = log.slice(Math.max(0, log.length - Math.max(1, n||10)));
+          for(var j=0; j<log.length; j++){
+            var y = log[j];
+            if(y.role==='system'||y.recalled) continue;
+            var role2 = (y.role==='me') ? 'user' : 'assistant';
+            var content2 = (role2==='user') ? _convertSpecialTags(y.text) : String(y.text||'');
+            out.push({role:role2, content:content2});
+          }
         }
         return out;
       }
@@ -16054,6 +16069,21 @@ const npc = _wxGetChatTargetMeta(npcId);
 
           if (personaText){
             parts.push('【用户身份】\n' + personaText);
+          }
+        }catch(e){}
+
+        // === 3.4 [★小手机线上聊天上下文 权重9] 线下模式时，注入线上手机对话作为最重要背景 ===
+        try{
+          if(_getChatMode(npcId) === 'offline'){
+            var phoneOnlineLog = _getLogForModeBranch(npcId, 'online');
+            var phoneOnlineTail = phoneOnlineLog.slice(-12).filter(function(m){ return m.role!=='system'&&!m.recalled; });
+            if(phoneOnlineTail.length > 0){
+              var phoneOnlineLines = phoneOnlineTail.map(function(m){
+                var who = m.role === 'me' ? '用户' : (npc.name||'角色');
+                return who + ': ' + String(m.text||'').slice(0, 200);
+              });
+              parts.push('【★重要·小手机线上聊天记录（切换到线下前的对话，权重最高）】\n以下是你们在手机上聊天的最近对话，你必须记住这些内容并在线下场景中体现：\n' + phoneOnlineLines.join('\n'));
+            }
           }
         }catch(e){}
 
