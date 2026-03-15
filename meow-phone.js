@@ -16061,47 +16061,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           }
         }catch(e){}
 
-        // === 3.4 [★小手机线上聊天上下文 权重9] 线下模式时，注入线上手机对话作为最重要背景 ===
-        // 注意：在线消息只放在 system prompt 里（带明确的说话人标注），不混入 messages 数组
-        // 避免 role:user/assistant 让 AI 分不清谁是谁
-        try{
-          if(_getChatMode(npcId) === 'offline'){
-            var phoneOnlineLog = _getLogForModeBranch(npcId, 'online');
-            // 取最近20条，足够覆盖关键背景
-            var phoneOnlineTail = phoneOnlineLog.slice(-20).filter(function(m){ return m.role!=='system'&&!m.recalled; });
-            if(phoneOnlineTail.length > 0){
-              var myName = '用户';
-              try{ var _pset = phoneLoadSettings(); if(_pset&&_pset.phoneName) myName = _pset.phoneName; }catch(e){}
-              var phoneOnlineLines = phoneOnlineTail.map(function(m){
-                // 明确标注：是用户说的还是角色自己说的
-                if(m.role === 'me'){
-                  return '[' + myName + '说]: ' + String(m.text||'').slice(0, 200);
-                } else {
-                  return '[你(' + (npc.name||'角色') + ')说]: ' + String(m.text||'').slice(0, 200);
-                }
-              });
-              // 提取关键事实
-              var keyFacts = [];
-              phoneOnlineTail.forEach(function(m){
-                var t = String(m.text||'');
-                if(m.role==='me' && (t.indexOf('请你')>=0||t.indexOf('我请')>=0||t.indexOf('请客')>=0||t.indexOf('我来请')>=0||t.indexOf('我做东')>=0||t.indexOf('我说请')>=0)){
-                  keyFacts.push('⚠ 是'+myName+'（用户）主动提出请你吃饭——你是被请的一方，不要反过来抢着请客。');
-                }
-                if(m.role==='me' && (t.indexOf('找好了')>=0||t.indexOf('选好了')>=0||t.indexOf('订好了')>=0||t.indexOf('看好了')>=0)){
-                  keyFacts.push('⚠ 是'+myName+'（用户）已经找好/选好了去处，不是你安排的。');
-                }
-              });
-              var factBlock = keyFacts.length > 0 ? '\n\n关键事实（必须遵守）：\n' + [...new Set(keyFacts)].join('\n') : '';
-              parts.push(
-                '【★线上聊天记录（权重最高，线下场景的前情背景）】\n' +
-                '以下是你们切换到线下场景之前，在小手机上的对话记录。\n' +
-                '格式：[说话人] 内容。"['+myName+'说]"是用户发的，"[你('+( npc.name||'角色')+')说]"是你自己发的。\n\n' +
-                phoneOnlineLines.join('\n') +
-                factBlock
-              );
-            }
-          }
-        }catch(e){}
+        // === 3.4 已移至格式指令前注入（靠后 = 权重更高）===
 
         // === 3.5 [聊天总结]：C2 如果有总结数据，追加到 system prompt ===
         try{
@@ -16317,6 +16277,39 @@ const npc = _wxGetChatTargetMeta(npcId);
         if (_isOfflineMode){
           try{ parts.push(_buildOfflinePromptAddition(npcId)); }catch(e){}
         }
+
+        // === ★★★ 小手机线上聊天记录（紧贴格式指令前，权重最高）===
+        // Transformer 注意力机制：靠近末尾的内容权重最高，放在最后确保压过酒馆上下文
+        try{
+          if(_isOfflineMode){
+            var _onlineLog2 = _getLogForModeBranch(npcId, 'online');
+            var _onlineTail2 = _onlineLog2.slice(-20).filter(function(m){ return m.role!=='system'&&!m.recalled; });
+            if(_onlineTail2.length > 0){
+              var _myName2 = '用户';
+              try{ var _ps2 = phoneLoadSettings(); if(_ps2&&_ps2.phoneName) _myName2 = _ps2.phoneName; }catch(e){}
+              var _onlineLines2 = _onlineTail2.map(function(m){
+                return (m.role==='me' ? '['+_myName2+'说]' : '[你('+( npc.name||'角色')+')说]') +
+                  ': ' + String(m.text||'').slice(0, 200);
+              });
+              var _keyFacts2 = [];
+              _onlineTail2.forEach(function(m){
+                var t = String(m.text||'');
+                if(m.role==='me' && /请你|我请|请客|我来请|我做东|我说请/.test(t)){
+                  _keyFacts2.push('⚠ 是'+_myName2+'（用户）提出请你吃饭，你是被请的一方，不要反过来请客。');
+                }
+                if(m.role==='me' && /找好了|选好了|订好了|看好了/.test(t)){
+                  _keyFacts2.push('⚠ 是'+_myName2+'（用户）已找好/选好了地方，不是你安排的。');
+                }
+              });
+              var _factBlock2 = _keyFacts2.length > 0 ? '\n\n关键事实（必须遵守）：\n' + [...new Set(_keyFacts2)].join('\n') : '';
+              parts.push(
+                '【★★★最高优先级·切换线下前的小手机在线聊天记录★★★】\n' +
+                '"['+_myName2+'说]"= 用户说的，"[你('+( npc.name||'角色')+')说]"= 你自己说的。必须完整记住：\n\n' +
+                _onlineLines2.join('\n') + _factBlock2
+              );
+            }
+          }
+        }catch(e){}
 
         if (_isOfflineMode){
           // 线下模式：不用 ||| 分隔，改用连续文本 + 状态标记
