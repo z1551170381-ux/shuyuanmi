@@ -8493,8 +8493,17 @@ function getNPCCandidatesFromRecentMainChat(){
         const i = th.list.findIndex(x => String(x.id) === String(npcId));
         if (i < 0) return;
         const it = th.list[i];
+        // ★ 线下长文截断+清理用于列表预览
+        if (patch && patch.lastMsg){
+          var _preview = String(patch.lastMsg)
+            .replace(/\*[^*]+\*/g, '') // 去掉 *旁白*
+            .replace(/\[状态:[^\]]*\]/gi, '')
+            .replace(/\[属性:[^\]]*\]/gi, '')
+            .replace(/^\s*[-—]\s*/gm, '')
+            .trim();
+          patch.lastMsg = _preview.slice(0, 40) || patch.lastMsg.slice(0, 40);
+        }
         Object.assign(it, patch||{});
-        // 置顶保留顺序，否则移动到最前
         th.list.splice(i,1);
         if (it.pinned) th.list.unshift(it); else th.list.unshift(it);
         saveThreads(th);
@@ -18439,6 +18448,11 @@ const npc = _wxGetChatTargetMeta(npcId);
           if (idx < 0) return false;
           arr.splice(idx, 1);
           saveLogs(logs);
+          // ★ 重新同步线程列表的最新消息预览
+          try{
+            var _lastEntry = arr.filter(function(m){ return !m.recalled; }).slice(-1)[0];
+            if(_lastEntry) bumpThread(npcId, { lastMsg:_lastEntry.text, lastTime:_lastEntry.t });
+          }catch(e){}
           return true;
         }catch(e){ return false; }
       }
@@ -19740,6 +19754,8 @@ const npc = _wxGetChatTargetMeta(npcId);
           PhoneAI._replySeqId++;
           const mySeqId = PhoneAI._replySeqId;
           const myChatId = String(npcId);
+          // ★ 捕获发送时的模式，防止回复到达时模式已切换
+          const mySendMode = (typeof _getChatMode === 'function') ? _getChatMode(npcId) : 'online';
 
           _showTypingIndicator(npc.name);
 
@@ -19750,10 +19766,12 @@ const npc = _wxGetChatTargetMeta(npcId);
           const result = await PhoneAI.chat({
             messages: contextMessages,
             system: systemPrompt,
-            timeout: (_getChatMode(npcId) === 'offline') ? 180 : 60
+            timeout: mySendMode === 'offline' ? 180 : 60
           });
 
-          if (mySeqId !== PhoneAI._replySeqId || state.chatTarget !== myChatId){
+          // ★ 检查：会话未切走 且 模式未切换（防止回复发到错误模式）
+          const _modeNow = (typeof _getChatMode === 'function') ? _getChatMode(npcId) : 'online';
+          if (mySeqId !== PhoneAI._replySeqId || state.chatTarget !== myChatId || _modeNow !== mySendMode){
             _hideTypingIndicator(); return;
           }
           _hideTypingIndicator();
