@@ -15863,6 +15863,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           // 合并：在线消息在前，线下消息在后，共取 n 条
           var combined = onlineTail.concat(log);
           log = combined.slice(Math.max(0, combined.length - Math.max(1, n || 10)));
+
         } else {
           log = log.slice(Math.max(0, log.length - Math.max(1, n || 10)));
         }
@@ -16067,6 +16068,9 @@ const npc = _wxGetChatTargetMeta(npcId);
             var onlineSummary = getChatSummary(npcId, 'online');
             if (onlineSummary && onlineSummary.summaryText && onlineSummary.summaryText.trim()){
               parts.push('【在线聊天背景（线下互动前的对话内容）】\n' + onlineSummary.summaryText.trim().slice(0, 1500));
+
+            } else {
+
             }
           }
         }catch(e){}
@@ -20676,8 +20680,21 @@ const npc = _wxGetChatTargetMeta(npcId);
               try{ curMode = _getChatMode(npcId) || 'online'; }catch(e){}
 
               if(curMode === 'offline'){
-                // ★ 线下模式：切换场景到该地标（不触发AI回复，静默切换）
-                var newScene = { name:lmInfo.name, location:lmInfo.name, description:autoDesc, bgImage:'', customPrompt:'' };
+                // ★ 线下模式：切换场景（静默切换，携带"用户选定此地"的上下文）
+                // 从最近在线消息提取线索，明确告诉AI这是用户选定的地点
+                var recentOnlineCtx = '';
+                try{
+                  var onlineLog = _getLogForModeBranch(npcId, 'online');
+                  var lastOnlineMsgs = onlineLog.slice(-4).filter(function(m){ return !m.recalled; });
+                  if(lastOnlineMsgs.length){
+                    recentOnlineCtx = '\n（来此之前的背景：' + lastOnlineMsgs.map(function(m){
+                      return (m.role==='me'?'用户':'角色') + '说了"' + String(m.text||'').slice(0,60) + '"';
+                    }).join('；') + '）';
+                  }
+                }catch(e){}
+                // 场景描述中明确：是用户选定此地、用户已到场
+                var sceneDesc = autoDesc + '\n用户已到达此地，是用户选定并邀请角色前来的地点。角色应当跟随用户的安排，而不是主导去向。' + recentOnlineCtx;
+                var newScene = { name:lmInfo.name, location:lmInfo.name, description:sceneDesc, bgImage:'', customPrompt:'' };
                 try{ _saveSceneData(npcId, newScene); }catch(e){}
                 try{
                   var titleEl = root.querySelector('[data-ph="appTitle"]');
@@ -24689,7 +24706,10 @@ function _buildOfflinePromptAddition(npcId){
     '"下次，我们还来这里吧。"'
   ];
   if (scene.location) lines.push('\n当前地点：' + scene.location);
-  if (scene.description) lines.push('场景描述：' + scene.description);
+  if (scene.description){
+    // scene.description 可能包含"用户选定此地"等重要上下文，完整保留
+    lines.push('场景说明：' + scene.description);
+  }
 
   // 追加自定义提示词预设（最高优先级标注）
   if (scene.customPrompt && String(scene.customPrompt).trim()){
