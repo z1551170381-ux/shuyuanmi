@@ -15899,6 +15899,25 @@ const npc = _wxGetChatTargetMeta(npcId);
             var content2 = (role2==='user') ? _convertSpecialTags(y.text) : String(y.text||'');
             out.push({role:role2, content:content2});
           }
+          // ★ 开关开启时：线上模式也读取线下经历，让AI知道线下发生的事
+          try{
+            var _bridgeCfg = phoneLoadSettings();
+            if(_bridgeCfg.onlineIncludeOfflineCtx !== false){
+              var _offBridgeN = (typeof _getOfflineChatContextN==='function') ? _getOfflineChatContextN() : 5;
+              var _offBridgeLog = _getLogForModeBranch(npcId,'offline').slice(-_offBridgeN)
+                .filter(function(m){ return m.role!=='system'&&!m.recalled; });
+              if(_offBridgeLog.length){
+                // 以 user/assistant 格式插到前面作为背景
+                var _bridgeOut = [];
+                _offBridgeLog.forEach(function(m){
+                  var r = (m.role==='me')?'user':'assistant';
+                  var c = (r==='user')?_convertSpecialTags(m.text):String(m.text||'');
+                  _bridgeOut.push({role:r, content:c});
+                });
+                out = _bridgeOut.concat(out);
+              }
+            }
+          }catch(e){}
         }
         return out;
       }
@@ -16098,15 +16117,24 @@ const npc = _wxGetChatTargetMeta(npcId);
           if (summaryData && summaryData.summaryText && summaryData.summaryText.trim()){
             parts.push('【之前的对话摘要】\n' + summaryData.summaryText.trim().slice(0, 2000));
           }
-          // ★ 线下模式：同时附加在线模式的总结，让AI知道之前在线聊了什么
+          // ★ 线下模式：附加在线总结
           if (_getChatMode(npcId) === 'offline'){
             var onlineSummary = getChatSummary(npcId, 'online');
             if (onlineSummary && onlineSummary.summaryText && onlineSummary.summaryText.trim()){
               parts.push('【在线聊天背景（线下互动前的对话内容）】\n' + onlineSummary.summaryText.trim().slice(0, 1500));
-
-            } else {
-
             }
+          }
+          // ★ 线上模式开关开启时：附加线下总结
+          if (_getChatMode(npcId) === 'online'){
+            try{
+              var _bridgeSumCfg = phoneLoadSettings();
+              if(_bridgeSumCfg.onlineIncludeOfflineCtx !== false){
+                var offlineSumForOnline = getChatSummary(npcId, 'offline');
+                if(offlineSumForOnline && offlineSumForOnline.summaryText && offlineSumForOnline.summaryText.trim()){
+                  parts.push('【线下经历背景（两人面对面发生的事，在线聊天时也应记住）】\n' + offlineSumForOnline.summaryText.trim().slice(0, 1500));
+                }
+              }
+            }catch(e){}
           }
         }catch(e){}
 
@@ -23059,6 +23087,7 @@ function renderSettingsUIApp(container){
         var cfg = phoneLoadSettings();
         var currentOnline = Math.min(50, Math.max(3, Number(cfg.chatContextN) || 10));
         var currentOffline = Math.min(30, Math.max(1, Number(cfg.chatContextNOffline) || 5));
+        var offlineBridgeOn = cfg.onlineIncludeOfflineCtx !== false; // 默认开启
         var html = '<div class="settingSubPage">' +
           '<div class="settingSubTitle">📝 上下文条数</div>' +
 
@@ -23067,11 +23096,20 @@ function renderSettingsUIApp(container){
           '<div class="settingSubDesc" style="margin-bottom:10px;">AI 回复时参考最近多少条在线聊天记录。</div>' +
           '<div style="display:flex;align-items:center;gap:12px;">' +
             '<input type="range" min="3" max="50" value="' + currentOnline + '" data-ph="ctxNSlider" style="flex:1;accent-color:var(--ph-accent,#07c160);" />' +
-            '<span data-ph="ctxNVal" style="font-size:15px;font-weight:600;color:var(--ph-text);min-width:36px;text-align:center;">' + currentOnline + '</span>' +
+            '<span data-ph="ctxNVal" style="font-size:15px;color:var(--ph-text);min-width:36px;text-align:center;">' + currentOnline + '</span>' +
           '</div>' +
           '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ph-text-dim);margin-top:4px;padding:0 2px;"><span>3条</span><span>50条</span></div>' +
           '<div style="margin-top:8px;padding:8px 12px;border-radius:10px;background:var(--ph-glass);font-size:12px;color:var(--ph-text-sub);line-height:1.6;">' +
             '💡 建议：日常闲聊 8~15 条；深度对话 20~30 条。' +
+          '</div>' +
+
+          // 线上读取线下开关
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:10px 12px;border-radius:10px;background:var(--ph-glass);">' +
+            '<div>' +
+              '<div style="font-size:12px;color:var(--ph-text);">线上模式同时读取线下经历</div>' +
+              '<div style="font-size:11px;color:var(--ph-text-sub);margin-top:2px;">开启后AI在线上聊天时也知道线下发生的事</div>' +
+            '</div>' +
+            '<button class="sToggle' + (offlineBridgeOn?' on':'') + '" data-ph="offlineBridgeToggle"></button>' +
           '</div>' +
 
           // 线下
@@ -23079,7 +23117,7 @@ function renderSettingsUIApp(container){
           '<div class="settingSubDesc" style="margin-bottom:10px;">线下消息字数多，建议设少一点避免超出 Token 限制。</div>' +
           '<div style="display:flex;align-items:center;gap:12px;">' +
             '<input type="range" min="1" max="30" value="' + currentOffline + '" data-ph="ctxNOfflineSlider" style="flex:1;accent-color:var(--ph-accent,#07c160);" />' +
-            '<span data-ph="ctxNOfflineVal" style="font-size:15px;font-weight:600;color:var(--ph-text);min-width:36px;text-align:center;">' + currentOffline + '</span>' +
+            '<span data-ph="ctxNOfflineVal" style="font-size:15px;color:var(--ph-text);min-width:36px;text-align:center;">' + currentOffline + '</span>' +
           '</div>' +
           '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ph-text-dim);margin-top:4px;padding:0 2px;"><span>1条</span><span>30条</span></div>' +
           '<div style="margin-top:8px;padding:8px 12px;border-radius:10px;background:var(--ph-glass);font-size:12px;color:var(--ph-text-sub);line-height:1.6;">' +
@@ -23093,13 +23131,21 @@ function renderSettingsUIApp(container){
         var slider = container.querySelector('[data-ph="ctxNSlider"]');
         var valSpan = container.querySelector('[data-ph="ctxNVal"]');
         if(slider){
-          slider.addEventListener('input', function(){
-            if(valSpan) valSpan.textContent = slider.value;
-          });
+          slider.addEventListener('input', function(){ if(valSpan) valSpan.textContent = slider.value; });
           slider.addEventListener('change', function(){
+            var cfg2 = phoneLoadSettings(); cfg2.chatContextN = Number(slider.value)||10; phoneSaveSettings(cfg2);
+          });
+        }
+
+        // 线上读取线下开关
+        var bridgeToggle = container.querySelector('[data-ph="offlineBridgeToggle"]');
+        if(bridgeToggle){
+          bridgeToggle.addEventListener('click', function(){
             var cfg2 = phoneLoadSettings();
-            cfg2.chatContextN = Number(slider.value) || 10;
+            cfg2.onlineIncludeOfflineCtx = !cfg2.onlineIncludeOfflineCtx;
+            if(cfg2.onlineIncludeOfflineCtx === undefined) cfg2.onlineIncludeOfflineCtx = true;
             phoneSaveSettings(cfg2);
+            bridgeToggle.className = 'sToggle' + (cfg2.onlineIncludeOfflineCtx?' on':'');
           });
         }
 
@@ -23107,13 +23153,9 @@ function renderSettingsUIApp(container){
         var sliderOff = container.querySelector('[data-ph="ctxNOfflineSlider"]');
         var valSpanOff = container.querySelector('[data-ph="ctxNOfflineVal"]');
         if(sliderOff){
-          sliderOff.addEventListener('input', function(){
-            if(valSpanOff) valSpanOff.textContent = sliderOff.value;
-          });
+          sliderOff.addEventListener('input', function(){ if(valSpanOff) valSpanOff.textContent = sliderOff.value; });
           sliderOff.addEventListener('change', function(){
-            var cfg2 = phoneLoadSettings();
-            cfg2.chatContextNOffline = Number(sliderOff.value) || 5;
-            phoneSaveSettings(cfg2);
+            var cfg2 = phoneLoadSettings(); cfg2.chatContextNOffline = Number(sliderOff.value)||5; phoneSaveSettings(cfg2);
           });
         }
       }
