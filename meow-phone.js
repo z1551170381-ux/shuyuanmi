@@ -10459,7 +10459,7 @@ ${lines}
             const it = list[i];
             const d = new Date(it.time || 0);
             const ts = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-            const typeLabel = it.type === 'diary' ? '📝 日记' : '💬 语录';
+            const typeLabel = it.type === 'diary' ? '📝 日记' : it.type === 'room_secret' ? (it.furnEmoji||'🔍')+' '+esc(it.furnLabel||'房间秘密') : '💬 语录';
             const tagStr = _safeArr(it.tags).map(t=>`<span style="display:inline-block;padding:2px 6px;border-radius:4px;background:rgba(7,193,96,.1);color:var(--ph-accent, #07c160);font-size:10px;margin-right:4px;">${esc(t)}</span>`).join('');
             html += `<div style="margin:0 14px 10px;padding:14px;border-radius:14px;background:var(--ph-glass-strong);border:1px solid var(--ph-glass-border);">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
@@ -28981,10 +28981,43 @@ async function _showNpcFurnPanel(container, mapData, houseId, npcId, npcName, fu
     '</div>' +
     // 秘密区（隐藏）
     '<div data-el="secretArea" style="display:none;margin-bottom:8px;padding:12px 14px;background:rgba(243,156,18,.05);border:1px solid rgba(243,156,18,.2);border-radius:12px;font-size:12px;color:var(--ph-text);line-height:1.7;"></div>' +
+    '<button data-el="favSecret" style="display:none;width:100%;padding:9px;border-radius:10px;border:1px solid rgba(243,156,18,.25);background:rgba(243,156,18,.06);font-size:12px;cursor:pointer;color:#b7800a;margin-bottom:6px;">🔖 收藏这个发现</button>' +
     '<button data-el="panelClose" style="width:100%;padding:9px;border-radius:10px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.08));background:transparent;font-size:12px;cursor:pointer;color:var(--ph-text-sub);">关闭</button>';
 
   var ov = _cpShowOverlay(inner);
   ov.querySelector('[data-el="panelClose"]')?.addEventListener('click', function(){ ov.remove(); });
+
+  // ★ 收藏秘密 → 存入我的收藏（type: room_secret）
+  ov.querySelector('[data-el="favSecret"]')?.addEventListener('click', function(){
+    try{
+      var secretTxt = this._secretText || '';
+      if(!secretTxt){ try{toast('没有可收藏的内容');}catch(e){} return; }
+      var data = _loadFavorites();
+      var favId = 'room_secret_'+npcId+'_'+cat.type+'_'+Date.now();
+      // 检查近似重复
+      for(var i=0;i<data.list.length;i++){
+        if(data.list[i].content===secretTxt){
+          try{toast('已在收藏中');}catch(e){} return;
+        }
+      }
+      data.list.push({
+        type: 'room_secret',
+        content: secretTxt,
+        tags: [npcName, cat.label, '房间秘密'],
+        time: _now(),
+        msgId: favId,
+        from: npcName,
+        npcId: npcId,
+        furnType: cat.type,
+        furnLabel: cat.label,
+        furnEmoji: cat.emoji
+      });
+      _saveFavorites(data);
+      this.textContent = '✅ 已收藏';
+      this.disabled = true;
+      try{toast('🔖 已收藏到「我的收藏」');}catch(e){}
+    }catch(e){ try{toast('收藏失败');}catch(e2){} }
+  });
 
   function buildLogHtml(logs){
     if(!logs||!logs.length) return '<div style="font-size:11px;color:rgba(20,24,28,.3);text-align:center;padding:8px 0;">暂无动态记录</div>';
@@ -29080,6 +29113,12 @@ async function _showNpcFurnPanel(container, mapData, houseId, npcId, npcName, fu
       if(txt&&secretArea){
         secretArea.style.display='block';
         secretArea.innerHTML='<div style="font-size:11px;color:rgba(243,156,18,.8);font-weight:600;margin-bottom:6px;">🔍 你发现了……</div><div style="font-size:12px;line-height:1.75;color:var(--ph-text);">'+esc(txt)+'</div>';
+        // ★ 显示收藏按钮
+        var favBtn = ov.querySelector('[data-el="favSecret"]');
+        if(favBtn){
+          favBtn.style.display='block';
+          favBtn._secretText = txt;
+        }
       }
     }catch(e){
       if(secretArea){secretArea.style.display='block';secretArea.innerHTML='<div style="font-size:12px;color:var(--ph-text-sub);text-align:center;padding:8px;">什么也没发现……也许下次会不同。</div>';}
