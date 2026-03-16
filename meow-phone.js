@@ -2234,6 +2234,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   border-radius:38px; position:relative; overflow:hidden;
   background:var(--ph-bg-primary);
   border:1px solid rgba(255,255,255,.22);
+  z-index: 2;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.10),
     0 28px 80px var(--ph-shadow);
@@ -2266,41 +2267,45 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
    It matches phShell's size+position exactly but uses a negative inset
    to show only the ring area. It has backdrop-filter so the ring
    actually blurs whatever is behind the phone — real frosted glass. */
+/* ---------- Frosted Ring Layer ---------- */
+/* 比 phShell 大一圈 (每边+10px)，z-index 低于 phShell
+   phShell 压在上面盖住中间，只有四周露出的 10px 环是可见的
+   那圈环的 backdrop-filter 才真正模糊酒馆页面背景 */
 #${ID} .phRingLayer{
   display: none;
   position: absolute;
-  width: 375px; height: 750px;
-  max-width: 96vw; max-height: 90vh;
+  width: calc(375px + 20px); height: calc(750px + 20px);
+  max-width: calc(96vw + 20px); max-height: calc(90vh + 20px);
   left: 50%; top: 50%;
   transform: translate(-50%, -50%);
-  border-radius: 42px;
-  z-index: 4;
+  border-radius: 48px;
+  z-index: 1;           /* phShell 设为 z-index:2 确保压住此层 */
   pointer-events: none;
-  border: 9px solid transparent;
-  background: transparent;
-  backdrop-filter: blur(18px) saturate(140%) brightness(1.06);
-  -webkit-backdrop-filter: blur(18px) saturate(140%) brightness(1.06);
-  /* Warm cream tint overlay — enough opacity to look glassy, not white */
+  background: rgba(228,216,200,.42);
+  backdrop-filter: blur(20px) saturate(150%) brightness(1.08);
+  -webkit-backdrop-filter: blur(20px) saturate(150%) brightness(1.08);
   box-shadow:
-    inset 0 0 0 9px rgba(228,216,200,.50),
-    0 0 0 1px rgba(170,155,138,.18);
+    0 0 0 1px rgba(170,155,138,.15),
+    0 32px 80px rgba(100,94,86,.18);
 }
 #${ID}.full .phRingLayer{ display: block; }
-/* frost: warmer ivory tint */
+
+/* frost: 暖象牙色环 */
 #${ID}[data-theme="frost"] .phRingLayer{
-  border-radius: 54px;
+  border-radius: 60px;
+  background:
+    linear-gradient(160deg, rgba(248,238,224,.60) 0%, rgba(228,216,200,.44) 50%, rgba(210,198,182,.52) 100%);
   box-shadow:
-    inset 0 0 0 9px rgba(230,218,202,.52),
-    inset 0 4px 0 rgba(255,248,238,.65),
-    inset 0 -3px 0 rgba(180,165,148,.25),
-    0 0 0 1px rgba(180,165,148,.20);
+    0 0 0 1.5px rgba(180,165,148,.18),
+    0 28px 72px rgba(100,94,86,.16);
 }
+
 /* mini mode */
 #${ID}.mini .phRingLayer{
   display: block;
-  border-radius: 34px;
-  width: 100%; height: 100%;
-  left: 0; top: 0; transform: none;
+  border-radius: 38px;
+  width: calc(100% + 20px); height: calc(100% + 20px);
+  left: -10px; top: -10px; transform: none;
 }
 
 /* ---------- Drag handle ---------- */
