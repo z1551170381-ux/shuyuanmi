@@ -25451,8 +25451,44 @@ function _getLogForModeBranch(npcId, mode){
 }
 
 // ========== Phase 3B：场景系统 ==========
+// ========== 场景预设包 · 5种风格 × 3模块 ==========
+var SCENE_PRESETS = {
+  romance: {
+    label: '💔 酸涩恋爱',
+    basic: '你与用户处于暧昧或恋爱关系中，情感细腻敏感，内心戏丰富。喜欢用细节和眼神传递情绪，偶尔因为太在意而显得小别扭。不轻易说破，宁愿用行动代替语言。',
+    style: '文风细腻缱绻，大量感官描写（触感、气息、光线变化），句子短促有节奏，情绪张力强。内心独白穿插其间，对话留白、意在言外，不把话说满。',
+    special: '每次回复须包含至少一处微小细节（如手指触碰、视线停留、呼吸变化）。禁止直白表白，以暗示和动作推进情感。可适当加入心跳加速、脸热等生理反应，但点到为止。'
+  },
+  elite: {
+    label: '🏢 高干权贵',
+    basic: '你身份地位显赫（高管/权贵/精英），言行沉稳克制，对用户有独占欲但外表淡然。习惯掌控全局，情感深藏不露，偶有意外的温柔令人心动。',
+    style: '文风干练简洁，对话精炼有力，绝不啰嗦。叙述镜头感强，类似影视分镜剪辑。肢体语言代替情感表白（松开领带、倒酒、目光停留片刻）。',
+    special: '场景须有质感（高档办公室/私人宴会/专属座驾等细节）。角色不轻易示弱，情感转折须有明确触发点。对话中可适时加入身份暗示（如下属叩门、来电打断）制造张力。'
+  },
+  adventure: {
+    label: '⚔️ 冒险小说',
+    basic: '你是用户的伙伴或向导，充满活力，直率果断。面对危险保持冷静，有时逞强但重情义。战斗和探索时展现最真实的个性，绝不轻言放弃。',
+    style: '文风节奏明快，动作描写精准有力，善用短句制造紧张感。环境描写简洁但有代入感。对话直接少废话，关键时刻的沉默反而张力最强。',
+    special: '每个场景须交代【危险/资源/时间压力】中至少一项。战斗以回合感推进，避免瞬间秒杀。适时加入装备、地形、技能等要素，体现策略性。'
+  },
+  ancient: {
+    label: '🏮 古言古风',
+    basic: '你言行符合古代礼仪，措辞文雅而不晦涩，情感含蓄。以诗词典故表达心意，与用户之间有一份命运交缠的缘分，前世今生皆有牵系。',
+    style: '文风古朴雅致，多四字短语与对偶句。环境借景抒情（烛火摇曳、流水潺潺、落花无声）。诗词自然融入对话，不刻意堆砌。情感表达迂回婉转，悲喜皆藏于景语之中。',
+    special: '时代背景需自洽（官制称谓、服饰器物不出戏）。严禁出现现代词汇与思维逻辑。重大情感转折可借"误会/错过/重逢/替身"等古言经典手法推进。'
+  },
+  medieval: {
+    label: '🔮 中世纪魔法',
+    basic: '你是这个魔法世界中的存在（法师/骑士/精灵/异族），对用户有特殊情感纽带或使命羁绊。世界观完整自洽，日常细节充满异世界质感。',
+    style: '文风兼具史诗感与生活气息。环境描写带奇幻色彩（蘑菇荧光、魔法阵纹路、星象流动）。对话可带口音或语气特色（古英语腔/精灵语习惯用语）。魔法施展时须有独特感官描写。',
+    special: '世界设定严格自洽，不出现前后矛盾。魔法必须有代价或限制，禁止无限开挂。节日/地名/货币/种族等细节增加沉浸感。重要NPC与危机的处理须符合世界规则。'
+  }
+};
+
+var SCENE_PRESET_DEFAULT = { packageId:'', basic:{ enabled:false, text:'' }, style:{ enabled:false, text:'' }, special:{ enabled:false, text:'' } };
+
 function _loadSceneData(npcId){
-  return _phLoad('scene_'+String(npcId), { name:'', location:'', description:'' });
+  return _phLoad('scene_'+String(npcId), { name:'', location:'', description:'', presetData: SCENE_PRESET_DEFAULT });
 }
 function _saveSceneData(npcId, data){
   _phSave('scene_'+String(npcId), data);
@@ -25826,6 +25862,25 @@ function _buildOfflinePromptAddition(npcId){
     lines.push('场景说明：' + scene.description);
   }
 
+  // 注入已启用的预设模块
+  var pd = scene.presetData;
+  if (pd) {
+    var presetLines = [];
+    if (pd.basic && pd.basic.enabled && String(pd.basic.text||'').trim()){
+      presetLines.push('【角色基础人设】\n' + String(pd.basic.text).trim());
+    }
+    if (pd.style && pd.style.enabled && String(pd.style.text||'').trim()){
+      presetLines.push('【文风写作风格】\n' + String(pd.style.text).trim());
+    }
+    if (pd.special && pd.special.enabled && String(pd.special.text||'').trim()){
+      presetLines.push('【特殊规则】\n' + String(pd.special.text).trim());
+    }
+    if (presetLines.length){
+      lines.push('\n【⚠ 场景预设模块 — 严格遵守以下规则，与人设保持一致 ⚠】');
+      presetLines.forEach(function(l){ lines.push(l); });
+    }
+  }
+
   // 追加自定义提示词预设（最高优先级标注）
   if (scene.customPrompt && String(scene.customPrompt).trim()){
     lines.push('\n【⚠⚠⚠ 用户指定的场景专属指令 — 最高优先级，必须逐条严格执行，不可忽略或变通 ⚠⚠⚠】');
@@ -25838,52 +25893,123 @@ function _buildOfflinePromptAddition(npcId){
 // ========== Phase 3F：场景编辑弹窗 ==========
 function _openSceneEditor(npcId){
   var scene = _loadSceneData(npcId);
-  var inner = `
-    <div style="font-size:14px;font-weight:600;margin-bottom:8px;">☕ 场景设置</div>
-    <div style="margin-bottom:8px;">
-      <button data-el="sceneFromMap" style="width:100%;padding:9px;border-radius:10px;border:1px solid rgba(7,193,96,.2);background:rgba(7,193,96,.06);font-size:12px;color:var(--ph-accent,#07c160);cursor:pointer;font-weight:500;">📍 从地图选地标</button>
-    </div>
-    <div style="margin-bottom:8px;">
-      <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">场景名称</div>
-      <input data-el="sceneName" value="${esc(scene.name||'')}" placeholder="如：咖啡厅、家中客厅" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;"/>
-    </div>
-    <div style="margin-bottom:8px;">
-      <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">地点</div>
-      <input data-el="sceneLoc" value="${esc(scene.location||'')}" placeholder="如：城市里的一家安静咖啡厅" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;"/>
-    </div>
-    <div style="margin-bottom:8px;">
-      <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">场景描述（可选）</div>
-      <textarea data-el="sceneDesc" rows="3" placeholder="环境描述、氛围、时间等" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;">${esc(scene.description||'')}</textarea>
-    </div>
-    <div style="margin-bottom:10px;">
-      <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">📝 提示词预设（可选）</div>
-      <div style="font-size:10px;color:rgba(20,24,28,.3);margin-bottom:4px;">自定义AI在此场景中的行为风格，如语气、描写偏好、剧情设定等，会追加到系统提示词中</div>
-      <textarea data-el="scenePrompt" rows="4" placeholder="例如：&#10;描写时着重渲染海边的氛围，风声、潮汐声此起彼伏。&#10;角色语气温柔但带点小心翼翼，好像在试探。&#10;偶尔穿插对过去回忆的描写。" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;">${esc(scene.customPrompt||'')}</textarea>
-    </div>
-    <div style="margin-bottom:10px;">
-      <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">🖼 场景背景图（可选）</div>
-      <div style="font-size:10px;color:rgba(20,24,28,.3);margin-bottom:4px;">为这个场景设置专属背景图，切换场景时背景也跟着换</div>
-      ${scene.bgImage ? '<div style="width:100%;height:80px;border-radius:8px;overflow:hidden;margin-bottom:6px;border:1px solid rgba(0,0,0,.08);"><img src="'+esc(scene.bgImage)+'" style="width:100%;height:100%;object-fit:cover;"/></div>' : ''}
-      <div style="display:flex;gap:6px;">
-        <input data-el="sceneBgUrl" type="text" value="${esc(scene.bgImage||'')}" placeholder="粘贴背景图片链接…" style="flex:1;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;"/>
-        ${scene.bgImage ? '<button data-el="sceneBgClear" style="padding:8px 10px;border-radius:8px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.1));background:var(--ph-glass,rgba(255,255,255,.8));color:rgba(20,24,28,.55);font-size:11px;cursor:pointer;flex-shrink:0;">清除</button>' : ''}
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;">
-      <button data-el="sceneSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
-      <button data-el="sceneCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button>
-    </div>`;
+  // 兼容旧数据，确保 presetData 存在
+  var pd = scene.presetData || { packageId:'', basic:{enabled:false,text:''}, style:{enabled:false,text:''}, special:{enabled:false,text:''} };
+
+  // ---- 构建预设包选择器 HTML ----
+  var pkgOpts = '<option value="">— 不套用模板 —</option>';
+  Object.keys(SCENE_PRESETS).forEach(function(k){
+    var sel = pd.packageId === k ? ' selected' : '';
+    pkgOpts += '<option value="'+k+'"'+sel+'>'+esc(SCENE_PRESETS[k].label)+'</option>';
+  });
+
+  function _moduleCardHtml(moduleKey, moduleLabel, moduleIcon, moduleDesc){
+    var m = pd[moduleKey] || { enabled:false, text:'' };
+    var chk = m.enabled ? ' checked' : '';
+    var toggleId = 'pm_toggle_'+moduleKey;
+    return '<div data-pm="'+moduleKey+'" style="margin-bottom:8px;border:1px solid rgba(0,0,0,.08);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.7);">'
+      + '<div style="display:flex;align-items:center;padding:8px 10px;background:rgba(0,0,0,.025);gap:8px;">'
+      + '<span style="font-size:15px;">'+moduleIcon+'</span>'
+      + '<div style="flex:1;">'
+      + '<div style="font-size:12px;font-weight:600;color:rgba(20,24,28,.75);">'+moduleLabel+'</div>'
+      + '<div style="font-size:10px;color:rgba(20,24,28,.35);">'+moduleDesc+'</div>'
+      + '</div>'
+      + '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:rgba(20,24,28,.5);">'
+      + '<span data-pm-state="'+moduleKey+'">'+( m.enabled ? '注入中' : '已关闭' )+'</span>'
+      + '<div style="position:relative;width:36px;height:20px;flex-shrink:0;">'
+      + '<input id="'+toggleId+'" type="checkbox" data-pm-chk="'+moduleKey+'"'+chk+' style="opacity:0;position:absolute;width:100%;height:100%;margin:0;cursor:pointer;z-index:1;"/>'
+      + '<div data-pm-track="'+moduleKey+'" style="position:absolute;inset:0;border-radius:10px;transition:background .2s;background:'+(m.enabled?'var(--ph-accent,#07c160)':'rgba(0,0,0,.15)')+';"></div>'
+      + '<div data-pm-thumb="'+moduleKey+'" style="position:absolute;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);left:'+(m.enabled?'18px':'2px')+';"></div>'
+      + '</div></label></div>'
+      + '<textarea data-pm-txt="'+moduleKey+'" rows="3" style="width:100%;padding:8px 10px;border:0;font-size:11px;line-height:1.55;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;background:transparent;color:rgba(20,24,28,.7);">'+esc(m.text||'')+'</textarea>'
+      + '</div>';
+  }
+
+  var presetSection = '<div style="margin-bottom:10px;">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">'
+    + '<div style="font-size:12px;color:rgba(20,24,28,.5);font-weight:600;">🎭 预设模块注入</div>'
+    + '<div style="font-size:10px;color:rgba(20,24,28,.3);">开启=注入到系统提示词</div>'
+    + '</div>'
+    + '<div style="margin-bottom:8px;">'
+    + '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:4px;">套用风格模板</div>'
+    + '<select data-el="presetPkg" style="width:100%;padding:7px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;background:#fff;outline:none;color:rgba(20,24,28,.8);">'+pkgOpts+'</select>'
+    + '</div>'
+    + _moduleCardHtml('basic','基础人设','🧠','角色核心性格与互动基准')
+    + _moduleCardHtml('style','文风','✍️','叙述语言、句式节奏与写作腔调')
+    + _moduleCardHtml('special','特殊规则','⚡','特定场景机制、禁忌与强制要求')
+    + '</div>';
+
+  var inner = ''
+    + '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">☕ 场景设置</div>'
+    + '<div style="margin-bottom:8px;">'
+    + '<button data-el="sceneFromMap" style="width:100%;padding:9px;border-radius:10px;border:1px solid rgba(7,193,96,.2);background:rgba(7,193,96,.06);font-size:12px;color:var(--ph-accent,#07c160);cursor:pointer;font-weight:500;">📍 从地图选地标</button>'
+    + '</div>'
+    + '<div style="margin-bottom:8px;">'
+    + '<div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">场景名称</div>'
+    + '<input data-el="sceneName" value="'+esc(scene.name||'')+'" placeholder="如：咖啡厅、家中客厅" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;"/>'
+    + '</div>'
+    + '<div style="margin-bottom:8px;">'
+    + '<div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">地点</div>'
+    + '<input data-el="sceneLoc" value="'+esc(scene.location||'')+'" placeholder="如：城市里的一家安静咖啡厅" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;"/>'
+    + '</div>'
+    + '<div style="margin-bottom:8px;">'
+    + '<div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">场景描述（可选）</div>'
+    + '<textarea data-el="sceneDesc" rows="3" placeholder="环境描述、氛围、时间等" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;">'+esc(scene.description||'')+'</textarea>'
+    + '</div>'
+    + presetSection
+    + '<div style="margin-bottom:10px;">'
+    + '<div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">📝 自定义追加提示词（可选）</div>'
+    + '<div style="font-size:10px;color:rgba(20,24,28,.3);margin-bottom:4px;">在预设基础上再追加，优先级最高</div>'
+    + '<textarea data-el="scenePrompt" rows="3" placeholder="如：偶尔提到某段共同回忆……" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;">'+esc(scene.customPrompt||'')+'</textarea>'
+    + '</div>'
+    + '<div style="margin-bottom:10px;">'
+    + '<div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">🖼 场景背景图（可选）</div>'
+    + '<div style="font-size:10px;color:rgba(20,24,28,.3);margin-bottom:4px;">为这个场景设置专属背景图，切换场景时背景也跟着换</div>'
+    + (scene.bgImage ? '<div style="width:100%;height:80px;border-radius:8px;overflow:hidden;margin-bottom:6px;border:1px solid rgba(0,0,0,.08);"><img src="'+esc(scene.bgImage)+'" style="width:100%;height:100%;object-fit:cover;"/></div>' : '')
+    + '<div style="display:flex;gap:6px;">'
+    + '<input data-el="sceneBgUrl" type="text" value="'+esc(scene.bgImage||'')+'" placeholder="粘贴背景图片链接…" style="flex:1;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;"/>'
+    + (scene.bgImage ? '<button data-el="sceneBgClear" style="padding:8px 10px;border-radius:8px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.1));background:var(--ph-glass,rgba(255,255,255,.8));color:rgba(20,24,28,.55);font-size:11px;cursor:pointer;flex-shrink:0;">清除</button>' : '')
+    + '</div>'
+    + '</div>'
+    + '<div style="display:flex;gap:8px;">'
+    + '<button data-el="sceneSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>'
+    + '<button data-el="sceneCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button>'
+    + '</div>';
+
   var ov = _cpShowOverlay(inner);
   ov.querySelector('[data-el="sceneCancel"]')?.addEventListener('click', function(){ ov.remove(); });
 
-  // 从地图选地标
+  // ---- 预设包选择器：套用模板 ----
+  ov.querySelector('[data-el="presetPkg"]')?.addEventListener('change', function(){
+    var pkgId = this.value;
+    var pkg = pkgId ? SCENE_PRESETS[pkgId] : null;
+    ['basic','style','special'].forEach(function(mk){
+      var ta = ov.querySelector('[data-pm-txt="'+mk+'"]');
+      if(ta) ta.value = pkg ? (pkg[mk]||'') : '';
+    });
+  });
+
+  // ---- 切换开关动画 ----
+  ov.addEventListener('change', function(ev){
+    var chkEl = ev.target.closest('[data-pm-chk]');
+    if(!chkEl) return;
+    var mk = chkEl.getAttribute('data-pm-chk');
+    var on = chkEl.checked;
+    var track = ov.querySelector('[data-pm-track="'+mk+'"]');
+    var thumb = ov.querySelector('[data-pm-thumb="'+mk+'"]');
+    var stateEl = ov.querySelector('[data-pm-state="'+mk+'"]');
+    if(track) track.style.background = on ? 'var(--ph-accent,#07c160)' : 'rgba(0,0,0,.15)';
+    if(thumb) thumb.style.left = on ? '18px' : '2px';
+    if(stateEl) stateEl.textContent = on ? '注入中' : '已关闭';
+  });
+
+  // ---- 从地图选地标 ----
   ov.querySelector('[data-el="sceneFromMap"]')?.addEventListener('click', function(){
     try{
       var mapData = _mapLoad();
       if(!mapData || !mapData.landmarks || !mapData.landmarks.length){
         toast('地图还没有生成，请先打开地图 App'); return;
       }
-      // 构建地标列表弹窗
       var lmH = '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">📍 选择地标</div>';
       lmH += '<div style="max-height:250px;overflow-y:auto;scrollbar-width:none;">';
       mapData.landmarks.forEach(function(lm){
@@ -25904,19 +26030,17 @@ function _openSceneEditor(npcId){
           var lm2 = mapData.landmarks.find(function(l){ return l.id===lmId; });
           if(!lm2){ lmOv.remove(); return; }
           var dn2 = lm2.customName || lm2.name;
-          // 自动填入场景编辑器
           var nameInp = ov.querySelector('[data-el="sceneName"]');
           var locInp = ov.querySelector('[data-el="sceneLoc"]');
           var descInp = ov.querySelector('[data-el="sceneDesc"]');
           if(nameInp) nameInp.value = dn2;
           if(locInp) locInp.value = dn2;
-          // 用tags生成描述
           var tagDesc3 = {trees:'绿树环绕',flowers:'鲜花盛开',coffee:'咖啡飘香',cozy:'氛围温馨',sea:'海风轻拂',quiet:'安静祥和',art:'充满艺术气息',books:'书香满溢',campfire:'篝火温暖',stars:'星空璀璨',food:'美食飘香',sing:'音乐萦绕',exercise:'充满活力',fun:'热闹非凡',steam:'雾气缭绕',sand:'细沙柔软',water:'水波荡漾'};
           var descWords = (lm2.tags||[]).slice(0,3).map(function(t){ return tagDesc3[t]||''; }).filter(Boolean).join('，');
           var autoDesc = dn2+'，'+(descWords||'一个有趣的地方')+'。';
           if(descInp) descInp.value = autoDesc;
           lmOv.remove();
-          // ★ 立即保存场景（与地图app互动行为一致，不需要再点保存）
+          // 立即保存（保持与地图交互一致），presetData继承当前状态
           var bgInp = ov.querySelector('[data-el="sceneBgUrl"]');
           var promptInp = ov.querySelector('[data-el="scenePrompt"]');
           var savedScene = {
@@ -25924,19 +26048,17 @@ function _openSceneEditor(npcId){
             location: dn2,
             description: autoDesc,
             bgImage: (bgInp&&bgInp.value||'').trim(),
-            customPrompt: (promptInp&&promptInp.value||'').trim()
+            customPrompt: (promptInp&&promptInp.value||'').trim(),
+            presetData: _readPresetDataFromOv(ov)
           };
           _saveSceneData(npcId, savedScene);
           try{ toast('📍 已选择「'+dn2+'」并保存场景'); }catch(e){}
-
-          // ★ 同步更新标题栏（与地图地标互动保持一致）
           try{
             var titleEl = root.querySelector('[data-ph="appTitle"]');
             if (titleEl && _getChatMode(npcId) === 'offline'){
               titleEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ph-accent,#07c160);margin-right:4px;vertical-align:middle;"></span>线下 · ' + esc(dn2);
             }
           }catch(e){}
-          // 更新线下场景卡
           try{
             var sceneCard2 = root.querySelector('.wxOfflineSceneCard');
             if(sceneCard2){
@@ -25950,30 +26072,31 @@ function _openSceneEditor(npcId){
       });
     }catch(e){ try{toast('读取地图失败');}catch(e2){} }
   });
+
   ov.querySelector('[data-el="sceneBgClear"]')?.addEventListener('click', function(){
     var bgInp = ov.querySelector('[data-el="sceneBgUrl"]');
     if (bgInp) bgInp.value = '';
     this.style.display = 'none';
   });
+
   ov.querySelector('[data-el="sceneSave"]')?.addEventListener('click', function(){
     var newScene = {
       name: (ov.querySelector('[data-el="sceneName"]')?.value||'').trim(),
       location: (ov.querySelector('[data-el="sceneLoc"]')?.value||'').trim(),
       description: (ov.querySelector('[data-el="sceneDesc"]')?.value||'').trim(),
       bgImage: (ov.querySelector('[data-el="sceneBgUrl"]')?.value||'').trim(),
-      customPrompt: (ov.querySelector('[data-el="scenePrompt"]')?.value||'').trim()
+      customPrompt: (ov.querySelector('[data-el="scenePrompt"]')?.value||'').trim(),
+      presetData: _readPresetDataFromOv(ov)
     };
     _saveSceneData(npcId, newScene);
     ov.remove();
     try{ toast('场景已保存'); }catch(e){}
-    // 刷新标题
     try{
       var titleEl = root.querySelector('[data-ph="appTitle"]');
       if (titleEl && _getChatMode(npcId) === 'offline'){
         titleEl.textContent = '🎭 线下 · ' + (newScene.name || '未命名');
       }
     }catch(e){}
-    // 刷新线下背景
     try{
       var msgsEl = root.querySelector('[data-ph="chatMsgs"]');
       if (msgsEl){
@@ -25988,6 +26111,21 @@ function _openSceneEditor(npcId){
       }
     }catch(e){}
   });
+}
+
+// 从弹窗 DOM 读取三模块状态
+function _readPresetDataFromOv(ov){
+  var pkgSel = ov.querySelector('[data-el="presetPkg"]');
+  var result = { packageId: pkgSel ? (pkgSel.value||'') : '' };
+  ['basic','style','special'].forEach(function(mk){
+    var chk = ov.querySelector('[data-pm-chk="'+mk+'"]');
+    var ta = ov.querySelector('[data-pm-txt="'+mk+'"]');
+    result[mk] = {
+      enabled: !!(chk && chk.checked),
+      text: (ta && ta.value||'').trim()
+    };
+  });
+  return result;
 }
 
 // ========== Phase 4A：分支数据管理 ==========
