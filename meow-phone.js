@@ -25483,7 +25483,8 @@ function _applyCustomHTMLTemplate(tpl, vars){
 
 function _injectCustomCSS(npcId){
   try{
-    var existing = root.querySelector('#meow-phone-custom-css');
+    // doc.head에 있으므로 getElementById로 찾아 제거
+    var existing = doc.getElementById('meow-phone-custom-css');
     if (existing) existing.remove();
     var mode = _getChatMode(npcId);
     var styles = _loadCustomStyle(npcId);
