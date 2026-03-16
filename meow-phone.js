@@ -4559,10 +4559,16 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   border-top:1px solid rgba(255,255,255,.28);
 }
 #${ID} .mapToolBtn{
-  flex:1; padding:8px; border-radius:999px; border:1px solid rgba(255,255,255,.38);
+  flex:1; padding:7px 6px; border-radius:999px; border:1px solid rgba(255,255,255,.38);
   background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .25) + .04));
-  font-size:12px; color:var(--ph-text, rgba(20,24,28,0.65)); cursor:pointer;
+  font-size:11.5px; color:var(--ph-text, rgba(20,24,28,0.65)); cursor:pointer;
   backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  display:flex; align-items:center; justify-content:center; gap:4px;
+}
+#${ID} .mapToolBtnAccent{
+  background: var(--ph-accent-grad);
+  color: #fff !important;
+  border-color: transparent;
 }
 #${ID} .mapToolBtn:active{ transform:scale(0.96); }
 /* Map Detail Overlay */
@@ -4575,11 +4581,11 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 @keyframes mapFadeIn{ from{opacity:0;} to{opacity:1;} }
 #${ID} .mapDetailCard{
   width:92%; max-height:72%; overflow-y:auto;
-  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .28) + .08));
-  backdrop-filter:blur(var(--phAppBlur,20px)) saturate(120%); -webkit-backdrop-filter:blur(var(--phAppBlur,20px)) saturate(120%);
+  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .28) + .12));
+  backdrop-filter:blur(40px) saturate(140%); -webkit-backdrop-filter:blur(40px) saturate(140%);
   border-radius:22px 22px 0 0; padding:16px;
-  box-shadow:0 -4px 24px rgba(100,94,86,.12);
-  border:1px solid rgba(255,255,255,.40);
+  box-shadow:0 -6px 32px rgba(100,94,86,.14);
+  border:1px solid rgba(255,255,255,.50);
   border-bottom:none;
   animation:mapSlideUp .25s ease;
   scrollbar-width:none;
@@ -27274,11 +27280,11 @@ function _mapGenDecorations(rng, islandPts, landmarks, river, zones){
 
 // ---- 色板 ----
 var MAP_PALETTES = [
-  { island:'#A8B89A', sea:'#D2D9C8', sand:'#DDD6C4', name:'浅莫兰迪' },
-  { island:'#9FB093', sea:'#CCD5C2', sand:'#DBD4C0', name:'雾绿' },
-  { island:'#A5B59A', sea:'#D0D8C5', sand:'#DED7C6', name:'薄荷奶' },
-  { island:'#9DAD8E', sea:'#CBD4BF', sand:'#D9D2C0', name:'青瓷' },
-  { island:'#A2B196', sea:'#CED6C5', sand:'#DCD5C3', name:'抹茶' },
+  { island:'#C4D4B8', sea:'#D8E8D0', sand:'#E8E0C8', name:'霜雾绿' },
+  { island:'#B8C8D8', sea:'#CCE0EC', sand:'#E4DDD0', name:'冰蓝' },
+  { island:'#C8C0B0', sea:'#D8D4C8', sand:'#EAE4D4', name:'暖沙' },
+  { island:'#BCC8B8', sea:'#D0DCC8', sand:'#E8E2D2', name:'薄荷霜' },
+  { island:'#C4B8C8', sea:'#D8D0E4', sand:'#ECE6D8', name:'淡紫' },
 ];
 
 // ---- 地图生成主函数 ----
@@ -27617,23 +27623,33 @@ function _mapBuildSVG(mapData){
     var displayName = lm.customName || lm.name;
     svg += '<g class="mapLm" data-lmid="'+lm.id+'" style="cursor:pointer;" transform="translate('+lm.x.toFixed(1)+','+lm.y.toFixed(1)+')">';
     // emoji→SVG分类图标映射（受--ph-icon-inner-tint控制）
-    var _lmIconColor = 'var(--ph-icon-inner-tint, #9E8875)';
-    var _emojiSvgMap = {
-      '🌳':'M7 2C7 2 4 5 4 8a3 3 0 006 0C10 5 7 2 7 2zM7 8v6M5 14h4','🎋':'M7 2v12M5 6c0 0 2-1 4-1M5 9c0 0 2 1 4 0','🌸':'M7 4a3 3 0 000 6 3 3 0 000-6zM7 2v1M7 9v1M4 4l.7.7M9.3 9.3l.7.7M2 7h1M11 7h1M4 10l.7-.7M9.3 4.7l.7-.7',
-      '🏠':'M2 8l5-5 5 5v6H2zM5 14V10h4v4','🏫':'M1 8l6-6 6 6v6H1zM5 14v-4h4v4M7 2v2','🏪':'M1 5h12v9H1zM1 5l2-3h8l2 3M5 14v-4h4v4',
-      '🌊':'M1 8c2-2 4-2 5 0s3 2 5 0M1 11c2-2 4-2 5 0s3 2 5 0','⛺':'M7 2L1 12h12zM4 12l3-7 3 7','🌅':'M1 9h12M7 9V3M4 6l3-3 3 3M2 12l2-3M10 12l2-3',
-      '🏛':'M1 12h12M2 12V7h10v5M1 7l6-5 6 5M5 12V8h2v4M9 12V8h2v4','🎯':'M7 7m-5 0a5 5 0 1010 0 5 5 0 10-10 0M7 7m-2 0a2 2 0 104 0 2 2 0 10-4 0M7 7h.01',
-      '☕':'M3 5h8v6a4 4 0 01-8 0zM11 7h1a2 2 0 010 4h-1','🍰':'M1 8h12M7 8V3l3 3-3 3M4 14h8v-6H4z','🛒':'M1 1h2l2 8h7l2-6H4',
-      '⭐':'M7 1l1.8 3.6L13 5.3l-3 2.9.7 4.1L7 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7z','🎪':'M7 1v12M2 5h10M2 9h10M1 13h12','🏥':'M2 4h10v9H2zM7 6v5M4.5 8.5h5',
-      '🌲':'M7 1L3 7h2L2 12h5v2h0v-2h5L9 7h2zM6 14h2','🏡':'M2 8l5-5 5 5v6H2zM5 14V10h4v4M1 8h12','🎭':'M3 3c0 0 1 3 4 3s4-3 4-3M3 9c0 0 1 3 4 3s4-3 4-3'
+    // 地标图标：双色填充SVG，高辨识度（受--ph-icon-inner-tint控制）
+    var _ic = 'var(--ph-icon-inner-tint, #9E8875)';
+    var _icL = 'rgba(255,255,255,0.88)';
+    var _lmFilled = {
+      '\u{1F333}': '<circle cx="7" cy="5.5" r="4" fill="'+_ic+'"/><rect x="6" y="9" width="2" height="4" rx="0.5" fill="'+_ic+'"/><circle cx="7" cy="5" r="2.2" fill="'+_icL+'" opacity="0.4"/>',
+      '\u{1F332}': '<polygon points="7,1 2,9 12,9" fill="'+_ic+'"/><polygon points="7,4 3,11 11,11" fill="'+_ic+'" opacity="0.85"/><rect x="6.2" y="10" width="1.6" height="3" rx="0.5" fill="'+_ic+'"/>',
+      '\u{1F338}': '<circle cx="7" cy="7" r="2" fill="'+_ic+'"/><circle cx="7" cy="3.5" r="1.8" fill="'+_ic+'" opacity="0.7"/><circle cx="10.5" cy="5.5" r="1.8" fill="'+_ic+'" opacity="0.7"/><circle cx="10" cy="9.5" r="1.8" fill="'+_ic+'" opacity="0.7"/><circle cx="4" cy="9.5" r="1.8" fill="'+_ic+'" opacity="0.7"/><circle cx="3.5" cy="5.5" r="1.8" fill="'+_ic+'" opacity="0.7"/>',
+      '\u{1F38B}': '<rect x="6.2" y="2" width="1.6" height="10" rx="0.8" fill="'+_ic+'"/><rect x="3.5" y="3" width="1.4" height="8" rx="0.7" fill="'+_ic+'" opacity="0.7"/><rect x="9.1" y="3.5" width="1.4" height="7.5" rx="0.7" fill="'+_ic+'" opacity="0.7"/>',
+      '\u{1F3E0}': '<polygon points="7,2 1,8 13,8" fill="'+_ic+'"/><rect x="2" y="7.5" width="10" height="5.5" rx="0.5" fill="'+_ic+'" opacity="0.85"/><rect x="5.5" y="9.5" width="3" height="3.5" rx="0.5" fill="'+_icL+'" opacity="0.9"/>',
+      '\u{1F3E1}': '<polygon points="7,2 1,8 13,8" fill="'+_ic+'"/><rect x="2" y="7.5" width="10" height="5.5" rx="0.5" fill="'+_ic+'" opacity="0.85"/><rect x="5.5" y="9.5" width="3" height="3.5" rx="0.5" fill="'+_icL+'" opacity="0.9"/>',
+      '\u{1F3EB}': '<rect x="2" y="4" width="10" height="9" rx="0.5" fill="'+_ic+'"/><polygon points="7,1 1,5 13,5" fill="'+_ic+'" opacity="0.9"/><rect x="5.5" y="7" width="3" height="4" rx="0.5" fill="'+_icL+'" opacity="0.9"/>',
+      '\u{1F3EA}': '<rect x="1.5" y="6" width="11" height="7" rx="0.5" fill="'+_ic+'"/><path d="M1.5 6 Q4 2.5 7 2.5 Q10 2.5 12.5 6" fill="'+_ic+'" opacity="0.85"/><rect x="5" y="8.5" width="4" height="4.5" rx="0.5" fill="'+_icL+'" opacity="0.9"/>',
+      '\u{1F3E5}': '<rect x="2" y="3" width="10" height="10" rx="1" fill="'+_ic+'"/><rect x="5.8" y="5.5" width="2.4" height="5" rx="0.3" fill="'+_icL+'" opacity="0.95"/><rect x="4" y="7.3" width="6" height="2.4" rx="0.3" fill="'+_icL+'" opacity="0.95"/>',
+      '\u{1F3DB}': '<rect x="1" y="11" width="12" height="1.5" rx="0.5" fill="'+_ic+'"/><rect x="2" y="7" width="10" height="4.5" fill="'+_ic+'" opacity="0.85"/><rect x="1.5" y="5.5" width="11" height="2" rx="0.3" fill="'+_ic+'"/><rect x="3" y="3" width="1.5" height="3" rx="0.3" fill="'+_ic+'" opacity="0.9"/><rect x="6.3" y="3" width="1.5" height="3" rx="0.3" fill="'+_ic+'" opacity="0.9"/><rect x="9.5" y="3" width="1.5" height="3" rx="0.3" fill="'+_ic+'" opacity="0.9"/>',
+      '\u{2615}': '<path d="M3 5 h7 v5 a3.5 3.5 0 0 1-7 0 z" fill="'+_ic+'"/><path d="M10 6.5 h1.5 a1.5 1.5 0 0 1 0 3 H10" fill="none" stroke="'+_ic+'" stroke-width="1.2"/><rect x="5.5" y="2" width="1.2" height="2.5" rx="0.6" fill="'+_ic+'" opacity="0.6"/>',
+      '\u{1F370}': '<polygon points="7,2 13,13 1,13" fill="'+_ic+'"/><polygon points="7,2 13,13 10,13" fill="'+_icL+'" opacity="0.3"/>',
+      '\u{1F6D2}': '<path d="M1 2 h2 l2.5 7 h5.5 l2-5 H4.5" fill="none" stroke="'+_ic+'" stroke-width="1.5" stroke-linecap="round"/><circle cx="6" cy="12" r="1.2" fill="'+_ic+'"/><circle cx="10.5" cy="12" r="1.2" fill="'+_ic+'"/>',
+      '\u{26FA}': '<polygon points="7,1 0.5,13 13.5,13" fill="'+_ic+'"/><polygon points="7,1 7,13 13.5,13" fill="'+_ic+'" opacity="0.6"/><rect x="5" y="8" width="4" height="5" rx="0.3" fill="'+_icL+'" opacity="0.75"/>',
+      '\u{1F305}': '<circle cx="7" cy="9" r="3.5" fill="'+_ic+'"/><line x1="0" y1="9" x2="14" y2="9" stroke="'+_ic+'" stroke-width="1.2"/><line x1="7" y1="2" x2="7" y2="5" stroke="'+_ic+'" stroke-width="1.2"/><line x1="3" y1="4" x2="4.5" y2="5.5" stroke="'+_ic+'" stroke-width="1.2"/><line x1="11" y1="4" x2="9.5" y2="5.5" stroke="'+_ic+'" stroke-width="1.2"/>',
+      '\u{2B50}': '<polygon points="7,1 8.8,5.4 13.5,5.5 9.8,8.5 11.1,13 7,10.4 2.9,13 4.2,8.5 0.5,5.5 5.2,5.4" fill="'+_ic+'"/>',
+      '\u{1F3AA}': '<rect x="1" y="6" width="12" height="7" rx="1" fill="'+_ic+'" opacity="0.85"/><polygon points="7,1 1,7 13,7" fill="'+_ic+'"/>',
+      '\u{1F3AD}': '<circle cx="5" cy="6" r="3.5" fill="'+_ic+'" opacity="0.85"/><circle cx="9" cy="8" r="3.5" fill="'+_ic+'"/>',
     };
-    // 用emoji首字符提取简单path，fallback到一个圆点
-    var _emojiKey = lm.emoji;
-    var _iconPath = _emojiSvgMap[_emojiKey] || 'M7 4a3 3 0 100 6 3 3 0 000-6z';
-    svg += '<circle class="mapLmBg" r="12" fill="rgba(255,255,255,0.82)" stroke="rgba(200,190,175,0.40)" stroke-width="0.8"/>';
-    svg += '<g transform="translate(-7,-7)"><path d="'+_iconPath+'" fill="none" stroke="'+_lmIconColor+'" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></g>';
-    svg += '<text class="mapLmLabel" y="18" font-size="6.5" text-anchor="middle" fill="rgba(30,30,30,0.72)" font-weight="500" style="pointer-events:none;text-shadow:0 0.5px 2px rgba(255,255,255,0.9);">'+esc(displayName)+'</text>';
-    svg += '</g>';
+    var _lmIcon = _lmFilled[lm.emoji] || ('<circle cx="7" cy="7" r="4" fill="'+_ic+'"/>');
+    svg += '<circle class="mapLmBg" r="12" fill="rgba(255,255,255,0.90)" stroke="rgba(200,190,175,0.30)" stroke-width="0.7"/>';
+    svg += '<g transform="translate(-7,-7)"><svg viewBox="0 0 14 14" width="14" height="14">'+_lmIcon+'</svg></g>';
+    svg += '<text class="mapLmLabel" y="19" font-size="6.5" text-anchor="middle" fill="rgba(30,30,30,0.72)" font-weight="500" style="pointer-events:none;text-shadow:0 0.5px 2px rgba(255,255,255,0.9);">'+esc(displayName)+'</text>';svg += '</g>';
   });
   svg += '</g>';
 
@@ -28242,9 +28258,13 @@ function renderMapApp(body){
   // 底部工具栏
   var toolbar = doc.createElement('div');
   toolbar.className = 'mapToolbar';
-  toolbar.innerHTML = '<button class="mapToolBtn" data-act="mapRegenerate">🔄 重新生成</button>'+
-    '<button class="mapToolBtn" data-act="mapEditMapName">✏️ 改名</button>'+
-    '<button class="mapToolBtn" data-act="mapEnterEditor" style="background:var(--ph-accent,#07c160);color:#fff;border-color:transparent;">🖌️ 编辑地图</button>';
+  var _svgRegen = '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 8a6 6 0 1 0 1.2-3.6"/><polyline points="2,3.5 2,8 6.5,8"/></svg>';
+  var _svgRename = '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M11 2l3 3-8 8H3v-3z"/><line x1="9" y1="4" x2="12" y2="7"/></svg>';
+  var _svgEdit = '<svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M2 11l-1 4 4-1L13 6l-3-3L2 11zm9.5-8.5l2 2-1.5 1.5-2-2 1.5-1.5z"/></svg>';
+  toolbar.innerHTML =
+    '<button class="mapToolBtn" data-act="mapRegenerate">'+_svgRegen+' 重新生成</button>'+
+    '<button class="mapToolBtn" data-act="mapEditMapName">'+_svgRename+' 改名</button>'+
+    '<button class="mapToolBtn mapToolBtnAccent" data-act="mapEnterEditor">'+_svgEdit+' 编辑地图</button>';
   wrap.appendChild(toolbar);
 
   body.appendChild(wrap);
