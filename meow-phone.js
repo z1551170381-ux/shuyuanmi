@@ -1142,36 +1142,49 @@ function ensureTuneStyle(){
   display: flex; align-items: center; justify-content: center;
 }
 
-/* settingSection 容器：大圆角卡片，每组分离 */
+/* settingSection 容器：圆角卡片，每组分离 */
 #${ID}[data-theme="frost"] .settingSection{
-  border-radius: 24px !important;
+  border-radius: 20px !important;
   border: 1px solid rgba(255,255,255,.82) !important;
-  box-shadow: 0 6px 24px rgba(100,94,86,.07), inset 0 1px 0 rgba(255,255,255,.92) !important;
+  box-shadow: 0 4px 18px rgba(100,94,86,.06), inset 0 1px 0 rgba(255,255,255,.92) !important;
   background: rgba(255,255,255, calc(var(--ph-frost-panel-a, .5) + .05)) !important;
-  margin: 0 12px 10px !important;
+  margin: 0 12px 8px !important;
 }
 
-/* settingRow 每行高度稍高，更有呼吸感 */
+/* settingRow 精致窄长 */
 #${ID}[data-theme="frost"] .settingRow{
-  padding: 15px 16px;
-  border-bottom: 1px solid rgba(48,44,40,.05) !important;
+  padding: 11px 14px !important;
+  border-bottom: 1px solid rgba(48,44,40,.04) !important;
 }
 #${ID}[data-theme="frost"] .settingRow:last-child{
   border-bottom: none !important;
 }
-
-/* settingRow icon 圆角 */
-#${ID}[data-theme="frost"] .settingRow .sIcon{
-  border-radius: 50%;
-  width: 34px; height: 34px;
-  background: rgba(255,255,255,.72);
-  border: 1px solid rgba(255,255,255,.85);
-  box-shadow: 0 2px 8px rgba(100,94,86,.08);
+#${ID}[data-theme="frost"] .settingRow .sLabel{
+  font-size: 13px !important;
+}
+#${ID}[data-theme="frost"] .settingRow .sValue{
+  font-size: 11.5px !important;
+}
+#${ID}[data-theme="frost"] .settingSectionTitle{
+  font-size: 10px !important;
+  padding: 8px 14px 4px !important;
+  letter-spacing: .7px !important;
 }
 
-/* phCard（App清晰度每个滑块卡片）更大圆角 */
+/* settingRow icon 小圆 */
+#${ID}[data-theme="frost"] .settingRow .sIcon{
+  border-radius: 50%;
+  width: 28px; height: 28px;
+  font-size: 13px !important;
+  background: rgba(255,255,255,.72);
+  border: 1px solid rgba(255,255,255,.85);
+  box-shadow: 0 2px 6px rgba(100,94,86,.07);
+  margin-right: 10px;
+}
+
+/* phCard（App清晰度每个滑块卡片）精致化 */
 #${ID}[data-theme="frost"] .phCard{
-  border-radius: 22px !important;
+  border-radius: 18px !important;
   border: 1px solid rgba(255,255,255,.82) !important;
   background: rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .08)) !important;
   box-shadow: 0 4px 18px rgba(100,94,86,.06), inset 0 1px 0 rgba(255,255,255,.92) !important;
@@ -1181,18 +1194,116 @@ function ensureTuneStyle(){
 /* wxDiscoverGroup & wxDiscoverItem 独立卡片 */
 #${ID}[data-theme="frost"] .wxDiscoverGroup,
 #${ID}[data-theme="frost"] .wxGroupAccordion{
-  border-radius: 22px !important;
+  border-radius: 18px !important;
   overflow: hidden;
-  margin: 0 12px 10px;
+  margin: 0 12px 8px;
   border: 1px solid rgba(255,255,255,.82) !important;
-  box-shadow: 0 4px 18px rgba(100,94,86,.06), inset 0 1px 0 rgba(255,255,255,.90) !important;
+  box-shadow: 0 3px 14px rgba(100,94,86,.05), inset 0 1px 0 rgba(255,255,255,.90) !important;
+}
+/* 通讯录组之间额外间距（好友/npc等分组之间留空隙）*/
+#${ID}[data-theme="frost"] .wxContactList .wxGroupAccordion{
+  margin: 0 12px 8px !important;
+}
+#${ID}[data-theme="frost"] .wxContactList .wxGroupAccordion + .wxGroupAccordion{
+  margin-top: 6px !important;
+}
+
+/* 发现页 & 通讯录：每行独立 pill 卡片，彼此分开 */
+#${ID}[data-theme="frost"] .wxDiscoverGroup{
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0;
+  margin: 0 12px 0;
 }
 #${ID}[data-theme="frost"] .wxDiscoverItem{
-  border-radius: 0;
-  border-bottom: 1px solid rgba(48,44,40,.04) !important;
+  border-radius: 16px !important;
+  margin: 0 0 6px 0 !important;
+  padding: 10px 14px !important;
+  border-bottom: none !important;
+  border: 1px solid rgba(255,255,255,.82) !important;
+  background: rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .08)) !important;
+  box-shadow: 0 2px 10px rgba(100,94,86,.05), inset 0 1px 0 rgba(255,255,255,.90) !important;
+  min-height: 0;
 }
 #${ID}[data-theme="frost"] .wxDiscoverItem:last-child{
   border-bottom: none !important;
+  margin-bottom: 8px !important;
+}
+#${ID}[data-theme="frost"] .wxDiscoverItem:hover{
+  background: rgba(255,255,255,.88) !important;
+}
+
+/* 发现页文字精致小巧 */
+#${ID}[data-theme="frost"] .wxDiscoverItem .wxDName{
+  font-size: 13px !important;
+  font-weight: 400 !important;
+}
+#${ID}[data-theme="frost"] .wxDiscoverItem .wxDArrow{
+  font-size: 13px !important;
+  opacity: .35 !important;
+}
+#${ID}[data-theme="frost"] .wxDiscoverItem .wxDIco{
+  width: 28px !important; height: 28px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+}
+
+/* 发现页 section 标题字小 */
+#${ID}[data-theme="frost"] .wxDGroupTitle{
+  font-size: 10px !important;
+  padding: 6px 4px 3px !important;
+  letter-spacing: .6px !important;
+}
+
+/* 通讯录行精致化 */
+#${ID}[data-theme="frost"] .wxContactHeader,
+#${ID}[data-theme="frost"] .wxContactItem{
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+}
+#${ID}[data-theme="frost"] .wxContactHeader .wxCHName,
+#${ID}[data-theme="frost"] .wxContactItem .wxCIName{
+  font-size: 13px !important;
+}
+#${ID}[data-theme="frost"] .wxContactHeader .wxCHIco,
+#${ID}[data-theme="frost"] .wxContactItem .wxCIAvatar{
+  width: 28px !important; height: 28px !important;
+}
+
+/* 整体 app 内文字精致小巧 */
+#${ID}[data-theme="frost"] .phAppBody{
+  font-size: 13px;
+}
+#${ID}[data-theme="frost"] .wxTopTitle{
+  font-size: 15px !important;
+}
+#${ID}[data-theme="frost"] .wxTopBar .wxTopTitle{
+  font-size: 15px !important;
+}
+
+/* 搜索框精致化 */
+#${ID}[data-theme="frost"] .wxSearchBox{
+  height: 34px !important;
+  font-size: 12.5px !important;
+}
+
+/* 聊天列表行精致化 */
+#${ID}[data-theme="frost"] .wxChatRow{
+  padding: 0 !important;
+}
+#${ID}[data-theme="frost"] .chatItemInner,
+#${ID}[data-theme="frost"] .wxChatRow .chatItemInner{
+  padding: 9px 13px !important;
+}
+#${ID}[data-theme="frost"] .wxChatName{
+  font-size: 13px !important;
+}
+#${ID}[data-theme="frost"] .wxChatPreview{
+  font-size: 11.5px !important;
+}
+#${ID}[data-theme="frost"] .wxChatTime{
+  font-size: 10.5px !important;
 }
 
 
@@ -1238,10 +1349,7 @@ function ensureTuneStyle(){
   border-radius: 18px;
 }
 
-/* settingRow icon */
-#${ID}[data-theme="frost"] .settingRow .sIcon{
-  border-radius: 14px;
-}
+/* settingRow icon 已在上方定义，此处不重复 */
 
 /* —— 7. Toggle 开关霜雪感 —— */
 #${ID}[data-theme="frost"] .sToggle,
@@ -1255,16 +1363,14 @@ function ensureTuneStyle(){
   border-color: transparent;
 }
 
-/* —— 8. App 顶栏/底栏 描边细化 —— */
+/* —— 8. App 顶栏描边细化（底栏 wxTabbar 还原原版，不覆盖）—— */
 #${ID}[data-theme="frost"] .phAppBar{
   border-bottom: 1px solid rgba(255,255,255,.58) !important;
 }
 #${ID}[data-theme="frost"] .wxTopBar{
   border-bottom: 1px solid rgba(255,255,255,.58) !important;
 }
-#${ID}[data-theme="frost"] .wxTabbar{
-  border-top: 1px solid rgba(255,255,255,.58) !important;
-}
+/* wxTabbar 不在这里覆盖，保持原版 frost 样式 */
 
 /* —— 9. Range Slider 霜雪样式 —— */
 #${ID}[data-theme="frost"] input[type="range"]{
@@ -1389,7 +1495,11 @@ function phoneApplyVisualFromSettings(cfg){
     root.style.setProperty('--phAppBorderA', String(appBorder));
     root.style.setProperty('--phAppBlur', appBlurPx + 'px');
 
-    root.style.setProperty('--phAppSolidA', String(appSolidA));
+    // 内容底模糊度：blur越高→solid自动降低，让壁纸透过来可见模糊效果
+    // blur=0 → solid不变; blur=50 → solid降到约22%（保留基本底色）
+    const blurRatio = appBodyBlurPx / 50;
+    const effectiveSolidA = appSolidA * (1 - blurRatio * 0.72);
+    root.style.setProperty('--phAppSolidA', String(Math.max(0.08, effectiveSolidA)));
     root.style.setProperty('--phAppBodyBlur', appBodyBlurPx + 'px');
 
     // ✅ 动态设置 appBody RGB（匹配当前主题底色）
