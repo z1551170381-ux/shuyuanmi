@@ -16051,8 +16051,16 @@ const npc = _wxGetChatTargetMeta(npcId);
       // ★ 来电弹窗（外层作用域，_writeAIReply / LifePush 均可直接调用）
       function _showIncomingCall(npcId, npcName, avatarHint, callType, onAccept, onDecline){
         try{
+          // 直接挂到 phShell 内，inset:0 铺满，overflow:hidden 正好裁成手机圆角形状
+          var _shellEl = null;
+          try{
+            var _rootEl = document.getElementById('meow-phone-root');
+            if(_rootEl) _shellEl = _rootEl.querySelector('.phShell');
+          }catch(e){}
+          if(!_shellEl){ console.warn('[IncomingCall] phShell not found'); return; }
+
           // 清除旧弹窗
-          document.querySelectorAll('.meowIncomingCall').forEach(function(e){ e.remove(); });
+          _shellEl.querySelectorAll('.meowIncomingCall').forEach(function(e){ e.remove(); });
 
           var avatarImg = (typeof phoneGetAvatar === 'function') ? phoneGetAvatar(npcId) : null;
           var avatarHtml = avatarImg
@@ -16060,21 +16068,10 @@ const npc = _wxGetChatTargetMeta(npcId);
             : '<span style="font-size:28px;font-weight:700;color:#fff;">'+((avatarHint||(npcName||'?')).charAt(0))+'</span>';
           var isVideo = (callType === 'video');
 
-          // 找到手机 shell 的视口坐标，让弹窗精准覆盖在手机上
-          var _shellRect = null;
-          try{
-            var _shellEl = document.querySelector('#meow-phone-root .phShell') || document.getElementById('meow-phone-root');
-            if(_shellEl) _shellRect = _shellEl.getBoundingClientRect();
-          }catch(e){}
-
           var overlay = document.createElement('div');
           overlay.className = 'meowIncomingCall';
-          // position:fixed + shell坐标，绕过所有 overflow:hidden
-          var _st = _shellRect
-            ? 'position:fixed;left:'+Math.round(_shellRect.left)+'px;top:'+Math.round(_shellRect.top)+'px;width:'+Math.round(_shellRect.width)+'px;height:'+Math.round(_shellRect.height)+'px;border-radius:38px;'
-            : 'position:fixed;top:10%;left:50%;transform:translateX(-50%);width:320px;border-radius:24px;';
-          overlay.style.cssText = _st
-            + 'z-index:2147483647;background:rgba(18,18,24,.96);backdrop-filter:blur(20px);'
+          overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:9999;'
+            + 'background:rgba(18,18,24,.96);backdrop-filter:blur(20px);'
             + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;'
             + 'opacity:1;pointer-events:auto;';
 
@@ -16091,7 +16088,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             +'<span style="font-size:12px;color:rgba(255,255,255,.55);">接听</span></div>'
             +'</div>';
 
-          document.body.appendChild(overlay);
+          _shellEl.appendChild(overlay);
           try{ if(navigator.vibrate) navigator.vibrate([300,200,300]); }catch(e){}
 
           function _dismiss(){ if(overlay.isConnected) overlay.remove(); }
