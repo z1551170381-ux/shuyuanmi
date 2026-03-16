@@ -16048,71 +16048,61 @@ const npc = _wxGetChatTargetMeta(npcId);
         }
       }
 
-      // ★ 来电弹窗（外层作用域，_writeAIReply / LifePush 均可直接调用）
+      // ★ 来电弹窗
       function _showIncomingCall(npcId, npcName, avatarHint, callType, onAccept, onDecline){
-        try{
-          // 直接挂到 phShell 内，inset:0 铺满，overflow:hidden 正好裁成手机圆角形状
-          var _shellEl = null;
-          try{
-            var _rootEl = document.getElementById('meow-phone-root');
-            if(_rootEl) _shellEl = _rootEl.querySelector('.phShell');
-          }catch(e){}
-          if(!_shellEl){ console.warn('[IncomingCall] phShell not found'); return; }
+        // 手机没打开就先打开，再重试
+        var _shell = document.querySelector('#meow-phone-root .phShell');
+        if(!_shell){
+          try{ MEOW.phone.showFull(); }catch(e){}
+          setTimeout(function(){ _showIncomingCall(npcId, npcName, avatarHint, callType, onAccept, onDecline); }, 700);
+          return;
+        }
+        // 清除旧来电
+        _shell.querySelectorAll('.meowIncomingCallOv').forEach(function(e){ e.remove(); });
 
-          // 清除旧弹窗
-          _shellEl.querySelectorAll('.meowIncomingCall').forEach(function(e){ e.remove(); });
+        var _img = (typeof phoneGetAvatar==='function') ? phoneGetAvatar(npcId) : null;
+        var _av = _img ? '<img src="'+_img+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>'
+                       : '<span style="font-size:32px;font-weight:700;color:#fff;">'+(npcName||'?').charAt(0)+'</span>';
 
-          var avatarImg = (typeof phoneGetAvatar === 'function') ? phoneGetAvatar(npcId) : null;
-          var avatarHtml = avatarImg
-            ? '<img src="'+avatarImg+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>'
-            : '<span style="font-size:28px;font-weight:700;color:#fff;">'+((avatarHint||(npcName||'?')).charAt(0))+'</span>';
-          var isVideo = (callType === 'video');
-
-          var overlay = document.createElement('div');
-          overlay.className = 'meowIncomingCall';
-          overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:9999;'
-            + 'background:rgba(18,18,24,.96);backdrop-filter:blur(20px);'
-            + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;'
-            + 'opacity:1;pointer-events:auto;transform:none;';
-
-          overlay.innerHTML =
-            '<div style="font-size:11px;color:rgba(255,255,255,.45);letter-spacing:1px;">'+(isVideo?'📹 视频通话来电':'📞 语音通话来电')+'</div>'
-            +'<div style="width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 0 0 8px rgba(255,255,255,.07);">'+avatarHtml+'</div>'
-            +'<div style="font-size:22px;font-weight:700;color:#fff;">'+(npcName||npcId||'')+'</div>'
-            +'<div style="display:flex;gap:56px;margin-top:8px;">'
+        var ov = document.createElement('div');
+        ov.className = 'meowIncomingCallOv';
+        ov.setAttribute('style',
+          'position:absolute !important;top:0 !important;left:0 !important;right:0 !important;bottom:0 !important;'
+          +'z-index:99999 !important;background:rgba(18,18,24,.95);'
+          +'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;');
+        ov.innerHTML = ''
+          +'<div style="font-size:11px;color:rgba(255,255,255,.4);letter-spacing:1.5px;">'+(callType==='video'?'📹 视频通话来电':'📞 语音通话来电')+'</div>'
+          +'<div style="width:84px;height:84px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 0 0 8px rgba(255,255,255,.06);">'+_av+'</div>'
+          +'<div style="font-size:22px;font-weight:700;color:#fff;">'+(npcName||npcId||'')+'</div>'
+          +'<div style="display:flex;gap:60px;margin-top:12px;">'
             +'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">'
-            +'<button data-icbtn="decline" style="width:64px;height:64px;border-radius:50%;background:#ef4444;border:0;font-size:28px;cursor:pointer;">📵</button>'
-            +'<span style="font-size:12px;color:rgba(255,255,255,.55);">拒接</span></div>'
+              +'<button data-ic="decline" style="width:64px;height:64px;border-radius:50%;background:#ef4444;border:0;font-size:28px;cursor:pointer;">📵</button>'
+              +'<span style="font-size:12px;color:rgba(255,255,255,.5);">拒接</span>'
+            +'</div>'
             +'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">'
-            +'<button data-icbtn="accept" style="width:64px;height:64px;border-radius:50%;background:#22c55e;border:0;font-size:28px;cursor:pointer;">📞</button>'
-            +'<span style="font-size:12px;color:rgba(255,255,255,.55);">接听</span></div>'
-            +'</div>';
+              +'<button data-ic="accept" style="width:64px;height:64px;border-radius:50%;background:#22c55e;border:0;font-size:28px;cursor:pointer;">📞</button>'
+              +'<span style="font-size:12px;color:rgba(255,255,255,.5);">接听</span>'
+            +'</div>'
+          +'</div>';
 
-          _shellEl.appendChild(overlay);
-          try{ if(navigator.vibrate) navigator.vibrate([300,200,300]); }catch(e){}
+        _shell.appendChild(ov);
+        try{ if(navigator.vibrate) navigator.vibrate([300,200,300]); }catch(e){}
 
-          function _dismiss(){ if(overlay.isConnected) overlay.remove(); }
-
-          var _autoHangup = setTimeout(function(){
-            if(overlay.isConnected){
-              _dismiss();
-              try{
-                pushLog(npcId, 'system', '📵 未接来电（'+(npcName||npcId)+'）');
-                bumpThread(npcId, { lastMsg:'📵 未接来电', lastTime:Date.now(), unread:1 });
-              }catch(e){}
-            }
-          }, 25000);
-
-          overlay.querySelector('[data-icbtn="accept"]').addEventListener('click', function(e){
-            e.stopPropagation(); clearTimeout(_autoHangup); _dismiss();
-            try{ if(onAccept) onAccept(); }catch(e2){}
-          });
-          overlay.querySelector('[data-icbtn="decline"]').addEventListener('click', function(e){
-            e.stopPropagation(); clearTimeout(_autoHangup); _dismiss();
-            try{ if(onDecline) onDecline(); }catch(e2){}
-          });
-
-        }catch(e){ console.warn('[IncomingCall] error:', e); }
+        var _done = false;
+        function _dismiss(){ if(!_done){ _done=true; if(ov.isConnected) ov.remove(); } }
+        var _hang = setTimeout(function(){
+          if(!_done){ _dismiss();
+            try{ pushLog(npcId,'system','📵 未接来电（'+(npcName||npcId)+'）'); bumpThread(npcId,{lastMsg:'📵 未接来电',lastTime:Date.now(),unread:1}); }catch(e){}
+          }
+        }, 25000);
+        ov.querySelector('[data-ic="accept"]').addEventListener('click', function(e){
+          e.stopPropagation(); clearTimeout(_hang); _dismiss();
+          try{ if(onAccept) onAccept(); }catch(e2){ console.warn('[IC]',e2); }
+        });
+        ov.querySelector('[data-ic="decline"]').addEventListener('click', function(e){
+          e.stopPropagation(); clearTimeout(_hang); _dismiss();
+          try{ if(onDecline) onDecline(); }catch(e2){}
+        });
       }
       try{ window._meowIncomingCall = _showIncomingCall; }catch(e){}
 
@@ -16317,19 +16307,16 @@ const npc = _wxGetChatTargetMeta(npcId);
                   _showIncomingCall(npcId, _npc_ck.name||npcId, _npc_ck.avatar||'', _isVideo?'video':'voice',
                     function(){ // 接听
                       try{
-                        ensureRoot();
                         var _ct2 = _isVideo ? 'video' : 'voice';
-                        var _alreadyHere = (state.app === 'chatDetail' && state.chatTarget === npcId);
-                        if(!_alreadyHere){ openChat(npcId); }
-                        // openChat 用了 root，说明 root 已设置，直接调 _cpStartCall
+                        if(state.app !== 'chatDetail' || state.chatTarget !== npcId){ openChat(npcId); }
                         setTimeout(function(){
                           try{
                             var _db2 = loadContactsDB();
                             var _npc2 = findContactById(_db2, npcId) || {id:npcId,name:String(npcId),avatar:''};
                             _cpStartCall(npcId, _npc2, _ct2);
-                          }catch(e){ console.warn('[IncomingCall] startCall err:',e); }
-                        }, _alreadyHere ? 50 : 700);
-                      }catch(e){ console.warn('[IncomingCall] accept err:',e); }
+                          }catch(e){ console.warn('[IC accept]',e); }
+                        }, 300);
+                      }catch(e){}
                     },
                     function(){ // 拒接
                       try{
