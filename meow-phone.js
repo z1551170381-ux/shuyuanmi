@@ -842,18 +842,8 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .phModalCard,
 #${ID}[data-theme="frost"] .wxEditMsgBox,
 #${ID}[data-theme="frost"] .wxConfirmBox,
-#${ID}[data-theme="frost"] .wxStatePanelCard{
-  background:
-    linear-gradient(180deg, rgba(255,255,255,var(--ph-frost-hi-a)), rgba(255,255,255,calc(var(--ph-frost-hi-a) * .30))),
-    rgba(255,255,255,var(--ph-frost-panel-a)) !important;
-  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) * .80)) !important;
-  box-shadow:0 4px 18px rgba(126,142,166,.05) !important;
-  backdrop-filter:blur(calc(var(--ph-glass-blur) * .55)) saturate(120%) !important;
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .55)) saturate(120%) !important;
-}
-
+#${ID}[data-theme="frost"] .wxStatePanelCard,
 #${ID}[data-theme="frost"] .phAppIcon,
-#${ID}[data-theme="frost"] .phDock,
 #${ID}[data-theme="frost"] .phSearch,
 #${ID}[data-theme="frost"] .wxChatRow,
 #${ID}[data-theme="frost"] .chatItemSwipeWrap .chatItemInner,
@@ -862,12 +852,12 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .wxContactItem,
 #${ID}[data-theme="frost"] .wxGroupHeader{
   background:
-    linear-gradient(180deg, rgba(255,255,255,calc(var(--ph-frost-hi-a) * .60)), rgba(255,255,255,calc(var(--ph-frost-hi-a) * .18))),
-    rgba(255,255,255,var(--ph-frost-surface-a)) !important;
-  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) * .70)) !important;
-  box-shadow:0 2px 10px rgba(126,142,166,.04);
-  backdrop-filter:blur(calc(var(--ph-glass-blur) * .45)) saturate(115%);
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .45)) saturate(115%);
+    linear-gradient(180deg, rgba(255,255,255,var(--ph-frost-hi-a)), rgba(255,255,255,calc(var(--ph-frost-hi-a) * .30))),
+    rgba(255,255,255,var(--ph-frost-panel-a)) !important;
+  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) * .80)) !important;
+  box-shadow:0 3px 14px rgba(126,142,166,.05) !important;
+  backdrop-filter:blur(calc(var(--ph-glass-blur) * .50)) saturate(118%) !important;
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .50)) saturate(118%) !important;
 }
 
 /* 导航栏/标签栏/其他功能栏 — 透明玻璃 */
