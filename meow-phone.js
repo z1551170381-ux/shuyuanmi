@@ -1575,19 +1575,18 @@ function ensureTuneStyle(){
   padding:0; flex-shrink:0; line-height:1; align-self:flex-start;
 }
 .meowIncomingCall{
-  position:fixed; top:0; left:50%; transform:translateX(-50%);
-  width:100%; max-width:420px;
+  position:absolute; top:0; left:0; right:0;
   background:rgba(18,18,24,.96); backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px);
   border-bottom-left-radius:24px; border-bottom-right-radius:24px;
-  border:1px solid rgba(255,255,255,.1); border-top:0;
-  padding:24px 20px 28px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+  padding:32px 20px 28px;
   box-shadow:0 12px 48px rgba(0,0,0,.6);
-  opacity:0; transform:translateX(-50%) translateY(-100%);
+  opacity:0; transform:translateY(-100%);
   transition:opacity .35s, transform .4s cubic-bezier(.22,1,.36,1);
-  pointer-events:none; z-index:999999;
+  pointer-events:none; z-index:9999;
   display:flex; flex-direction:column; align-items:center; gap:10px;
 }
-.meowIncomingCall.show{ opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
+.meowIncomingCall.show{ opacity:1; transform:translateY(0); pointer-events:auto; }
 .meowIncomingCall .icAvatar{
   width:72px; height:72px; border-radius:50%;
   background:rgba(255,255,255,.15); overflow:hidden;
@@ -16052,9 +16051,11 @@ const npc = _wxGetChatTargetMeta(npcId);
       // ★ 来电弹窗（外层作用域，_writeAIReply / LifePush 均可直接调用）
       function _showIncomingCall(npcId, npcName, avatarHint, callType, onAccept, onDecline){
         try{
-          var existingIC = doc.querySelector('.meowIncomingCall');
+          // 挂到手机 root 节点内，而不是 doc.body（避免弹到手机外面）
+          var _icRoot = doc.getElementById('meow-phone-root') || doc.body;
+          var existingIC = _icRoot.querySelector('.meowIncomingCall');
           if(existingIC) existingIC.remove();
-          var existingToast = doc.querySelector('.meowLifePushToast');
+          var existingToast = _icRoot.querySelector('.meowLifePushToast');
           if(existingToast) existingToast.remove();
 
           var el = doc.createElement('div');
@@ -16073,7 +16074,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             +   '<button class="icBtn" data-ic="accept"><div class="icBtnCircle accept">📞</div><span>接听</span></button>'
             + '</div>';
 
-          doc.body.appendChild(el);
+          _icRoot.appendChild(el);
           requestAnimationFrame(function(){ el.classList.add('show'); });
           try{ if(navigator.vibrate) navigator.vibrate([300,200,300]); }catch(e){}
 
@@ -16307,7 +16308,13 @@ const npc = _wxGetChatTargetMeta(npcId);
                     function(){ // 接听
                       try{
                         if(state.app !== 'chatDetail' || state.chatTarget !== npcId){ openChat(npcId); }
-                        setTimeout(function(){ try{ _cpStartCall(npcId, _npc_ck, _isVideo?'video':'voice'); }catch(e){} }, 400);
+                        setTimeout(function(){
+                          try{
+                            var _db_acc = loadContactsDB();
+                            var _npc_acc = findContactById(_db_acc, npcId) || { id:npcId, name:String(npcId), avatar:'' };
+                            _cpStartCall(npcId, _npc_acc, _isVideo?'video':'voice');
+                          }catch(e){}
+                        }, 400);
                       }catch(e){}
                     },
                     function(){ // 拒接
