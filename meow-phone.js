@@ -1213,6 +1213,10 @@ function ensureTuneStyle(){
   box-shadow: 0 2px 12px rgba(100,94,86,.06) !important;
   background: rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .06)) !important;
 }
+/* 通讯录：新的朋友/分组 header 后面紧跟的第一个 wxGroupAccordion 要拉开明显距离 */
+#${ID}[data-theme="frost"] .wxContactHeader + .wxGroupAccordion{
+  margin-top: 16px !important;
+}
 /* 通讯录组之间额外间距（好友/npc等分组之间留空隙）*/
 #${ID}[data-theme="frost"] .wxContactList .wxGroupAccordion{
   margin: 0 12px 6px !important;
@@ -2244,19 +2248,24 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   transition:transform .2s ease;
   transform-origin:top left;
 }
-/* frost shell：奶油磨砂玻璃 + 多层边框厚度感 */
+/* frost shell：磨砂玻璃边框质感 — 多层环，用暖奶油半透明色代替纯白，视觉上像磨砂玻璃切面 */
 #${ID}[data-theme="frost"] .phShell{
   background:
     linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.04)),
     var(--ph-bg-primary);
-  border-color: rgba(255,255,255,.60);
+  border: 1.5px solid rgba(255,255,255,.42);
   box-shadow:
-    0 0 0 1px rgba(120,110,100,.10),
-    0 0 0 3.5px rgba(255,255,255,.50),
-    0 0 0 5px rgba(120,110,100,.07),
-    inset 0 1.5px 0 rgba(255,255,255,.85),
-    inset 0 -1px 0 rgba(120,110,100,.06),
-    0 32px 80px rgba(100,94,86,.14), 0 10px 28px rgba(100,94,86,.08);
+    /* 最内层：细微暗边收口 */
+    inset 0 -1px 0 rgba(120,110,100,.05),
+    inset 0 1.5px 0 rgba(255,255,255,.75),
+    /* 第1圈：暖奶油半透明——这是玻璃折射层，不用纯白 */
+    0 0 0 3px rgba(235,228,220,.48),
+    /* 第2圈：半透深暗收口，让环不"飘"  */
+    0 0 0 4.5px rgba(140,128,115,.14),
+    /* 第3圈：外发光，给整体托底 */
+    0 0 0 6px rgba(220,215,208,.18),
+    /* 环境阴影 */
+    0 28px 72px rgba(100,94,86,.16), 0 10px 28px rgba(100,94,86,.10);
 }
 /* modern shell */
 #${ID}[data-theme="modern"] .phShell{
