@@ -1680,21 +1680,23 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 /* --- pill mode --- */
 #${ID}.pill{
   display:flex !important;
-  width:56px; height:56px; border-radius:50%;
-  background:var(--ph-accent-grad);
+  padding:8px 16px; height:auto; width:auto; border-radius:20px;
+  background:rgba(255,255,255,.90);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
   align-items:center; justify-content:center;
-  cursor:pointer;
-  box-shadow:0 6px 24px rgba(99,102,241,.45);
-  transition:transform .15s, box-shadow .2s;
+  gap:8px; cursor:pointer; font-weight:500;
+  border:1px solid rgba(255,255,255,.40);
+  box-shadow:0 4px 15px rgba(0,0,0,.10);
+  transition:transform .3s ease, box-shadow .3s ease;
   animation:phPillPulse 3s ease-in-out infinite;
 }
-#${ID}.pill:hover{ transform:scale(1.1); }
+#${ID}.pill:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.15); }
 #${ID}.pill:active{ transform:scale(.95); }
 #${ID}.pill .phShell{ display:none; }
-#${ID}.pill .phPillIcon{ display:flex; font-size:24px; color:#fff; pointer-events:none; }
+#${ID}.pill .phPillIcon{ display:flex; font-size:20px; color:var(--ph-accent,#555); pointer-events:none; }
 @keyframes phPillPulse{
-  0%,100%{ box-shadow:0 6px 24px rgba(99,102,241,.45); }
-  50%{ box-shadow:0 6px 28px rgba(99,102,241,.6); }
+  0%,100%{ box-shadow:0 4px 15px rgba(0,0,0,.10); }
+  50%{ box-shadow:0 6px 20px rgba(0,0,0,.18); }
 }
 
 /* ---------- Phone Shell ---------- */
@@ -1702,13 +1704,14 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   width:375px; height:750px; max-width:96vw; max-height:90vh;
   border-radius:38px; position:relative; overflow:hidden;
   background:var(--ph-bg-primary);
-  border:1px solid var(--ph-glass-border);
+  backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.50);
   box-shadow:
-    0 0 0 1px rgba(0,0,0,.2),
-    inset 0 1px 0 rgba(255,255,255,.08),
-    0 24px 80px var(--ph-shadow);
-  transition:transform .2s ease;
-  transform-origin:top left;
+    0 20px 40px var(--ph-shadow),
+    0 1px 3px rgba(0,0,0,.05),
+    inset 0 1px 0 rgba(255,255,255,.80);
+  transition:transform .35s cubic-bezier(0.25,0.8,0.25,1);
+  transform-origin:bottom right;
 }
 /* frost shell：精细高光 + 阴影（GPT-aligned） */
 #${ID}[data-theme="frost"] .phShell{
@@ -2019,13 +2022,14 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   box-shadow:0 4px 16px var(--ph-shadow);
   position:relative;
 }
-#${ID} .phAppIcon:hover{ background:var(--ph-glass-strong); }
+#${ID} .phAppIcon:hover{ background:var(--ph-glass-strong); transform:translateY(-2px) scale(1.05); filter:brightness(1.1); }
 #${ID} .phAppIcon:active{ transform:scale(.9); }
 #${ID} .phAppIcon .ai{
-  width:36px; height:36px; border-radius:10px;
+  width:36px; height:36px; border-radius:12px;
   display:flex; align-items:center; justify-content:center;
   font-size:18px; line-height:1; color:#fff;
   background:var(--ph-accent-grad);
+  box-shadow:0 4px 10px rgba(0,0,0,.08);
   opacity:0.90;
 }
 #${ID} .phAppIcon[data-app="chats"] .ai{ background:var(--ph-icon-tint, linear-gradient(135deg,rgba(123,158,168,.75),rgba(154,184,194,.65))); }
@@ -2036,6 +2040,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .phAppIcon .at{
   font-size:10.5px; color:var(--ph-text-sub); font-weight:500;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:90%;
+  text-shadow:0 1px 2px rgba(255,255,255,.8);
 }
 
 /* ---------- Search bar ---------- */
