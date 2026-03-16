@@ -1255,20 +1255,20 @@ function ensureTuneStyle(){
 }
 #${ID}[data-theme="frost"] .wxDiscoverItem{
   border-radius: 16px !important;
-  margin: 0 0 6px 0 !important;
+  margin: 0 0 5px 0 !important;
   padding: 10px 14px !important;
   border-bottom: none !important;
-  border: 1px solid rgba(255,255,255,.82) !important;
-  background: rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .08)) !important;
-  box-shadow: 0 2px 10px rgba(100,94,86,.05), inset 0 1px 0 rgba(255,255,255,.90) !important;
+  border: none !important;
+  background: rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .06)) !important;
+  box-shadow: none !important;
   min-height: 0;
 }
 #${ID}[data-theme="frost"] .wxDiscoverItem:last-child{
   border-bottom: none !important;
-  margin-bottom: 8px !important;
+  margin-bottom: 6px !important;
 }
 #${ID}[data-theme="frost"] .wxDiscoverItem:hover{
-  background: rgba(255,255,255,.88) !important;
+  background: rgba(255,255,255,.32) !important;
 }
 
 /* 发现页文字精致小巧 */
@@ -1460,16 +1460,14 @@ function ensureTuneStyle(){
 }
 
 /* —— 11. 柔化白边 — 全局降低 frost 玻璃卡片描边和高光强度 —— */
-/* 将所有卡片的 border 透明度从 .80-.92 统一降到更柔和的 .38-.48 */
 #${ID}[data-theme="frost"] .phCard,
 #${ID}[data-theme="frost"] .settingSection,
 #${ID}[data-theme="frost"] .wxDiscoverGroup,
 #${ID}[data-theme="frost"] .wxGroupAccordion,
-#${ID}[data-theme="frost"] .wxDiscoverItem,
 #${ID}[data-theme="frost"] .wxChatRow,
 #${ID}[data-theme="frost"] .chatItemSwipeWrap .chatItemInner{
-  border-color: rgba(255,255,255,.38) !important;
-  box-shadow: 0 2px 12px rgba(100,94,86,.06) !important;
+  border-color: rgba(255,255,255,.28) !important;
+  box-shadow: 0 1px 8px rgba(100,94,86,.05) !important;
 }
 /* 顶部导航栏描边柔化（phAppBar only - wxTopBar is controlled by phAppA above）*/
 #${ID}[data-theme="frost"] .phAppBar{
@@ -2268,18 +2266,16 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
    to show only the ring area. It has backdrop-filter so the ring
    actually blurs whatever is behind the phone — real frosted glass. */
 /* ---------- Frosted Ring Layer ---------- */
-/* 比 phShell 大一圈 (每边+10px)，z-index 低于 phShell
-   phShell 压在上面盖住中间，只有四周露出的 10px 环是可见的
-   那圈环的 backdrop-filter 才真正模糊酒馆页面背景 */
+/* 比 phShell 大一圈 (每边+5px)，z-index 低于 phShell */
 #${ID} .phRingLayer{
   display: none;
   position: absolute;
-  width: calc(375px + 20px); height: calc(750px + 20px);
-  max-width: calc(96vw + 20px); max-height: calc(90vh + 20px);
+  width: calc(375px + 10px); height: calc(750px + 10px);
+  max-width: calc(96vw + 10px); max-height: calc(90vh + 10px);
   left: 50%; top: 50%;
   transform: translate(-50%, -50%);
-  border-radius: 48px;
-  z-index: 1;           /* phShell 设为 z-index:2 确保压住此层 */
+  border-radius: 43px;
+  z-index: 1;
   pointer-events: none;
   background: rgba(228,216,200,.42);
   backdrop-filter: blur(20px) saturate(150%) brightness(1.08);
@@ -2290,22 +2286,22 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID}.full .phRingLayer{ display: block; }
 
-/* frost: 暖象牙色环 */
+/* frost: 暖象牙色细环 */
 #${ID}[data-theme="frost"] .phRingLayer{
-  border-radius: 60px;
+  border-radius: 55px;
   background:
-    linear-gradient(160deg, rgba(248,238,224,.60) 0%, rgba(228,216,200,.44) 50%, rgba(210,198,182,.52) 100%);
+    linear-gradient(160deg, rgba(248,238,224,.55) 0%, rgba(228,216,200,.40) 50%, rgba(210,198,182,.48) 100%);
   box-shadow:
-    0 0 0 1.5px rgba(180,165,148,.18),
+    0 0 0 1px rgba(180,165,148,.15),
     0 28px 72px rgba(100,94,86,.16);
 }
 
 /* mini mode */
 #${ID}.mini .phRingLayer{
   display: block;
-  border-radius: 38px;
-  width: calc(100% + 20px); height: calc(100% + 20px);
-  left: -10px; top: -10px; transform: none;
+  border-radius: 33px;
+  width: calc(100% + 10px); height: calc(100% + 10px);
+  left: -5px; top: -5px; transform: none;
 }
 
 /* ---------- Drag handle ---------- */
@@ -11516,19 +11512,19 @@ ${lines}
           } else {
             presets.forEach((p,idx)=>{
               const isActive = p.id === activeId;
-              html += `<div style="margin-bottom:10px;padding:14px;border-radius:14px;background:${isActive?'rgba(7,193,96,.08)':'rgba(255,255,255,.7)'};border:1px solid ${isActive?'rgba(7,193,96,.3)':'rgba(0,0,0,.06)'};cursor:pointer;" data-act="apiEditPreset" data-pidx="${idx}">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                  <span style="font-size:14px;font-weight:600;color:var(--ph-text);flex:1;">${_esc(p.name)}${isActive?' <span style="font-size:10px;color:var(--ph-accent, #07c160);">● 使用中</span>':''}</span>
-                  <button data-act="apiActivate" data-pid="${_esc(p.id)}" style="padding:4px 10px;border-radius:8px;border:1px solid ${isActive?'var(--ph-accent, #07c160)':'rgba(0,0,0,.1)'};background:${isActive?'var(--ph-accent, #07c160)':'#fff'};color:${isActive?'#fff':'var(--ph-text-sub)'};font-size:11px;cursor:pointer;">${isActive?'已启用':'启用'}</button>
+              html += `<div style="margin-bottom:8px;padding:12px 14px;border-radius:16px;background:${isActive?'rgba(var(--ph-accent-rgb,125,155,138),.12)':'var(--ph-glass)'};border:1px solid ${isActive?'var(--ph-accent, rgba(125,155,138,.5))':'var(--ph-glass-border)'};cursor:pointer;backdrop-filter:blur(var(--ph-glass-blur));-webkit-backdrop-filter:blur(var(--ph-glass-blur));" data-act="apiEditPreset" data-pidx="${idx}">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                  <span style="font-size:13px;font-weight:500;color:var(--ph-text);flex:1;">${_esc(p.name)}${isActive?' <span style="font-size:10px;color:var(--ph-accent, #07c160);">● 使用中</span>':''}</span>
+                  <button data-act="apiActivate" data-pid="${_esc(p.id)}" style="padding:3px 12px;border-radius:999px;border:1px solid ${isActive?'var(--ph-accent, #07c160)':'var(--ph-glass-border)'};background:${isActive?'var(--ph-accent, #07c160)':'var(--ph-glass)'};color:${isActive?'#fff':'var(--ph-text-sub)'};font-size:11px;cursor:pointer;">${isActive?'已启用':'启用'}</button>
                 </div>
                 <div style="font-size:11px;color:var(--ph-text-dim);word-break:break-all;">URL: ${_esc((p.baseUrl||'').slice(0,60)||'未设置')}</div>
                 <div style="font-size:11px;color:var(--ph-text-dim);">Model: ${_esc(p.model||'未设置')}</div>
               </div>`;
             });
           }
-          html += `<div style="display:flex;gap:8px;margin-top:14px;">
-            <button data-act="apiAddPreset" style="flex:1;padding:12px;border-radius:12px;border:1px solid rgba(0,0,0,.1);background:#fff;color:var(--ph-text);font-size:13px;cursor:pointer;">+ 新建预设</button>
-            <button data-act="apiExportAll" style="flex:1;padding:12px;border-radius:12px;border:1px solid rgba(0,0,0,.1);background:#fff;color:var(--ph-text);font-size:13px;cursor:pointer;">导出预设</button>
+          html += `<div style="display:flex;gap:8px;margin-top:12px;">
+            <button data-act="apiAddPreset" style="flex:1;padding:10px;border-radius:999px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:13px;cursor:pointer;backdrop-filter:blur(var(--ph-glass-blur));">+ 新建预设</button>
+            <button data-act="apiExportAll" style="flex:1;padding:10px;border-radius:999px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:13px;cursor:pointer;backdrop-filter:blur(var(--ph-glass-blur));">导出预设</button>
           </div>`;
 
           // === 通道分配 ===
@@ -11536,11 +11532,11 @@ ${lines}
             var bgActiveId = data.backgroundActiveId || '';
             var bgPresetName = '与聊天相同';
             if (bgActiveId){ var bgP = presets.find(function(pp){ return pp.id === bgActiveId; }); if(bgP) bgPresetName = bgP.name; else bgActiveId = ''; }
-            html += `<div style="margin-top:18px;padding:14px;border-radius:14px;background:rgba(59,130,246,.04);border:1px solid rgba(59,130,246,.12);">
-              <div style="font-size:13px;font-weight:700;color:var(--ph-text);margin-bottom:10px;">🔀 通道分配</div>
-              <div style="font-size:11px;color:var(--ph-text-dim);margin-bottom:10px;line-height:1.5;">三条通道各用独立 AbortController，互不干扰。<br/>聊天和朋友圈使用「启用」的预设；总结/资讯可选用单独预设（按次计费更省）。</div>
+            html += `<div style="margin-top:14px;padding:12px 14px;border-radius:16px;background:var(--ph-glass);border:1px solid var(--ph-glass-border);backdrop-filter:blur(var(--ph-glass-blur));-webkit-backdrop-filter:blur(var(--ph-glass-blur));">
+              <div style="font-size:13px;font-weight:500;color:var(--ph-text);margin-bottom:8px;">🔀 通道分配</div>
+              <div style="font-size:11px;color:var(--ph-text-dim);margin-bottom:8px;line-height:1.5;">三条通道各用独立 AbortController，互不干扰。<br/>聊天和朋友圈使用「启用」的预设；总结/资讯可选用单独预设（按次计费更省）。</div>
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                <span style="font-size:12px;color:var(--ph-text);min-width:90px;font-weight:600;">💬 聊天/朋友圈</span>
+                <span style="font-size:12px;color:var(--ph-text);min-width:90px;font-weight:500;">💬 聊天/朋友圈</span>
                 <span style="font-size:11px;color:var(--ph-accent, #07c160);">${_esc(presets.find(function(pp){return pp.id===activeId;})?presets.find(function(pp){return pp.id===activeId;}).name:'未设置')}</span>
               </div>
               <div style="display:flex;align-items:center;gap:8px;">
