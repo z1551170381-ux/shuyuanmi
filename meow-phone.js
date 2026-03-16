@@ -16209,39 +16209,67 @@ const npc = _wxGetChatTargetMeta(npcId);
         }
 
         // ★ 检测 NPC 消息里是否主动提出打电话/语音/连麦 → 延迟弹来电弹窗
+        // 检测范围：当前这条 + 最近10条 them 消息（防止关键词出现在上一条但当前条没有）
         try{
-          var _callKeywords = /打电话|语音通话|语音吧|连麦|视频通话|视频吧|给你打|打给你|接一下|接电话|通个话|打过去|打过来|要不要打|要不打个/;
-          if(_callKeywords.test(cleanText)){
-            var _db_ck = loadContactsDB();
-            var _npc_ck = findContactById(_db_ck, npcId) || { id:npcId, name:String(npcId), avatar:'' };
-            var _isVideo = /视频/.test(cleanText);
-            setTimeout(function(){
-              if(typeof _showIncomingCall === 'function'){
-                _showIncomingCall(npcId, _npc_ck.name||npcId, _npc_ck.avatar||'', _isVideo?'video':'voice',
-                  function(){ // 接听
-                    try{
-                      if(state.app !== 'chatDetail' || state.chatTarget !== npcId){ openChat(npcId); }
-                      setTimeout(function(){ try{ _cpStartCall(npcId, _npc_ck, _isVideo?'video':'voice'); }catch(e){} }, 400);
-                    }catch(e){}
-                  },
-                  function(){ // 拒接 → NPC发一条"没事哦"
-                    try{
-                      pushLog(npcId, 'system', '📵 未接来电（'+(_npc_ck.name||npcId)+'）');
-                      bumpThread(npcId, { lastMsg:'📵 未接来电', lastTime:Date.now(), unread:1 });
-                      setTimeout(function(){
-                        var _declineTexts = ['没事，你在忙吧', '没关系的', '……不接也行', '下次吧'];
-                        var _dt = _declineTexts[Math.floor(Math.random()*_declineTexts.length)];
-                        if(typeof _insertOnlineProactiveMessage==='function'){
-                          var _ins2 = _insertOnlineProactiveMessage(npcId, _dt, { kind:'random' });
-                          if(_ins2){ bumpThread(npcId, { lastMsg:_dt, lastTime:_ins2.ts, unread:1 }); }
-                        }
-                        if(state.chatTarget===npcId && state.app==='chatDetail'){ try{ renderChatDetail(npcId); }catch(e){} }
-                      }, 5000 + Math.random()*5000);
-                    }catch(e){}
+          var _callKeywords = /打电话|语音通话|语音吧|连麦|视频通话|视频吧|给你打|打给你|接一下|接电话|通个话|打过去|打过来|要不要打|要不打个|\[发起通话\]/;
+          // 冷却：10分钟内不重复弹
+          var _callCooldownKey = 'meow_call_trigger_' + String(npcId);
+          var _lastCallTrigger = 0;
+          try{ _lastCallTrigger = parseInt(localStorage.getItem(_callCooldownKey)||'0')||0; }catch(e){}
+          var _callCooldownOk = Date.now() - _lastCallTrigger > 10 * 60 * 1000;
+
+          if(_callCooldownOk){
+            // 先检测当前这条
+            var _hitText = '';
+            if(_callKeywords.test(cleanText)){
+              _hitText = cleanText;
+            } else {
+              // 再扫最近10条 them 消息
+              try{
+                var _recentLog = _getLogForModeBranch ? _getLogForModeBranch(npcId, _getChatMode(npcId)) : [];
+                var _recentThem = _recentLog.filter(function(m){ return m.role==='them' && !m.recalled; }).slice(-10);
+                for(var _ri=_recentThem.length-1; _ri>=0; _ri--){
+                  if(_callKeywords.test(_recentThem[_ri].text||'')){
+                    _hitText = _recentThem[_ri].text;
+                    break;
                   }
-                );
-              }
-            }, 2000 + Math.random()*2000); // 2~4秒后弹，模拟拨号延迟
+                }
+              }catch(e){}
+            }
+
+            if(_hitText){
+              try{ localStorage.setItem(_callCooldownKey, String(Date.now())); }catch(e){}
+              var _db_ck = loadContactsDB();
+              var _npc_ck = findContactById(_db_ck, npcId) || { id:npcId, name:String(npcId), avatar:'' };
+              var _isVideo = /视频/.test(_hitText);
+              setTimeout(function(){
+                if(typeof _showIncomingCall === 'function'){
+                  _showIncomingCall(npcId, _npc_ck.name||npcId, _npc_ck.avatar||'', _isVideo?'video':'voice',
+                    function(){ // 接听
+                      try{
+                        if(state.app !== 'chatDetail' || state.chatTarget !== npcId){ openChat(npcId); }
+                        setTimeout(function(){ try{ _cpStartCall(npcId, _npc_ck, _isVideo?'video':'voice'); }catch(e){} }, 400);
+                      }catch(e){}
+                    },
+                    function(){ // 拒接
+                      try{
+                        pushLog(npcId, 'system', '📵 未接来电（'+(_npc_ck.name||npcId)+'）');
+                        bumpThread(npcId, { lastMsg:'📵 未接来电', lastTime:Date.now(), unread:1 });
+                        setTimeout(function(){
+                          var _declineTexts = ['没事，你在忙吧', '没关系的', '……不接也行', '下次吧'];
+                          var _dt = _declineTexts[Math.floor(Math.random()*_declineTexts.length)];
+                          if(typeof _insertOnlineProactiveMessage==='function'){
+                            var _ins2 = _insertOnlineProactiveMessage(npcId, _dt, { kind:'random' });
+                            if(_ins2){ bumpThread(npcId, { lastMsg:_dt, lastTime:_ins2.ts, unread:1 }); }
+                          }
+                          if(state.chatTarget===npcId && state.app==='chatDetail'){ try{ renderChatDetail(npcId); }catch(e){} }
+                        }, 5000 + Math.random()*5000);
+                      }catch(e){}
+                    }
+                  );
+                }
+              }, 2000 + Math.random()*2000);
+            }
           }
         }catch(e){}
       }
@@ -17285,7 +17313,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         if (_isOfflineMode){
           parts.push('---\n【回复格式（线下模式）】\n直接写小说段落，无需任何特殊标记。\n- 旁白/动作/环境：用 *星号包裹*\n- 台词：用"引号"\n- 不要输出任何代码、标签或符号，只有纯文字\n- 2~4段，段间空行\n\n【状态同步（末尾必加）】\n[状态:穿着=...,正在=...,心声=...]\n[属性:心情+5]（只写变化的）' + _attrHint + _customEntryHint);
         } else {
-          parts.push('---\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息的长度随机变化：有的很短（1-5字，如"嗯""好的""？"），有的中等（一两句话），偶尔有一条较长的。\n模拟真实手机聊天的节奏感——不要把所有内容压缩成一段话。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长\n\n示例格式：\n嗯|||怎么了？|||你今天怎么这么安静\n\n【状态同步（必须执行）】\n每次回复时，你必须在最后一条消息的末尾附加两个标记（标记不会显示给用户）。\n\n标记1 - 状态描述：根据当前对话内容和场景，更新你的穿着、正在做什么、以及内心独白：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。\n\n标记2 - 属性变化：根据对话中发生的事情，输出属性的变化量（正数为增加，负数为减少）：\n[属性:属性名+数值,属性名-数值]\n可用属性：精力、心情、健康、饱腹、如厕、娱乐（值域0-100，只写有变化的）\n变化量要合理：吃饭→饱腹+30~50，聊天开心→心情+5~15，运动→精力-10~20、健康+5\n如果对话没有涉及属性变化（纯闲聊），可以只写 [属性:心情+3] 之类的微调。' + _attrHint + '\n\n完整示例：\n吃饱了，舒服～ [状态:穿着=家居服,正在=收拾碗筷,心声=泡面也还行] [属性:饱腹+40,心情+5,娱乐-3]' + _customEntryHint + voiceInstructions + stkForAI);
+          parts.push('---\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息的长度随机变化：有的很短（1-5字，如"嗯""好的""？"），有的中等（一两句话），偶尔有一条较长的。\n模拟真实手机聊天的节奏感——不要把所有内容压缩成一段话。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长的\n\n示例格式：\n嗯|||怎么了？|||你今天怎么这么安静\n\n【通话触发指令】\n当你想主动发起语音通话时（如想听对方声音、深夜想连麦、情绪激动想打电话），在消息里自然说出意图，必须使用以下词语之一才能触发来电：\n"打电话" / "语音吧" / "连麦" / "给你打" / "打给你" / "接一下" / "接电话" / "通个话" / "要不打个电话"\n例如："睡不着……要不打给你？" 或 "我想听你声音，语音吧"\n想发起视频通话时，说"视频通话" 或 "视频吧"。\n⚠ 不要无故触发，只在情绪/场景自然需要时才用。\n\n【状态同步（必须执行）】\n每次回复时，你必须在最后一条消息的末尾附加两个标记（标记不会显示给用户）。\n\n标记1 - 状态描述：根据当前对话内容和场景，更新你的穿着、正在做什么、以及内心独白：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。\n\n标记2 - 属性变化：根据对话中发生的事情，输出属性的变化量（正数为增加，负数为减少）：\n[属性:属性名+数值,属性名-数值]\n可用属性：精力、心情、健康、饱腹、如厕、娱乐（值域0-100，只写有变化的）\n变化量要合理：吃饭→饱腹+30~50，聊天开心→心情+5~15，运动→精力-10~20、健康+5\n如果对话没有涉及属性变化（纯闲聊），可以只写 [属性:心情+3] 之类的微调。' + _attrHint + '\n\n完整示例：\n吃饱了，舒服～ [状态:穿着=家居服,正在=收拾碗筷,心声=泡面也还行] [属性:饱腹+40,心情+5,娱乐-3]' + _customEntryHint + voiceInstructions + stkForAI);
         }
 
         return parts.join('\n\n');
