@@ -3727,12 +3727,13 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 /* 有背景图时加半透明遮罩提升文字可读性 */
 #${ID} .wxOfflineWrap[style*="background-image"]{ background-color:rgba(0,0,0,.25); background-blend-mode:darken; }
 #${ID} .wxOfflineParagraph{
-  font-size:13.5px; line-height:1.85; color:rgba(255,255,255,.92);
-  margin-bottom:16px; text-indent:0; position:relative;
+  font-size:14px; line-height:2.0; color:rgba(255,255,255,.92);
+  margin-bottom:20px; text-indent:0; position:relative;
   animation:phBubbleIn .25s ease-out;
-  padding:10px 14px; border-radius:10px;
+  padding:12px 16px; border-radius:12px;
   background:rgba(0,0,0,.35); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
   text-shadow:0 1px 3px rgba(0,0,0,.5);
+  letter-spacing:0.03em;
 }
 /* 无背景图时回退到浅色方案 */
 #${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph{
@@ -3749,8 +3750,9 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID} .wxOfflineParagraph .rpText{ display:block; }
 #${ID} .wxOfflineParagraph .rpAction{
-  font-style:italic; display:block; margin:4px 0;
-  color:rgba(255,255,200,.65); font-size:12.5px; line-height:1.7;
+  font-style:normal; display:block; margin:6px 0;
+  color:rgba(255,255,200,.72); font-size:13px; line-height:1.9;
+  letter-spacing:0.02em;
 }
 #${ID} .wxOfflineTimeSep{
   text-align:center; font-size:11px; color:rgba(255,255,255,.45);
@@ -3783,9 +3785,10 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 /* 环境描写块（舞台指示） */
 #${ID} .wxOfflineParagraph.rpStageDir{
-  border-left:0; text-align:center; font-style:italic;
-  color:rgba(255,255,255,.6); background:rgba(0,0,0,.2);
-  font-size:12px; line-height:1.7; padding:8px 14px;
+  border-left:0; text-align:center; font-style:normal;
+  color:rgba(255,255,255,.6); background:rgba(0,0,0,.18);
+  font-size:12.5px; line-height:1.85; padding:8px 16px;
+  letter-spacing:0.04em;
 }
 #${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph.rpStageDir{
   color:rgba(100,90,70,.55); background:rgba(0,0,0,.03);
@@ -25493,9 +25496,20 @@ function _injectCustomCSS(npcId){
       css += styles.onlineStyle.css || '';
     }
     if (css.trim()){
+      // 自动给每条规则加 #ID 前缀，使权重与内置规则相同
+      var prefixed = css.replace(/([^{}]+)\{/g, function(match, sel){
+        var trimmed = sel.trim();
+        // 跳过 @media / @keyframes / 已含 ID 的规则
+        if(/^@/.test(trimmed) || trimmed.indexOf(ID) !== -1) return match;
+        var parts = trimmed.split(',').map(function(s){
+          s = s.trim();
+          return s ? '#'+ID+' '+s : s;
+        });
+        return parts.join(', ')+'{';
+      });
       var st = doc.createElement('style');
       st.id = 'meow-phone-custom-css';
-      st.textContent = css;
+      st.textContent = prefixed;
       root.appendChild(st);
     }
   }catch(e){}
