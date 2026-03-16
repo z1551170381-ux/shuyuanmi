@@ -16075,7 +16075,8 @@ const npc = _wxGetChatTargetMeta(npcId);
             : 'position:fixed;top:10%;left:50%;transform:translateX(-50%);width:320px;border-radius:24px;';
           overlay.style.cssText = _st
             + 'z-index:2147483647;background:rgba(18,18,24,.96);backdrop-filter:blur(20px);'
-            + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
+            + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;'
+            + 'opacity:1;pointer-events:auto;';
 
           overlay.innerHTML =
             '<div style="font-size:11px;color:rgba(255,255,255,.45);letter-spacing:1px;">'+(isVideo?'📹 视频通话来电':'📞 语音通话来电')+'</div>'
