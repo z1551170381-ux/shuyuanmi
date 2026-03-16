@@ -16105,6 +16105,13 @@ const npc = _wxGetChatTargetMeta(npcId);
         });
       }
       try{ window._meowIncomingCall = _showIncomingCall; }catch(e){}
+      try{ window._meowStartCall = function(npcId, callType){
+        try{
+          var _db = loadContactsDB();
+          var _npc = findContactById(_db, npcId) || {id:npcId, name:String(npcId), avatar:''};
+          _cpStartCall(npcId, _npc, callType || 'voice');
+        }catch(e){ console.warn('[meowStartCall]', e); }
+      }; }catch(e){}
 
       // ===== _writeAIReply：统一写入 AI 回复气泡 =====
       async function _writeAIReply(npcId, npc, rawText, ts){
@@ -16311,9 +16318,7 @@ const npc = _wxGetChatTargetMeta(npcId);
                         if(state.app !== 'chatDetail' || state.chatTarget !== npcId){ openChat(npcId); }
                         setTimeout(function(){
                           try{
-                            var _db2 = loadContactsDB();
-                            var _npc2 = findContactById(_db2, npcId) || {id:npcId,name:String(npcId),avatar:''};
-                            _cpStartCall(npcId, _npc2, _ct2);
+                            if(typeof window._meowStartCall==='function') window._meowStartCall(npcId, _ct2);
                           }catch(e){ console.warn('[IC accept]',e); }
                         }, 300);
                       }catch(e){}
@@ -25143,12 +25148,12 @@ function bindPageScroll(){
                       _showIncomingCall(nId, _npc5.name||nId, _npc5.avatar||'', 'voice',
                         function(){ // 接听
                           try{
-                            ensureRoot();
-                            var _alreadyHere2 = (state.app === 'chatDetail' && state.chatTarget === nId);
-                            if(!_alreadyHere2){ openChat(nId); }
+                            if(state.app !== 'chatDetail' || state.chatTarget !== nId){ openChat(nId); }
                             setTimeout(function(){
-                              try{ _cpStartCall(nId, _npc5, 'voice'); }catch(e){ console.warn('[IncomingCall]',e); }
-                            }, _alreadyHere2 ? 50 : 700);
+                              try{
+                                if(typeof window._meowStartCall==='function') window._meowStartCall(nId, 'voice');
+                              }catch(e){}
+                            }, 300);
                           }catch(e){}
                         },
                         function(){ // 拒接 → 留一条未接来电 + 随后发一条"你怎么不接"风格文字
