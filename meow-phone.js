@@ -4578,13 +4578,15 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   display:flex; align-items:flex-end; justify-content:center;
   animation:mapFadeIn .2s ease;
 }
-/* 毛玻璃底层：只覆盖卡片区域高度，不变黑 */
+/* 毛玻璃底层：白色半透明+强力模糊 */
 #${ID} .mapDetailBlurBg{
   position:absolute; bottom:0; left:0; right:0;
   height:72%;
-  backdrop-filter:blur(calc(var(--phAppBlur,25px) * 1.6)) saturate(140%);
-  -webkit-backdrop-filter:blur(calc(var(--phAppBlur,25px) * 1.6)) saturate(140%);
+  background:rgba(245,242,236,0.52);
+  backdrop-filter:blur(calc(var(--phAppBlur,25px)*2.0)) saturate(150%) brightness(1.04);
+  -webkit-backdrop-filter:blur(calc(var(--phAppBlur,25px)*2.0)) saturate(150%) brightness(1.04);
   pointer-events:none; z-index:0;
+  border-radius:22px 22px 0 0;
 }
 @keyframes mapFadeIn{ from{opacity:0;} to{opacity:1;} }
 #${ID} .mapDetailCard{
@@ -27740,10 +27742,35 @@ function _mapShowLandmarkDetail(container, mapData, lmId, npcId){
   html += '<div class="mapDetailClose" data-act="mapDetailClose">✕</div>';
   html += '<div class="mapDetailHead">';
   // 地标详情图标 - SVG扁平图标（受内部图标色控制）
-  var _detailIconColor = 'var(--ph-icon-inner-tint, #9E8875)';
-  var _detSvgMap = {'🌳':'M7 2C7 2 4 5 4 8a3 3 0 006 0C10 5 7 2 7 2zM7 8v6M5 14h4','🏠':'M2 8l5-5 5 5v6H2zM5 14V10h4v4','🏫':'M1 8l6-6 6 6v6H1zM5 14v-4h4v4','🏪':'M1 5h12v9H1zM1 5l2-3h8l2 3M5 14v-4h4v4','🌊':'M1 8c2-2 4-2 5 0s3 2 5 0M1 11c2-2 4-2 5 0s3 2 5 0','⛺':'M7 2L1 12h12zM4 12l3-7 3 7','🌅':'M1 9h12M7 9V3M4 6l3-3 3 3','🏛':'M1 12h12M2 12V7h10v5M1 7l6-5 6 5M5 12V8h2v4M9 12V8h2v4','☕':'M3 5h8v6a4 4 0 01-8 0zM11 7h1a2 2 0 010 4h-1','🍰':'M1 8h12M7 8V3l3 3-3 3M4 14h8v-6H4z','🛒':'M1 1h2l2 8h7l2-6H4','⭐':'M7 1l1.8 3.6L13 5.3l-3 2.9.7 4.1L7 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7z','🎪':'M7 1v12M2 5h10M2 9h10M1 13h12','🏥':'M2 4h10v9H2zM7 6v5M4.5 8.5h5','🌲':'M7 1L3 7h2L2 12h5v2h0v-2h5L9 7h2z','🎋':'M7 2v12M5 6c0 0 2-1 4-1M5 9c0 0 2 1 4 0'};
-  var _detPath = _detSvgMap[lm.emoji] || 'M7 3a4 4 0 100 8 4 4 0 000-8z';
-  html += '<span class="mapDetailEmoji"><svg viewBox="0 0 14 14" width="40" height="40" fill="none" stroke="'+_detailIconColor+'" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="'+_detPath+'"/></svg></span>';
+  var _detShapes = {
+    '🏛️': '<rect x="2" y="11" width="10" height="1.5" fill="var(--ph-icon-inner-tint,#9E8875)"/><rect x="2.5" y="7" width="9" height="4.5" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.82"/><rect x="1.5" y="5.5" width="11" height="2" fill="var(--ph-icon-inner-tint,#9E8875)"/><rect x="3" y="3" width="1.5" height="3" fill="var(--ph-icon-inner-tint,#9E8875)"/><rect x="6.3" y="3" width="1.5" height="3" fill="var(--ph-icon-inner-tint,#9E8875)"/><rect x="9.5" y="3" width="1.5" height="3" fill="var(--ph-icon-inner-tint,#9E8875)"/>',
+    '☕': '<path d="M3 5.5h7v5a3.5 3.5 0 0 1-7 0z" fill="var(--ph-icon-inner-tint,#9E8875)"/><path d="M10 7h1.5a1.5 1.5 0 0 1 0 3H10" fill="none" stroke="var(--ph-icon-inner-tint,#9E8875)" stroke-width="1.3"/><circle cx="5" cy="3" r="0.8" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.6"/><circle cx="7" cy="2.2" r="0.8" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.5"/>',
+    '🏥': '<rect x="2" y="3" width="10" height="10" rx="1" fill="var(--ph-icon-inner-tint,#9E8875)"/><rect x="5.8" y="5.5" width="2.4" height="5" rx="0.3" fill="white" opacity="0.95"/><rect x="4" y="7.3" width="6" height="2.4" rx="0.3" fill="white" opacity="0.95"/>',
+    '📚': '<rect x="2" y="2" width="2.5" height="10" rx="0.5" fill="var(--ph-icon-inner-tint,#9E8875)"/><rect x="5" y="3" width="2.5" height="9" rx="0.5" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.82"/><rect x="8" y="2.5" width="2.5" height="9.5" rx="0.5" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.65"/><rect x="11" y="3.5" width="1.5" height="8.5" rx="0.4" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.5"/>',
+    '🚉': '<rect x="2" y="4" width="10" height="8" rx="1" fill="var(--ph-icon-inner-tint,#9E8875)"/><polygon points="7,1.5 2,5 12,5" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.9"/><rect x="4" y="6.5" width="2.5" height="2" rx="0.4" fill="white" opacity="0.85"/><rect x="7.5" y="6.5" width="2.5" height="2" rx="0.4" fill="white" opacity="0.85"/>',
+    '💪': '<ellipse cx="7" cy="5.5" rx="3" ry="4" fill="var(--ph-icon-inner-tint,#9E8875)"/><rect x="1.5" y="4.5" width="2.5" height="2" rx="1" fill="var(--ph-icon-inner-tint,#9E8875)"/><rect x="10" y="4.5" width="2.5" height="2" rx="1" fill="var(--ph-icon-inner-tint,#9E8875)"/>',
+    '🛍️': '<rect x="2" y="5.5" width="10" height="7.5" rx="0.8" fill="var(--ph-icon-inner-tint,#9E8875)"/><path d="M5 5.5 Q5 2.5 7 2.5 Q9 2.5 9 5.5" fill="none" stroke="var(--ph-icon-inner-tint,#9E8875)" stroke-width="1.4"/><rect x="5.5" y="8" width="3" height="5" rx="0.5" fill="white" opacity="0.8"/>',
+    '🍞': '<ellipse cx="4.5" cy="8" rx="3.5" ry="4.5" fill="var(--ph-icon-inner-tint,#9E8875)"/><ellipse cx="9.5" cy="8" rx="3.5" ry="4.5" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.85"/><ellipse cx="7" cy="7" rx="3" ry="4" fill="var(--ph-icon-inner-tint,#9E8875)"/>',
+    '🍽️': '<rect x="6.3" y="1.5" width="1.4" height="11" rx="0.7" fill="var(--ph-icon-inner-tint,#9E8875)"/><path d="M3.5 1.5 v5 a2.5 2.5 0 0 0 2.5 2.5" fill="none" stroke="var(--ph-icon-inner-tint,#9E8875)" stroke-width="1.3"/><rect x="3" y="7" width="1.5" height="5" rx="0.5" fill="var(--ph-icon-inner-tint,#9E8875)"/>',
+    '💐': '<circle cx="7" cy="5.5" r="2" fill="var(--ph-icon-inner-tint,#9E8875)"/><circle cx="4" cy="4" r="1.8" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.75"/><circle cx="10" cy="4" r="1.8" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.75"/><circle cx="4" cy="7.5" r="1.8" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.65"/><circle cx="10" cy="7.5" r="1.8" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.65"/><rect x="6.4" y="9" width="1.2" height="4.5" rx="0.6" fill="var(--ph-icon-inner-tint,#9E8875)"/>',
+    '🎤': '<rect x="5.5" y="1.5" width="3" height="7" rx="1.5" fill="var(--ph-icon-inner-tint,#9E8875)"/><path d="M3.5 7.5 Q3.5 11.5 7 11.5 Q10.5 11.5 10.5 7.5" fill="none" stroke="var(--ph-icon-inner-tint,#9E8875)" stroke-width="1.4"/><rect x="6.3" y="11.5" width="1.4" height="2" rx="0.3" fill="var(--ph-icon-inner-tint,#9E8875)"/>',
+    '🌳': '<ellipse cx="7" cy="5.5" rx="4.5" ry="4" fill="var(--ph-icon-inner-tint,#9E8875)"/><rect x="6" y="9" width="2" height="4" rx="0.8" fill="var(--ph-icon-inner-tint,#9E8875)"/>',
+    '🌲': '<polygon points="7,1 2.5,7.5 5,7.5 3,12.5 11,12.5 9,7.5 11.5,7.5" fill="var(--ph-icon-inner-tint,#9E8875)"/>',
+    '🌸': '<circle cx="7" cy="7" r="2" fill="var(--ph-icon-inner-tint,#9E8875)"/><circle cx="7" cy="3" r="1.7" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.72"/><circle cx="10.5" cy="5" r="1.7" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.72"/><circle cx="10" cy="9.5" r="1.7" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.72"/><circle cx="4" cy="9.5" r="1.7" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.72"/><circle cx="3.5" cy="5" r="1.7" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.72"/>',
+    '🌙': '<path d="M10 7 A5 5 0 1 1 7 2 A3.5 3.5 0 1 0 10 7z" fill="var(--ph-icon-inner-tint,#9E8875)"/>',
+    '🏘️': '<polygon points="4,4.5 0.5,8 7.5,8" fill="var(--ph-icon-inner-tint,#9E8875)"/><rect x="1" y="7.5" width="6" height="4.5" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.85"/><polygon points="10,4.5 7,8 13,8" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.8"/><rect x="7.5" y="7.5" width="5" height="4.5" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.7"/>',
+    '🏫': '<rect x="2" y="4.5" width="10" height="8" fill="var(--ph-icon-inner-tint,#9E8875)"/><polygon points="7,1 1,5.5 13,5.5" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.9"/><rect x="5.5" y="7" width="3" height="3.5" fill="white" opacity="0.85"/>',
+    '🏕️': '<polygon points="7,0.5 0,13 14,13" fill="var(--ph-icon-inner-tint,#9E8875)"/><polygon points="7,0.5 7,13 14,13" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.6"/><rect x="5" y="8" width="4" height="5" fill="white" opacity="0.7"/>',
+    '🎠': '<circle cx="7" cy="6.5" r="5" fill="none" stroke="var(--ph-icon-inner-tint,#9E8875)" stroke-width="1.4"/><circle cx="7" cy="6.5" r="1.5" fill="var(--ph-icon-inner-tint,#9E8875)"/><line x1="7" y1="1.5" x2="7" y2="5" stroke="var(--ph-icon-inner-tint,#9E8875)" stroke-width="1.2"/><line x1="11.3" y1="4" x2="9" y2="5.5" stroke="var(--ph-icon-inner-tint,#9E8875)" stroke-width="1.2"/><line x1="7" y1="11.5" x2="7" y2="8" stroke="var(--ph-icon-inner-tint,#9E8875)" stroke-width="1.2"/><line x1="2.7" y1="4" x2="5" y2="5.5" stroke="var(--ph-icon-inner-tint,#9E8875)" stroke-width="1.2"/>',
+    '🔭': '<rect x="5.5" y="2" width="3" height="2.5" fill="var(--ph-icon-inner-tint,#9E8875)"/><polygon points="7,4 4,13 10,13" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.9"/><rect x="4" y="8" width="6" height="1.2" fill="white" opacity="0.7"/>',
+    '🎨': '<rect x="2" y="4" width="10" height="9" rx="1" fill="var(--ph-icon-inner-tint,#9E8875)"/><polygon points="7,1 1,5 13,5" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.9"/><circle cx="5" cy="8.5" r="1.8" fill="white" opacity="0.75"/><circle cx="9" cy="8.5" r="1.8" fill="white" opacity="0.6"/>',
+    '♨️': '<ellipse cx="7" cy="10" rx="4.5" ry="2.5" fill="var(--ph-icon-inner-tint,#9E8875)"/><path d="M5 7 Q4.5 5 5.5 4 Q6.5 3 6 1.5" fill="none" stroke="var(--ph-icon-inner-tint,#9E8875)" stroke-width="1.3" stroke-linecap="round"/><path d="M7 7 Q6.5 5 7.5 4 Q8.5 3 8 1.5" fill="none" stroke="var(--ph-icon-inner-tint,#9E8875)" stroke-width="1.3" stroke-linecap="round"/><path d="M9 7 Q8.5 5 9.5 4 Q10.5 3 10 1.5" fill="none" stroke="var(--ph-icon-inner-tint,#9E8875)" stroke-width="1.3" stroke-linecap="round"/>',
+    '🏖️': '<path d="M0 9 Q7 5 14 9" fill="var(--ph-icon-inner-tint,#9E8875)"/><rect x="0" y="9" width="14" height="5" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.5"/><circle cx="10" cy="6" r="2.5" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.85"/>',
+    '🏠': '<polygon points="7,1.5 1,7.5 13,7.5" fill="var(--ph-icon-inner-tint,#9E8875)"/><rect x="2.5" y="7" width="9" height="5.5" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.85"/><rect x="5.5" y="9" width="3" height="3.5" fill="white" opacity="0.8"/>',
+  };
+  var _det = _detShapes[lm.emoji] || _detShapes[(lm.emoji||"").replace(/\uFE0F/g,"")] || '<ellipse cx="7" cy="8" rx="4.5" ry="4" fill="var(--ph-icon-inner-tint,#9E8875)"/>';
+  html += '<span class="mapDetailEmoji"><svg viewBox="0 0 14 14" width="40" height="40">'+_det+'</svg></span>';
+
   html += '<div class="mapDetailNameRow"><span class="mapDetailName" data-el="mapLmName">'+esc(displayName)+'</span><span class="mapDetailEdit" data-act="mapEditName" title="编辑名称">✏️</span></div>';
   html += '<div class="mapDetailAtmo">'+esc(atmo)+'</div>';
   html += '</div>';
