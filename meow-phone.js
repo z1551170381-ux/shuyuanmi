@@ -16318,21 +16318,18 @@ const npc = _wxGetChatTargetMeta(npcId);
                     function(){ // 接听
                       try{
                         ensureRoot();
-                        if(state.app !== 'chatDetail' || state.chatTarget !== npcId){ openChat(npcId); }
-                        var _ct = _isVideo ? 'video' : 'voice';
+                        var _ct2 = _isVideo ? 'video' : 'voice';
+                        var _alreadyHere = (state.app === 'chatDetail' && state.chatTarget === npcId);
+                        if(!_alreadyHere){ openChat(npcId); }
+                        // openChat 用了 root，说明 root 已设置，直接调 _cpStartCall
                         setTimeout(function(){
                           try{
-                            // 通过 _cpVideoCall 打开选择弹窗，然后自动点击对应按钮
-                            _cpVideoCall(npcId);
-                            setTimeout(function(){
-                              try{
-                                var _btn = document.querySelector('[data-act="cpCallStart"][data-calltype="'+_ct+'"]');
-                                if(_btn) _btn.click();
-                              }catch(e){}
-                            }, 100);
-                          }catch(e){ console.warn('[IncomingCall]',e); }
-                        }, state.app !== 'chatDetail' ? 600 : 50);
-                      }catch(e){}
+                            var _db2 = loadContactsDB();
+                            var _npc2 = findContactById(_db2, npcId) || {id:npcId,name:String(npcId),avatar:''};
+                            _cpStartCall(npcId, _npc2, _ct2);
+                          }catch(e){ console.warn('[IncomingCall] startCall err:',e); }
+                        }, _alreadyHere ? 50 : 700);
+                      }catch(e){ console.warn('[IncomingCall] accept err:',e); }
                     },
                     function(){ // 拒接
                       try{
@@ -25160,18 +25157,11 @@ function bindPageScroll(){
                         function(){ // 接听
                           try{
                             ensureRoot();
-                            if(state.app !== 'chatDetail' || state.chatTarget !== nId){ openChat(nId); }
+                            var _alreadyHere2 = (state.app === 'chatDetail' && state.chatTarget === nId);
+                            if(!_alreadyHere2){ openChat(nId); }
                             setTimeout(function(){
-                              try{
-                                _cpVideoCall(nId);
-                                setTimeout(function(){
-                                  try{
-                                    var _vbtn = document.querySelector('[data-act="cpCallStart"][data-calltype="voice"]');
-                                    if(_vbtn) _vbtn.click();
-                                  }catch(e){}
-                                }, 100);
-                              }catch(e){}
-                            }, state.app !== 'chatDetail' ? 600 : 50);
+                              try{ _cpStartCall(nId, _npc5, 'voice'); }catch(e){ console.warn('[IncomingCall]',e); }
+                            }, _alreadyHere2 ? 50 : 700);
                           }catch(e){}
                         },
                         function(){ // 拒接 → 留一条未接来电 + 随后发一条"你怎么不接"风格文字
