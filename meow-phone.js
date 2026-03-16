@@ -16073,7 +16073,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:9999;'
             + 'background:rgba(18,18,24,.96);backdrop-filter:blur(20px);'
             + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;'
-            + 'opacity:1;pointer-events:auto;';
+            + 'opacity:1;pointer-events:auto;transform:none;';
 
           overlay.innerHTML =
             '<div style="font-size:11px;color:rgba(255,255,255,.45);letter-spacing:1px;">'+(isVideo?'📹 视频通话来电':'📞 语音通话来电')+'</div>'
