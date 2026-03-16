@@ -784,28 +784,28 @@ function ensureTuneStyle(){
 }
 
 #${ID}[data-theme="frost"][data-view="home"]{
-  --ph-frost-panel-a: calc(var(--phHomeA, .36) * .55 + .02);
-  --ph-frost-surface-a: calc(var(--phHomeA, .36) * .42 + .02);
-  --ph-frost-bar-a: calc(var(--phHomeA, .36) * .50 + .02);
-  --ph-frost-hi-a: calc(var(--phHomeA, .36) * .18 + .04);
-  --ph-frost-line-a: calc(var(--phHomeA, .36) * .55 + .06);
+  --ph-frost-panel-a: calc(var(--phHomeA, .36) * .82 + .03);
+  --ph-frost-surface-a: calc(var(--phHomeA, .36) * .68 + .03);
+  --ph-frost-bar-a: calc(var(--phHomeA, .36) * .74 + .04);
+  --ph-frost-hi-a: calc(var(--phHomeA, .36) * .32 + .08);
+  --ph-frost-line-a: calc(var(--phHomeA, .36) * .82 + .12);
   --ph-row-bg: rgba(255,255,255,var(--ph-frost-surface-a));
-  --ph-row-hover: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .06));
-  --ph-searchbox-bg: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .04));
+  --ph-row-hover: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .07));
+  --ph-searchbox-bg: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .05));
   --ph-searchbox-text: rgba(40,48,62,.40);
   --ph-discover-bg: rgba(255,255,255,var(--ph-frost-panel-a));
   --ph-discover-border: rgba(255,255,255,var(--ph-frost-line-a));
 }
 
 #${ID}[data-theme="frost"][data-view="app"]{
-  --ph-frost-panel-a: calc(var(--phAppA, .52) * .50 + .02);
-  --ph-frost-surface-a: calc(var(--phAppA, .52) * .38 + .02);
-  --ph-frost-bar-a: calc(var(--phAppA, .52) * .45 + .02);
-  --ph-frost-hi-a: calc(var(--phAppA, .52) * .16 + .05);
-  --ph-frost-line-a: calc(var(--phAppA, .52) * .50 + .08);
+  --ph-frost-panel-a: calc(var(--phAppA, .52) * .78 + .03);
+  --ph-frost-surface-a: calc(var(--phAppA, .52) * .64 + .03);
+  --ph-frost-bar-a: calc(var(--phAppA, .52) * .72 + .04);
+  --ph-frost-hi-a: calc(var(--phAppA, .52) * .28 + .09);
+  --ph-frost-line-a: calc(var(--phAppA, .52) * .78 + .13);
   --ph-row-bg: rgba(255,255,255,var(--ph-frost-surface-a));
-  --ph-row-hover: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .06));
-  --ph-searchbox-bg: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .04));
+  --ph-row-hover: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .07));
+  --ph-searchbox-bg: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .05));
   --ph-searchbox-text: rgba(40,48,62,.40);
   --ph-discover-bg: rgba(255,255,255,var(--ph-frost-panel-a));
   --ph-discover-border: rgba(255,255,255,var(--ph-frost-line-a));
@@ -844,12 +844,12 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .wxConfirmBox,
 #${ID}[data-theme="frost"] .wxStatePanelCard{
   background:
-    linear-gradient(180deg, rgba(255,255,255,var(--ph-frost-hi-a)), rgba(255,255,255,calc(var(--ph-frost-hi-a) * .30))),
+    linear-gradient(180deg, rgba(255,255,255,var(--ph-frost-hi-a)), rgba(255,255,255,calc(var(--ph-frost-hi-a) * .38))),
     rgba(255,255,255,var(--ph-frost-panel-a)) !important;
-  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) * .80)) !important;
-  box-shadow:0 4px 18px rgba(126,142,166,.05) !important;
-  backdrop-filter:blur(calc(var(--ph-glass-blur) * .55)) saturate(120%) !important;
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .55)) saturate(120%) !important;
+  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) * 1.02)) !important;
+  box-shadow:0 8px 22px rgba(126,142,166,.06), inset 0 1px 0 rgba(255,255,255,calc(var(--ph-frost-line-a) * .32)) !important;
+  backdrop-filter:blur(calc(var(--ph-glass-blur) * .22)) saturate(108%) !important;
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .22)) saturate(108%) !important;
 }
 
 #${ID}[data-theme="frost"] .phAppIcon,
@@ -863,25 +863,25 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .wxContactItem,
 #${ID}[data-theme="frost"] .wxGroupHeader{
   background:
-    linear-gradient(180deg, rgba(255,255,255,calc(var(--ph-frost-hi-a) * .60)), rgba(255,255,255,calc(var(--ph-frost-hi-a) * .18))),
+    linear-gradient(180deg, rgba(255,255,255,calc(var(--ph-frost-hi-a) * .88)), rgba(255,255,255,calc(var(--ph-frost-hi-a) * .26))),
     rgba(255,255,255,var(--ph-frost-surface-a)) !important;
-  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) * .70)) !important;
-  box-shadow:0 2px 10px rgba(126,142,166,.04);
-  backdrop-filter:blur(calc(var(--ph-glass-blur) * .45)) saturate(115%);
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .45)) saturate(115%);
+  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) * 1.03)) !important;
+  box-shadow:0 6px 16px rgba(126,142,166,.045), inset 0 1px 0 rgba(255,255,255,calc(var(--ph-frost-line-a) * .28));
+  backdrop-filter:blur(calc(var(--ph-glass-blur) * .16)) saturate(106%);
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .16)) saturate(106%);
 }
 
-/* 导航栏/标签栏/其他功能栏 — 透明玻璃 */
+/* 导航栏/标签栏/其他功能栏 — 正常霜雪半透明 */
 #${ID}[data-theme="frost"] .phAppBar,
 #${ID}[data-theme="frost"] .wxTabbar,
 #${ID}[data-theme="frost"] .wxStickerPanel,
 #${ID}[data-theme="frost"] .wxVoicePanel,
 #${ID}[data-theme="frost"] .wxChatPlusGrid{
-  background:rgba(255,255,255, calc(var(--ph-frost-bar-a) * 0.70)) !important;
-  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) * .60)) !important;
-  box-shadow: none !important;
-  backdrop-filter:blur(calc(var(--ph-glass-blur) * .45)) saturate(115%) !important;
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .45)) saturate(115%) !important;
+  background:rgba(255,255,255,var(--ph-frost-bar-a)) !important;
+  border-color:rgba(255,255,255,calc(var(--ph-frost-line-a) * 1.01)) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,calc(var(--ph-frost-line-a) * .22)) !important;
+  backdrop-filter:blur(calc(var(--ph-glass-blur) * .18)) saturate(107%) !important;
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .18)) saturate(107%) !important;
 }
 
 /* 聊天顶栏 + 输入栏：跟随 App 清晰度设置的卡片玻璃透明度(phAppA)和模糊度(phAppBlur) */
@@ -1037,9 +1037,9 @@ function ensureTuneStyle(){
 /* —— 3. Dock 更圆润 —— */
 #${ID}[data-theme="frost"] .phDock{
   border-radius: 38px;
-  background: rgba(255,255,255, calc(var(--ph-frost-bar-a) * 0.70));
-  border: 1px solid rgba(255,255,255, calc(var(--ph-frost-line-a) * 0.60));
-  box-shadow: 0 8px 24px rgba(100,94,86,.07);
+  background: rgba(255,255,255,.28);
+  border: 1px solid rgba(255,255,255,.35);
+  box-shadow: 0 8px 24px rgba(100,94,86,.08);
   backdrop-filter: blur(calc(var(--ph-glass-blur) * .55)) saturate(120%);
   -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) * .55)) saturate(120%);
 }
@@ -1156,14 +1156,12 @@ function ensureTuneStyle(){
   display: flex; align-items: center; justify-content: center;
 }
 
-/* settingSection 容器：圆角卡片，透明玻璃感 */
+/* settingSection 容器：圆角卡片，每组分离 */
 #${ID}[data-theme="frost"] .settingSection{
   border-radius: 20px !important;
-  border: 1px solid rgba(255,255,255, calc(var(--ph-frost-line-a) * .65)) !important;
-  box-shadow: 0 2px 12px rgba(100,94,86,.04) !important;
-  background: rgba(255,255,255, var(--ph-frost-panel-a)) !important;
-  backdrop-filter: blur(calc(var(--ph-glass-blur) * .50)) saturate(118%) !important;
-  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) * .50)) saturate(118%) !important;
+  border: 1px solid rgba(255,255,255,.82) !important;
+  box-shadow: 0 4px 18px rgba(100,94,86,.06), inset 0 1px 0 rgba(255,255,255,.92) !important;
+  background: rgba(255,255,255, calc(var(--ph-frost-panel-a, .5) + .05)) !important;
   margin: 0 12px 8px !important;
 }
 
@@ -1198,16 +1196,10 @@ function ensureTuneStyle(){
   margin-right: 10px;
 }
 
-/* phCard（App清晰度每个滑块卡片）透明玻璃化 */
+/* phCard（App清晰度每个滑块卡片）精致化 */
 #${ID}[data-theme="frost"] .phCard{
   border-radius: 18px !important;
-  border: 1px solid rgba(255,255,255, calc(var(--ph-frost-line-a) * .65)) !important;
-  background: rgba(255,255,255, var(--ph-frost-panel-a)) !important;
-  backdrop-filter: blur(calc(var(--ph-glass-blur) * .45)) saturate(115%) !important;
-  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) * .45)) saturate(115%) !important;
-  box-shadow: 0 2px 10px rgba(100,94,86,.04) !important;
-  margin: 0 12px 8px !important;
-}
+  border: 1px solid rgba(255,255,255,.82) !important;
   background: rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .08)) !important;
   box-shadow: 0 4px 18px rgba(100,94,86,.06), inset 0 1px 0 rgba(255,255,255,.92) !important;
   margin: 0 12px 10px !important;
@@ -1319,13 +1311,6 @@ function ensureTuneStyle(){
 }
 
 /* 整体 app 内文字精致小巧 */
-/* frost 下所有设置卡片标题去粗体 */
-#${ID}[data-theme="frost"] .phCard [style*="font-weight:700"],
-#${ID}[data-theme="frost"] .settingSection [style*="font-weight:700"],
-#${ID}[data-theme="frost"] .phCard [style*="font-weight: 700"],
-#${ID}[data-theme="frost"] .settingSection [style*="font-weight: 700"]{
-  font-weight: 500 !important;
-}
 #${ID}[data-theme="frost"] .phAppBody{
   font-size: 13px;
 }
@@ -2282,7 +2267,8 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
    It matches phShell's size+position exactly but uses a negative inset
    to show only the ring area. It has backdrop-filter so the ring
    actually blurs whatever is behind the phone — real frosted glass. */
-/* ---------- Frosted Ring Layer — 透明手机壳效果 ---------- */
+/* ---------- Frosted Ring Layer ---------- */
+/* 比 phShell 大一圈 (每边+5px)，z-index 低于 phShell */
 #${ID} .phRingLayer{
   display: none;
   position: absolute;
@@ -2293,32 +2279,32 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   border-radius: 43px;
   z-index: 1;
   pointer-events: none;
-  background: rgba(210,200,185,.32);
-  backdrop-filter: blur(6px) saturate(115%);
-  -webkit-backdrop-filter: blur(6px) saturate(115%);
+  background: rgba(228,216,200,.72);
+  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
   box-shadow:
-    inset 0 1px 0 rgba(255,248,235,.45),
-    inset 0 -1px 0 rgba(150,138,122,.22),
-    0 0 0 0.5px rgba(160,148,132,.18),
-    0 24px 64px rgba(100,94,86,.16);
+    inset 0 1px 0 rgba(255,248,235,.60),
+    inset 0 -1px 0 rgba(155,140,122,.28),
+    0 0 0 1px rgba(165,150,132,.22),
+    0 28px 72px rgba(100,94,86,.20);
 }
 #${ID}.full .phRingLayer{ display: block; }
 
-/* frost: 透明手机壳 — 极淡暖色，见材质不遮壁纸 */
+/* frost: 透明手机壳质感 — 奶油暖色，有实质感但微微透 */
 #${ID}[data-theme="frost"] .phRingLayer{
   border-radius: 55px;
   background:
     linear-gradient(170deg,
-      rgba(248,240,228,.36) 0%,
-      rgba(232,220,206,.22) 45%,
-      rgba(220,208,192,.30) 100%);
-  backdrop-filter: blur(6px) saturate(120%) brightness(1.03);
-  -webkit-backdrop-filter: blur(6px) saturate(120%) brightness(1.03);
+      rgba(252,244,232,.82) 0%,
+      rgba(238,226,210,.72) 45%,
+      rgba(222,210,194,.78) 100%);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
   box-shadow:
-    inset 0 1.5px 0 rgba(255,250,240,.55),
-    inset 0 -1.5px 0 rgba(150,136,120,.25),
-    0 0 0 0.5px rgba(165,152,136,.16),
-    0 24px 64px rgba(100,94,86,.14);
+    inset 0 1.5px 0 rgba(255,252,242,.68),
+    inset 0 -1.5px 0 rgba(148,134,116,.32),
+    0 0 0 1px rgba(172,158,140,.22),
+    0 28px 72px rgba(100,94,86,.18);
 }
 
 /* mini mode */
