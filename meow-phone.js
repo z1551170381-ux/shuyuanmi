@@ -288,6 +288,7 @@ function phoneLoadSettings(){
 
     // APP 内容底（更不透明纯色/半透明底）
     uiAppSolidOpacity: 92,
+    uiAppBodyBlur: 18,
 
     // 其他
     fontSize: 14,
@@ -317,6 +318,7 @@ function phoneLoadSettings(){
       out.uiAppBlur     = Math.max(0, Math.min(40,  Number(out.uiAppBlur     ?? 16)));
 
       out.uiAppSolidOpacity = Math.max(0, Math.min(100, Number(out.uiAppSolidOpacity ?? 92)));
+      out.uiAppBodyBlur  = Math.max(0, Math.min(50,  Number(out.uiAppBodyBlur  ?? 18)));
       out.fontSize = Math.max(10, Math.min(22, Number(out.fontSize ?? 14)));
 
       return out;
@@ -579,8 +581,8 @@ function ensureTuneStyle(){
 /* APP 内容底：使用 --phAppBodyRGB + --phAppSolidA 实现滑块控制 */
 #${ID}[data-view="app"] .phAppBody{
   background: rgba(var(--phAppBodyRGB,10,10,10), var(--phAppSolidA,.92));
-  backdrop-filter: blur(calc(var(--phAppBlur,16px) * .18));
-  -webkit-backdrop-filter: blur(calc(var(--phAppBlur,16px) * .18));
+  backdrop-filter: blur(var(--phAppBodyBlur, 18px));
+  -webkit-backdrop-filter: blur(var(--phAppBodyBlur, 18px));
 }
 
 /* App 顶部横条 — 全主题化 */
@@ -811,21 +813,16 @@ function ensureTuneStyle(){
 }
 
 #${ID}[data-theme="frost"] .phWallpaper{
-  background-color:#eae8e3;
+  background-color:#f8f7f5;
   background-image:
     var(--ph-wallpaper-url, none),
-    /* Nube 标志性：左上粉红光晕 */
-    radial-gradient(ellipse 260px 220px at 22% 18%, rgba(220,160,160,.55), transparent 70%),
-    /* 右上淡蓝光晕 */
-    radial-gradient(ellipse 200px 180px at 80% 12%, rgba(190,200,220,.32), transparent 65%),
-    /* 左下绿色光晕 */
-    radial-gradient(ellipse 240px 220px at 18% 84%, rgba(160,200,170,.48), transparent 70%),
-    /* 右下暖橙光晕 */
-    radial-gradient(ellipse 200px 180px at 82% 80%, rgba(220,196,168,.36), transparent 65%),
-    /* 中心极淡叠加，保持奶油底色 */
-    linear-gradient(160deg, rgba(255,255,255,.18) 0%, rgba(240,238,233,.08) 100%);
+    radial-gradient(circle at 18% 18%, rgba(255,214,230,.10), transparent 34%),
+    radial-gradient(circle at 78% 18%, rgba(206,221,255,.09), transparent 30%),
+    radial-gradient(circle at 72% 76%, rgba(226,214,255,.07), transparent 34%),
+    radial-gradient(circle at 24% 78%, rgba(255,244,225,.07), transparent 30%),
+    linear-gradient(180deg, rgba(255,255,255,.24), rgba(247,245,242,.12));
   background-size: cover, auto, auto, auto, auto, auto;
-  background-position: center, 22% 18%, 80% 12%, 18% 84%, 82% 80%, center;
+  background-position: center, 18% 18%, 78% 18%, 72% 76%, 24% 78%, center;
 }
 
 #${ID}[data-theme="frost"] .phShell{
@@ -893,8 +890,8 @@ function ensureTuneStyle(){
   background:
     linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.02)),
     rgba(var(--phAppBodyRGB,250,249,247), var(--phAppSolidA,.92));
-  backdrop-filter:blur(calc(var(--phAppBlur,16px) * .10)) saturate(104%);
-  -webkit-backdrop-filter:blur(calc(var(--phAppBlur,16px) * .10)) saturate(104%);
+  backdrop-filter:blur(var(--phAppBodyBlur, 18px)) saturate(104%);
+  -webkit-backdrop-filter:blur(var(--phAppBodyBlur, 18px)) saturate(104%);
 }
 
 #${ID}[data-theme="frost"] .wxChatBubble.them .wxCBContent,
@@ -935,8 +932,8 @@ function ensureTuneStyle(){
 
 #${ID}[data-theme="frost"] .phAppIcon .ai svg.phIco,
 #${ID}[data-theme="frost"] .phDockBtn .di svg.phIco{
-  fill:rgba(60,55,50,.78) !important;
-  filter:drop-shadow(0 1px 1px rgba(255,255,255,.50));
+  fill:rgba(255,255,255,.98) !important;
+  filter:drop-shadow(0 1px 1.2px rgba(68,88,120,.18));
 }
 
 #${ID}[data-theme="frost"] .phAppIcon .ai svg.phIco{
@@ -986,39 +983,254 @@ function ensureTuneStyle(){
   background:rgba(255,255,255,calc(var(--ph-frost-surface-a) + .08));
 }
 
-/* frost 状态栏：深色文字/图标 适配浅色背景 */
-#${ID}[data-theme="frost"] .phTime{
-  color:rgba(48,44,40,.76);
-  text-shadow:0 1px 0 rgba(255,255,255,.55);
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  FROST OVERHAUL v2 — 霜雪 大圆角 / 胶囊按钮 / 扁平SVG图标  ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+
+/* —— 1. CSS 变量：更大圆角 —— */
+#${ID}[data-theme="frost"]{
+  --ph-radius-lg: 28px;
+  --ph-radius-md: 22px;
+  --ph-radius-sm: 16px;
+  --ph-radius-xs: 12px;
 }
-#${ID}[data-theme="frost"] .iosSignal i{
-  background:rgba(48,44,40,.72);
-  box-shadow:none;
+
+/* Shell 边框更圆 */
+#${ID}[data-theme="frost"] .phShell{
+  border-radius: 50px;
 }
-#${ID}[data-theme="frost"] .iosWifi::before,
-#${ID}[data-theme="frost"] .iosWifi::after{
-  border-top-color:rgba(48,44,40,.72);
+#${ID}[data-theme="frost"].mini .phShell{
+  border-radius: 38px;
 }
-#${ID}[data-theme="frost"] .iosWifi span{
-  background:rgba(48,44,40,.72);
+
+/* phCard 大圆角 + 霜雪描边 */
+#${ID}[data-theme="frost"] .phCard{
+  border-radius: 26px;
+  border: 1px solid rgba(255,255,255,.80);
+  box-shadow: 0 8px 28px rgba(100,95,90,.07), inset 0 1px 0 rgba(255,255,255,.92);
 }
-#${ID}[data-theme="frost"] .iosBattery .bat{
-  border-color:rgba(48,44,40,.70);
+
+/* —— 2. 搜索栏全胶囊 —— */
+#${ID}[data-theme="frost"] .phSearch{
+  border-radius: 999px;
+  height: 38px;
 }
-#${ID}[data-theme="frost"] .iosBattery .bat::after{
-  background:rgba(48,44,40,.70);
+#${ID}[data-theme="frost"] .wxSearchBox{
+  border-radius: 999px;
+  height: 36px;
 }
-#${ID}[data-theme="frost"] .iosBattery .pct{
-  color:rgba(48,44,40,.72);
+
+/* —— 3. Dock 更圆润 —— */
+#${ID}[data-theme="frost"] .phDock{
+  border-radius: 38px;
+  background: rgba(255,255,255,.55);
+  border: 1px solid rgba(255,255,255,.82);
+  box-shadow: 0 12px 36px rgba(100,94,86,.09), inset 0 1px 0 rgba(255,255,255,.92);
 }
-#${ID}[data-theme="frost"] .phSysBtn{
-  border-color:rgba(48,44,40,.12);
-  background:rgba(48,44,40,.06);
-  color:rgba(48,44,40,.72);
+/* Dock 按钮图标区域（首页图标 ai 颜色不改，保持白色原来的渐变） */
+#${ID}[data-theme="frost"] .phDockBtn .di{
+  border-radius: 16px;
 }
-/* frost 拖动条：深色 */
-#${ID}[data-theme="frost"] .phDragHint{
-  background:rgba(48,44,40,.18);
+
+/* —— 4. App 图标（首页）—— */
+/* phAppIcon 外框更圆，内部 .ai 颜色保持原有白色渐变，不覆盖 */
+#${ID}[data-theme="frost"] .phAppIcon{
+  border-radius: 24px;
+}
+#${ID}[data-theme="frost"] .phAppIcon .ai{
+  border-radius: 18px;
+  /* 保持原白色渐变，不覆盖颜色，仅加细边 */
+  border: 1px solid rgba(255,255,255,.60);
+  box-shadow: 0 3px 12px rgba(100,94,86,.10), inset 0 1px 0 rgba(255,255,255,.55);
+}
+
+/* —— 5. 胶囊按钮 —— */
+/* Modal 按钮 */
+#${ID}[data-theme="frost"] .phModalBtn{
+  border-radius: 999px;
+  padding: 10px 22px;
+  font-weight: 600;
+  letter-spacing: .01em;
+  border: 1px solid rgba(48,44,40,.08);
+  background: rgba(255,255,255,.72);
+  color: rgba(48,44,40,.82);
+  transition: background .15s;
+}
+#${ID}[data-theme="frost"] .phModalBtn.primary{
+  background: rgba(48,44,40,.82);
+  color: #fff;
+  border: none;
+}
+#${ID}[data-theme="frost"] .phModalBtn:hover{ background: rgba(255,255,255,.88); }
+#${ID}[data-theme="frost"] .phModalBtn.primary:hover{ background: rgba(60,56,52,.90); }
+
+/* 设置选项按钮胶囊 */
+#${ID}[data-theme="frost"] .sOptionBtn{
+  border-radius: 999px;
+  padding: 9px 20px;
+  height: 38px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid rgba(48,44,40,.10);
+  background: rgba(255,255,255,.65);
+  color: rgba(48,44,40,.68);
+  font-size: 13px;
+  font-weight: 500;
+  transition: all .18s;
+}
+#${ID}[data-theme="frost"] .sOptionBtn.active{
+  background: rgba(48,44,40,.82);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 12px rgba(48,44,40,.18);
+}
+
+/* 发送按钮胶囊 */
+#${ID}[data-theme="frost"] .wxChatSendBtn{
+  border-radius: 999px;
+  padding: 8px 20px;
+  font-weight: 600;
+}
+
+/* 联系人操作按钮胶囊 */
+#${ID}[data-theme="frost"] .phContactActionBtn{
+  border-radius: 999px;
+  padding: 8px 20px;
+}
+
+/* 壁纸按钮胶囊 */
+#${ID}[data-theme="frost"] .sWpBtn{
+  border-radius: 999px;
+}
+
+/* —— 6. 圆角补充 —— */
+/* 聊天行卡片 */
+#${ID}[data-theme="frost"] .wxChatRow{
+  border-radius: 24px !important;
+  margin: 3px 10px;
+}
+
+/* 聊天气泡 */
+#${ID}[data-theme="frost"] .wxChatBubble.me .wxCBContent{
+  border-radius: 22px 22px 6px 22px !important;
+}
+#${ID}[data-theme="frost"] .wxChatBubble.them .wxCBContent{
+  border-radius: 22px 22px 22px 6px !important;
+}
+
+/* 确认/弹窗框 */
+#${ID}[data-theme="frost"] .wxConfirmBox{
+  border-radius: 28px !important;
+}
+#${ID}[data-theme="frost"] .phModalCard{
+  border-radius: 28px !important;
+}
+
+/* 主题卡片 */
+#${ID}[data-theme="frost"] .themeCard{
+  border-radius: 22px;
+}
+#${ID}[data-theme="frost"] .themeCard .tcPreview{
+  border-radius: 16px;
+}
+
+/* 壁纸预览 */
+#${ID}[data-theme="frost"] .sWpPreview{
+  border-radius: 22px;
+}
+
+/* 输入框 */
+#${ID}[data-theme="frost"] .wxChatInputBar textarea{
+  border-radius: 22px;
+}
+#${ID}[data-theme="frost"] .sTimeInput{
+  border-radius: 16px;
+}
+
+/* Tab 按钮 */
+#${ID}[data-theme="frost"] .wxTabBtn{
+  border-radius: 18px;
+}
+
+/* settingRow icon */
+#${ID}[data-theme="frost"] .settingRow .sIcon{
+  border-radius: 14px;
+}
+
+/* —— 7. Toggle 开关霜雪感 —— */
+#${ID}[data-theme="frost"] .sToggle,
+#${ID}[data-theme="frost"] .settingRow .sToggle{
+  background: rgba(180,175,170,.30);
+  border: 1px solid rgba(48,44,40,.06);
+}
+#${ID}[data-theme="frost"] .sToggle.on,
+#${ID}[data-theme="frost"] .settingRow .sToggle.on{
+  background: linear-gradient(135deg, rgba(112,148,165,.82), rgba(148,178,194,.72));
+  border-color: transparent;
+}
+
+/* —— 8. App 顶栏/底栏 描边细化 —— */
+#${ID}[data-theme="frost"] .phAppBar{
+  border-bottom: 1px solid rgba(255,255,255,.58) !important;
+}
+#${ID}[data-theme="frost"] .wxTopBar{
+  border-bottom: 1px solid rgba(255,255,255,.58) !important;
+}
+#${ID}[data-theme="frost"] .wxTabbar{
+  border-top: 1px solid rgba(255,255,255,.58) !important;
+}
+
+/* —— 9. Range Slider 霜雪样式 —— */
+#${ID}[data-theme="frost"] input[type="range"]{
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(48,44,40,.12);
+  outline: none;
+  cursor: pointer;
+}
+#${ID}[data-theme="frost"] input[type="range"]::-webkit-slider-thumb{
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid rgba(48,44,40,.12);
+  box-shadow: 0 2px 10px rgba(100,94,86,.22);
+  cursor: pointer;
+  transition: box-shadow .15s;
+}
+#${ID}[data-theme="frost"] input[type="range"]::-webkit-slider-thumb:hover{
+  box-shadow: 0 3px 16px rgba(100,94,86,.30);
+}
+#${ID}[data-theme="frost"] input[type="range"]::-moz-range-thumb{
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid rgba(48,44,40,.12);
+  box-shadow: 0 2px 10px rgba(100,94,86,.22);
+  cursor: pointer;
+}
+
+/* —— 10. Zoom bar / pill 胶囊 —— */
+#${ID}[data-theme="frost"] .phZoomBar{
+  border-radius: 999px;
+  background: rgba(248,246,242,.90);
+  border: 1px solid rgba(255,255,255,.82);
+}
+#${ID}[data-theme="frost"] .phZoomBtn{
+  border-radius: 50%;
+  background: rgba(48,44,40,.06);
+  color: rgba(48,44,40,.72);
+}
+#${ID}[data-theme="frost"] .phZoomLabel{
+  color: rgba(48,44,40,.60);
+}
+#${ID}[data-theme="frost"].pill{
+  background: rgba(248,246,242,.90);
+  border: 1px solid rgba(255,255,255,.80);
+  box-shadow: 0 4px 20px rgba(100,94,86,.12);
 }
     `;
     (doc.head || doc.documentElement).appendChild(st);
@@ -1077,6 +1289,8 @@ function phoneApplyVisualFromSettings(cfg){
 
     // APP底色不透明度
     const appSolidA = _meowClamp01((cfg.uiAppSolidOpacity||0)/100);
+    // APP 内容底模糊度（独立滑块）
+    const appBodyBlurPx = _meowClampInt(cfg.uiAppBodyBlur, 0, 50, 18);
 
     root.style.setProperty('--phHomeA', String(homeA));
     root.style.setProperty('--phHomeStrongA', String(homeStrong));
@@ -1089,6 +1303,7 @@ function phoneApplyVisualFromSettings(cfg){
     root.style.setProperty('--phAppBlur', appBlurPx + 'px');
 
     root.style.setProperty('--phAppSolidA', String(appSolidA));
+    root.style.setProperty('--phAppBodyBlur', appBodyBlurPx + 'px');
 
     // ✅ 动态设置 appBody RGB（匹配当前主题底色）
     try{
@@ -1429,88 +1644,82 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   --ph-searchbox-text: rgba(255,255,255,.40);
 }
 
-/* ── frost：Nube 风·奶油暖灰 + 彩色光晕 ── */
+/* ── frost：奶白暖调玻璃拟态（默认视觉主题） ── */
 #${ID}[data-theme="frost"]{
-  /* 底色：暖米白，对标 Nube #eae8e3 */
-  --ph-bg-primary: #eae8e3;
-  --ph-glass: rgba(255,255,255,.52);
-  --ph-glass-strong: rgba(255,255,255,.72);
-  --ph-glass-border: rgba(255,255,255,.68);
-  --ph-glass-blur: 40px;
-  /* 文字：暖灰，非纯黑——Nube 标志性可读性 */
-  --ph-text: rgba(48,44,40,.82);
-  --ph-text-sub: rgba(48,44,40,.48);
-  --ph-text-dim: rgba(48,44,40,.26);
-  /* 强调色：中性石板灰（Nube 按钮色） */
-  --ph-accent: rgba(148,144,140,.92);
-  --ph-accent2: rgba(168,164,160,.80);
-  --ph-accent-grad: linear-gradient(135deg,rgba(152,148,145,.88),rgba(172,168,164,.80));
-  --ph-shadow: rgba(60,52,44,.06);
-  --ph-shadow-up: rgba(255,255,255,.92);
-  --phAppBodyRGB: 236,234,229;
-  --phHomeBodyRGB: 240,238,233;
-  --ph-sep: rgba(48,44,40,.05);
-  --ph-row-bg: rgba(255,255,253,.58);
-  --ph-row-hover: rgba(255,255,253,.80);
-  --ph-input-bg: rgba(255,255,253,.82);
-  --ph-input-border: rgba(48,44,40,.08);
-  /* 发送按钮：石板灰 pill（Nube 风格） */
-  --ph-send-btn: rgba(148,144,140,.90);
+  /* 底色：纯净白+极淡暖调（对标 Nube，更白更亮） */
+  --ph-bg-primary: linear-gradient(160deg,#fdfcfb 0%,#faf9f7 55%,#f5f3ef 100%);
+  --ph-glass: rgba(255,255,255,.50);       /* GPT-aligned: card-soft */
+  --ph-glass-strong: rgba(255,255,255,.70); /* card-strong */
+  --ph-glass-border: rgba(255,255,255,.76); /* card-line */
+  --ph-glass-blur: 32px;
+  --ph-text: rgba(22,18,14,.88);
+  --ph-text-sub: rgba(22,18,14,.50);
+  --ph-text-dim: rgba(22,18,14,.28);
+  /* 强调色：莫兰迪鼠尾草绿（可被 accentHex 覆盖） */
+  --ph-accent: #7d9b8a;
+  --ph-accent2: #a3bab0;
+  --ph-accent-grad: linear-gradient(135deg,#7d9b8a,#a3bab0);
+  --ph-shadow: rgba(40,30,20,.07);
+  --ph-shadow-up: rgba(255,255,255,.95);
+  --phAppBodyRGB: 250,249,247;   /* frost App底色 RGB */
+  --phHomeBodyRGB: 253,252,250;
+  --ph-sep: rgba(22,18,14,.040);
+  --ph-row-bg: rgba(255,255,254,.62);
+  --ph-row-hover: rgba(255,255,254,.86);
+  --ph-input-bg: rgba(255,255,254,.85);
+  --ph-input-border: rgba(22,18,14,.08);
+  --ph-send-btn: #7d9b8a;
   --ph-send-icon: #fff;
-  /* 聊天气泡：我方灰色胶囊，对方纯白 */
-  --ph-chat-me-bubble: rgba(148,144,140,.88);
+  --ph-chat-me-bubble: linear-gradient(135deg,#7d9b8a,#a3bab0);
   --ph-chat-me-text: #fff;
-  --ph-chat-them-bubble: rgba(255,255,253,.90);
-  --ph-chat-them-text: rgba(48,44,40,.84);
-  /* 导航栏/底栏 */
-  --ph-tabbar-bg: rgba(240,238,233,.88);
-  --ph-tabbar-border: rgba(255,255,255,.72);
-  --ph-tabbar-on: rgba(48,44,40,.82);
-  --ph-tabbar-off: rgba(48,44,40,.28);
-  --ph-appbar-bg: rgba(240,238,233,.90);
-  --ph-appbody-bg: rgba(236,234,229,.92);
-  --ph-topbar-bg: rgba(240,238,233,.90);
-  --ph-topbar-border: rgba(255,255,255,.72);
-  --ph-topbar-title: rgba(48,44,40,.82);
-  --ph-topbar-btn: rgba(48,44,40,.40);
-  --ph-sticker-bg: rgba(232,230,225,.82);
-  --ph-input-area-bg: rgba(236,234,229,.84);
-  --ph-input-text: rgba(48,44,40,.84);
-  --ph-input-ph: rgba(48,44,40,.26);
-  /* 微信聊天 */
-  --ph-wechat-me-bubble: rgba(148,144,140,.88);
+  --ph-chat-them-bubble: rgba(255,253,250,.92);
+  --ph-chat-them-text: rgba(28,22,16,.88);
+  --ph-tabbar-bg: rgba(253,252,250,.82);
+  --ph-tabbar-border: rgba(255,255,255,.80);
+  --ph-tabbar-on: #7d9b8a;
+  --ph-tabbar-off: rgba(22,18,14,.32);
+  --ph-appbar-bg: rgba(253,252,250,.85);
+  --ph-appbody-bg: rgba(250,249,247,.88);
+  --ph-topbar-bg: rgba(253,252,250,.85);
+  --ph-topbar-border: rgba(255,255,255,.80);
+  --ph-topbar-title: rgba(28,22,16,.88);
+  --ph-topbar-btn: rgba(28,22,16,.44);
+  --ph-sticker-bg: rgba(246,243,239,.80);
+  --ph-input-area-bg: rgba(249,247,243,.80);
+  --ph-input-text: rgba(28,22,16,.88);
+  --ph-input-ph: rgba(28,22,16,.28);
+  --ph-wechat-me-bubble: linear-gradient(135deg,#7d9b8a,#a3bab0);
   --ph-wechat-me-text: #fff;
-  --ph-wechat-them-bubble: rgba(255,255,253,.90);
-  --ph-wechat-them-text: rgba(48,44,40,.84);
-  --ph-wechat-bg: rgba(228,226,221,.70);
-  --ph-plus-popup-bg: rgba(60,56,52,.92);
-  /* 模态/确认框 */
-  --ph-modal-bg: rgba(244,242,238,.97);
-  --ph-modal-text: rgba(48,44,40,.84);
-  --ph-confirm-bg: rgba(248,246,242,.99);
-  --ph-confirm-text: rgba(48,44,40,.84);
-  --ph-confirm-sep: rgba(48,44,40,.06);
-  --ph-confirm-cancel: rgba(48,44,40,.40);
-  --ph-confirm-danger: #b0392b;
-  --ph-wallpaper-base: #eae8e3;
+  --ph-wechat-them-bubble: rgba(255,253,250,.92);
+  --ph-wechat-them-text: rgba(28,22,16,.88);
+  --ph-wechat-bg: rgba(242,240,237,.65);
+  --ph-plus-popup-bg: rgba(52,46,38,.90);
+  --ph-modal-bg: rgba(254,252,249,.96);
+  --ph-modal-text: rgba(28,22,16,.88);
+  --ph-confirm-bg: rgba(255,255,254,.98);
+  --ph-confirm-text: rgba(28,22,16,.88);
+  --ph-confirm-sep: rgba(28,22,16,.07);
+  --ph-confirm-cancel: rgba(28,22,16,.44);
+  --ph-confirm-danger: #c0392b;
+  --ph-wallpaper-base: #f5f5f7;   /* 同 GPT: 浅灰白 */
   --ph-ico-list: rgba(255,253,250,.95);
-  /* Shell */
-  --ph-shell-border: rgba(255,255,255,.62);
-  --ph-shell-shadow: 0 28px 72px rgba(100,94,86,.10), 0 8px 20px rgba(100,94,86,.06);
-  --ph-status-fg: rgba(48,44,40,.76);
-  --ph-status-shadow: 0 1px 0 rgba(255,255,255,.55);
-  --ph-home-label: rgba(48,44,40,.62);
-  --ph-app-icon-bg: linear-gradient(180deg,rgba(255,255,255,.60),rgba(248,246,242,.42));
-  --ph-app-icon-border: rgba(255,255,255,.82);
-  --ph-app-icon-shadow: 0 8px 22px rgba(100,94,86,.10);
-  --ph-dock-surface: rgba(255,255,255,.30);
-  --ph-dock-line: rgba(255,255,255,.54);
-  --ph-discover-bg: rgba(255,255,253,.68);
-  --ph-discover-border: rgba(48,44,40,.04);
-  --ph-discover-name: rgba(48,44,40,.80);
-  --ph-discover-arrow: rgba(48,44,40,.16);
-  --ph-searchbox-bg: rgba(255,255,253,.66);
-  --ph-searchbox-text: rgba(48,44,40,.36);
+  /* GPT-aligned shell/status */
+  --ph-shell-border: rgba(255,255,255,.58);
+  --ph-shell-shadow: 0 28px 72px rgba(118,130,155,.16), 0 10px 24px rgba(118,130,155,.08);
+  --ph-status-fg: rgba(32,40,53,.86);
+  --ph-status-shadow: 0 1px 0 rgba(255,255,255,.50);
+  --ph-home-label: rgba(38,45,58,.70);
+  --ph-app-icon-bg: linear-gradient(180deg, rgba(255,255,255,.55), rgba(244,247,251,.38));
+  --ph-app-icon-border: rgba(255,255,255,.88);
+  --ph-app-icon-shadow: 0 12px 28px rgba(112,126,152,.12);
+  --ph-dock-surface: rgba(255,255,255,.32);
+  --ph-dock-line: rgba(255,255,255,.52);
+  --ph-discover-bg: rgba(255,255,254,.72);
+  --ph-discover-border: rgba(22,18,14,.040);
+  --ph-discover-name: rgba(22,18,14,.85);
+  --ph-discover-arrow: rgba(22,18,14,.18);
+  --ph-searchbox-bg: rgba(255,255,254,.70);
+  --ph-searchbox-text: rgba(22,18,14,.38);
 }
 
 /* ── medieval：深棕皮革 ── */
@@ -1726,23 +1935,21 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 /* --- pill mode --- */
 #${ID}.pill{
   display:flex !important;
-  padding:8px 16px; height:auto; width:auto; border-radius:20px;
-  background:rgba(255,255,255,.90);
-  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  width:56px; height:56px; border-radius:50%;
+  background:var(--ph-accent-grad);
   align-items:center; justify-content:center;
-  gap:8px; cursor:pointer; font-weight:500;
-  border:1px solid rgba(255,255,255,.40);
-  box-shadow:0 4px 15px rgba(0,0,0,.10);
-  transition:transform .3s ease, box-shadow .3s ease;
+  cursor:pointer;
+  box-shadow:0 6px 24px rgba(99,102,241,.45);
+  transition:transform .15s, box-shadow .2s;
   animation:phPillPulse 3s ease-in-out infinite;
 }
-#${ID}.pill:hover{ transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.15); }
+#${ID}.pill:hover{ transform:scale(1.1); }
 #${ID}.pill:active{ transform:scale(.95); }
 #${ID}.pill .phShell{ display:none; }
-#${ID}.pill .phPillIcon{ display:flex; font-size:20px; color:var(--ph-accent,#555); pointer-events:none; }
+#${ID}.pill .phPillIcon{ display:flex; font-size:24px; color:#fff; pointer-events:none; }
 @keyframes phPillPulse{
-  0%,100%{ box-shadow:0 4px 15px rgba(0,0,0,.10); }
-  50%{ box-shadow:0 6px 20px rgba(0,0,0,.18); }
+  0%,100%{ box-shadow:0 6px 24px rgba(99,102,241,.45); }
+  50%{ box-shadow:0 6px 28px rgba(99,102,241,.6); }
 }
 
 /* ---------- Phone Shell ---------- */
@@ -1750,22 +1957,19 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   width:375px; height:750px; max-width:96vw; max-height:90vh;
   border-radius:38px; position:relative; overflow:hidden;
   background:var(--ph-bg-primary);
-  backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
-  border:1px solid rgba(255,255,255,.50);
+  border:1px solid var(--ph-glass-border);
   box-shadow:
-    0 20px 40px var(--ph-shadow),
-    0 1px 3px rgba(0,0,0,.05),
-    inset 0 1px 0 rgba(255,255,255,.80);
-  transition:transform .35s cubic-bezier(0.25,0.8,0.25,1);
-  transform-origin:bottom right;
+    0 0 0 1px rgba(0,0,0,.2),
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 24px 80px var(--ph-shadow);
+  transition:transform .2s ease;
+  transform-origin:top left;
 }
-/* frost shell：Nube 风·奶油磨砂玻璃 */
+/* frost shell：精细高光 + 阴影（GPT-aligned） */
 #${ID}[data-theme="frost"] .phShell{
-  border-color: rgba(255,255,255,.62);
-  box-shadow: 0 28px 72px rgba(100,94,86,.10), 0 8px 20px rgba(100,94,86,.06), inset 0 1px 0 rgba(255,255,255,.82);
   background:
-    linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.04)),
-    #eae8e3;
+    linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.03)),
+    var(--ph-bg-primary);
 }
 /* modern shell */
 #${ID}[data-theme="modern"] .phShell{
@@ -2070,14 +2274,13 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   box-shadow:0 4px 16px var(--ph-shadow);
   position:relative;
 }
-#${ID} .phAppIcon:hover{ background:var(--ph-glass-strong); transform:translateY(-2px) scale(1.05); filter:brightness(1.1); }
+#${ID} .phAppIcon:hover{ background:var(--ph-glass-strong); }
 #${ID} .phAppIcon:active{ transform:scale(.9); }
 #${ID} .phAppIcon .ai{
-  width:36px; height:36px; border-radius:12px;
+  width:36px; height:36px; border-radius:10px;
   display:flex; align-items:center; justify-content:center;
   font-size:18px; line-height:1; color:#fff;
   background:var(--ph-accent-grad);
-  box-shadow:0 4px 10px rgba(0,0,0,.08);
   opacity:0.90;
 }
 #${ID} .phAppIcon[data-app="chats"] .ai{ background:var(--ph-icon-tint, linear-gradient(135deg,rgba(123,158,168,.75),rgba(154,184,194,.65))); }
@@ -2088,7 +2291,6 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .phAppIcon .at{
   font-size:10.5px; color:var(--ph-text-sub); font-weight:500;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:90%;
-  text-shadow:0 1px 2px rgba(255,255,255,.8);
 }
 
 /* ---------- Search bar ---------- */
@@ -23105,6 +23307,7 @@ function renderSettingsUIApp(container){
   const op = Math.max(0, Math.min(100, Number(cfg.uiAppOpacity ?? 52)));
   const blur = Math.max(0, Math.min(40, Number(cfg.uiAppBlur ?? 16)));
   const solid = Math.max(0, Math.min(100, Number(cfg.uiAppSolidOpacity ?? 92)));
+  const bodyBlur = Math.max(0, Math.min(50, Number(cfg.uiAppBodyBlur ?? 18)));
 
   container.innerHTML = `
     <div class="settingSubPage">
@@ -23134,6 +23337,15 @@ function renderSettingsUIApp(container){
         </div>
         <input data-uiapp="blur" type="range" min="0" max="40" value="${blur}" style="width:100%;margin-top:10px;">
       </div>
+
+      <div class="phCard">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-weight:700;color:var(--ph-text);">App 内容底模糊度</div>
+          <div style="font-size:12px;color:var(--ph-text-sub);"><b data-uiapp="bodyblur">${bodyBlur}</b>px</div>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:var(--ph-text-dim);">内容区背景毛玻璃强度，越高越霜雪朦胧感。</div>
+        <input data-uiapp="bodyblur" type="range" min="0" max="50" value="${bodyBlur}" style="width:100%;margin-top:10px;">
+      </div>
     </div>
   `;
 
@@ -23143,9 +23355,10 @@ function renderSettingsUIApp(container){
       const v = Number(inp.value||0);
       const cfg2 = phoneLoadSettings();
 
-      if (k === 'blur') cfg2.uiAppBlur = Math.max(0, Math.min(40, v));
-      else if (k === 'op') cfg2.uiAppOpacity = Math.max(0, Math.min(100, v));
-      else cfg2.uiAppSolidOpacity = Math.max(0, Math.min(100, v));
+      if (k === 'blur')       cfg2.uiAppBlur         = Math.max(0, Math.min(40, v));
+      else if (k === 'op')    cfg2.uiAppOpacity       = Math.max(0, Math.min(100, v));
+      else if (k === 'bodyblur') cfg2.uiAppBodyBlur   = Math.max(0, Math.min(50, v));
+      else                    cfg2.uiAppSolidOpacity  = Math.max(0, Math.min(100, v));
 
       phoneSaveSettings(cfg2);
       phoneApplyVisualFromSettings(cfg2);
