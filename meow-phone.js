@@ -784,14 +784,14 @@ function ensureTuneStyle(){
 }
 
 #${ID}[data-theme="frost"][data-view="home"]{
-  --ph-frost-panel-a: calc(var(--phHomeA, .36) * .55 + .02);
-  --ph-frost-surface-a: calc(var(--phHomeA, .36) * .42 + .02);
-  --ph-frost-bar-a: calc(var(--phHomeA, .36) * .50 + .02);
-  --ph-frost-hi-a: calc(var(--phHomeA, .36) * .18 + .04);
-  --ph-frost-line-a: calc(var(--phHomeA, .36) * .55 + .06);
+  --ph-frost-panel-a: calc(var(--phHomeA, .36) * .82 + .03);
+  --ph-frost-surface-a: calc(var(--phHomeA, .36) * .68 + .03);
+  --ph-frost-bar-a: calc(var(--phHomeA, .36) * .74 + .04);
+  --ph-frost-hi-a: calc(var(--phHomeA, .36) * .32 + .08);
+  --ph-frost-line-a: calc(var(--phHomeA, .36) * .82 + .12);
   --ph-row-bg: rgba(255,255,255,var(--ph-frost-surface-a));
-  --ph-row-hover: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .06));
-  --ph-searchbox-bg: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .04));
+  --ph-row-hover: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .07));
+  --ph-searchbox-bg: rgba(255,255,255,calc(var(--ph-frost-surface-a) + .05));
   --ph-searchbox-text: rgba(40,48,62,.40);
   --ph-discover-bg: rgba(255,255,255,var(--ph-frost-panel-a));
   --ph-discover-border: rgba(255,255,255,var(--ph-frost-line-a));
@@ -1036,13 +1036,11 @@ function ensureTuneStyle(){
 /* —— 3. Dock 更圆润 —— */
 #${ID}[data-theme="frost"] .phDock{
   border-radius: 38px;
-  background: rgba(232,220,205,.68);
-  border: 1px solid rgba(255,248,235,.50);
-  box-shadow:
-    inset 0 1px 0 rgba(255,252,240,.55),
-    0 8px 24px rgba(100,94,86,.10);
-  backdrop-filter: blur(18px) saturate(130%);
-  -webkit-backdrop-filter: blur(18px) saturate(130%);
+  background: rgba(255,255,255, calc(var(--phHomeA, .36) * .72 + .12));
+  border: 1px solid rgba(255,255,255, calc(var(--phHomeA, .36) * .55 + .12));
+  box-shadow: 0 8px 24px rgba(100,94,86,.10);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
 }
 /* Dock 按钮图标区域（首页图标 ai 颜色不改，保持白色原来的渐变） */
 #${ID}[data-theme="frost"] .phDockBtn .di{
@@ -1499,11 +1497,7 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .wxTabbar{
   border-top-color: rgba(48,44,40,.06) !important;
 }
-/* Dock 柔化 */
-#${ID}[data-theme="frost"] .phDock{
-  border-color: rgba(255,255,255,.42) !important;
-  box-shadow: 0 8px 24px rgba(100,94,86,.08) !important;
-}
+/* Dock 颜色已在上方 phDock 主规则定义，此处不覆盖 */
 /* 搜索框柔化 */
 #${ID}[data-theme="frost"] .phSearch,
 #${ID}[data-theme="frost"] .wxSearchBox{
