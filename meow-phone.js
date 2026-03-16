@@ -1146,20 +1146,26 @@ function ensureTuneStyle(){
 }
 
 /* settingSection 容器：圆角卡片，透明玻璃感 */
+/* ── 统一卡片风格：settingSection / wxGroupAccordion / wxChatList ──
+   全部对齐发现页 wxDiscoverGroup 的圆角卡+行分隔线效果 */
+
+/* 设置页分组卡片 */
 #${ID}[data-theme="frost"] .settingSection{
-  border-radius: 20px !important;
-  border: 1px solid rgba(255,255,255, calc(var(--ph-frost-line-a) * .65)) !important;
-  box-shadow: 0 2px 12px rgba(100,94,86,.04) !important;
-  background: rgba(255,255,255, var(--ph-frost-panel-a)) !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(255,255,255,.38) !important;
+  box-shadow: 0 2px 12px rgba(100,94,86,.06) !important;
+  background: rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .06)) !important;
   backdrop-filter: blur(calc(var(--ph-glass-blur) * .50)) saturate(118%) !important;
   -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) * .50)) saturate(118%) !important;
+  overflow: hidden !important;
   margin: 0 12px 8px !important;
 }
 
-/* settingRow 精致窄长 */
+/* settingRow 行 — 与 wxDiscoverItem 同风格 */
 #${ID}[data-theme="frost"] .settingRow{
   padding: 11px 14px !important;
   border-bottom: 1px solid rgba(48,44,40,.04) !important;
+  background: transparent !important;
 }
 #${ID}[data-theme="frost"] .settingRow:last-child{
   border-bottom: none !important;
@@ -1204,13 +1210,26 @@ function ensureTuneStyle(){
 
 /* wxDiscoverGroup & wxDiscoverItem 独立卡片 */
 #${ID}[data-theme="frost"] .wxDiscoverGroup,
+/* 通讯录分组卡片 — 与发现页完全一致 */
 #${ID}[data-theme="frost"] .wxGroupAccordion{
   border-radius: 18px !important;
   overflow: hidden;
-  margin: 0 12px 6px;
+  margin: 0 12px 8px;
   border: 1px solid rgba(255,255,255,.38) !important;
   box-shadow: 0 2px 12px rgba(100,94,86,.06) !important;
   background: rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .06)) !important;
+}
+/* 通讯录内部行：与 wxDiscoverItem 同风格 */
+#${ID}[data-theme="frost"] .wxGroupHeader,
+#${ID}[data-theme="frost"] .wxContactItem{
+  background: transparent !important;
+  border-bottom: 1px solid rgba(48,44,40,.04) !important;
+  border-top: none !important; border-left: none !important; border-right: none !important;
+  padding: 10px 14px !important;
+}
+#${ID}[data-theme="frost"] .wxGroupHeader:last-child,
+#${ID}[data-theme="frost"] .wxContactItem:last-child{
+  border-bottom: none !important;
 }
 /* 通讯录：新的朋友/分组 header 后面紧跟的第一个 wxGroupAccordion 要拉开明显距离 */
 #${ID}[data-theme="frost"] .wxContactHeader + .wxGroupAccordion{
@@ -1297,7 +1316,16 @@ function ensureTuneStyle(){
 }
 
 /* 通讯录行精致化 */
-#${ID}[data-theme="frost"] .wxContactHeader,
+/* 通讯录独立入口行 (新的朋友/分组) — 每行作为独立pill卡片 */
+#${ID}[data-theme="frost"] .wxContactHeader{
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  border-radius: 18px !important;
+  margin: 0 12px 6px !important;
+  border: 1px solid rgba(255,255,255,.38) !important;
+  box-shadow: 0 2px 12px rgba(100,94,86,.06) !important;
+  background: rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .06)) !important;
+}
 #${ID}[data-theme="frost"] .wxContactItem{
   padding: 10px 14px !important;
   font-size: 13px !important;
@@ -1338,6 +1366,13 @@ function ensureTuneStyle(){
 /* 聊天列表行精致化 */
 #${ID}[data-theme="frost"] .wxChatRow{
   padding: 0 !important;
+  /* 每条聊天行作为独立pill卡片，与发现页单项独立风格一致 */
+  border-radius: 18px !important;
+  margin: 0 12px 6px !important;
+  border: 1px solid rgba(255,255,255,.38) !important;
+  box-shadow: 0 2px 12px rgba(100,94,86,.06) !important;
+  background: rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .06)) !important;
+  overflow: hidden;
 }
 #${ID}[data-theme="frost"] .chatItemInner,
 #${ID}[data-theme="frost"] .wxChatRow .chatItemInner{
