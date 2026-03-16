@@ -4578,23 +4578,15 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   display:flex; align-items:flex-end; justify-content:center;
   animation:mapFadeIn .2s ease;
 }
-/* 毛玻璃底层：白色半透明+强力模糊 */
-#${ID} .mapDetailBlurBg{
-  position:absolute; bottom:0; left:0; right:0;
-  height:72%;
-  background:rgba(245,242,236,0.52);
-  backdrop-filter:blur(calc(var(--phAppBlur,25px)*2.0)) saturate(150%) brightness(1.04);
-  -webkit-backdrop-filter:blur(calc(var(--phAppBlur,25px)*2.0)) saturate(150%) brightness(1.04);
-  pointer-events:none; z-index:0;
-  border-radius:22px 22px 0 0;
-}
+/* 毛玻璃底层已移除 — backdrop-filter在phApp合成层内无法穿透壁纸
+   改用实色半透明背景，视觉效果与设置页一致 */
 @keyframes mapFadeIn{ from{opacity:0;} to{opacity:1;} }
 #${ID} .mapDetailCard{
   width:92%; max-height:72%; overflow-y:auto;
-  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .28) + .14));
+  background: rgba(248,245,240, 0.90);
   border-radius:22px 22px 0 0; padding:16px;
-  box-shadow:0 -6px 32px rgba(100,94,86,.14);
-  border:1px solid rgba(255,255,255,.50);
+  box-shadow:0 -6px 32px rgba(100,94,86,.16);
+  border:1px solid rgba(255,255,255,.60);
   border-bottom:none;
   animation:mapSlideUp .25s ease;
   scrollbar-width:none;
@@ -27817,7 +27809,7 @@ function _mapShowLandmarkDetail(container, mapData, lmId, npcId){
 
   var wrap = doc.createElement('div');
   wrap.className = 'mapDetailOverlay';
-  wrap.innerHTML = '<div class="mapDetailBlurBg"></div>' + html;
+  wrap.innerHTML = html;
   container.appendChild(wrap);
 
   // 事件
