@@ -5574,18 +5574,33 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
           // ---- 聊天记录 JSON 导出 ----
           if (act === 'wxExportChatLog'){
             var _expNid = t.getAttribute('data-npcid') || state.chatTarget;
+            var _expMode = t.getAttribute('data-expmode') || 'all';
             try{
               var _expLogs = loadLogs();
-              var _expArr = _safeArr(_expLogs.map && _expLogs.map[String(_expNid)]);
-              if (!_expArr.length){ try{toast('该角色暂无聊天记录');}catch(e){} return; }
+              var _expAll = _safeArr(_expLogs.map && _expLogs.map[String(_expNid)]);
+              if (!_expAll.length){ try{toast('该角色暂无聊天记录');}catch(e){} return; }
+              // 按模式过滤
+              var _expArr;
+              if(_expMode === 'online'){
+                _expArr = _expAll.filter(function(m){ return _normChatMode(m.mode||'online') === 'online'; });
+              } else if(_expMode === 'offline'){
+                _expArr = _expAll.filter(function(m){ return _normChatMode(m.mode||'online') === 'offline'; });
+              } else {
+                _expArr = _expAll;
+              }
+              if (!_expArr.length){ try{toast('该模式暂无聊天记录');}catch(e){} return; }
               var _expDb = loadContactsDB();
               var _expNpc = findContactById(_expDb, _expNid) || { name:String(_expNid) };
+              // 线下模式额外统计字数
+              var _wordCount = _expMode === 'offline' ? _expArr.reduce(function(s,m){ return s + String(m.text||'').length; }, 0) : 0;
               var _expData = {
                 v:1,
                 exportedAt: Date.now(),
                 npcId: _expNid,
                 npcName: _expNpc.name || '',
+                mode: _expMode,
                 totalMessages: _expArr.length,
+                totalChars: _wordCount || undefined,
                 messages: _expArr
               };
               var _expJson = JSON.stringify(_expData, null, 2);
@@ -5593,10 +5608,13 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
               var _expUrl = URL.createObjectURL(_expBlob);
               var _expA = doc.createElement('a');
               _expA.href = _expUrl;
-              _expA.download = 'chat_' + String(_expNpc.name||_expNid).replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g,'_') + '_' + new Date().toISOString().slice(0,10) + '.json';
+              var _expSuffix = _expMode === 'online' ? '_线上' : _expMode === 'offline' ? '_线下' : '';
+              _expA.download = 'chat_' + String(_expNpc.name||_expNid).replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g,'_') + _expSuffix + '_' + new Date().toISOString().slice(0,10) + '.json';
               doc.body.appendChild(_expA); _expA.click();
               setTimeout(function(){ doc.body.removeChild(_expA); URL.revokeObjectURL(_expUrl); }, 200);
-              try{toast('已导出 ' + _expArr.length + ' 条消息');}catch(e){}
+              var _toastMsg = '已导出 ' + _expArr.length + ' 条' + (_expMode==='offline'?'线下':'线上') + '消息';
+              if(_wordCount) _toastMsg += '（共 ' + _wordCount.toLocaleString() + ' 字）';
+              try{toast(_toastMsg);}catch(e){}
             }catch(e){ try{toast('导出失败: '+e.message);}catch(e2){} }
             return;
           }
@@ -13686,20 +13704,50 @@ const npc = _wxGetChatTargetMeta(npcId);
           msgs.appendChild(tip);
           _wxAppendBubble(msgs, npc, 'them', '在这里和我私聊吧~ 😊', _now());
         }else{
-          let lastTimeStr = '';
-          for (const x of log){
-            const ts = _fmtTime(x.t);
-            if (ts !== lastTimeStr){
-              const td = doc.createElement('div');
-              td.className = 'wxCBTime';
-              td.textContent = ts;
-              msgs.appendChild(td);
-              lastTimeStr = ts;
+          // ★ 分页：默认只渲染最近 50 条，顶部加「查看更早消息」按钮
+          const PAGE = 50;
+          var _offset = Math.max(0, log.length - PAGE); // 当前渲染起点
+
+          function _renderPage(fromIdx, scrollToTop){
+            msgs.innerHTML = '';
+            // 如果还有更早的消息，加顶部按钮
+            if(fromIdx > 0){
+              const loadMoreBtn = doc.createElement('div');
+              loadMoreBtn.style.cssText = 'text-align:center;padding:8px 0 4px;';
+              loadMoreBtn.innerHTML = '<button style="font-size:11px;padding:5px 14px;border-radius:20px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.85);color:rgba(20,24,28,.5);cursor:pointer;">查看更早的 ' + Math.min(fromIdx, PAGE) + ' 条消息</button>';
+              loadMoreBtn.querySelector('button').addEventListener('click', function(){
+                var newFrom = Math.max(0, fromIdx - PAGE);
+                _offset = newFrom;
+                _renderPage(newFrom, false);
+              });
+              msgs.appendChild(loadMoreBtn);
             }
-            _wxAppendBubble(msgs, npc, x.role, x.text, x.t, undefined, { edited:!!x.edited, recalled:!!x.recalled });
+            // 渲染这一页
+            let lastTimeStr = '';
+            var pageLog = log.slice(fromIdx);
+            for (const x of pageLog){
+              const ts = _fmtTime(x.t);
+              if (ts !== lastTimeStr){
+                const td = doc.createElement('div');
+                td.className = 'wxCBTime';
+                td.textContent = ts;
+                msgs.appendChild(td);
+                lastTimeStr = ts;
+              }
+              _wxAppendBubble(msgs, npc, x.role, x.text, x.t, undefined, { edited:!!x.edited, recalled:!!x.recalled });
+            }
+            requestAnimationFrame(()=>{
+              try{
+                if(scrollToTop) msgs.scrollTop = 0;
+                else msgs.scrollTop = msgs.scrollHeight;
+              }catch(e){}
+            });
           }
+
+          _renderPage(_offset, false);
+          // 把 _renderPage 挂到 msgs 上供外部追加消息时刷新用
+          msgs._reloadHistory = function(){ _renderPage(_offset, false); };
         }
-        requestAnimationFrame(()=>{ try{ msgs.scrollTop = msgs.scrollHeight; }catch(e){} });
       }
 
       /* --- 子渲染：绑定输入框事件 --- */
@@ -14014,11 +14062,19 @@ const npc = _wxGetChatTargetMeta(npcId);
             </div>
 
             <div class="wxCSGroup" style="margin-top:12px;">
-              <div class="wxCSItem" data-act="wxExportChatLog" data-npcid="${esc(contactId)}">
+              <div class="wxCSItem" data-act="wxExportChatLog" data-npcid="${esc(contactId)}" data-expmode="online">
                 <div class="wxCSIco">${_phFlatIcon('📤')}</div>
                 <div class="wxCSName">
-                  导出聊天记录
-                  <div style="font-size:11px;color:rgba(20,24,28,.4);margin-top:1px;">导出该角色全部消息为 JSON</div>
+                  导出聊天记录（线上）
+                  <div style="font-size:11px;color:rgba(20,24,28,.4);margin-top:1px;">导出在线聊天气泡为 JSON</div>
+                </div>
+                <div class="wxCSArrow">›</div>
+              </div>
+              <div class="wxCSItem" data-act="wxExportChatLog" data-npcid="${esc(contactId)}" data-expmode="offline">
+                <div class="wxCSIco">${_phFlatIcon('📖')}</div>
+                <div class="wxCSName">
+                  导出聊天记录（线下）
+                  <div style="font-size:11px;color:rgba(20,24,28,.4);margin-top:1px;">导出线下小说段落为 JSON</div>
                 </div>
                 <div class="wxCSArrow">›</div>
               </div>
@@ -18993,7 +19049,10 @@ const npc = _wxGetChatTargetMeta(npcId);
           if (!apiCfg.endpoint || !apiCfg.key) return;
           var targetMode = _normChatMode(mode || _getChatMode(npcId));
           var ce = _loadCharExtra(npcId);
-          var chunkSize = Math.max(5, ce.autoSumEvery || 20);
+          // ★ 线上线下分别用各自的N
+          var chunkSize = targetMode === 'offline'
+            ? Math.max(5, ce.autoSumEveryOffline || 30)
+            : Math.max(5, ce.autoSumEvery || 20);
           var batchCount = 0;
           var maxBatch = 10; // 安全上限
 
@@ -21230,7 +21289,10 @@ const npc = _wxGetChatTargetMeta(npcId);
           var ce = _loadCharExtra(npcId);
           if (ce.autoSummary){
             var curMode = _normChatMode(_getChatMode(npcId));
-            var everyN = Math.max(5, ce.autoSumEvery || 20);
+            // ★ 线上线下分别用各自的N
+            var everyN = curMode === 'offline'
+              ? Math.max(5, ce.autoSumEveryOffline || 30)
+              : Math.max(5, ce.autoSumEvery || 20);
             // 用 _getTimelinePendingRange 检查是否有足够的未总结消息
             var pending = _getTimelinePendingRange(npcId, curMode, everyN);
             if (pending && (pending.toIdx - pending.fromIdx + 1) >= everyN){
@@ -25750,14 +25812,26 @@ function _openTimelineViewer(npcId){
       return (a.createdAt || 0) - (b.createdAt || 0);
     });
     var info = _getPendingInfo();
-    var statusText = '已总结至第 ' + info.lastEnd + ' 条，共 ' + info.logLength + ' 条';
-    if (info.remaining > 0) statusText += '（剩余 ' + info.remaining + ' 条未总结）';
+    // ★ 显示当前模式过滤后的条数，并附上全量总数帮助理解
+    var _totalAllModes = 0;
+    try{ _totalAllModes = getLog(npcId).length; }catch(e){}
+    var _modeFilterNote = (_totalAllModes > info.logLength) ? '（全部模式共'+_totalAllModes+'条）' : '';
+    var statusText = '已总结至第 ' + info.lastEnd + ' 条，当前模式共 ' + info.logLength + ' 条' + _modeFilterNote;
+    if (info.remaining > 0) statusText += '，剩余 ' + info.remaining + ' 条未总结';
+    // ★ 线下模式显示字数统计
+    if(_normChatMode(viewMode) === 'offline'){
+      try{
+        var _offLog = _getLogForModeBranch(npcId, 'offline');
+        var _totalChars = _offLog.reduce(function(s,m){ return s+String(m.text||'').length; },0);
+        statusText += ' · 共约 ' + (_totalChars >= 10000 ? Math.round(_totalChars/1000)+'k' : _totalChars) + ' 字';
+      }catch(e){}
+    }
     var h = renderTabs()
-      + '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:4px;">当前查看：'+ _modeLabel(viewMode) +' · 共 '+entries.length+' 条</div>'
+      + '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:4px;">当前查看：'+ _modeLabel(viewMode) +' · 共 '+entries.length+' 个摘要块</div>'
       + '<div style="font-size:10px;color:rgba(20,24,28,.35);margin:2px 0;">'+statusText+'</div>'
       + '<div style="display:flex;align-items:center;gap:6px;margin:6px 0 4px;">'
       + '<span style="font-size:10px;color:rgba(20,24,28,.4);">每次总结</span>'
-      + '<input data-el="chunkInput" type="number" min="5" max="'+(viewMode==='offline'?'100':'200')+'" value="'+_getChunkSize()+'" style="width:50px;padding:2px 4px;border-radius:4px;border:1px solid rgba(0,0,0,.1);font-size:11px;text-align:center;" />'
+      + '<input data-el="chunkInput" type="number" min="5" max="99999" value="'+_getChunkSize()+'" style="width:60px;padding:2px 4px;border-radius:4px;border:1px solid rgba(0,0,0,.1);font-size:11px;text-align:center;" />'
       + '<span style="font-size:10px;color:rgba(20,24,28,.4);">条消息'+(viewMode==='offline'?' (线下建议30)':'')+' </span>'
       + '<button data-act="chunkSave" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);cursor:pointer;">保存</button>'
       + (entries.length > 0 ? '<button data-act="tlClearAll" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.9);color:rgba(20,24,28,.4);cursor:pointer;margin-left:auto;">清除全部</button>' : '')
@@ -25957,7 +26031,7 @@ function _openTimelineViewer(npcId){
     if (act === 'chunkSave'){
       var inp = modal.querySelector('[data-el="chunkInput"]');
       if (!inp) return;
-      var _maxChunk = (viewMode === 'offline') ? 100 : 200;
+      var _maxChunk = 99999;
       var v = Math.max(5, Math.min(_maxChunk, parseInt(inp.value) || (viewMode === 'offline' ? 30 : 20)));
       var ce = _loadCharExtra(npcId);
       if(viewMode === 'offline'){
