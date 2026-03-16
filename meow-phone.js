@@ -1574,6 +1574,48 @@ function ensureTuneStyle(){
   font-size:14px; color:rgba(255,255,255,.4); background:transparent; border:0; cursor:pointer;
   padding:0; flex-shrink:0; line-height:1; align-self:flex-start;
 }
+.meowIncomingCall{
+  position:fixed; top:0; left:50%; transform:translateX(-50%);
+  width:100%; max-width:420px;
+  background:rgba(18,18,24,.96); backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px);
+  border-bottom-left-radius:24px; border-bottom-right-radius:24px;
+  border:1px solid rgba(255,255,255,.1); border-top:0;
+  padding:24px 20px 28px;
+  box-shadow:0 12px 48px rgba(0,0,0,.6);
+  opacity:0; transform:translateX(-50%) translateY(-100%);
+  transition:opacity .35s, transform .4s cubic-bezier(.22,1,.36,1);
+  pointer-events:none; z-index:999999;
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+}
+.meowIncomingCall.show{ opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
+.meowIncomingCall .icAvatar{
+  width:72px; height:72px; border-radius:50%;
+  background:rgba(255,255,255,.15); overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  font-size:28px; font-weight:700; color:#fff;
+  box-shadow:0 0 0 4px rgba(255,255,255,.1);
+  animation:icPulse 2s ease-in-out infinite;
+}
+.meowIncomingCall .icAvatar img{ width:100%; height:100%; object-fit:cover; }
+@keyframes icPulse{
+  0%,100%{ box-shadow:0 0 0 4px rgba(255,255,255,.1); }
+  50%{ box-shadow:0 0 0 10px rgba(255,255,255,.04); }
+}
+.meowIncomingCall .icLabel{ font-size:11px; color:rgba(255,255,255,.4); letter-spacing:1px; }
+.meowIncomingCall .icName{ font-size:20px; font-weight:700; color:#fff; }
+.meowIncomingCall .icBtns{ display:flex; gap:32px; margin-top:8px; }
+.meowIncomingCall .icBtn{
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  font-size:11px; color:rgba(255,255,255,.55); cursor:pointer; background:transparent; border:0;
+}
+.meowIncomingCall .icBtnCircle{
+  width:56px; height:56px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:24px;
+  transition:transform .15s;
+}
+.meowIncomingCall .icBtn:active .icBtnCircle{ transform:scale(.92); }
+.meowIncomingCall .icBtnCircle.accept{ background:#22c55e; }
+.meowIncomingCall .icBtnCircle.decline{ background:#ef4444; }
     `;
     (doc.head || doc.documentElement).appendChild(lpSt);
   }catch(e){}
@@ -24845,6 +24887,75 @@ function bindPageScroll(){
         // ★ 前台实时推送：每2.5分钟检查，触发条件满足时 AI 生成消息 + 弹窗
         try{
           // 弹窗显示函数
+          // ★ NPC 主动来电弹窗
+          function _showIncomingCall(npcId, npcName, avatarHint, callType, onAccept, onDecline){
+            try{
+              // 移除已有弹窗
+              var existingIC = doc.querySelector('.meowIncomingCall');
+              if(existingIC) existingIC.remove();
+              var existingToast = doc.querySelector('.meowLifePushToast');
+              if(existingToast) existingToast.remove();
+
+              var el = doc.createElement('div');
+              el.className = 'meowIncomingCall';
+              var avatarImg = (typeof phoneGetAvatar === 'function') ? phoneGetAvatar(npcId) : null;
+              var avatarHtml = avatarImg
+                ? '<img src="'+avatarImg+'" />'
+                : esc((avatarHint || (npcName||'?').charAt(0)));
+              var isVideo = callType === 'video';
+              el.innerHTML =
+                '<div class="icLabel">'+(isVideo?'📹 视频通话来电':'📞 语音通话来电')+'</div>'
+                + '<div class="icAvatar">'+avatarHtml+'</div>'
+                + '<div class="icName">'+esc(npcName||npcId)+'</div>'
+                + '<div class="icBtns">'
+                +   '<button class="icBtn" data-ic="decline">'
+                +     '<div class="icBtnCircle decline">📵</div>'
+                +     '<span>拒接</span>'
+                +   '</button>'
+                +   '<button class="icBtn" data-ic="accept">'
+                +     '<div class="icBtnCircle accept">📞</div>'
+                +     '<span>接听</span>'
+                +   '</button>'
+                + '</div>';
+
+              doc.body.appendChild(el);
+              requestAnimationFrame(function(){ el.classList.add('show'); });
+
+              // 震动反馈
+              try{ if(navigator.vibrate) navigator.vibrate([300,200,300]); }catch(e){}
+
+              function _dismiss(){ el.classList.remove('show'); setTimeout(function(){ if(el.isConnected) el.remove(); }, 400); }
+
+              el.querySelector('[data-ic="accept"]').addEventListener('click', function(){
+                _dismiss();
+                try{ if(onAccept) onAccept(); }catch(e){}
+              });
+              el.querySelector('[data-ic="decline"]').addEventListener('click', function(){
+                _dismiss();
+                try{ if(onDecline) onDecline(); }catch(e){}
+              });
+
+              // 25秒无人接听 → 自动挂断
+              var autoHangup = setTimeout(function(){
+                if(el.isConnected){
+                  _dismiss();
+                  // 留一条未接来电记录
+                  try{
+                    var _db_ic = loadContactsDB();
+                    var _npc_ic = findContactById(_db_ic, npcId) || { name:npcName };
+                    pushLog(npcId, 'system', '📵 未接来电（'+(_npc_ic.name||npcId)+'）');
+                    bumpThread(npcId, { lastMsg:'📵 未接来电', lastTime:Date.now(), unread:1 });
+                  }catch(e){}
+                }
+              }, 25000);
+              el.addEventListener('click', function(ev){
+                // 点击接听/拒接按钮时 clearTimeout 防止重复触发
+                if(ev.target.closest('[data-ic]')) clearTimeout(autoHangup);
+              });
+
+            }catch(e){ console.warn('[IncomingCall] error:', e); }
+          }
+
           function _showLifePushToast(npcId, npcName, avatarHint, text, onTap){
             try{
               var existing = doc.querySelector('.meowLifePushToast');
@@ -24946,6 +25057,46 @@ function bindPageScroll(){
                     if (!inserted5) return;
                     var ts5 = inserted5.ts;
                     fgText = inserted5.text;
+
+                    // ★ 来电概率：社交主动性高 + 当前不在深夜 → 有概率触发来电而非文字
+                    var _p5 = sSnap.personality || {};
+                    var _sd5 = (_p5.socialDrive != null) ? _p5.socialDrive : 50;
+                    var _h5 = new Date().getHours();
+                    var _callChance = (_sd5 >= 70) ? 0.35 : (_sd5 >= 50 ? 0.18 : 0.08);
+                    var _canCall = _h5 >= 9 && _h5 <= 22; // 9点到22点才打电话
+                    var _doCall = _canCall && Math.random() < _callChance;
+
+                    if(_doCall){
+                      // 来电模式：弹来电弹窗，接听后进入通话
+                      var _db5 = loadContactsDB();
+                      var _npc5 = findContactById(_db5, nId) || { id:nId, name:String(nId), avatar:'', profile:'' };
+                      // 记录一条「正在拨打」系统消息（接听后会有通话记录覆盖）
+                      _showIncomingCall(nId, _npc5.name||nId, _npc5.avatar||'', 'voice',
+                        function(){ // 接听
+                          try{
+                            if(state.app !== 'chatDetail' || state.chatTarget !== nId){ openChat(nId); }
+                            setTimeout(function(){
+                              try{ _cpStartCall(nId, _npc5, 'voice'); }catch(e){ console.warn('[IncomingCall] startCall error:', e); }
+                            }, 400);
+                          }catch(e){}
+                        },
+                        function(){ // 拒接 → 留一条未接来电 + 随后发一条"你怎么不接"风格文字
+                          try{
+                            pushLog(nId, 'system', '📵 未接来电（'+(_npc5.name||nId)+'）');
+                            bumpThread(nId, { lastMsg:'📵 未接来电', lastTime:Date.now(), unread:1 });
+                            // 延迟发一条"打扰到你了"风格消息
+                            setTimeout(function(){
+                              var _missedTexts = ['……你在忙吗', '没接到，等你有空', '打扰你了吗', '刚才想找你说说话'];
+                              var _mt = _missedTexts[Math.floor(Math.random()*_missedTexts.length)];
+                              var _ins = _insertOnlineProactiveMessage(nId, _mt, { kind:'random' });
+                              if(_ins){ bumpThread(nId, { lastMsg:_mt.slice(0,30), lastTime:_ins.ts, unread:1 }); }
+                              if(state.chatTarget===nId && state.app==='chatDetail'){ try{ renderChatDetail(nId); }catch(e){} }
+                            }, 8000 + Math.random()*12000);
+                          }catch(e){}
+                        }
+                      );
+                      return; // 来电模式不走下方文字推送流程
+                    }
 
                     // 更新 thread 未读
                     bumpThread(nId, { lastMsg:fgText.slice(0,30)+(fgText.length>30?'…':''), lastTime:ts5, unread:(function(){
