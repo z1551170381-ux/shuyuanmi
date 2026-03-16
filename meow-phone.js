@@ -25496,16 +25496,18 @@ function _injectCustomCSS(npcId){
       css += styles.onlineStyle.css || '';
     }
     if (css.trim()){
-      // 自动给每条规则加 #ID 前缀，使权重与内置规则相同
+      // 自动给每条规则加 #ID 前缀 + 所有属性加 !important，确保覆盖内置样式
       var prefixed = css.replace(/([^{}]+)\{/g, function(match, sel){
         var trimmed = sel.trim();
-        // 跳过 @media / @keyframes / 已含 ID 的规则
         if(/^@/.test(trimmed) || trimmed.indexOf(ID) !== -1) return match;
         var parts = trimmed.split(',').map(function(s){
           s = s.trim();
           return s ? '#'+ID+' '+s : s;
         });
         return parts.join(', ')+'{';
+      }).replace(/([^{}:]+):([^{};!]+)(;|})/g, function(m, prop, val, end){
+        // 给每条属性值加 !important（跳过已有的）
+        return prop + ':' + val.trim() + ' !important' + end;
       });
       var st = doc.createElement('style');
       st.id = 'meow-phone-custom-css';
