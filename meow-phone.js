@@ -4517,16 +4517,16 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 /* ========== Map App ========== */
 #${ID} .mapAppWrap{
   display:flex; flex-direction:column; height:100%; position:relative; overflow:hidden;
-  background:rgba(255,255,255,var(--phAppSolidA,0.92));
+  background:rgba(var(--phAppBodyRGB,250,249,247), var(--phAppSolidA,.92));
 }
 #${ID} .mapTopBar{
   padding:10px 14px 6px; flex-shrink:0;
-  background:rgba(255,255,255,0.6);
-  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-  border-bottom:1px solid rgba(0,0,0,0.05);
+  background:rgba(255,255,255, calc(var(--ph-frost-bar-a, .28) * 0.70));
+  backdrop-filter:blur(var(--phAppBlur,16px)); -webkit-backdrop-filter:blur(var(--phAppBlur,16px));
+  border-bottom:1px solid rgba(255,255,255,.28);
 }
-#${ID} .mapTopTitle{ font-size:15px; font-weight:700; color:rgba(20,24,28,0.85); }
-#${ID} .mapTopNpc{ font-size:11px; color:rgba(20,24,28,0.45); margin-top:2px; }
+#${ID} .mapTopTitle{ font-size:14px; font-weight:500; color:var(--ph-text, rgba(20,24,28,0.85)); }
+#${ID} .mapTopNpc{ font-size:11px; color:var(--ph-text-sub, rgba(20,24,28,0.45)); margin-top:2px; }
 #${ID} .mapContainer{
   flex:1; position:relative; overflow:hidden; touch-action:none;
   display:flex; align-items:center; justify-content:center;
@@ -4554,14 +4554,15 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .mapZoomBtn:active{ transform:scale(0.9); }
 #${ID} .mapToolbar{
   display:flex; gap:8px; padding:8px 14px 12px; flex-shrink:0;
-  background:rgba(255,255,255,0.6);
-  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-  border-top:1px solid rgba(0,0,0,0.05);
+  background:rgba(255,255,255, calc(var(--ph-frost-bar-a, .28) * 0.70));
+  backdrop-filter:blur(var(--phAppBlur,16px)); -webkit-backdrop-filter:blur(var(--phAppBlur,16px));
+  border-top:1px solid rgba(255,255,255,.28);
 }
 #${ID} .mapToolBtn{
-  flex:1; padding:8px; border-radius:10px; border:1px solid rgba(0,0,0,0.08);
-  background:var(--ph-glass, rgba(255,255,255,0.7));
-  font-size:12px; color:rgba(20,24,28,0.65); cursor:pointer;
+  flex:1; padding:8px; border-radius:999px; border:1px solid rgba(255,255,255,.38);
+  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .25) + .04));
+  font-size:12px; color:var(--ph-text, rgba(20,24,28,0.65)); cursor:pointer;
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
 }
 #${ID} .mapToolBtn:active{ transform:scale(0.96); }
 /* Map Detail Overlay */
@@ -4574,11 +4575,12 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 @keyframes mapFadeIn{ from{opacity:0;} to{opacity:1;} }
 #${ID} .mapDetailCard{
   width:92%; max-height:72%; overflow-y:auto;
-  background:rgba(255,255,255,0.96);
-  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-  border-radius:18px 18px 0 0; padding:16px;
-  box-shadow:0 -4px 24px rgba(0,0,0,0.15);
-  border:1px solid rgba(0,0,0,0.06);
+  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .28) + .08));
+  backdrop-filter:blur(var(--phAppBlur,20px)) saturate(120%); -webkit-backdrop-filter:blur(var(--phAppBlur,20px)) saturate(120%);
+  border-radius:22px 22px 0 0; padding:16px;
+  box-shadow:0 -4px 24px rgba(100,94,86,.12);
+  border:1px solid rgba(255,255,255,.40);
+  border-bottom:none;
   animation:mapSlideUp .25s ease;
   scrollbar-width:none;
 }
@@ -12927,46 +12929,48 @@ ${lines}
 
         var h='<div class="settingSubPage">';
 
-        h+='<div class="phCard" style="margin-bottom:12px;"><div style="font-weight:700;color:var(--ph-text);margin-bottom:10px;">总控制</div>';
-        h+='<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;color:var(--ph-text);">自动运行总开关</span><button class="sToggle'+(cfg.enabled?' on':'')+'" data-afcfg="enabled" style="flex-shrink:0;"></button></div></div>';
+        // ── 总控制 ──
+        h+='<div style="font-size:10px;color:var(--ph-text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.7px;padding:8px 14px 4px;">总控制</div>';
+        h+='<div class="settingSection"><div class="settingRow"><span class="sLabel" style="font-size:13px;font-weight:400;">自动运行总开关</span><button class="sToggle'+(cfg.enabled?' on':'')+'" data-afcfg="enabled" style="flex-shrink:0;"></button></div></div>';
 
         if(cfg.enabled){
-          h+='<div class="phCard" style="margin-bottom:12px;"><div style="font-weight:700;color:var(--ph-text);margin-bottom:10px;">触发策略</div>';
-          h+='<div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;color:var(--ph-text);">触发模式</span><select data-afcfg="mode" style="padding:4px 8px;border-radius:8px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:12px;"><option value="daily_once"'+(cfg.mode==='daily_once'?' selected':'')+'>每天一次</option><option value="interval"'+(cfg.mode==='interval'?' selected':'')+'>间隔更新</option></select></div>';
+          var stratRows='';
+          stratRows+='<div class="settingRow"><span class="sLabel" style="font-size:13px;font-weight:400;">触发模式</span><select data-afcfg="mode" style="padding:3px 8px;border-radius:999px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:12px;"><option value="daily_once"'+(cfg.mode==='daily_once'?' selected':'')+'>每天一次</option><option value="interval"'+(cfg.mode==='interval'?' selected':'')+'>间隔更新</option></select></div>';
           if(cfg.mode==='daily_once'){
-            h+='<div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;color:var(--ph-text);">触发时间</span><select data-afcfg="dailyHour" style="padding:4px 8px;border-radius:8px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:12px;">';
-            for(var hh=0;hh<24;hh++) h+='<option value="'+hh+'"'+(cfg.dailyHour===hh?' selected':'')+'>'+String(hh).padStart(2,'0')+':00</option>';
-            h+='</select></div>';
-          }else{
-            h+='<div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;color:var(--ph-text);">间隔分钟</span><input data-afcfg="intervalMin" type="number" min="30" max="1440" value="'+(cfg.intervalMin||180)+'" style="width:80px;padding:4px 8px;border-radius:8px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:12px;text-align:center;"/></div>';
+            var hourOpts=''; for(var hh=0;hh<24;hh++) hourOpts+='<option value="'+hh+'"'+(cfg.dailyHour===hh?' selected':'')+'>'+String(hh).padStart(2,'0')+':00</option>';
+            stratRows+='<div class="settingRow"><span class="sLabel" style="font-size:13px;font-weight:400;">触发时间</span><select data-afcfg="dailyHour" style="padding:3px 8px;border-radius:999px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:12px;">'+hourOpts+'</select></div>';
+          } else {
+            stratRows+='<div class="settingRow"><span class="sLabel" style="font-size:13px;font-weight:400;">间隔分钟</span><input data-afcfg="intervalMin" type="number" min="30" max="1440" value="'+(cfg.intervalMin||180)+'" style="width:72px;padding:3px 8px;border-radius:999px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:12px;text-align:center;"/></div>';
           }
-          h+='<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;color:var(--ph-text);">时间基准</span><select data-afcfg="tzMode" style="padding:4px 8px;border-radius:8px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:12px;"><option value="real"'+(cfg.tzMode==='real'?' selected':'')+'>现实时间</option><option value="story"'+(cfg.tzMode==='story'?' selected':'')+'>故事时间</option></select></div></div>';
+          stratRows+='<div class="settingRow"><span class="sLabel" style="font-size:13px;font-weight:400;">时间基准</span><select data-afcfg="tzMode" style="padding:3px 8px;border-radius:999px;border:1px solid var(--ph-glass-border);background:var(--ph-glass);color:var(--ph-text);font-size:12px;"><option value="real"'+(cfg.tzMode==='real'?' selected':'')+'>现实时间</option><option value="story"'+(cfg.tzMode==='story'?' selected':'')+'>故事时间</option></select></div>';
+          h+='<div style="font-size:10px;color:var(--ph-text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.7px;padding:8px 14px 4px;">触发策略</div><div class="settingSection">'+stratRows+'</div>';
         }
 
-        h+='<div class="phCard" style="margin-bottom:12px;"><div style="font-weight:700;color:var(--ph-text);margin-bottom:10px;">参考数据来源</div>';
+        var srcRows='';
         [{k:'worldbook',l:'酒馆世界书'},{k:'summary',l:'聊天总结数据'},{k:'phoneGlobalWB',l:'小手机世界书'},{k:'recentChat',l:'最近聊天片段'}].forEach(function(s){
-          h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;"><span style="font-size:13px;color:var(--ph-text);">'+s.l+'</span><button class="sToggle'+(cfg.sources[s.k]?' on':'')+'" data-afsrc="'+s.k+'" style="flex-shrink:0;"></button></div>';
+          srcRows+='<div class="settingRow"><span class="sLabel" style="font-size:13px;font-weight:400;">'+s.l+'</span><button class="sToggle'+(cfg.sources[s.k]?' on':'')+'" data-afsrc="'+s.k+'" style="flex-shrink:0;"></button></div>';
         });
-        h+='</div>';
+        h+='<div style="font-size:10px;color:var(--ph-text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.7px;padding:8px 14px 4px;">参考数据来源</div><div class="settingSection">'+srcRows+'</div>';
 
-        h+='<div class="phCard" style="margin-bottom:12px;"><div style="font-weight:700;color:var(--ph-text);margin-bottom:10px;">自动更新目标</div>';
+        var tgtRows='';
         [{k:'forum',l:'论坛',a:true},{k:'browser',l:'浏览器',a:true},{k:'moments',l:'朋友圈',a:true},{k:'weather',l:'天气资讯',a:true},{k:'calendar',l:'日历日程',a:true},{k:'sms',l:'短信',a:true},{k:'map',l:'地图日志',a:true}].forEach(function(tg){
-          h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;opacity:'+(tg.a?'1':'0.4')+';"><span style="font-size:13px;color:var(--ph-text);">'+tg.l+'</span>';
-          h+=tg.a?'<button class="sToggle'+((cfg.autoTargets||{})[tg.k]?' on':'')+'" data-aftgt="'+tg.k+'" style="flex-shrink:0;"></button>':'<span style="font-size:11px;color:var(--ph-text-dim);">开发中</span>';
-          h+='</div>';
+          tgtRows+='<div class="settingRow"><span class="sLabel" style="font-size:13px;font-weight:400;">'+tg.l+'</span>'+(tg.a?'<button class="sToggle'+((cfg.autoTargets||{})[tg.k]?' on':'')+'" data-aftgt="'+tg.k+'" style="flex-shrink:0;"></button>':'<span style="font-size:11px;color:var(--ph-text-dim);">开发中</span>')+'</div>';
         });
-        h+='</div>';
+        h+='<div style="font-size:10px;color:var(--ph-text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.7px;padding:8px 14px 4px;">自动更新目标</div><div class="settingSection">'+tgtRows+'</div>';
 
-        h+='<div class="phCard" style="margin-bottom:12px;"><div style="font-weight:700;color:var(--ph-text);margin-bottom:10px;">手动操作</div><button data-act="afRunAll" style="width:100%;padding:12px;border:0;border-radius:12px;background:var(--ph-accent-grad);color:#fff;font-size:14px;font-weight:600;cursor:pointer;">🔄 立即全部更新</button></div>';
-        h+='<div class="phCard" style="margin-bottom:12px;"><div style="font-weight:700;color:var(--ph-text);margin-bottom:10px;">运行状态</div><div style="font-size:12px;color:var(--ph-text-sub);">上次运行：'+lastRunText+'</div>'+cdText+'</div>';
-        h+='<div class="phCard" style="margin-bottom:12px;"><div style="font-weight:700;color:var(--ph-text);margin-bottom:10px;">存储管理</div>';
-        // 存储信息：IDB + sessionStorage + localStorage
+        h+='<div style="padding:0 12px 8px;"><button data-act="afRunAll" style="width:100%;padding:11px;border:0;border-radius:999px;background:var(--ph-accent-grad);color:#fff;font-size:13px;font-weight:500;cursor:pointer;">立即全部更新</button></div>';
+
+        h+='<div style="font-size:10px;color:var(--ph-text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.7px;padding:8px 14px 4px;">运行状态</div><div class="settingSection">';
+        h+='<div class="settingRow"><span class="sLabel" style="font-size:13px;font-weight:400;">上次运行</span><span style="font-size:11px;color:var(--ph-text-sub);">'+lastRunText+'</span></div>'+cdText+'</div>';
+
         var idbReady = (typeof MeowDB !== 'undefined' && MeowDB.isReady());
-        h+='<div style="font-size:12px;color:var(--ph-text-sub);margin-bottom:4px;">IndexedDB 资讯: <span data-ph="afIdbSize">'+(idbReady?'检测中…':'不可用')+'</span></div>';
-        if(ssUsage>0) h+='<div style="font-size:12px;color:var(--ph-text-sub);margin-bottom:4px;">sessionStorage 缓存 (旧): '+(ssUsage>1024?Math.round(ssUsage/1024)+'KB':ssUsage+'B')+'</div>';
-        h+='<div style="font-size:12px;color:var(--ph-text-sub);margin-bottom:6px;">localStorage: ~'+Math.round(lsUsage/1024)+'KB ('+lsP+'%)</div>';
-        if(lsP>60) h+='<div style="font-size:11px;color:#ef4444;margin-bottom:6px;">⚠️ 存储空间较满</div>';
-        h+='<button data-act="afClearCache" style="width:100%;padding:10px;border:0;border-radius:10px;background:var(--ph-glass);color:#ef4444;font-size:12px;cursor:pointer;border:1px solid rgba(239,68,68,.3);">清空所有 AI 资讯缓存</button></div></div>';
+        h+='<div style="font-size:10px;color:var(--ph-text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.7px;padding:8px 14px 4px;">存储管理</div><div class="settingSection">';
+        h+='<div class="settingRow"><span class="sLabel" style="font-size:13px;font-weight:400;">IndexedDB</span><span data-ph="afIdbSize" style="font-size:11px;color:var(--ph-text-sub);">'+(idbReady?'检测中…':'不可用')+'</span></div>';
+        if(ssUsage>0) h+='<div class="settingRow"><span class="sLabel" style="font-size:13px;font-weight:400;">Session缓存</span><span style="font-size:11px;color:var(--ph-text-sub);">'+(ssUsage>1024?Math.round(ssUsage/1024)+'KB':ssUsage+'B')+'</span></div>';
+        h+='<div class="settingRow"><span class="sLabel" style="font-size:13px;font-weight:400;">localStorage</span><span style="font-size:11px;color:'+(lsP>60?'#ef4444':'var(--ph-text-sub)')+';">~'+Math.round(lsUsage/1024)+'KB ('+lsP+'%)</span></div></div>';
+        h+='<div style="padding:0 12px 12px;"><button data-act="afClearCache" style="width:100%;padding:10px;border:1px solid rgba(239,68,68,.3);border-radius:999px;background:var(--ph-glass);color:#ef4444;font-size:12px;cursor:pointer;">清空所有 AI 资讯缓存</button></div>';
+
+        h+='</div>';
         container.innerHTML=h;
 
         // 异步加载 IDB feedPacks 大小
@@ -27612,9 +27616,23 @@ function _mapBuildSVG(mapData){
   (mapData.landmarks||[]).forEach(function(lm){
     var displayName = lm.customName || lm.name;
     svg += '<g class="mapLm" data-lmid="'+lm.id+'" style="cursor:pointer;" transform="translate('+lm.x.toFixed(1)+','+lm.y.toFixed(1)+')">';
-    svg += '<circle class="mapLmBg" r="11" fill="rgba(255,255,255,0.88)" stroke="rgba(0,0,0,0.08)" stroke-width="0.6"/>';
-    svg += '<text class="mapLmEmoji" font-size="11" text-anchor="middle" dominant-baseline="central" style="pointer-events:none;">'+lm.emoji+'</text>';
-    svg += '<text class="mapLmLabel" y="17" font-size="6.5" text-anchor="middle" fill="rgba(30,30,30,0.75)" font-weight="600" style="pointer-events:none;text-shadow:0 0.5px 2px rgba(255,255,255,0.9);">'+esc(displayName)+'</text>';
+    // emoji→SVG分类图标映射（受--ph-icon-inner-tint控制）
+    var _lmIconColor = 'var(--ph-icon-inner-tint, #9E8875)';
+    var _emojiSvgMap = {
+      '🌳':'M7 2C7 2 4 5 4 8a3 3 0 006 0C10 5 7 2 7 2zM7 8v6M5 14h4','🎋':'M7 2v12M5 6c0 0 2-1 4-1M5 9c0 0 2 1 4 0','🌸':'M7 4a3 3 0 000 6 3 3 0 000-6zM7 2v1M7 9v1M4 4l.7.7M9.3 9.3l.7.7M2 7h1M11 7h1M4 10l.7-.7M9.3 4.7l.7-.7',
+      '🏠':'M2 8l5-5 5 5v6H2zM5 14V10h4v4','🏫':'M1 8l6-6 6 6v6H1zM5 14v-4h4v4M7 2v2','🏪':'M1 5h12v9H1zM1 5l2-3h8l2 3M5 14v-4h4v4',
+      '🌊':'M1 8c2-2 4-2 5 0s3 2 5 0M1 11c2-2 4-2 5 0s3 2 5 0','⛺':'M7 2L1 12h12zM4 12l3-7 3 7','🌅':'M1 9h12M7 9V3M4 6l3-3 3 3M2 12l2-3M10 12l2-3',
+      '🏛':'M1 12h12M2 12V7h10v5M1 7l6-5 6 5M5 12V8h2v4M9 12V8h2v4','🎯':'M7 7m-5 0a5 5 0 1010 0 5 5 0 10-10 0M7 7m-2 0a2 2 0 104 0 2 2 0 10-4 0M7 7h.01',
+      '☕':'M3 5h8v6a4 4 0 01-8 0zM11 7h1a2 2 0 010 4h-1','🍰':'M1 8h12M7 8V3l3 3-3 3M4 14h8v-6H4z','🛒':'M1 1h2l2 8h7l2-6H4',
+      '⭐':'M7 1l1.8 3.6L13 5.3l-3 2.9.7 4.1L7 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7z','🎪':'M7 1v12M2 5h10M2 9h10M1 13h12','🏥':'M2 4h10v9H2zM7 6v5M4.5 8.5h5',
+      '🌲':'M7 1L3 7h2L2 12h5v2h0v-2h5L9 7h2zM6 14h2','🏡':'M2 8l5-5 5 5v6H2zM5 14V10h4v4M1 8h12','🎭':'M3 3c0 0 1 3 4 3s4-3 4-3M3 9c0 0 1 3 4 3s4-3 4-3'
+    };
+    // 用emoji首字符提取简单path，fallback到一个圆点
+    var _emojiKey = lm.emoji;
+    var _iconPath = _emojiSvgMap[_emojiKey] || 'M7 4a3 3 0 100 6 3 3 0 000-6z';
+    svg += '<circle class="mapLmBg" r="12" fill="rgba(255,255,255,0.82)" stroke="rgba(200,190,175,0.40)" stroke-width="0.8"/>';
+    svg += '<g transform="translate(-7,-7)"><path d="'+_iconPath+'" fill="none" stroke="'+_lmIconColor+'" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></g>';
+    svg += '<text class="mapLmLabel" y="18" font-size="6.5" text-anchor="middle" fill="rgba(30,30,30,0.72)" font-weight="500" style="pointer-events:none;text-shadow:0 0.5px 2px rgba(255,255,255,0.9);">'+esc(displayName)+'</text>';
     svg += '</g>';
   });
   svg += '</g>';
@@ -27668,7 +27686,11 @@ function _mapShowLandmarkDetail(container, mapData, lmId, npcId){
   var html = '<div class="mapDetailCard" data-lmid="'+lm.id+'">';
   html += '<div class="mapDetailClose" data-act="mapDetailClose">✕</div>';
   html += '<div class="mapDetailHead">';
-  html += '<span class="mapDetailEmoji">'+lm.emoji+'</span>';
+  // 地标详情图标 - SVG扁平图标（受内部图标色控制）
+  var _detailIconColor = 'var(--ph-icon-inner-tint, #9E8875)';
+  var _detSvgMap = {'🌳':'M7 2C7 2 4 5 4 8a3 3 0 006 0C10 5 7 2 7 2zM7 8v6M5 14h4','🏠':'M2 8l5-5 5 5v6H2zM5 14V10h4v4','🏫':'M1 8l6-6 6 6v6H1zM5 14v-4h4v4','🏪':'M1 5h12v9H1zM1 5l2-3h8l2 3M5 14v-4h4v4','🌊':'M1 8c2-2 4-2 5 0s3 2 5 0M1 11c2-2 4-2 5 0s3 2 5 0','⛺':'M7 2L1 12h12zM4 12l3-7 3 7','🌅':'M1 9h12M7 9V3M4 6l3-3 3 3','🏛':'M1 12h12M2 12V7h10v5M1 7l6-5 6 5M5 12V8h2v4M9 12V8h2v4','☕':'M3 5h8v6a4 4 0 01-8 0zM11 7h1a2 2 0 010 4h-1','🍰':'M1 8h12M7 8V3l3 3-3 3M4 14h8v-6H4z','🛒':'M1 1h2l2 8h7l2-6H4','⭐':'M7 1l1.8 3.6L13 5.3l-3 2.9.7 4.1L7 10.4l-3.7 1.9.7-4.1-3-2.9 4.2-.7z','🎪':'M7 1v12M2 5h10M2 9h10M1 13h12','🏥':'M2 4h10v9H2zM7 6v5M4.5 8.5h5','🌲':'M7 1L3 7h2L2 12h5v2h0v-2h5L9 7h2z','🎋':'M7 2v12M5 6c0 0 2-1 4-1M5 9c0 0 2 1 4 0'};
+  var _detPath = _detSvgMap[lm.emoji] || 'M7 3a4 4 0 100 8 4 4 0 000-8z';
+  html += '<span class="mapDetailEmoji"><svg viewBox="0 0 14 14" width="40" height="40" fill="none" stroke="'+_detailIconColor+'" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="'+_detPath+'"/></svg></span>';
   html += '<div class="mapDetailNameRow"><span class="mapDetailName" data-el="mapLmName">'+esc(displayName)+'</span><span class="mapDetailEdit" data-act="mapEditName" title="编辑名称">✏️</span></div>';
   html += '<div class="mapDetailAtmo">'+esc(atmo)+'</div>';
   html += '</div>';
