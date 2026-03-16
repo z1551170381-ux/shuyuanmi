@@ -871,10 +871,9 @@ function ensureTuneStyle(){
   -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .16)) saturate(106%);
 }
 
+/* 导航栏/标签栏/其他功能栏 — 正常霜雪半透明 */
 #${ID}[data-theme="frost"] .phAppBar,
-#${ID}[data-theme="frost"] .wxTopBar,
 #${ID}[data-theme="frost"] .wxTabbar,
-#${ID}[data-theme="frost"] .wxChatInputBar,
 #${ID}[data-theme="frost"] .wxStickerPanel,
 #${ID}[data-theme="frost"] .wxVoicePanel,
 #${ID}[data-theme="frost"] .wxChatPlusGrid{
@@ -883,6 +882,22 @@ function ensureTuneStyle(){
   box-shadow:inset 0 1px 0 rgba(255,255,255,calc(var(--ph-frost-line-a) * .22)) !important;
   backdrop-filter:blur(calc(var(--ph-glass-blur) * .18)) saturate(107%) !important;
   -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .18)) saturate(107%) !important;
+}
+
+/* 聊天顶栏 + 输入栏：壁纸透出，毛玻璃感更强 */
+#${ID}[data-theme="frost"] .wxTopBar{
+  background: rgba(255,255,255, calc(var(--ph-frost-bar-a) * 0.55)) !important;
+  border-color: rgba(255,255,255,.22) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.28) !important;
+  backdrop-filter: blur(28px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(140%) !important;
+}
+#${ID}[data-theme="frost"] .wxChatInputBar{
+  background: rgba(255,255,255, calc(var(--ph-frost-bar-a) * 0.52)) !important;
+  border-top-color: rgba(255,255,255,.20) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.26) !important;
+  backdrop-filter: blur(28px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(140%) !important;
 }
 
 #${ID}[data-theme="frost"] .phAppBody{
@@ -1193,16 +1208,37 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .wxGroupAccordion{
   border-radius: 18px !important;
   overflow: hidden;
-  margin: 0 12px 8px;
-  border: 1px solid rgba(255,255,255,.82) !important;
-  box-shadow: 0 3px 14px rgba(100,94,86,.05), inset 0 1px 0 rgba(255,255,255,.90) !important;
+  margin: 0 12px 6px;
+  border: 1px solid rgba(255,255,255,.38) !important;
+  box-shadow: 0 2px 12px rgba(100,94,86,.06) !important;
+  background: rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .06)) !important;
 }
 /* 通讯录组之间额外间距（好友/npc等分组之间留空隙）*/
 #${ID}[data-theme="frost"] .wxContactList .wxGroupAccordion{
-  margin: 0 12px 8px !important;
+  margin: 0 12px 6px !important;
 }
 #${ID}[data-theme="frost"] .wxContactList .wxGroupAccordion + .wxGroupAccordion{
   margin-top: 6px !important;
+}
+/* 通讯录 wxGroupHeader：与发现页行风格统一，更轻细 */
+#${ID}[data-theme="frost"] .wxGroupHeader{
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  border-bottom: 1px solid rgba(48,44,40,.04) !important;
+  background: transparent !important;
+}
+#${ID}[data-theme="frost"] .wxGroupHeader .wxCHIco{
+  width: 28px !important; height: 28px !important;
+  border-radius: 8px !important;
+}
+/* 分组(wxDiscoverGroup中的新的朋友/分组)与下方好友组拉开距离 */
+#${ID}[data-theme="frost"] .wxDiscoverGroup{
+  margin-bottom: 12px !important;
+}
+/* wxContactList 整体顶部加点间距 */
+#${ID}[data-theme="frost"] .wxContactList{
+  padding-top: 6px;
 }
 
 /* 发现页 & 通讯录：每行独立 pill 卡片，彼此分开 */
@@ -1356,7 +1392,7 @@ function ensureTuneStyle(){
 }
 #${ID}[data-theme="frost"] .sToggle.on,
 #${ID}[data-theme="frost"] .settingRow .sToggle.on{
-  background: linear-gradient(135deg, rgba(112,148,165,.82), rgba(148,178,194,.72));
+  background: var(--ph-accent-grad);
   border-color: transparent;
 }
 
@@ -1467,11 +1503,8 @@ function ensureTuneStyle(){
   border-color: rgba(255,255,255,.36) !important;
   box-shadow: 0 8px 32px rgba(100,94,86,.10) !important;
 }
-/* Shell 外壳柔化 */
-#${ID}[data-theme="frost"] .phShell{
-  border-color: rgba(255,255,255,.45) !important;
-  box-shadow: 0 24px 64px rgba(100,94,86,.14), 0 8px 20px rgba(100,94,86,.07) !important;
-}
+/* Shell 外壳：保留多层边框厚度感，在此覆盖无效果（已在主规则定义） */
+/* 此处不覆盖 phShell，让 frost phShell 主规则生效 */
     `;
     (doc.head || doc.documentElement).appendChild(st);
 
@@ -1936,7 +1969,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   --ph-wechat-me-text: #fff;
   --ph-wechat-them-bubble: rgba(255,253,250,.92);
   --ph-wechat-them-text: rgba(28,22,16,.88);
-  --ph-wechat-bg: rgba(242,240,237,.65);
+  --ph-wechat-bg: rgba(242,240,237,.38);
   --ph-plus-popup-bg: rgba(52,46,38,.90);
   --ph-modal-bg: rgba(254,252,249,.96);
   --ph-modal-text: rgba(28,22,16,.88);
@@ -2201,19 +2234,29 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   width:375px; height:750px; max-width:96vw; max-height:90vh;
   border-radius:38px; position:relative; overflow:hidden;
   background:var(--ph-bg-primary);
-  border:1px solid var(--ph-glass-border);
+  border:1.5px solid rgba(255,255,255,.35);
   box-shadow:
-    0 0 0 1px rgba(0,0,0,.2),
-    inset 0 1px 0 rgba(255,255,255,.08),
-    0 24px 80px var(--ph-shadow);
+    0 0 0 1px rgba(0,0,0,.12),
+    0 0 0 3.5px rgba(255,255,255,.22),
+    0 0 0 5px rgba(0,0,0,.06),
+    inset 0 1px 0 rgba(255,255,255,.12),
+    0 32px 90px var(--ph-shadow);
   transition:transform .2s ease;
   transform-origin:top left;
 }
-/* frost shell：精细高光 + 阴影（GPT-aligned） */
+/* frost shell：奶油磨砂玻璃 + 多层边框厚度感 */
 #${ID}[data-theme="frost"] .phShell{
   background:
-    linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.03)),
+    linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.04)),
     var(--ph-bg-primary);
+  border-color: rgba(255,255,255,.60);
+  box-shadow:
+    0 0 0 1px rgba(120,110,100,.10),
+    0 0 0 3.5px rgba(255,255,255,.50),
+    0 0 0 5px rgba(120,110,100,.07),
+    inset 0 1.5px 0 rgba(255,255,255,.85),
+    inset 0 -1px 0 rgba(120,110,100,.06),
+    0 32px 80px rgba(100,94,86,.14), 0 10px 28px rgba(100,94,86,.08);
 }
 /* modern shell */
 #${ID}[data-theme="modern"] .phShell{
@@ -4253,7 +4296,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   position:relative; transition:background .2s; flex-shrink:0;
 }
 #${ID} .settingRow .sToggle.on,
-#${ID} .sToggle.on{ background:var(--ph-accent, rgba(99,102,241,.6)); }
+#${ID} .sToggle.on{ background: var(--ph-accent, rgba(99,102,241,.6)); }
 #${ID} .settingRow .sToggle::after,
 #${ID} .sToggle::after{
   content:''; position:absolute; top:3px; left:3px;
