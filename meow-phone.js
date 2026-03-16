@@ -29367,20 +29367,27 @@ function _getChibiSettings(npcId){
     gender:'female', hairStyle:'f1', hairColor:'#2A2832',
     skinColor:'#FAEBD7', coatColor:'#4A5A6A',
     catEars:true, acc:false, outfit:'o1',
-    posX: null, posY: null, scale: 0.55
+    posX: null, posY: null, scale: 0.42
   });
 }
 function _saveChibiSettings(npcId, data){ _phSave('chibi_'+String(npcId), data); }
 
 function _getChibiScene(npcId){
-  // 根据NPC当前行为和时间推断动画状态
   try{
-    var bx = _loadCharBehavior ? _loadCharBehavior(npcId) : null;
-    var doing = bx && bx.doing ? bx.doing : '';
+    var bx = (typeof _loadCharBehavior==='function') ? _loadCharBehavior(npcId) : null;
+    var doing = bx && bx.doing ? String(bx.doing) : '';
+    // 读属性值
+    var stats = (typeof catchUpStats==='function') ? catchUpStats(npcId) : null;
+    var energy  = stats && stats.attrs ? (stats.attrs.energy  || 0) : 0;
+    var hunger  = stats && stats.attrs ? (stats.attrs.hunger  || stats.attrs.satiety || 0) : 0;
     var h = new Date().getHours();
-    if(/睡|休息|躺/.test(doing) || (h>=23||h<7)) return 'sleep';
-    if(/吃|饭|餐/.test(doing) || h===8||h===12||h===19) return 'eat';
-    if(/坐|看书|读|玩/.test(doing)) return 'sit';
+
+    // 睡觉：精力极低(<20) / doing含睡/休息/躺 / 深夜凌晨
+    if(energy < 20 || /睡|休息|躺|床/.test(doing) || h>=23 || h<7) return 'sleep';
+    // 吃饭：饱腹低(<30) / doing含吃/饭/餐/做菜
+    if(hunger < 30 || /吃|饭|餐|做菜|厨/.test(doing) || h===8||h===12||h===19) return 'eat';
+    // 坐着：doing含坐/看书/读/玩/游戏/电脑/手机
+    if(/坐|看书|阅读|读书|玩|游戏|电脑|手机|沙发/.test(doing)) return 'sit';
   }catch(e){}
   return null; // 站立
 }
@@ -29390,6 +29397,9 @@ function _openChibiEditor(container, npcId, npcName, onSave){
   var HC=['#2A2832','#8B7355','#E8D5A0','#C45555','#7B68AE','#E89BAE','#3A5566','#E8E4E0','#5A8A6A','#D49055'];
   var SKC=['#FAEBD7','#F5DEB3','#DEB887','#C8A882','#A0785A'];
   var CTC=['#4A5A6A','#2A2832','#F0EDE8','#B84444','#5A7A5A','#D4949E','#8B7355','#4466AA','#D4B44A'];
+  // 发型列表按性别
+  var FEMALE_HAIRS=[{id:'f1',l:'长发'},{id:'f2',l:'双马尾'},{id:'f3',l:'直刘海'},{id:'f4',l:'麻花辫'},{id:'f5',l:'波波头'}];
+  var MALE_HAIRS  =[{id:'m1',l:'蓬松'},{id:'m2',l:'偏分'},{id:'m3',l:'韩式'},{id:'m4',l:'呆毛'},{id:'m5',l:'中分'}];
 
   function swatch(colors, val, key){
     return colors.map(function(c){
@@ -29399,15 +29409,19 @@ function _openChibiEditor(container, npcId, npcName, onSave){
   function btn(val, cur, key, label){
     return '<button data-cfgkey="'+key+'" data-cfgval="'+val+'" style="padding:4px 8px;border-radius:6px;font-size:10px;cursor:pointer;border:'+(cur===val?'2px solid #7AAA6A':'1.5px solid rgba(0,0,0,.1)')+';background:'+(cur===val?'rgba(122,170,106,.06)':'white')+';color:'+(cur===val?'#5A8A4A':'#999')+';margin:2px;">'+label+'</button>';
   }
+  function hairButtons(gender, curHair){
+    var list = gender==='male' ? MALE_HAIRS : FEMALE_HAIRS;
+    return list.map(function(s){ return btn(s.id, curHair, 'hairStyle', s.l); }).join('');
+  }
 
   var inner = '<div style="font-size:13px;font-weight:600;margin-bottom:10px;">👤 房间角色设置</div>'
     +'<div style="margin-bottom:10px;padding:10px;background:rgba(7,193,96,.04);border-radius:10px;border:1px solid rgba(7,193,96,.12);">'
     +'<label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;">'
     +'<input type="checkbox" data-cfgkey="enabled" '+(cfg.enabled?'checked':'')+' style="width:16px;height:16px;accent-color:#07c160;"> 在房间里显示角色</label></div>'
-    +'<div style="margin-bottom:8px;">'
+    +'<div style="margin-bottom:6px;">'
     +btn('female',cfg.gender,'gender','♀ 女生')+btn('male',cfg.gender,'gender','♂ 男生')
-    +'&nbsp;'+btn('f1',cfg.hairStyle,'hairStyle','长发')+btn('f2',cfg.hairStyle,'hairStyle','双马尾')+btn('f3',cfg.hairStyle,'hairStyle','直刘海')+btn('f4',cfg.hairStyle,'hairStyle','麻花辫')+btn('f5',cfg.hairStyle,'hairStyle','波波头')
     +'</div>'
+    +'<div data-el="hairBtns" style="margin-bottom:8px;">'+hairButtons(cfg.gender, cfg.hairStyle)+'</div>'
     +'<div style="font-size:10px;color:rgba(20,24,28,.4);margin-bottom:3px;">发色</div><div style="margin-bottom:8px;">'+swatch(HC,cfg.hairColor,'hairColor')+'</div>'
     +'<div style="font-size:10px;color:rgba(20,24,28,.4);margin-bottom:3px;">肤色</div><div style="margin-bottom:8px;">'+swatch(SKC,cfg.skinColor,'skinColor')+'</div>'
     +'<div style="font-size:10px;color:rgba(20,24,28,.4);margin-bottom:3px;">衣服颜色</div><div style="margin-bottom:8px;">'+swatch(CTC,cfg.coatColor,'coatColor')+'</div>'
@@ -29415,7 +29429,7 @@ function _openChibiEditor(container, npcId, npcName, onSave){
     +'<label style="font-size:11px;cursor:pointer;margin-right:12px;"><input type="checkbox" data-cfgkey="catEars" '+(cfg.catEars?'checked':'')+' style="accent-color:#07c160;"> 🐱 猫耳</label>'
     +'<label style="font-size:11px;cursor:pointer;"><input type="checkbox" data-cfgkey="acc" '+(cfg.acc?'checked':'')+' style="accent-color:#07c160;"> 💎 装饰</label>'
     +'</div>'
-    +'<div style="margin-bottom:10px;font-size:11px;color:rgba(20,24,28,.4);">动画状态根据角色作息和时间自动切换（睡觉/吃饭/坐着/站立）</div>'
+    +'<div style="margin-bottom:10px;font-size:11px;color:rgba(20,24,28,.4);">动画根据doing和精力/饱腹自动切换（睡觉/吃饭/坐着/站立）</div>'
     +'<div style="display:flex;gap:8px;">'
     +'<button data-act="chibiSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>'
     +'<button data-act="chibiCancel" style="padding:10px 16px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;color:rgba(20,24,28,.6);">取消</button>'
@@ -29426,8 +29440,25 @@ function _openChibiEditor(container, npcId, npcName, onSave){
     var t = e.target;
     var key = t.getAttribute('data-cfgkey');
     if(key){
-      if(t.type==='checkbox') cfg[key] = t.checked;
-      else { cfg[key] = t.getAttribute('data-cfgval'); e.target.parentNode.querySelectorAll('[data-cfgkey="'+key+'"]').forEach(function(b){ b.style.border=(b.getAttribute('data-cfgval')===cfg[key]?'2px solid #7AAA6A':'1.5px solid rgba(0,0,0,.1)'); b.style.color=(b.getAttribute('data-cfgval')===cfg[key]?'#5A8A4A':'#999'); }); }
+      if(t.type==='checkbox'){ cfg[key] = t.checked; }
+      else {
+        cfg[key] = t.getAttribute('data-cfgval');
+        // 切换性别时刷新发型按钮
+        if(key==='gender'){
+          var defH = cfg.gender==='male' ? 'm1' : 'f1';
+          cfg.hairStyle = defH;
+          var hairBtnsEl = ov.querySelector('[data-el="hairBtns"]');
+          if(hairBtnsEl) hairBtnsEl.innerHTML = hairButtons(cfg.gender, cfg.hairStyle);
+        }
+        // 更新同组按钮高亮
+        ov.querySelectorAll('[data-cfgkey="'+key+'"]').forEach(function(b){
+          if(b.type==='checkbox') return;
+          var on = b.getAttribute('data-cfgval')===cfg[key];
+          b.style.border = on?'2px solid #7AAA6A':'1.5px solid rgba(0,0,0,.1)';
+          b.style.color  = on?'#5A8A4A':'#999';
+          b.style.background = on?'rgba(122,170,106,.06)':'white';
+        });
+      }
     }
     if(t.getAttribute('data-act')==='chibiSave'){ _saveChibiSettings(npcId, cfg); ov.remove(); if(onSave) onSave(); }
     if(t.getAttribute('data-act')==='chibiCancel'){ ov.remove(); }
@@ -29721,9 +29752,27 @@ function _mapOpenRoom(container, mapData, houseId){
         var _chibiFn = (typeof _getChibiSettings==='function') ? _getChibiSettings(npcOwner) : null;
         if(_chibiFn && _chibiFn.enabled){
           var _chibScene = _getChibiScene(npcOwner);
-          var _chibSvg = _chibiFurnSVG({ gender:_chibiFn.gender, hairStyle:_chibiFn.hairStyle, hairColor:_chibiFn.hairColor, skinColor:_chibiFn.skinColor, coatColor:_chibiFn.coatColor, catEars:_chibiFn.catEars, acc:_chibiFn.acc, outfit:_chibiFn.outfit, scene:_chibScene, scale:_chibiFn.scale||0.55 });
+          var _chibScale = _chibiFn.scale || 0.42;
+          var _chibSvg = _chibiFurnSVG({ gender:_chibiFn.gender, hairStyle:_chibiFn.hairStyle, hairColor:_chibiFn.hairColor, skinColor:_chibiFn.skinColor, coatColor:_chibiFn.coatColor, catEars:_chibiFn.catEars, acc:_chibiFn.acc, outfit:_chibiFn.outfit, scene:_chibScene, scale:_chibScale });
+
+          // ★ 根据场景定位到对应家具上
           var _cx = typeof _chibiFn.posX === 'number' ? _chibiFn.posX : 150;
-          var _cy = typeof _chibiFn.posY === 'number' ? _chibiFn.posY : 90;
+          var _cy = typeof _chibiFn.posY === 'number' ? _chibiFn.posY : 100;
+          // 自动吸附到对应家具位置
+          try{
+            var _snapType = _chibScene==='sleep' ? 'bed' : _chibScene==='eat' ? 'stove' : _chibScene==='sit' ? 'sofa' : null;
+            if(_snapType){
+              var _snapFurn = furniture.find(function(f){ return f.type===_snapType && f.owned; });
+              if(_snapFurn){
+                var _sp;
+                if(typeof _snapFurn.roomX==='number'){ _sp={x:_snapFurn.roomX, y:_snapFurn.roomY}; }
+                else { var _spos=_defaultFurnPositions[_snapType]||{gx:0,gy:0}; _sp=_isoProject(typeof _snapFurn.gx==='number'?_snapFurn.gx:_spos.gx, typeof _snapFurn.gy==='number'?_snapFurn.gy:_spos.gy); }
+                _cx = _sp.x;
+                _cy = _sp.y - (_chibScene==='sleep'?8:(_chibScene==='sit'?10:15));
+              }
+            }
+          }catch(e){}
+
           html += '<g data-el="chibiSprite" style="cursor:pointer;" transform="translate('+_cx+','+_cy+')">';
           html += _chibSvg;
           html += '</g>';
