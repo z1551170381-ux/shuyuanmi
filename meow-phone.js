@@ -25512,7 +25512,8 @@ function _injectCustomCSS(npcId){
       var st = doc.createElement('style');
       st.id = 'meow-phone-custom-css';
       st.textContent = prefixed;
-      root.appendChild(st);
+      // doc.head에 마지막으로 추가 → 내장 스타일보다 후위에서 !important 우선
+      (doc.head || doc.documentElement).appendChild(st);
     }
   }catch(e){}
 }
