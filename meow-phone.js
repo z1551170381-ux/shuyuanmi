@@ -858,7 +858,6 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .wxChatRow,
 #${ID}[data-theme="frost"] .chatItemSwipeWrap .chatItemInner,
 #${ID}[data-theme="frost"] .wxMeProfile,
-#${ID}[data-theme="frost"] .wxDiscoverItem,
 #${ID}[data-theme="frost"] .wxContactHeader,
 #${ID}[data-theme="frost"] .wxContactItem,
 #${ID}[data-theme="frost"] .wxGroupHeader{
@@ -1037,11 +1036,13 @@ function ensureTuneStyle(){
 /* —— 3. Dock 更圆润 —— */
 #${ID}[data-theme="frost"] .phDock{
   border-radius: 38px;
-  background: rgba(255,255,255, calc(var(--ph-frost-bar-a) * 0.70));
-  border: 1px solid rgba(255,255,255, calc(var(--ph-frost-line-a) * 0.60));
-  box-shadow: 0 8px 24px rgba(100,94,86,.07);
-  backdrop-filter: blur(calc(var(--ph-glass-blur) * .55)) saturate(120%);
-  -webkit-backdrop-filter: blur(calc(var(--ph-glass-blur) * .55)) saturate(120%);
+  background: rgba(232,220,205,.68);
+  border: 1px solid rgba(255,248,235,.50);
+  box-shadow:
+    inset 0 1px 0 rgba(255,252,240,.55),
+    0 8px 24px rgba(100,94,86,.10);
+  backdrop-filter: blur(18px) saturate(130%);
+  -webkit-backdrop-filter: blur(18px) saturate(130%);
 }
 /* Dock 按钮图标区域（首页图标 ai 颜色不改，保持白色原来的渐变） */
 #${ID}[data-theme="frost"] .phDockBtn .di{
@@ -1255,30 +1256,34 @@ function ensureTuneStyle(){
   padding-top: 6px;
 }
 
-/* 发现页 & 通讯录：每行独立 pill 卡片，彼此分开 */
+/* 发现页 & 我页：wxDiscoverGroup 作为卡片容器，内部 items 整合在一张圆角卡里 */
 #${ID}[data-theme="frost"] .wxDiscoverGroup{
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+  background: rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .06)) !important;
+  border: 1px solid rgba(255,255,255,.38) !important;
+  border-radius: 18px !important;
+  box-shadow: 0 2px 12px rgba(100,94,86,.06) !important;
+  overflow: hidden;
   padding: 0;
-  margin: 0 12px 0;
+  margin: 0 12px 8px;
 }
 #${ID}[data-theme="frost"] .wxDiscoverItem{
-  border-radius: 16px !important;
-  margin: 0 0 5px 0 !important;
-  padding: 10px 14px !important;
-  border-bottom: none !important;
-  border: none !important;
-  background: rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .06)) !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 11px 14px !important;
+  border-bottom: 1px solid rgba(48,44,40,.04) !important;
+  border-top: none !important;
+  border-left: none !important;
+  border-right: none !important;
+  background: transparent !important;
   box-shadow: none !important;
   min-height: 0;
 }
 #${ID}[data-theme="frost"] .wxDiscoverItem:last-child{
   border-bottom: none !important;
-  margin-bottom: 6px !important;
+  margin-bottom: 0 !important;
 }
 #${ID}[data-theme="frost"] .wxDiscoverItem:hover{
-  background: rgba(255,255,255,.32) !important;
+  background: rgba(255,255,255,.18) !important;
 }
 
 /* 发现页文字精致小巧 */
@@ -2304,21 +2309,21 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID}.full .phRingLayer{ display: block; }
 
-/* frost: 透明手机壳 — 极淡暖色，见材质不遮壁纸 */
+/* frost: 实心透明手机壳质感 */
 #${ID}[data-theme="frost"] .phRingLayer{
   border-radius: 55px;
   background:
     linear-gradient(170deg,
-      rgba(248,240,228,.36) 0%,
-      rgba(232,220,206,.22) 45%,
-      rgba(220,208,192,.30) 100%);
-  backdrop-filter: blur(6px) saturate(120%) brightness(1.03);
-  -webkit-backdrop-filter: blur(6px) saturate(120%) brightness(1.03);
+      rgba(252,244,232,.82) 0%,
+      rgba(238,226,210,.72) 45%,
+      rgba(224,212,196,.78) 100%);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
   box-shadow:
-    inset 0 1.5px 0 rgba(255,250,240,.55),
-    inset 0 -1.5px 0 rgba(150,136,120,.25),
-    0 0 0 0.5px rgba(165,152,136,.16),
-    0 24px 64px rgba(100,94,86,.14);
+    inset 0 1.5px 0 rgba(255,252,242,.72),
+    inset 0 -1.5px 0 rgba(148,134,116,.32),
+    0 0 0 1px rgba(172,158,140,.24),
+    0 24px 64px rgba(100,94,86,.18);
 }
 
 /* mini mode */
