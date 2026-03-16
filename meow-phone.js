@@ -1402,11 +1402,7 @@ function ensureTuneStyle(){
 
 /* —— 8. App 顶栏描边细化（底栏 wxTabbar 还原原版，不覆盖）—— */
 #${ID}[data-theme="frost"] .phAppBar{
-  border-bottom: 1px solid rgba(255,255,255,.58) !important;
-}
-#${ID}[data-theme="frost"] .wxTopBar{
-  border-bottom: 1px solid rgba(255,255,255,.58) !important;
-}
+/* wxTopBar border-bottom 已在上方 phAppA 规则里统一设置，此处不再覆盖 */
 /* wxTabbar 不在这里覆盖，保持原版 frost 样式 */
 
 /* —— 9. Range Slider 霜雪样式 —— */
@@ -1475,9 +1471,8 @@ function ensureTuneStyle(){
   border-color: rgba(255,255,255,.38) !important;
   box-shadow: 0 2px 12px rgba(100,94,86,.06) !important;
 }
-/* 顶部导航栏、输入栏、底栏描边也柔化 */
-#${ID}[data-theme="frost"] .phAppBar,
-#${ID}[data-theme="frost"] .wxTopBar{
+/* 顶部导航栏描边柔化（phAppBar only - wxTopBar is controlled by phAppA above）*/
+#${ID}[data-theme="frost"] .phAppBar{
   border-bottom-color: rgba(48,44,40,.06) !important;
   box-shadow: none !important;
 }
@@ -2274,35 +2269,33 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .phRingLayer{
   display: none;
   position: absolute;
-  /* match phShell: same size, same center */
   width: 375px; height: 750px;
   max-width: 96vw; max-height: 90vh;
   left: 50%; top: 50%;
   transform: translate(-50%, -50%);
-  border-radius: 42px;           /* slightly larger than phShell's 38px */
-  z-index: 4;                    /* above phShell (z-index:auto) but below UI */
+  border-radius: 42px;
+  z-index: 4;
   pointer-events: none;
-  /* The ring border width */
-  border: 8px solid transparent;
-  /* Clip-path: show only the ring border area via box model */
+  border: 9px solid transparent;
   background: transparent;
-  /* backdrop-filter applied to the border area */
-  backdrop-filter: blur(14px) saturate(130%);
-  -webkit-backdrop-filter: blur(14px) saturate(130%);
-  /* Tint the ring with a warm semi-transparent overlay */
+  backdrop-filter: blur(18px) saturate(140%) brightness(1.06);
+  -webkit-backdrop-filter: blur(18px) saturate(140%) brightness(1.06);
+  /* Warm cream tint overlay — enough opacity to look glassy, not white */
   box-shadow:
-    inset 0 0 0 8px rgba(235,225,210,.28),  /* warm cream inner ring fill */
-    0 0 0 1px rgba(200,188,172,.22);         /* subtle outer edge */
+    inset 0 0 0 9px rgba(228,216,200,.50),
+    0 0 0 1px rgba(170,155,138,.18);
 }
 #${ID}.full .phRingLayer{ display: block; }
-/* frost theme: warmer ring tint */
+/* frost: warmer ivory tint */
 #${ID}[data-theme="frost"] .phRingLayer{
-  border-radius: 54px;           /* match frost phShell's 50px + ring width */
+  border-radius: 54px;
   box-shadow:
-    inset 0 0 0 8px rgba(240,230,215,.30),
-    0 0 0 1px rgba(210,198,182,.20);
+    inset 0 0 0 9px rgba(230,218,202,.52),
+    inset 0 4px 0 rgba(255,248,238,.65),
+    inset 0 -3px 0 rgba(180,165,148,.25),
+    0 0 0 1px rgba(180,165,148,.20);
 }
-/* mini mode: match mini shell radius */
+/* mini mode */
 #${ID}.mini .phRingLayer{
   display: block;
   border-radius: 34px;
