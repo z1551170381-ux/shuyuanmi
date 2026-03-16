@@ -496,6 +496,7 @@ function ensureTuneStyle(){
   --phAppBorderA: .68;
   --phAppBlur: 16px;
   --phAppSolidA: .92;
+  --phAppBodyBlur: 18px;
   --phAppBodyRGB: 10,10,10;    /* 各主题覆盖 */
   --phHomeWallA: 1;
   --phAppWallA: 1;
@@ -579,11 +580,19 @@ function ensureTuneStyle(){
 }
 
 /* APP 内容底：使用 --phAppBodyRGB + --phAppSolidA 实现滑块控制 */
+/* --phAppBodyBlur 通过 ::before 伪元素实现独立模糊，不受背景不透明度影响 */
 #${ID}[data-view="app"] .phAppBody{
   background: rgba(var(--phAppBodyRGB,10,10,10), var(--phAppSolidA,.92));
-  backdrop-filter: blur(var(--phAppBodyBlur, 18px));
-  -webkit-backdrop-filter: blur(var(--phAppBodyBlur, 18px));
+  position: relative;
 }
+#${ID}[data-view="app"] .phAppBody::before{
+  content: '';
+  position: absolute; inset: 0; z-index: 0;
+  backdrop-filter: blur(var(--phAppBodyBlur, 0px));
+  -webkit-backdrop-filter: blur(var(--phAppBodyBlur, 0px));
+  pointer-events: none;
+}
+#${ID}[data-view="app"] .phAppBody > *{ position: relative; z-index: 1; }
 
 /* App 顶部横条 — 全主题化 */
 #${ID}[data-view="app"] .phAppBar{
@@ -890,9 +899,16 @@ function ensureTuneStyle(){
   background:
     linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.02)),
     rgba(var(--phAppBodyRGB,250,249,247), var(--phAppSolidA,.92));
-  backdrop-filter:blur(var(--phAppBodyBlur, 18px)) saturate(104%);
-  -webkit-backdrop-filter:blur(var(--phAppBodyBlur, 18px)) saturate(104%);
+  position: relative;
 }
+#${ID}[data-theme="frost"] .phAppBody::before{
+  content: '';
+  position: absolute; inset: 0; z-index: 0;
+  backdrop-filter: blur(var(--phAppBodyBlur, 18px)) saturate(110%);
+  -webkit-backdrop-filter: blur(var(--phAppBodyBlur, 18px)) saturate(110%);
+  pointer-events: none;
+}
+#${ID}[data-theme="frost"] .phAppBody > *{ position: relative; z-index: 1; }
 
 #${ID}[data-theme="frost"] .wxChatBubble.them .wxCBContent,
 #${ID}[data-theme="frost"] .chatBubble.them .cbContent{
@@ -974,6 +990,7 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .wxChatInputBar .wxChatExBtn{
   background:rgba(255,255,255,calc(var(--ph-frost-surface-a) * .72));
   border:1px solid rgba(255,255,255,calc(var(--ph-frost-line-a) * .88));
+  border-radius: 50%;
 }
 
 #${ID}[data-theme="frost"] .wxTopBar .wxTopBtn:hover,
@@ -1045,16 +1062,28 @@ function ensureTuneStyle(){
 }
 
 /* —— 5. 胶囊按钮 —— */
-/* Modal 按钮 */
+/* 返回按钮：完全圆形 */
+#${ID}[data-theme="frost"] .phNavBtn{
+  border-radius: 50% !important;
+  width: 36px; height: 36px;
+}
+#${ID}[data-theme="frost"] .wxTopBar .wxTopBtn{
+  border-radius: 50%;
+  width: 32px; height: 32px;
+}
+
+/* Modal 按钮：扁长胶囊 */
 #${ID}[data-theme="frost"] .phModalBtn{
   border-radius: 999px;
-  padding: 10px 22px;
+  padding: 9px 28px;
+  height: 40px;
   font-weight: 600;
   letter-spacing: .01em;
   border: 1px solid rgba(48,44,40,.08);
   background: rgba(255,255,255,.72);
   color: rgba(48,44,40,.82);
   transition: background .15s;
+  white-space: nowrap;
 }
 #${ID}[data-theme="frost"] .phModalBtn.primary{
   background: rgba(48,44,40,.82);
@@ -1064,11 +1093,11 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .phModalBtn:hover{ background: rgba(255,255,255,.88); }
 #${ID}[data-theme="frost"] .phModalBtn.primary:hover{ background: rgba(60,56,52,.90); }
 
-/* 设置选项按钮胶囊 */
+/* 设置选项按钮：扁长胶囊 */
 #${ID}[data-theme="frost"] .sOptionBtn{
   border-radius: 999px;
-  padding: 9px 20px;
-  height: 38px;
+  padding: 0 22px;
+  height: 40px;
   display: flex; align-items: center; justify-content: center;
   border: 1.5px solid rgba(48,44,40,.10);
   background: rgba(255,255,255,.65);
@@ -1076,6 +1105,7 @@ function ensureTuneStyle(){
   font-size: 13px;
   font-weight: 500;
   transition: all .18s;
+  white-space: nowrap;
 }
 #${ID}[data-theme="frost"] .sOptionBtn.active{
   background: rgba(48,44,40,.82);
@@ -1087,19 +1117,23 @@ function ensureTuneStyle(){
 /* 发送按钮胶囊 */
 #${ID}[data-theme="frost"] .wxChatSendBtn{
   border-radius: 999px;
-  padding: 8px 20px;
+  padding: 0 22px;
+  height: 38px;
   font-weight: 600;
 }
 
 /* 联系人操作按钮胶囊 */
 #${ID}[data-theme="frost"] .phContactActionBtn{
   border-radius: 999px;
-  padding: 8px 20px;
+  padding: 0 22px;
+  height: 38px;
 }
 
 /* 壁纸按钮胶囊 */
 #${ID}[data-theme="frost"] .sWpBtn{
   border-radius: 999px;
+  height: 38px;
+  padding: 0 20px;
 }
 
 /* —— 6. 圆角补充 —— */
@@ -1107,6 +1141,23 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .wxChatRow{
   border-radius: 24px !important;
   margin: 3px 10px;
+}
+
+/* 发现/设置 列表行更圆润 */
+#${ID}[data-theme="frost"] .wxDiscoverItem{
+  border-radius: 0;
+}
+#${ID}[data-theme="frost"] .wxDiscoverGroup,
+#${ID}[data-theme="frost"] .wxGroupAccordion{
+  border-radius: 24px !important;
+  overflow: hidden;
+  margin: 0 12px 10px;
+}
+/* settingRow 组容器 */
+#${ID}[data-theme="frost"] .phCard.settingsGroup,
+#${ID}[data-theme="frost"] .settingGroup{
+  border-radius: 24px !important;
+  overflow: hidden;
 }
 
 /* 聊天气泡 */
@@ -2397,7 +2448,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .phNavBtn{
   appearance:none; border:0; background:transparent; color:var(--ph-text);
   cursor:pointer; font-size:18px; padding:0;
-  width:36px; height:36px; border-radius:10px;
+  width:36px; height:36px; border-radius:50%;
   display:flex; align-items:center; justify-content:center;
   flex-shrink:0; z-index:1;
 }
