@@ -21441,7 +21441,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           setStatus('对方思考中…'); setWave('active');
           stopSTT(); // ★ 确保 TTS 播放前停止识别，防拾音冲突
           try{
-            var recentMsgs = _getRecentMessagesForAPI(npcId, 6);
+            var recentMsgs = _getRecentMessagesForAPI(npcId, 20);
             // 追加通话中的对话
             for(var ti=0; ti<transcript.length; ti++){
               var tt = transcript[ti];
@@ -21453,19 +21453,22 @@ const npc = _wxGetChatTargetMeta(npcId);
             var npcInfo = findContactById(cdb, npcId) || {name:String(npcId),profile:''};
             var bhv = (typeof _loadCharBehavior==='function') ? _loadCharBehavior(npcId) : {};
 
-            var sysP = '你正在和用户进行'+(isVideo?'视频':'语音')+'通话。你扮演的是「'+esc(npcInfo.name)+'」。'
-              + (npcInfo.profile ? '\n角色简介：'+npcInfo.profile.slice(0,200) : '')
-              + (bhv.wearing ? '\n当前穿着：'+bhv.wearing : '')
-              + (bhv.doing ? '\n正在做：'+bhv.doing : '')
-              + '\n\n【通话回复要求】'
-              + '\n像真实通话一样自然口语化，每次1~3句简短回复。'
-              + '\n可以用语气词（嗯、啊、哈哈），不要用括号动作描述，不要用表情符号。'
-              + '\n直接说话，不加标记或前缀。';
+            // ★ 复用完整 buildSystemPrompt（角色卡/世界书/线上下记录/性格/关系全部带入）
+            var sysP = '';
+            try{ sysP = buildSystemPrompt(npcId); }catch(e){}
+            // 追加通话专属覆盖指令（放在最后权重最高，覆盖格式要求）
+            sysP += '\n\n【⚠ 当前正在进行'+(isVideo?'视频':'语音')+'通话，以下规则覆盖上方所有格式要求】'
+              + '\n- 口语化说话，每次1~3句，简短自然，像真实打电话一样'
+              + '\n- 禁止输出 ||| 分隔符，禁止输出 [状态:] [属性:] 等任何标记'
+              + '\n- 禁止括号动作描写，禁止表情符号，只说话'
+              + '\n- 可以用语气词：嗯、啊、哈哈、诶、喂、哦'
+              + '\n- 直接开口说话，不加任何前缀或角色名'
+              + (bhv.doing ? '\n- 你现在正在：'+bhv.doing : '');
 
             var result = await PhoneAI.chat({
               system: sysP,
               messages: recentMsgs.slice(-12),
-              temperature: 0.88, maxTokens: 150, timeout: 20
+              temperature: 0.88, maxTokens: 300, timeout: 20
             });
 
             if(ended) return;
