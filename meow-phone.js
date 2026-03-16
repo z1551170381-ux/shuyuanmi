@@ -3751,8 +3751,8 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .wxOfflineParagraph .rpText{ display:block; }
 #${ID} .wxOfflineParagraph .rpAction{
   font-style:normal; display:block; margin:8px 0;
-  color:rgba(255,255,200,.82); font-size:14px; line-height:2.3;
-  letter-spacing:0.04em; word-spacing:0.05em;
+  color:inherit; font-size:inherit; line-height:inherit;
+  letter-spacing:inherit; word-spacing:inherit;
 }
 #${ID} .wxOfflineTimeSep{
   text-align:center; font-size:11px; color:rgba(255,255,255,.45);
@@ -3762,7 +3762,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   color:rgba(100,80,60,.45);
 }
 #${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph .rpAction{
-  color:rgba(120,100,70,.65);
+  color:inherit;
 }
 #${ID} .wxOfflineParagraph .rpDialog{
   color:rgba(255,255,255,.97); font-weight:500;
@@ -25483,39 +25483,71 @@ function _applyCustomHTMLTemplate(tpl, vars){
 
 function _injectCustomCSS(npcId){
   try{
-    // doc.head에 있으므로 getElementById로 찾아 제거
-    var existing = doc.getElementById('meow-phone-custom-css');
-    if (existing) existing.remove();
-    var mode = _getChatMode(npcId);
-    var styles = _loadCustomStyle(npcId);
-    var css = '';
-    if (mode === 'offline'){
-      var preset = styles.offlineStyle.preset || 'default_white';
-      if (STYLE_PRESETS[preset]) css += STYLE_PRESETS[preset].css + '\n';
-      css += styles.offlineStyle.css || '';
-    } else {
-      css += styles.onlineStyle.css || '';
-    }
-    if (css.trim()){
-      // 自动给每条规则加 #ID 前缀 + 所有属性加 !important，确保覆盖内置样式
-      var prefixed = css.replace(/([^{}]+)\{/g, function(match, sel){
-        var trimmed = sel.trim();
-        if(/^@/.test(trimmed) || trimmed.indexOf(ID) !== -1) return match;
-        var parts = trimmed.split(',').map(function(s){
-          s = s.trim();
-          return s ? '#'+ID+' '+s : s;
-        });
-        return parts.join(', ')+'{';
-      }).replace(/([^{}:]+):([^{};!]+)(;|})/g, function(m, prop, val, end){
-        // 给每条属性值加 !important（跳过已有的）
-        return prop + ':' + val.trim() + ' !important' + end;
+    var head = doc.head || doc.documentElement;
+    var STYLE_IDS = ['meow-phone-custom-css-online', 'meow-phone-custom-css-offline'];
+    STYLE_IDS.forEach(function(id){
+      var old = doc.getElementById(id);
+      if (old) old.remove();
+    });
+
+    var styles = _loadCustomStyle(npcId) || {};
+    var scope = '#' + ID;
+
+    function _scopeAndBoostCSS(cssText){
+      var css = String(cssText || '').trim();
+      if (!css) return '';
+
+      // 1) 先给普通选择器加上 root 前缀，避免污染全局
+      //    支持逗号分组；@media/@supports/@keyframes 外层保持原样，内部规则照常再命中这条 replace
+      var scoped = css.replace(/(^|})\s*([^@{}][^{}]*)\{/g, function(match, sep, selectorText){
+        var trimmed = String(selectorText || '').trim();
+        if (!trimmed) return match;
+
+        var scopedSelectors = trimmed.split(',').map(function(sel){
+          sel = String(sel || '').trim();
+          if (!sel) return sel;
+          if (sel.indexOf(scope) === 0) return sel;
+          if (sel === 'html' || sel === 'body' || sel === ':root') return scope;
+          if (sel.indexOf('html ') === 0 || sel.indexOf('body ') === 0 || sel.indexOf(':root ') === 0){
+            return scope + sel.replace(/^(html|body|:root)\s+/, ' ');
+          }
+          return scope + ' ' + sel;
+        }).join(', ');
+
+        return sep + '\n' + scopedSelectors + '{';
       });
-      var st = doc.createElement('style');
-      st.id = 'meow-phone-custom-css';
-      st.textContent = prefixed;
-      // doc.head에 마지막으로 추가 → 내장 스타일보다 후위에서 !important 우선
-      (doc.head || doc.documentElement).appendChild(st);
+
+      // 2) 给声明统一补 !important，提升覆盖优先级
+      scoped = scoped.replace(/(:\s*[^;{}!]+)(\s*;)/g, function(match, valuePart, semi){
+        return /!important\s*$/.test(valuePart) ? match : (valuePart + ' !important' + semi);
+      }).replace(/(:\s*[^;{}!]+)(\s*})/g, function(match, valuePart, endBrace){
+        return /!important\s*$/.test(valuePart) ? match : (valuePart + ' !important' + endBrace);
+      });
+
+      return scoped.trim();
     }
+
+    function _appendStyleTag(styleId, cssText){
+      var finalCSS = _scopeAndBoostCSS(cssText);
+      if (!finalCSS) return;
+      var st = doc.createElement('style');
+      st.id = styleId;
+      st.setAttribute('data-meow-custom-css', '1');
+      st.textContent = finalCSS;
+      head.appendChild(st);
+    }
+
+    var onlineCSS = (styles.onlineStyle && styles.onlineStyle.css) || '';
+    var offlineCSS = '';
+    var offlinePreset = (styles.offlineStyle && styles.offlineStyle.preset) || 'default_white';
+    if (STYLE_PRESETS[offlinePreset] && STYLE_PRESETS[offlinePreset].css){
+      offlineCSS += STYLE_PRESETS[offlinePreset].css + '\n';
+    }
+    offlineCSS += (styles.offlineStyle && styles.offlineStyle.css) || '';
+
+    // 两套都注入，避免“在设置页保存后切回线上/线下才生效”的丢失感
+    _appendStyleTag('meow-phone-custom-css-online', onlineCSS);
+    _appendStyleTag('meow-phone-custom-css-offline', offlineCSS);
   }catch(e){}
 }
 
