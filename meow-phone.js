@@ -8366,7 +8366,7 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
         renderApp(id);
       }
 
-      // ★ 来电弹窗共享引用（由 LifePush 模块初始化后赋值，供 _writeAIReply 跨闭包调用）
+      // ★ 来电弹窗共享引用（已移至外层，此行保留作兼容占位）
       var _triggerIncomingCall = null;
 
       function openChat(contactId){
@@ -16049,7 +16049,63 @@ const npc = _wxGetChatTargetMeta(npcId);
         }
       }
 
-      // ===== _writeAIReply：统一写入 AI 回复气泡（处理语音/表情标记）=====
+      // ★ 来电弹窗（外层作用域，_writeAIReply / LifePush 均可直接调用）
+      function _showIncomingCall(npcId, npcName, avatarHint, callType, onAccept, onDecline){
+        try{
+          var existingIC = doc.querySelector('.meowIncomingCall');
+          if(existingIC) existingIC.remove();
+          var existingToast = doc.querySelector('.meowLifePushToast');
+          if(existingToast) existingToast.remove();
+
+          var el = doc.createElement('div');
+          el.className = 'meowIncomingCall';
+          var avatarImg = (typeof phoneGetAvatar === 'function') ? phoneGetAvatar(npcId) : null;
+          var avatarHtml = avatarImg
+            ? '<img src="'+avatarImg+'" />'
+            : esc((avatarHint || (npcName||'?').charAt(0)));
+          var isVideo = callType === 'video';
+          el.innerHTML =
+            '<div class="icLabel">'+(isVideo?'📹 视频通话来电':'📞 语音通话来电')+'</div>'
+            + '<div class="icAvatar">'+avatarHtml+'</div>'
+            + '<div class="icName">'+esc(npcName||npcId)+'</div>'
+            + '<div class="icBtns">'
+            +   '<button class="icBtn" data-ic="decline"><div class="icBtnCircle decline">📵</div><span>拒接</span></button>'
+            +   '<button class="icBtn" data-ic="accept"><div class="icBtnCircle accept">📞</div><span>接听</span></button>'
+            + '</div>';
+
+          doc.body.appendChild(el);
+          requestAnimationFrame(function(){ el.classList.add('show'); });
+          try{ if(navigator.vibrate) navigator.vibrate([300,200,300]); }catch(e){}
+
+          function _dismiss(){ el.classList.remove('show'); setTimeout(function(){ if(el.isConnected) el.remove(); }, 400); }
+
+          el.querySelector('[data-ic="accept"]').addEventListener('click', function(){
+            _dismiss(); try{ if(onAccept) onAccept(); }catch(e){}
+          });
+          el.querySelector('[data-ic="decline"]').addEventListener('click', function(){
+            _dismiss(); try{ if(onDecline) onDecline(); }catch(e){}
+          });
+
+          var autoHangup = setTimeout(function(){
+            if(el.isConnected){
+              _dismiss();
+              try{
+                var _db_ic = loadContactsDB();
+                var _npc_ic = findContactById(_db_ic, npcId) || { name:npcName };
+                pushLog(npcId, 'system', '📵 未接来电（'+(_npc_ic.name||npcId)+'）');
+                bumpThread(npcId, { lastMsg:'📵 未接来电', lastTime:Date.now(), unread:1 });
+              }catch(e){}
+            }
+          }, 25000);
+          el.addEventListener('click', function(ev){
+            if(ev.target.closest('[data-ic]')) clearTimeout(autoHangup);
+          });
+        }catch(e){ console.warn('[IncomingCall] error:', e); }
+      }
+      // 同时挂到 window，方便控制台调试
+      try{ window._meowIncomingCall = _showIncomingCall; }catch(e){}
+
+      // ===== _writeAIReply：统一写入 AI 回复气泡 =====
       async function _writeAIReply(npcId, npc, rawText, ts){
         var parsed = _parseAISpecialTags(rawText);
         var cleanText = parsed.cleanText || rawText;
@@ -16246,8 +16302,8 @@ const npc = _wxGetChatTargetMeta(npcId);
               var _npc_ck = findContactById(_db_ck, npcId) || { id:npcId, name:String(npcId), avatar:'' };
               var _isVideo = /视频/.test(_hitText);
               setTimeout(function(){
-                if(typeof _triggerIncomingCall === 'function'){
-                  _triggerIncomingCall(npcId, _npc_ck.name||npcId, _npc_ck.avatar||'', _isVideo?'video':'voice',
+                if(typeof _showIncomingCall === 'function'){
+                  _showIncomingCall(npcId, _npc_ck.name||npcId, _npc_ck.avatar||'', _isVideo?'video':'voice',
                     function(){ // 接听
                       try{
                         if(state.app !== 'chatDetail' || state.chatTarget !== npcId){ openChat(npcId); }
@@ -24957,79 +25013,6 @@ function bindPageScroll(){
 
         // ★ 前台实时推送：每2.5分钟检查，触发条件满足时 AI 生成消息 + 弹窗
         try{
-          // 弹窗显示函数
-          // ★ NPC 主动来电弹窗
-          function _showIncomingCall(npcId, npcName, avatarHint, callType, onAccept, onDecline){
-            try{
-              // 移除已有弹窗
-              var existingIC = doc.querySelector('.meowIncomingCall');
-              if(existingIC) existingIC.remove();
-              var existingToast = doc.querySelector('.meowLifePushToast');
-              if(existingToast) existingToast.remove();
-
-              var el = doc.createElement('div');
-              el.className = 'meowIncomingCall';
-              var avatarImg = (typeof phoneGetAvatar === 'function') ? phoneGetAvatar(npcId) : null;
-              var avatarHtml = avatarImg
-                ? '<img src="'+avatarImg+'" />'
-                : esc((avatarHint || (npcName||'?').charAt(0)));
-              var isVideo = callType === 'video';
-              el.innerHTML =
-                '<div class="icLabel">'+(isVideo?'📹 视频通话来电':'📞 语音通话来电')+'</div>'
-                + '<div class="icAvatar">'+avatarHtml+'</div>'
-                + '<div class="icName">'+esc(npcName||npcId)+'</div>'
-                + '<div class="icBtns">'
-                +   '<button class="icBtn" data-ic="decline">'
-                +     '<div class="icBtnCircle decline">📵</div>'
-                +     '<span>拒接</span>'
-                +   '</button>'
-                +   '<button class="icBtn" data-ic="accept">'
-                +     '<div class="icBtnCircle accept">📞</div>'
-                +     '<span>接听</span>'
-                +   '</button>'
-                + '</div>';
-
-              doc.body.appendChild(el);
-              requestAnimationFrame(function(){ el.classList.add('show'); });
-
-              // 震动反馈
-              try{ if(navigator.vibrate) navigator.vibrate([300,200,300]); }catch(e){}
-
-              function _dismiss(){ el.classList.remove('show'); setTimeout(function(){ if(el.isConnected) el.remove(); }, 400); }
-
-              el.querySelector('[data-ic="accept"]').addEventListener('click', function(){
-                _dismiss();
-                try{ if(onAccept) onAccept(); }catch(e){}
-              });
-              el.querySelector('[data-ic="decline"]').addEventListener('click', function(){
-                _dismiss();
-                try{ if(onDecline) onDecline(); }catch(e){}
-              });
-
-              // 25秒无人接听 → 自动挂断
-              var autoHangup = setTimeout(function(){
-                if(el.isConnected){
-                  _dismiss();
-                  // 留一条未接来电记录
-                  try{
-                    var _db_ic = loadContactsDB();
-                    var _npc_ic = findContactById(_db_ic, npcId) || { name:npcName };
-                    pushLog(npcId, 'system', '📵 未接来电（'+(_npc_ic.name||npcId)+'）');
-                    bumpThread(npcId, { lastMsg:'📵 未接来电', lastTime:Date.now(), unread:1 });
-                  }catch(e){}
-                }
-              }, 25000);
-              el.addEventListener('click', function(ev){
-                // 点击接听/拒接按钮时 clearTimeout 防止重复触发
-                if(ev.target.closest('[data-ic]')) clearTimeout(autoHangup);
-              });
-
-            }catch(e){ console.warn('[IncomingCall] error:', e); }
-          }
-          // ★ 暴露到外层作用域，供 _writeAIReply 跨闭包调用
-          _triggerIncomingCall = _showIncomingCall;
-          // ★ 同时挂到 window，方便控制台调试
-          try{ window._meowIncomingCall = _showIncomingCall; }catch(e){}
 
           function _showLifePushToast(npcId, npcName, avatarHint, text, onTap){
             try{
