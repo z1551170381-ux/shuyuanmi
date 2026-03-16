@@ -25063,7 +25063,7 @@ function bindPageScroll(){
                     var _sd5 = (_p5.socialDrive != null) ? _p5.socialDrive : 50;
                     var _h5 = new Date().getHours();
                     var _callChance = (_sd5 >= 70) ? 0.35 : (_sd5 >= 50 ? 0.18 : 0.08);
-                    var _canCall = _h5 >= 9 && _h5 <= 22; // 9点到22点才打电话
+                    var _canCall = _h5 >= 20 && _h5 <= 2; // 20点到02点才打电话
                     var _doCall = _canCall && Math.random() < _callChance;
 
                     if(_doCall){
