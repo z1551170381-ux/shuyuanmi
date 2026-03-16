@@ -579,11 +579,9 @@ function ensureTuneStyle(){
   background-position: center, 25% 10%, 80% 55%, 50% 95%;
 }
 
-/* APP 内容底：使用 --phAppBodyRGB + --phAppSolidA + --phAppBodyBlur 实现独立滑块控制 */
+/* APP 内容底：只控制背景色+不透明度，模糊由 phStage::before 统一处理 */
 #${ID}[data-view="app"] .phAppBody{
   background: rgba(var(--phAppBodyRGB,10,10,10), var(--phAppSolidA,.92));
-  backdrop-filter: blur(var(--phAppBodyBlur, 0px));
-  -webkit-backdrop-filter: blur(var(--phAppBodyBlur, 0px));
 }
 
 /* App 顶部横条 — 全主题化 */
@@ -889,10 +887,9 @@ function ensureTuneStyle(){
 
 #${ID}[data-theme="frost"] .phAppBody{
   background:
-    linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.01)),
+    linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.01)),
     rgba(var(--phAppBodyRGB,250,249,247), var(--phAppSolidA,.92));
-  backdrop-filter: blur(var(--phAppBodyBlur, 18px)) saturate(110%);
-  -webkit-backdrop-filter: blur(var(--phAppBodyBlur, 18px)) saturate(110%);
+  /* 模糊由 phStage::before 处理，此处不加 backdrop-filter */
 }
 
 #${ID}[data-theme="frost"] .wxChatBubble.them .wxCBContent,
@@ -1424,6 +1421,56 @@ function ensureTuneStyle(){
   background: rgba(248,246,242,.90);
   border: 1px solid rgba(255,255,255,.80);
   box-shadow: 0 4px 20px rgba(100,94,86,.12);
+}
+
+/* —— 11. 柔化白边 — 全局降低 frost 玻璃卡片描边和高光强度 —— */
+/* 将所有卡片的 border 透明度从 .80-.92 统一降到更柔和的 .38-.48 */
+#${ID}[data-theme="frost"] .phCard,
+#${ID}[data-theme="frost"] .settingSection,
+#${ID}[data-theme="frost"] .wxDiscoverGroup,
+#${ID}[data-theme="frost"] .wxGroupAccordion,
+#${ID}[data-theme="frost"] .wxDiscoverItem,
+#${ID}[data-theme="frost"] .wxChatRow,
+#${ID}[data-theme="frost"] .chatItemSwipeWrap .chatItemInner{
+  border-color: rgba(255,255,255,.38) !important;
+  box-shadow: 0 2px 12px rgba(100,94,86,.06) !important;
+}
+/* 顶部导航栏、输入栏、底栏描边也柔化 */
+#${ID}[data-theme="frost"] .phAppBar,
+#${ID}[data-theme="frost"] .wxTopBar{
+  border-bottom-color: rgba(48,44,40,.06) !important;
+  box-shadow: none !important;
+}
+#${ID}[data-theme="frost"] .wxTabbar{
+  border-top-color: rgba(48,44,40,.06) !important;
+}
+/* Dock 柔化 */
+#${ID}[data-theme="frost"] .phDock{
+  border-color: rgba(255,255,255,.42) !important;
+  box-shadow: 0 8px 24px rgba(100,94,86,.08) !important;
+}
+/* 搜索框柔化 */
+#${ID}[data-theme="frost"] .phSearch,
+#${ID}[data-theme="frost"] .wxSearchBox{
+  border-color: rgba(48,44,40,.06) !important;
+  box-shadow: none !important;
+}
+/* 返回按钮柔化 */
+#${ID}[data-theme="frost"] .phNavBtn{
+  border-color: rgba(255,255,255,.50) !important;
+  box-shadow: 0 1px 6px rgba(100,94,86,.10) !important;
+}
+/* Modal/确认框柔化 */
+#${ID}[data-theme="frost"] .phModalCard,
+#${ID}[data-theme="frost"] .wxConfirmBox,
+#${ID}[data-theme="frost"] .wxEditMsgBox{
+  border-color: rgba(255,255,255,.36) !important;
+  box-shadow: 0 8px 32px rgba(100,94,86,.10) !important;
+}
+/* Shell 外壳柔化 */
+#${ID}[data-theme="frost"] .phShell{
+  border-color: rgba(255,255,255,.45) !important;
+  box-shadow: 0 24px 64px rgba(100,94,86,.14), 0 8px 20px rgba(100,94,86,.07) !important;
 }
     `;
     (doc.head || doc.documentElement).appendChild(st);
@@ -2299,6 +2346,23 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 
 /* ---------- Stage ---------- */
 #${ID} .phStage{ position:absolute; left:0; right:0; top:44px; bottom:0; z-index:5; }
+
+/* ★ App内容底模糊：phStage::before 在 phWallpaper 同级堆叠上下文中应用模糊
+   transform:scale() 在 phApp 上创建独立合成层，内部 backdrop-filter 无法穿透到 phWallpaper
+   所以将模糊层放到 phStage 的伪元素上——它和 phWallpaper 处于同一层级，可以正常模糊 */
+#${ID} .phStage::before{
+  content:'';
+  position:absolute; inset:0; z-index:0;
+  backdrop-filter: blur(var(--phAppBodyBlur, 0px));
+  -webkit-backdrop-filter: blur(var(--phAppBodyBlur, 0px));
+  pointer-events:none;
+  opacity:0;
+  transition: opacity .25s;
+}
+#${ID}[data-view="app"] .phStage::before{
+  opacity:1;
+}
+
 #${ID} .phHome, #${ID} .phApp{
   position:absolute; inset:0; transition:opacity .25s, transform .25s;
 }
@@ -2308,6 +2372,8 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID}[data-view="app"] .phApp{ opacity:1; transform:scale(1); pointer-events:auto; }
 #${ID}.mini .phHome{ display:none; }
 #${ID}.mini .phApp{ opacity:1; transform:none; pointer-events:auto; }
+/* mini模式也显示模糊 */
+#${ID}.mini .phStage::before{ opacity:1; }
 
 /* ---------- Desktop Grid ---------- */
 #${ID} .phPages{
@@ -23512,35 +23578,35 @@ function renderSettingsUIApp(container){
 
       <div class="phCard">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-weight:700;color:var(--ph-text);">App 内容底不透明度</div>
-          <div style="font-size:12px;color:var(--ph-text-sub);"><b data-uiapp="solid">${solid}</b>%</div>
+          <div style="font-weight:400;font-size:13px;color:var(--ph-text);">App 内容底不透明度</div>
+          <div style="font-size:11.5px;color:var(--ph-text-sub);"><b data-uiapp="solid">${solid}</b>%</div>
         </div>
-        <div style="margin-top:8px;font-size:12px;color:var(--ph-text-dim);">提高更接近原生 App（更易读）。</div>
+        <div style="margin-top:6px;font-size:11px;color:var(--ph-text-dim);">提高更接近原生 App（更易读）。</div>
         <input data-uiapp="solid" type="range" min="0" max="100" value="${solid}" style="width:100%;margin-top:10px;">
       </div>
 
       <div class="phCard">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-weight:700;color:var(--ph-text);">App 卡片玻璃不透明度</div>
-          <div style="font-size:12px;color:var(--ph-text-sub);"><b data-uiapp="op">${op}</b>%</div>
+          <div style="font-weight:400;font-size:13px;color:var(--ph-text);">App 卡片玻璃不透明度</div>
+          <div style="font-size:11.5px;color:var(--ph-text-sub);"><b data-uiapp="op">${op}</b>%</div>
         </div>
         <input data-uiapp="op" type="range" min="0" max="100" value="${op}" style="width:100%;margin-top:10px;">
       </div>
 
       <div class="phCard">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-weight:700;color:var(--ph-text);">App 模糊度</div>
-          <div style="font-size:12px;color:var(--ph-text-sub);"><b data-uiapp="blur">${blur}</b>px</div>
+          <div style="font-weight:400;font-size:13px;color:var(--ph-text);">App 模糊度</div>
+          <div style="font-size:11.5px;color:var(--ph-text-sub);"><b data-uiapp="blur">${blur}</b>px</div>
         </div>
         <input data-uiapp="blur" type="range" min="0" max="40" value="${blur}" style="width:100%;margin-top:10px;">
       </div>
 
       <div class="phCard">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-weight:700;color:var(--ph-text);">App 内容底模糊度</div>
-          <div style="font-size:12px;color:var(--ph-text-sub);"><b data-uiapp="bodyblur">${bodyBlur}</b>px</div>
+          <div style="font-weight:400;font-size:13px;color:var(--ph-text);">App 内容底模糊度</div>
+          <div style="font-size:11.5px;color:var(--ph-text-sub);"><b data-uiapp="bodyblur">${bodyBlur}</b>px</div>
         </div>
-        <div style="margin-top:8px;font-size:12px;color:var(--ph-text-dim);">内容区背景毛玻璃强度，越高越霜雪朦胧感。</div>
+        <div style="margin-top:6px;font-size:11px;color:var(--ph-text-dim);">内容区背景毛玻璃强度，越高越霜雪朦胧感。</div>
         <input data-uiapp="bodyblur" type="range" min="0" max="50" value="${bodyBlur}" style="width:100%;margin-top:10px;">
       </div>
     </div>
