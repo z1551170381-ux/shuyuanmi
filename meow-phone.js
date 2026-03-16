@@ -16105,11 +16105,11 @@ const npc = _wxGetChatTargetMeta(npcId);
         });
       }
       try{ window._meowIncomingCall = _showIncomingCall; }catch(e){}
-      try{ window._meowStartCall = function(npcId, callType){
+      try{ window._meowStartCall = function(npcId, callType, isIncoming){
         try{
           var _db = loadContactsDB();
           var _npc = findContactById(_db, npcId) || {id:npcId, name:String(npcId), avatar:''};
-          _cpStartCall(npcId, _npc, callType || 'voice');
+          _cpStartCall(npcId, _npc, callType || 'voice', !!isIncoming);
         }catch(e){ console.warn('[meowStartCall]', e); }
       }; }catch(e){}
 
@@ -16318,7 +16318,7 @@ const npc = _wxGetChatTargetMeta(npcId);
                         if(state.app !== 'chatDetail' || state.chatTarget !== npcId){ openChat(npcId); }
                         setTimeout(function(){
                           try{
-                            if(typeof window._meowStartCall==='function') window._meowStartCall(npcId, _ct2);
+                            if(typeof window._meowStartCall==='function') window._meowStartCall(npcId, _ct2, true);
                           }catch(e){ console.warn('[IC accept]',e); }
                         }, 300);
                       }catch(e){}
@@ -21356,7 +21356,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         });
       }
 
-      function _cpStartCall(npcId, npc, callType){
+      function _cpStartCall(npcId, npc, callType, isIncoming){
         var startTime = Date.now();
         var avatarSrc = phoneGetAvatar(npcId);
         var avatarHtml = avatarSrc
@@ -21373,8 +21373,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             + '<div class="callVideoAvatar callAvatarBreath">' + avatarHtml + '</div>'
             + '<div style="position:absolute;top:14px;left:14px;">'
             +   '<div class="callName" style="font-size:15px;">' + esc(npc.name) + '</div>'
-            +   '<div class="callStatus" data-el="callStatus">正在呼叫…</div>'
-            +   '<div class="callTimer" data-el="callTimer"></div>'
+            +   '<div class="callStatus" data-el="callStatus">'+(isIncoming?'已接听…':'正在呼叫…')+'</div>'            +   '<div class="callTimer" data-el="callTimer"></div>'
             + '</div>'
             + '<div style="position:absolute;top:14px;right:14px;width:80px;height:106px;border-radius:12px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:24px;color:rgba(255,255,255,.3);">👤</div>'
             + '</div>'
@@ -21395,7 +21394,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             + '<div class="callAvatar callAvatarBreath">' + avatarHtml + '</div>'
             + '</div>'
             + '<div class="callName">' + esc(npc.name) + '</div>'
-            + '<div class="callStatus" data-el="callStatus">正在呼叫…</div>'
+            + '<div class="callStatus" data-el="callStatus">'+(isIncoming?'已接听…':'正在呼叫…')+'</div>'
             + '<div class="callTimer" data-el="callTimer"></div>'
             + '<div class="callWave" data-el="callWave"><span></span><span></span><span></span><span></span><span></span></div>'
             + '<div class="callTranscript" data-el="callTranscript"></div>'
@@ -21650,6 +21649,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         });
 
         // ---- 模拟接通 ----
+        // 来电接听：立即接通，不显示"正在呼叫"等待；去电：正常延迟
         var connectDelay = setTimeout(function(){
           if(ended) return;
           connected = true; connectTime = Date.now();
@@ -21661,7 +21661,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             if(timerEl) timerEl.textContent = String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
           }, 1000);
           updateModeUI();
-          // 对方先开口（直接调AI，不走processUserSaid以避免假的me消息）
+          // 对方先开口
           setTimeout(function(){
             if(ended) return;
             aiProcessing = true;
@@ -21670,9 +21670,17 @@ const npc = _wxGetChatTargetMeta(npcId);
               try{
                 var cdb2 = loadContactsDB();
                 var npcInfo2 = findContactById(cdb2, npcId) || {name:String(npcId)};
+                // 来电接听时：对方先说话（是对方打来的，对方主动开口）
+                // 去电时：对方接起来打招呼
+                var greetSys = isIncoming
+                  ? '你是「'+esc(npcInfo2.name)+'」，你刚才主动打电话给用户，对方接听了。用一句简短口语化的话开口（比如"接了"、"喂，听得到吗"）。不要括号动作，纯对话。'
+                  : '你是「'+esc(npcInfo2.name)+'」，刚接起用户打来的'+(isVideo?'视频':'语音')+'电话。用一句简短口语化的话接电话（比如"喂？怎么了~"）。不要括号动作，纯对话。';
+                var greetMsg = isIncoming
+                  ? '[用户接听了你打来的'+(isVideo?'视频':'语音')+'通话]'
+                  : '[用户拨打了'+(isVideo?'视频':'语音')+'通话]';
                 var greetResult = await PhoneAI.chat({
-                  system:'你是「'+esc(npcInfo2.name)+'」，刚接起用户打来的'+(isVideo?'视频':'语音')+'电话。用一句简短口语化的话接电话（比如"喂？怎么了~"）。不要括号动作，纯对话。',
-                  messages:[{role:'user',content:'[用户拨打了'+(isVideo?'视频':'语音')+'通话]'}],
+                  system: greetSys,
+                  messages:[{role:'user',content: greetMsg}],
                   temperature:0.9, maxTokens:60, timeout:12
                 });
                 if(ended) return;
@@ -21700,7 +21708,7 @@ const npc = _wxGetChatTargetMeta(npcId);
               }
             })();
           }, 300);
-        }, 1800 + Math.random()*1200);
+        }, isIncoming ? 0 : (1800 + Math.random()*1200));
 
         // ---- 挂断 ----
         function doHangup(){
@@ -25151,7 +25159,7 @@ function bindPageScroll(){
                             if(state.app !== 'chatDetail' || state.chatTarget !== nId){ openChat(nId); }
                             setTimeout(function(){
                               try{
-                                if(typeof window._meowStartCall==='function') window._meowStartCall(nId, 'voice');
+                                if(typeof window._meowStartCall==='function') window._meowStartCall(nId, 'voice', true);
                               }catch(e){}
                             }, 300);
                           }catch(e){}
