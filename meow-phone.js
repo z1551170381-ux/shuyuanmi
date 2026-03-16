@@ -1575,15 +1575,15 @@ function ensureTuneStyle(){
   padding:0; flex-shrink:0; line-height:1; align-self:flex-start;
 }
 .meowIncomingCall{
-  position:absolute; top:0; left:0; right:0;
+  position:fixed; top:0; left:0; right:0; width:100%;
   background:rgba(18,18,24,.96); backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px);
   border-bottom-left-radius:24px; border-bottom-right-radius:24px;
-  border-bottom:1px solid rgba(255,255,255,.1);
+  border-bottom:1px solid rgba(255,255,255,.12);
   padding:32px 20px 28px;
   box-shadow:0 12px 48px rgba(0,0,0,.6);
   opacity:0; transform:translateY(-100%);
   transition:opacity .35s, transform .4s cubic-bezier(.22,1,.36,1);
-  pointer-events:none; z-index:9999;
+  pointer-events:none; z-index:2147483647;
   display:flex; flex-direction:column; align-items:center; gap:10px;
 }
 .meowIncomingCall.show{ opacity:1; transform:translateY(0); pointer-events:auto; }
@@ -16051,8 +16051,11 @@ const npc = _wxGetChatTargetMeta(npcId);
       // ★ 来电弹窗（外层作用域，_writeAIReply / LifePush 均可直接调用）
       function _showIncomingCall(npcId, npcName, avatarHint, callType, onAccept, onDecline){
         try{
-          // 找到手机 root
+          // 挂到 #meow-phone-root（不是 phShell，phShell 有 overflow:hidden 会裁剪）
           var _icRootEl = document.getElementById('meow-phone-root');
+          if(!_icRootEl){ // 手机还没打开则先确保 root 存在
+            try{ ensureRoot(); _icRootEl = document.getElementById('meow-phone-root'); }catch(e){}
+          }
           if(!_icRootEl) return;
 
           // 清除旧来电弹窗
@@ -16067,7 +16070,22 @@ const npc = _wxGetChatTargetMeta(npcId);
 
           var overlay = document.createElement('div');
           overlay.className = 'meowIncomingCall';
-          overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(18,18,24,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;';
+          // phShell 是 root 内部居中的子元素，来电覆盖层要盖在它上方
+          // 用绝对定位配合 phShell 的 getBoundingClientRect 精准定位
+          var _shell = _icRootEl.querySelector('.phShell');
+          if(_shell){
+            var _sr = _shell.getBoundingClientRect();
+            var _rr = _icRootEl.getBoundingClientRect();
+            overlay.style.cssText = 'position:absolute;'
+              + 'left:'+(_sr.left-_rr.left)+'px;'
+              + 'top:'+(_sr.top-_rr.top)+'px;'
+              + 'width:'+_sr.width+'px;'
+              + 'z-index:9999;background:rgba(18,18,24,.96);'
+              + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;'
+              + 'border-radius:38px;padding:40px 20px;';
+          } else {
+            overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(18,18,24,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;';
+          }
           overlay.innerHTML =
             '<div style="font-size:11px;color:rgba(255,255,255,.45);letter-spacing:1px;">'+labelText+'</div>'
             +'<div style="width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 0 0 6px rgba(255,255,255,.08);">'+avatarHtml+'</div>'
