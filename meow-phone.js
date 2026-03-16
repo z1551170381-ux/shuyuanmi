@@ -29201,6 +29201,239 @@ async function _showNpcFurnPanel(container, mapData, houseId, npcId, npcName, fu
   });
 }
 
+// ========== Chibi 角色 SVG 生成器 ==========
+function _chibiFurnSVG(opts){
+  var g   = opts.gender     || 'female';
+  var h   = opts.hairStyle  || (g==='female'?'f1':'m1');
+  var hc  = opts.hairColor  || '#2A2832';
+  var sc  = opts.skinColor  || '#FAEBD7';
+  var cc  = opts.coatColor  || '#4A5A6A';
+  var ears= opts.catEars !== false;
+  var acc = opts.acc        || false;
+  var of2 = opts.outfit     || 'o1';
+  var scene = opts.scene    || null; // null|'sleep'|'eat'|'sit'
+  var scale = opts.scale    || 0.55;
+
+  function dk(hex,a){ a=a||30; var r=parseInt(hex.slice(1,3),16)-a,gr=parseInt(hex.slice(3,5),16)-a,b=parseInt(hex.slice(5,7),16)-a; return 'rgb('+Math.max(0,r)+','+Math.max(0,gr)+','+Math.max(0,b)+')'; }
+  function lt(hex,a){ a=a||25; var r=Math.min(255,parseInt(hex.slice(1,3),16)+a),gr=Math.min(255,parseInt(hex.slice(3,5),16)+a),b=Math.min(255,parseInt(hex.slice(5,7),16)+a); return 'rgb('+r+','+gr+','+b+')'; }
+  var ct2=dk(cc,20), sk2=dk(sc,15), isF=g==='female';
+
+  // --- 后发 ---
+  function hairBack(){
+    var c2=dk(hc);
+    if(g==='male') return '';
+    var m={'f1':'<path d="M-38,-16 Q-42,0 -44,18 Q-46,36 -40,48 Q-34,56 -20,58 Q-8,60 0,58 Q8,60 20,58 Q34,56 40,48 Q46,36 44,18 Q42,0 38,-16Z" fill="'+c2+'"/>',
+      'f2':'<path d="M-30,-14 Q-44,-10 -52,6 Q-56,24 -50,44 Q-44,58 -36,64 Q-28,62 -34,50 Q-42,34 -44,20 Q-44,6 -38,-4 Q-34,-10 -30,-12Z" fill="'+c2+'"/><path d="M30,-14 Q44,-10 52,6 Q56,24 50,44 Q44,58 36,64 Q28,62 34,50 Q42,34 44,20 Q44,6 38,-4 Q34,-10 30,-12Z" fill="'+c2+'"/>',
+      'f3':'<path d="M-38,-16 Q-42,0 -44,18 Q-46,36 -40,48 Q-34,56 -20,58 Q-8,60 0,58 Q8,60 20,58 Q34,56 40,48 Q46,36 44,18 Q42,0 38,-16Z" fill="'+c2+'"/>',
+      'f4':'', 'f5':''};
+    return m[h]||m['f1'];
+  }
+
+  // --- 前发 ---
+  function hairFront(){
+    var c2=dk(hc);
+    var map={
+      'f1':'<path d="M-44,-22 Q-36,-44 0,-48 Q36,-44 44,-22 Q48,0 46,6 Q38,12 28,6 Q18,12 8,6 Q-2,12 -14,6 Q-26,12 -36,7 Q-44,4 -46,6 Q-48,0 -44,-22Z" fill="'+hc+'"/><path d="M-44,5 Q-46,16 -42,28 Q-38,34 -34,32 Q-38,24 -40,14 Q-42,6 -42,5Z" fill="'+c2+'"/><path d="M44,5 Q46,16 42,28 Q38,34 34,32 Q38,24 40,14 Q42,6 42,5Z" fill="'+c2+'"/>',
+      'f2':'<path d="M-44,-22 Q-36,-44 0,-48 Q36,-44 44,-22 Q48,0 46,8 L-46,8 Q-48,0 -44,-22Z" fill="'+hc+'"/><path d="M-36,0 Q-30,-28 0,-32 Q30,-28 36,0 Q32,6 26,3 Q18,8 10,3 Q2,8 -6,3 Q-14,8 -22,3 Q-30,6 -36,0Z" fill="'+hc+'"/>',
+      'f3':'<path d="M-44,-22 Q-36,-44 0,-48 Q36,-44 44,-22 Q48,0 46,10 L-46,10 Q-48,0 -44,-22Z" fill="'+hc+'"/><rect x="-36" y="4" width="72" height="6" fill="'+hc+'"/><path d="M-44,6 Q-46,20 -42,34 Q-38,42 -34,40 Q-38,32 -40,20 Q-42,10 -42,6Z" fill="'+c2+'"/><path d="M44,6 Q46,20 42,34 Q38,42 34,40 Q38,32 40,20 Q42,10 42,6Z" fill="'+c2+'"/>',
+      'f4':'<path d="M-44,-22 Q-36,-44 0,-48 Q36,-44 44,-22 Q48,0 46,8 L-46,8 Q-48,0 -44,-22Z" fill="'+hc+'"/><polygon points="0,-4 -10,8 10,8" fill="'+sc+'"/><ellipse cx="-36" cy="11" rx="7" ry="6.5" fill="'+hc+'"/><ellipse cx="-36" cy="22" rx="6.5" ry="6" fill="'+c2+'"/><ellipse cx="-36" cy="33" rx="6" ry="6" fill="'+hc+'"/><ellipse cx="-36" cy="43" rx="5.5" ry="5.5" fill="'+c2+'"/><ellipse cx="-36" cy="53" rx="5" ry="5" fill="'+hc+'"/><circle cx="-36" cy="62" r="4" fill="'+lt(hc,40)+'" stroke="'+dk(hc,10)+'" stroke-width="0.5"/><ellipse cx="36" cy="11" rx="7" ry="6.5" fill="'+hc+'"/><ellipse cx="36" cy="22" rx="6.5" ry="6" fill="'+c2+'"/><ellipse cx="36" cy="33" rx="6" ry="6" fill="'+hc+'"/><ellipse cx="36" cy="43" rx="5.5" ry="5.5" fill="'+c2+'"/><ellipse cx="36" cy="53" rx="5" ry="5" fill="'+hc+'"/><circle cx="36" cy="62" r="4" fill="'+lt(hc,40)+'" stroke="'+dk(hc,10)+'" stroke-width="0.5"/>',
+      'f5':'<path d="M0,-48 Q-36,-44 -44,-22 Q-48,-2 -46,14 Q-42,28 -36,30 Q-30,28 -32,18 Q-36,6 -36,0 L36,0 Q36,6 32,18 Q30,28 36,30 Q42,28 46,14 Q48,-2 44,-22 Q36,-44 0,-48Z" fill="'+hc+'"/><path d="M-34,0 Q-28,-28 0,-32 Q28,-28 34,0 Q30,6 24,3 Q16,8 8,3 Q0,8 -8,3 Q-16,8 -24,3 Q-30,6 -34,0Z" fill="'+hc+'"/>',
+      'm1':'<path d="M-42,-22 Q-34,-44 0,-48 Q34,-44 42,-22 Q46,-2 42,10 L-42,10 Q-46,-2 -42,-22Z" fill="'+hc+'"/><path d="M-36,-4 Q-30,-30 0,-34 Q30,-30 36,-4 Q32,2 26,-1 Q18,4 10,-1 Q2,4 -6,-1 Q-14,4 -22,-1 Q-30,2 -36,-4Z" fill="'+hc+'"/><path d="M-38,4 Q-42,14 -36,20 Q-32,14 -36,6Z" fill="'+c2+'"/><path d="M38,4 Q42,14 36,20 Q32,14 36,6Z" fill="'+c2+'"/>',
+      'm2':'<path d="M-40,-18 Q-36,-42 -8,-45 Q8,-47 22,-44 Q36,-38 40,-18 Q43,-4 40,10 L-40,10 Q-43,-4 -40,-18Z" fill="'+hc+'"/><path d="M-38,10 Q-40,-2 -20,-12 Q-8,-16 2,10Z" fill="'+sc+'"/><path d="M-38,-20 L-10,-20 Q-20,2 -36,10Z" fill="'+c2+'"/><path d="M6,10 Q4,-12 18,-18 Q28,-8 30,10 Q22,4 12,10Z" fill="'+hc+'"/><path d="M-38,6 Q-42,12 -39,18 Q-35,12 -36,8Z" fill="'+c2+'"/><path d="M38,6 Q42,12 39,18 Q35,12 36,8Z" fill="'+c2+'"/>',
+      'm3':'<path d="M-38,-20 Q-34,-44 -10,-46 Q-4,-48 0,-46 Q4,-50 12,-46 Q30,-42 38,-18 Q42,-4 38,8 L-38,8 Q-42,-4 -38,-20Z" fill="'+hc+'"/><path d="M-22,8 Q-24,-12 0,-18 Q24,-12 22,8Z" fill="'+sc+'"/><path d="M22,8 Q28,-16 8,-22 Q4,-10 0,8Z" fill="'+hc+'"/><path d="M28,8 Q38,-8 18,-20 Q12,-8 8,8Z" fill="'+c2+'"/><path d="M-36,6 Q-40,12 -37,18 Q-33,12 -34,8Z" fill="'+c2+'"/><path d="M36,6 Q40,12 37,18 Q33,12 34,8Z" fill="'+hc+'"/>',
+      'm4':'<path d="M-36,-24 Q-26,-42 0,-46 Q26,-42 36,-24 Q40,-6 36,8 L-36,8 Q-40,-6 -36,-24Z" fill="'+hc+'"/><path d="M-28,-4 Q-16,-36 6,-40 Q28,-36 34,-8 L28,2 Q22,-8 14,0 Q6,-10 -2,0 Q-10,-8 -18,0 Q-24,-6 -26,0Z" fill="'+hc+'"/><path d="M-32,2 Q-34,10 -28,14 Q-26,8 -28,4Z" fill="'+c2+'"/><path d="M32,2 Q34,10 28,14 Q26,8 28,4Z" fill="'+c2+'"/>',
+      'm5':'<path d="M-40,-22 Q-30,-44 0,-48 Q30,-44 40,-22 Q44,-2 40,12 L-40,12 Q-44,-2 -40,-22Z" fill="'+hc+'"/><polygon points="0,-4 -10,12 10,12" fill="'+sc+'"/><path d="M-38,8 Q-42,16 -39,22 Q-35,16 -36,12Z" fill="'+c2+'"/><path d="M38,8 Q42,16 39,22 Q35,16 36,12Z" fill="'+c2+'"/>'
+    };
+    return map[h]||map[isF?'f1':'m1'];
+  }
+
+  // --- 身体核心 SVG ---
+  function chibiCore(){
+    var legsHidden = (scene==='sit'||scene==='sleep');
+    var armClass = isF ? 'crm-arm-l' : 'crm-male-arm-l';
+    var armClassR = isF ? 'crm-arm-r' : 'crm-male-arm-r';
+    var out = '';
+    // 影子
+    out += '<ellipse class="crm-shadow" cx="0" cy="78" rx="20" ry="7" fill="rgba(130,140,120,0.12)"/>';
+    out += '<g class="crm-body">';
+    // 尾巴
+    if(ears) out += '<g class="crm-tail"><path d="M12,40 Q28,34 34,22 Q38,10 32,4" fill="none" stroke="'+dk(hc,10)+'" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="3" r="3" fill="'+hc+'"/></g>';
+    // 后发
+    out += hairBack();
+    // 鞋
+    if(!legsHidden) out += '<ellipse class="crm-leg-l" cx="0" cy="0" rx="5.5" ry="4" fill="#2A2520"/><ellipse class="crm-leg-r" cx="0" cy="0" rx="5.5" ry="4" fill="#2A2520"/>';
+    // 身体
+    if(isF){
+      out += '<rect x="-15" y="34" width="30" height="22" rx="7" fill="'+cc+'"/>';
+      out += '<path d="M-4,34 L0,41 L4,34" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="round"/>';
+      if(of2==='o2') out += '<path d="M-12,34 L0,44 L12,34" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round"/>';
+      if(of2==='o3') out += '<rect x="-8" y="46" width="16" height="5" rx="2.5" fill="'+ct2+'" opacity="0.4"/>';
+      var skH = of2==='o3'?'56':'60', skB = of2==='o3'?'58':'64';
+      if(!legsHidden){
+        out += '<path d="M-16,52 Q-18,'+skH+' -14,'+skB+' L14,'+skB+' Q18,'+skH+' 16,52Z" fill="'+ct2+'"/>';
+        out += '<rect x="-11" y="'+(of2==='o3'?56:62)+'" width="8" height="'+(of2==='o3'?14:12)+'" rx="4" fill="'+cc+'"/>';
+        out += '<rect x="3" y="'+(of2==='o3'?56:62)+'" width="8" height="'+(of2==='o3'?14:12)+'" rx="4" fill="'+ct2+'"/>';
+      }
+    } else {
+      out += '<rect x="-15" y="34" width="30" height="24" rx="7" fill="'+cc+'"/>';
+      out += '<path d="M-4,34 L0,41 L4,34" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="round"/>';
+      if(of2==='o2') out += '<line x1="0" y1="34" x2="0" y2="58" stroke="'+ct2+'" stroke-width="1.5"/>';
+      if(of2==='o3') out += '<rect x="-10" y="38" width="20" height="3" rx="1.5" fill="rgba(255,255,255,0.25)"/>';
+      if(!legsHidden){
+        out += '<rect x="-10" y="54" width="8" height="16" rx="4" fill="'+(of2==='o2'?'#3A3A44':cc)+'"/>';
+        out += '<rect x="2" y="54" width="8" height="16" rx="4" fill="'+(of2==='o2'?'#2E2E38':ct2)+'"/>';
+      }
+    }
+    // 手臂
+    out += '<g class="'+armClass+'"><rect x="-4" y="0" width="7" height="14" rx="3.5" fill="'+cc+'" transform="translate(-15,36)"/><circle cx="0" cy="15" r="4" fill="'+sc+'" stroke="'+sk2+'" stroke-width="0.4" transform="translate(-15,36)"/></g>';
+    out += '<g class="'+armClassR+'"><rect x="-3" y="0" width="7" height="14" rx="3.5" fill="'+ct2+'" transform="translate(15,36)"/><circle cx="0" cy="15" r="4" fill="'+sc+'" stroke="'+sk2+'" stroke-width="0.4" transform="translate(15,36)"/></g>';
+    // 头
+    out += '<circle cx="0" cy="0" r="38" fill="'+sc+'" stroke="'+sk2+'" stroke-width="0.8"/>';
+    // 睡觉闭眼
+    if(scene==='sleep'){
+      out += '<rect x="-27" y="6" width="19" height="18" rx="3" fill="'+sc+'"/><rect x="8" y="6" width="19" height="18" rx="3" fill="'+sc+'"/>';
+      out += '<path d="M-26,13 Q-18,20 -10,13" fill="none" stroke="#1A1518" stroke-width="2.5" stroke-linecap="round"/>';
+      out += '<path d="M9,13 Q17,20 25,13" fill="none" stroke="#1A1518" stroke-width="2.5" stroke-linecap="round"/>';
+    }
+    // 前发
+    out += hairFront();
+    // 猫耳
+    if(ears){
+      out += '<path d="M-24,-32 L-34,-56 L-12,-38Z" fill="'+hc+'" stroke="'+dk(hc,20)+'" stroke-width="0.8" stroke-linejoin="round"/><path d="M-23,-34 L-31,-52 L-14,-38Z" fill="#E8BFB8"/>';
+      out += '<path d="M24,-32 L34,-56 L12,-38Z" fill="'+hc+'" stroke="'+dk(hc,20)+'" stroke-width="0.8" stroke-linejoin="round"/><path d="M23,-34 L31,-52 L14,-38Z" fill="#E8BFB8"/>';
+    }
+    // 装饰
+    if(acc&&isF){
+      out += '<path d="M-36,-10 A 40,40 0 0,1 36,-10" fill="none" stroke="'+dk(cc,10)+'" stroke-width="7" stroke-linecap="round"/>';
+      out += '<path d="M-36,-10 A 40,40 0 0,1 36,-10" fill="none" stroke="'+lt(cc,20)+'" stroke-width="3" stroke-linecap="round"/>';
+      out += '<circle cx="-36" cy="-10" r="5" fill="'+cc+'"/><circle cx="36" cy="-10" r="5" fill="'+cc+'"/>';
+    }
+    if(acc&&!isF){
+      out += '<path d="M-38,-18 Q-32,-50 0,-54 Q32,-50 38,-18 Q20,-14 0,-13 Q-20,-14 -38,-18Z" fill="'+cc+'"/>';
+      out += '<path d="M-38,-18 Q-10,-22 0,-21 Q10,-22 20,-20 Q10,-12 -38,-18Z" fill="'+dk(cc,15)+'"/>';
+      out += '<ellipse cx="0" cy="-54" rx="5" ry="3" fill="'+dk(cc,20)+'"/><circle cx="0" cy="-54" r="2.5" fill="'+lt(cc,20)+'"/>';
+    }
+    // 眼睛
+    if(scene!=='sleep'){
+      out += '<rect x="-25" y="8" width="15" height="15" rx="4.5" fill="#1A1518"/><rect x="10" y="8" width="15" height="15" rx="4.5" fill="#1A1518"/>';
+      out += '<rect x="-23" y="9.5" width="4" height="5.5" rx="2" fill="white"/><rect x="12" y="9.5" width="4" height="5.5" rx="2" fill="white"/>';
+      out += '<circle cx="-15" cy="19" r="1.2" fill="white" opacity="0.3"/><circle cx="20" cy="19" r="1.2" fill="white" opacity="0.3"/>';
+      out += '<g class="crm-blink"><rect x="-25" y="8" width="15" height="15" rx="4.5" fill="'+sc+'"/><rect x="10" y="8" width="15" height="15" rx="4.5" fill="'+sc+'"/></g>';
+    }
+    out += '<path d="M-3,29 Q-1,31.5 0,30 Q1,31.5 3,29" fill="none" stroke="'+dk(sc,50)+'" stroke-width="1" stroke-linecap="round"/>';
+    out += '<ellipse cx="-29" cy="20" rx="6" ry="3.5" fill="rgba(240,150,130,0.18)"/><ellipse cx="29" cy="20" rx="6" ry="3.5" fill="rgba(240,150,130,0.18)"/>';
+    out += '</g>'; // chibi-body
+    return out;
+  }
+
+  // --- 场景包装 ---
+  var sceneHtml = '';
+  if(scene==='sleep'){
+    sceneHtml = '<g transform="rotate(-90) translate(-4,0)">'+chibiCore()+'</g>';
+    sceneHtml += '<text class="crm-zzz-a" x="68" y="-8" font-size="9" font-weight="bold" fill="#A8B8A8">z</text>';
+    sceneHtml += '<text class="crm-zzz-b" x="74" y="-22" font-size="12" font-weight="bold" fill="#A8B8A8">z</text>';
+    sceneHtml += '<text class="crm-zzz-c" x="80" y="-38" font-size="16" font-weight="bold" fill="#A8B8A8">Z</text>';
+  } else if(scene==='eat'){
+    sceneHtml = chibiCore();
+    sceneHtml += '<ellipse cx="0" cy="56" rx="13" ry="5.5" fill="#E8CCA8"/><path d="M-13,54 Q-10,64 0,66 Q10,64 13,54Z" fill="#F0D8B8"/><ellipse cx="0" cy="53" rx="12" ry="4" fill="white"/>';
+    sceneHtml += '<path class="crm-steam-a" d="M-5,48 Q-7,43 -5,39" fill="none" stroke="#C8C0B0" stroke-width="1.5" stroke-linecap="round"/>';
+    sceneHtml += '<path class="crm-steam-b" d="M0,47 Q2,42 0,38" fill="none" stroke="#C8C0B0" stroke-width="1.5" stroke-linecap="round"/>';
+    sceneHtml += '<path class="crm-steam-c" d="M5,48 Q7,43 5,39" fill="none" stroke="#C8C0B0" stroke-width="1.5" stroke-linecap="round"/>';
+    sceneHtml += '<g class="crm-chop"><line x1="14" y1="36" x2="4" y2="55" stroke="#A08060" stroke-width="1.8" stroke-linecap="round"/><line x1="18" y1="36" x2="8" y2="55" stroke="#A08060" stroke-width="1.8" stroke-linecap="round"/></g>';
+  } else if(scene==='sit'){
+    sceneHtml = '<rect x="18" y="10" width="6" height="42" rx="3" fill="#C8A880"/><rect x="-24" y="46" width="48" height="7" rx="3.5" fill="#C8A880"/><rect x="-20" y="52" width="4" height="22" rx="2" fill="#B89870"/><rect x="16" y="52" width="4" height="22" rx="2" fill="#B89870"/>';
+    sceneHtml += chibiCore();
+    sceneHtml += '<rect x="-13" y="52" width="26" height="25" fill="rgba(232,232,224,0)"/>';
+    sceneHtml += '<rect x="-13" y="50" width="11" height="8" rx="4" fill="'+cc+'"/><rect x="2" y="50" width="11" height="8" rx="4" fill="'+ct2+'"/>';
+    sceneHtml += '<g class="crm-sit-l"><rect x="-10" y="55" width="8" height="10" rx="4" fill="'+cc+'"/><ellipse cx="-6" cy="66" rx="5" ry="3" fill="#2A2520"/></g>';
+    sceneHtml += '<g class="crm-sit-r"><rect x="2" y="55" width="8" height="10" rx="4" fill="'+ct2+'"/><ellipse cx="6" cy="66" rx="5" ry="3" fill="#2A2520"/></g>';
+  } else {
+    sceneHtml = chibiCore();
+  }
+
+  var uid = 'crm'+(Date.now()%100000);
+  var css = '<style>@keyframes '+uid+'-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}@keyframes '+uid+'-shadow{0%,100%{transform:scaleX(1);opacity:0.12}50%{transform:scaleX(0.92);opacity:0.09}}@keyframes '+uid+'-blink{0%,90%,100%{transform:scaleY(0)}94%,96%{transform:scaleY(1)}}@keyframes '+uid+'-tail{0%,100%{transform:rotate(0deg)}40%{transform:rotate(18deg)}70%{transform:rotate(-10deg)}}@keyframes '+uid+'-arm-l{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(-26deg)}}@keyframes '+uid+'-arm-r{0%,100%{transform:rotate(10deg)}50%{transform:rotate(26deg)}}@keyframes '+uid+'-male-l{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(-14deg)}}@keyframes '+uid+'-male-r{0%,100%{transform:rotate(8deg)}50%{transform:rotate(14deg)}}@keyframes '+uid+'-leg-l{0%,100%{transform:translate(-6px,73px)}50%{transform:translate(-9px,70px)}}@keyframes '+uid+'-leg-r{0%,100%{transform:translate(6px,73px)}50%{transform:translate(9px,70px)}}@keyframes '+uid+'-zzz{0%{opacity:0;transform:translate(0,0)scale(0.5)}15%{opacity:1}100%{opacity:0;transform:translate(-6px,-32px)scale(1)}}@keyframes '+uid+'-steam{0%{opacity:0;transform:translateY(0)}20%{opacity:0.7}100%{opacity:0;transform:translateY(-16px)}}@keyframes '+uid+'-chop{0%,100%{transform:rotate(-5deg)}45%{transform:rotate(-32deg)}}@keyframes '+uid+'-sit{0%,100%{transform:rotate(0deg)}50%{transform:rotate(4deg)}}@keyframes '+uid+'-hairL{0%,100%{transform:rotate(0deg)skewX(0)}30%{transform:rotate(-2deg)skewX(-3deg)}60%{transform:rotate(1deg)skewX(2deg)}}@keyframes '+uid+'-hairR{0%,100%{transform:rotate(0deg)skewX(0)}30%{transform:rotate(2deg)skewX(3deg)}60%{transform:rotate(-1deg)skewX(-2deg)}}@keyframes '+uid+'-hairB{0%,100%{transform:skewX(0)}40%{transform:skewX(-2deg)}70%{transform:skewX(1.5deg)}}.crm-body{animation:'+uid+'-float 2.6s ease-in-out infinite}.crm-shadow{transform-origin:0 78px;animation:'+uid+'-shadow 2.6s ease-in-out infinite}.crm-blink{transform-origin:0 8px;animation:'+uid+'-blink 4s ease-in-out infinite}.crm-tail{transform-origin:12px 40px;animation:'+uid+'-tail 2s ease-in-out infinite}.crm-arm-l{transform-origin:-15px 36px;animation:'+uid+'-arm-l 0.7s ease-in-out infinite}.crm-arm-r{transform-origin:15px 36px;animation:'+uid+'-arm-r 0.7s ease-in-out infinite}.crm-male-arm-l{transform-origin:-15px 36px;animation:'+uid+'-male-l 1.8s ease-in-out infinite}.crm-male-arm-r{transform-origin:15px 36px;animation:'+uid+'-male-r 1.8s ease-in-out infinite;animation-delay:-0.9s}.crm-leg-l{animation:'+uid+'-leg-l 0.7s ease-in-out infinite}.crm-leg-r{animation:'+uid+'-leg-r 0.7s ease-in-out infinite;animation-delay:-0.35s}.crm-zzz-a{animation:'+uid+'-zzz 2.2s ease-out infinite}.crm-zzz-b{animation:'+uid+'-zzz 2.2s ease-out 0.75s infinite}.crm-zzz-c{animation:'+uid+'-zzz 2.2s ease-out 1.5s infinite}.crm-steam-a{animation:'+uid+'-steam 1.6s ease-out infinite}.crm-steam-b{animation:'+uid+'-steam 1.6s ease-out 0.55s infinite}.crm-steam-c{animation:'+uid+'-steam 1.6s ease-out 1.1s infinite}.crm-chop{transform-origin:14px 42px;animation:'+uid+'-chop 0.9s ease-in-out infinite}.crm-sit-l{transform-origin:-6px 52px;animation:'+uid+'-sit 2.4s ease-in-out infinite}.crm-sit-r{transform-origin:6px 52px;animation:'+uid+'-sit 2.4s ease-in-out infinite;animation-delay:-1.2s}.hair-side-l{transform-origin:-38px 0;animation:'+uid+'-hairL 3.2s ease-in-out infinite}.hair-side-r{transform-origin:38px 0;animation:'+uid+'-hairR 3.2s ease-in-out infinite}.hair-back{transform-origin:0 0;animation:'+uid+'-hairB 3.8s ease-in-out infinite}</style>';
+
+  var viewBox = scene==='sleep' ? '-110 -55 220 130' : '-80 -80 160 185';
+  var vw = scene==='sleep' ? 150 : 120;
+  var vh = scene==='sleep' ? 100 : 150;
+
+  return '<svg viewBox="'+viewBox+'" width="'+(vw*scale)+'" height="'+(vh*scale)+'" xmlns="http://www.w3.org/2000/svg" style="overflow:visible;">'+css+sceneHtml+'</svg>';
+}
+
+function _getChibiSettings(npcId){
+  return _phLoad('chibi_'+String(npcId), {
+    enabled: false,
+    gender:'female', hairStyle:'f1', hairColor:'#2A2832',
+    skinColor:'#FAEBD7', coatColor:'#4A5A6A',
+    catEars:true, acc:false, outfit:'o1',
+    posX: null, posY: null, scale: 0.55
+  });
+}
+function _saveChibiSettings(npcId, data){ _phSave('chibi_'+String(npcId), data); }
+
+function _getChibiScene(npcId){
+  // 根据NPC当前行为和时间推断动画状态
+  try{
+    var bx = _loadCharBehavior ? _loadCharBehavior(npcId) : null;
+    var doing = bx && bx.doing ? bx.doing : '';
+    var h = new Date().getHours();
+    if(/睡|休息|躺/.test(doing) || (h>=23||h<7)) return 'sleep';
+    if(/吃|饭|餐/.test(doing) || h===8||h===12||h===19) return 'eat';
+    if(/坐|看书|读|玩/.test(doing)) return 'sit';
+  }catch(e){}
+  return null; // 站立
+}
+
+function _openChibiEditor(container, npcId, npcName, onSave){
+  var cfg = _getChibiSettings(npcId);
+  var HC=['#2A2832','#8B7355','#E8D5A0','#C45555','#7B68AE','#E89BAE','#3A5566','#E8E4E0','#5A8A6A','#D49055'];
+  var SKC=['#FAEBD7','#F5DEB3','#DEB887','#C8A882','#A0785A'];
+  var CTC=['#4A5A6A','#2A2832','#F0EDE8','#B84444','#5A7A5A','#D4949E','#8B7355','#4466AA','#D4B44A'];
+
+  function swatch(colors, val, key){
+    return colors.map(function(c){
+      return '<div data-cfgkey="'+key+'" data-cfgval="'+c+'" style="width:22px;height:22px;border-radius:50%;background:'+c+';cursor:pointer;border:'+(val===c?'2.5px solid #6A9A5A':'1.5px solid rgba(0,0,0,.08)')+';display:inline-block;margin:2px;"></div>';
+    }).join('');
+  }
+  function btn(val, cur, key, label){
+    return '<button data-cfgkey="'+key+'" data-cfgval="'+val+'" style="padding:4px 8px;border-radius:6px;font-size:10px;cursor:pointer;border:'+(cur===val?'2px solid #7AAA6A':'1.5px solid rgba(0,0,0,.1)')+';background:'+(cur===val?'rgba(122,170,106,.06)':'white')+';color:'+(cur===val?'#5A8A4A':'#999')+';margin:2px;">'+label+'</button>';
+  }
+
+  var inner = '<div style="font-size:13px;font-weight:600;margin-bottom:10px;">👤 房间角色设置</div>'
+    +'<div style="margin-bottom:10px;padding:10px;background:rgba(7,193,96,.04);border-radius:10px;border:1px solid rgba(7,193,96,.12);">'
+    +'<label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;">'
+    +'<input type="checkbox" data-cfgkey="enabled" '+(cfg.enabled?'checked':'')+' style="width:16px;height:16px;accent-color:#07c160;"> 在房间里显示角色</label></div>'
+    +'<div style="margin-bottom:8px;">'
+    +btn('female',cfg.gender,'gender','♀ 女生')+btn('male',cfg.gender,'gender','♂ 男生')
+    +'&nbsp;'+btn('f1',cfg.hairStyle,'hairStyle','长发')+btn('f2',cfg.hairStyle,'hairStyle','双马尾')+btn('f3',cfg.hairStyle,'hairStyle','直刘海')+btn('f4',cfg.hairStyle,'hairStyle','麻花辫')+btn('f5',cfg.hairStyle,'hairStyle','波波头')
+    +'</div>'
+    +'<div style="font-size:10px;color:rgba(20,24,28,.4);margin-bottom:3px;">发色</div><div style="margin-bottom:8px;">'+swatch(HC,cfg.hairColor,'hairColor')+'</div>'
+    +'<div style="font-size:10px;color:rgba(20,24,28,.4);margin-bottom:3px;">肤色</div><div style="margin-bottom:8px;">'+swatch(SKC,cfg.skinColor,'skinColor')+'</div>'
+    +'<div style="font-size:10px;color:rgba(20,24,28,.4);margin-bottom:3px;">衣服颜色</div><div style="margin-bottom:8px;">'+swatch(CTC,cfg.coatColor,'coatColor')+'</div>'
+    +'<div style="margin-bottom:8px;">'
+    +'<label style="font-size:11px;cursor:pointer;margin-right:12px;"><input type="checkbox" data-cfgkey="catEars" '+(cfg.catEars?'checked':'')+' style="accent-color:#07c160;"> 🐱 猫耳</label>'
+    +'<label style="font-size:11px;cursor:pointer;"><input type="checkbox" data-cfgkey="acc" '+(cfg.acc?'checked':'')+' style="accent-color:#07c160;"> 💎 装饰</label>'
+    +'</div>'
+    +'<div style="margin-bottom:10px;font-size:11px;color:rgba(20,24,28,.4);">动画状态根据角色作息和时间自动切换（睡觉/吃饭/坐着/站立）</div>'
+    +'<div style="display:flex;gap:8px;">'
+    +'<button data-act="chibiSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>'
+    +'<button data-act="chibiCancel" style="padding:10px 16px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;color:rgba(20,24,28,.6);">取消</button>'
+    +'</div>';
+
+  var ov = _cpShowOverlay(inner);
+  ov.addEventListener('click', function(e){
+    var t = e.target;
+    var key = t.getAttribute('data-cfgkey');
+    if(key){
+      if(t.type==='checkbox') cfg[key] = t.checked;
+      else { cfg[key] = t.getAttribute('data-cfgval'); e.target.parentNode.querySelectorAll('[data-cfgkey="'+key+'"]').forEach(function(b){ b.style.border=(b.getAttribute('data-cfgval')===cfg[key]?'2px solid #7AAA6A':'1.5px solid rgba(0,0,0,.1)'); b.style.color=(b.getAttribute('data-cfgval')===cfg[key]?'#5A8A4A':'#999'); }); }
+    }
+    if(t.getAttribute('data-act')==='chibiSave'){ _saveChibiSettings(npcId, cfg); ov.remove(); if(onSave) onSave(); }
+    if(t.getAttribute('data-act')==='chibiCancel'){ ov.remove(); }
+  });
+}
+
 function _mapOpenRoom(container, mapData, houseId){
   var house = (mapData.houses||[]).find(function(h){ return h.id===houseId; });
   if(!house) return;
@@ -29261,6 +29494,10 @@ function _mapOpenRoom(container, mapData, houseId){
     html += '<div class="mapRoomToolbar">';
     if(isMyH || npcOwner){
       html += '<button data-act="roomToggleEdit"'+(_editMode?' class="active"':'')+'>'+(_editMode?'✓ 完成':'🔧 装修')+'</button>';
+    }
+    if(npcOwner){
+      var _chibCfg = (typeof _getChibiSettings==='function') ? _getChibiSettings(npcOwner) : null;
+      html += '<button data-act="roomChibiEdit" style="'+(_chibCfg&&_chibCfg.enabled?'color:#07c160;':'')+'" title="角色设置">👤</button>';
     }
     html += '<span style="font-size:10px;color:rgba(20,24,28,.35);">💰$'+_roomGetBalance()+'</span>';
     html += '</div>';
@@ -29477,6 +29714,22 @@ function _mapOpenRoom(container, mapData, houseId){
     });
 
     // === 常驻装饰（已移除） ===
+
+    // ★ Chibi 角色
+    if(npcOwner){
+      try{
+        var _chibiFn = (typeof _getChibiSettings==='function') ? _getChibiSettings(npcOwner) : null;
+        if(_chibiFn && _chibiFn.enabled){
+          var _chibScene = _getChibiScene(npcOwner);
+          var _chibSvg = _chibiFurnSVG({ gender:_chibiFn.gender, hairStyle:_chibiFn.hairStyle, hairColor:_chibiFn.hairColor, skinColor:_chibiFn.skinColor, coatColor:_chibiFn.coatColor, catEars:_chibiFn.catEars, acc:_chibiFn.acc, outfit:_chibiFn.outfit, scene:_chibScene, scale:_chibiFn.scale||0.55 });
+          var _cx = typeof _chibiFn.posX === 'number' ? _chibiFn.posX : 150;
+          var _cy = typeof _chibiFn.posY === 'number' ? _chibiFn.posY : 90;
+          html += '<g data-el="chibiSprite" style="cursor:pointer;" transform="translate('+_cx+','+_cy+')">';
+          html += _chibSvg;
+          html += '</g>';
+        }
+      }catch(e){}
+    }
 
     // === 夜间光照：蒙版法（有灯的地方挖洞，再叠淡暖光） ===
     var _lampPositions = [];
@@ -29862,6 +30115,13 @@ function _mapOpenRoom(container, mapData, houseId){
       _dragTarget = null;
       _winTarget = null;
       renderRoom();
+      return;
+    }
+
+    if(act==='roomChibiEdit'){
+      if(npcOwner){
+        _openChibiEditor(container, npcOwner, npcOwnerName, function(){ renderRoom(); });
+      }
       return;
     }
 
