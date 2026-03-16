@@ -811,16 +811,21 @@ function ensureTuneStyle(){
 }
 
 #${ID}[data-theme="frost"] .phWallpaper{
-  background-color:#f8f7f5;
+  background-color:#eae8e3;
   background-image:
     var(--ph-wallpaper-url, none),
-    radial-gradient(circle at 18% 18%, rgba(255,214,230,.10), transparent 34%),
-    radial-gradient(circle at 78% 18%, rgba(206,221,255,.09), transparent 30%),
-    radial-gradient(circle at 72% 76%, rgba(226,214,255,.07), transparent 34%),
-    radial-gradient(circle at 24% 78%, rgba(255,244,225,.07), transparent 30%),
-    linear-gradient(180deg, rgba(255,255,255,.24), rgba(247,245,242,.12));
+    /* Nube 标志性：左上粉红光晕 */
+    radial-gradient(ellipse 260px 220px at 22% 18%, rgba(220,160,160,.55), transparent 70%),
+    /* 右上淡蓝光晕 */
+    radial-gradient(ellipse 200px 180px at 80% 12%, rgba(190,200,220,.32), transparent 65%),
+    /* 左下绿色光晕 */
+    radial-gradient(ellipse 240px 220px at 18% 84%, rgba(160,200,170,.48), transparent 70%),
+    /* 右下暖橙光晕 */
+    radial-gradient(ellipse 200px 180px at 82% 80%, rgba(220,196,168,.36), transparent 65%),
+    /* 中心极淡叠加，保持奶油底色 */
+    linear-gradient(160deg, rgba(255,255,255,.18) 0%, rgba(240,238,233,.08) 100%);
   background-size: cover, auto, auto, auto, auto, auto;
-  background-position: center, 18% 18%, 78% 18%, 72% 76%, 24% 78%, center;
+  background-position: center, 22% 18%, 80% 12%, 18% 84%, 82% 80%, center;
 }
 
 #${ID}[data-theme="frost"] .phShell{
@@ -930,8 +935,8 @@ function ensureTuneStyle(){
 
 #${ID}[data-theme="frost"] .phAppIcon .ai svg.phIco,
 #${ID}[data-theme="frost"] .phDockBtn .di svg.phIco{
-  fill:rgba(255,255,255,.98) !important;
-  filter:drop-shadow(0 1px 1.2px rgba(68,88,120,.18));
+  fill:rgba(60,55,50,.78) !important;
+  filter:drop-shadow(0 1px 1px rgba(255,255,255,.50));
 }
 
 #${ID}[data-theme="frost"] .phAppIcon .ai svg.phIco{
@@ -979,6 +984,41 @@ function ensureTuneStyle(){
 #${ID}[data-theme="frost"] .chatInputBar .chatExtraBtn:hover,
 #${ID}[data-theme="frost"] .wxChatInputBar .wxChatExBtn:hover{
   background:rgba(255,255,255,calc(var(--ph-frost-surface-a) + .08));
+}
+
+/* frost 状态栏：深色文字/图标 适配浅色背景 */
+#${ID}[data-theme="frost"] .phTime{
+  color:rgba(48,44,40,.76);
+  text-shadow:0 1px 0 rgba(255,255,255,.55);
+}
+#${ID}[data-theme="frost"] .iosSignal i{
+  background:rgba(48,44,40,.72);
+  box-shadow:none;
+}
+#${ID}[data-theme="frost"] .iosWifi::before,
+#${ID}[data-theme="frost"] .iosWifi::after{
+  border-top-color:rgba(48,44,40,.72);
+}
+#${ID}[data-theme="frost"] .iosWifi span{
+  background:rgba(48,44,40,.72);
+}
+#${ID}[data-theme="frost"] .iosBattery .bat{
+  border-color:rgba(48,44,40,.70);
+}
+#${ID}[data-theme="frost"] .iosBattery .bat::after{
+  background:rgba(48,44,40,.70);
+}
+#${ID}[data-theme="frost"] .iosBattery .pct{
+  color:rgba(48,44,40,.72);
+}
+#${ID}[data-theme="frost"] .phSysBtn{
+  border-color:rgba(48,44,40,.12);
+  background:rgba(48,44,40,.06);
+  color:rgba(48,44,40,.72);
+}
+/* frost 拖动条：深色 */
+#${ID}[data-theme="frost"] .phDragHint{
+  background:rgba(48,44,40,.18);
 }
     `;
     (doc.head || doc.documentElement).appendChild(st);
@@ -1389,82 +1429,88 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   --ph-searchbox-text: rgba(255,255,255,.40);
 }
 
-/* ── frost：奶白暖调玻璃拟态（默认视觉主题） ── */
+/* ── frost：Nube 风·奶油暖灰 + 彩色光晕 ── */
 #${ID}[data-theme="frost"]{
-  /* 底色：纯净白+极淡暖调（对标 Nube，更白更亮） */
-  --ph-bg-primary: linear-gradient(160deg,#fdfcfb 0%,#faf9f7 55%,#f5f3ef 100%);
-  --ph-glass: rgba(255,255,255,.50);       /* GPT-aligned: card-soft */
-  --ph-glass-strong: rgba(255,255,255,.70); /* card-strong */
-  --ph-glass-border: rgba(255,255,255,.76); /* card-line */
-  --ph-glass-blur: 32px;
-  --ph-text: rgba(22,18,14,.88);
-  --ph-text-sub: rgba(22,18,14,.50);
-  --ph-text-dim: rgba(22,18,14,.28);
-  /* 强调色：莫兰迪鼠尾草绿（可被 accentHex 覆盖） */
-  --ph-accent: #7d9b8a;
-  --ph-accent2: #a3bab0;
-  --ph-accent-grad: linear-gradient(135deg,#7d9b8a,#a3bab0);
-  --ph-shadow: rgba(40,30,20,.07);
-  --ph-shadow-up: rgba(255,255,255,.95);
-  --phAppBodyRGB: 250,249,247;   /* frost App底色 RGB */
-  --phHomeBodyRGB: 253,252,250;
-  --ph-sep: rgba(22,18,14,.040);
-  --ph-row-bg: rgba(255,255,254,.62);
-  --ph-row-hover: rgba(255,255,254,.86);
-  --ph-input-bg: rgba(255,255,254,.85);
-  --ph-input-border: rgba(22,18,14,.08);
-  --ph-send-btn: #7d9b8a;
+  /* 底色：暖米白，对标 Nube #eae8e3 */
+  --ph-bg-primary: #eae8e3;
+  --ph-glass: rgba(255,255,255,.52);
+  --ph-glass-strong: rgba(255,255,255,.72);
+  --ph-glass-border: rgba(255,255,255,.68);
+  --ph-glass-blur: 40px;
+  /* 文字：暖灰，非纯黑——Nube 标志性可读性 */
+  --ph-text: rgba(48,44,40,.82);
+  --ph-text-sub: rgba(48,44,40,.48);
+  --ph-text-dim: rgba(48,44,40,.26);
+  /* 强调色：中性石板灰（Nube 按钮色） */
+  --ph-accent: rgba(148,144,140,.92);
+  --ph-accent2: rgba(168,164,160,.80);
+  --ph-accent-grad: linear-gradient(135deg,rgba(152,148,145,.88),rgba(172,168,164,.80));
+  --ph-shadow: rgba(60,52,44,.06);
+  --ph-shadow-up: rgba(255,255,255,.92);
+  --phAppBodyRGB: 236,234,229;
+  --phHomeBodyRGB: 240,238,233;
+  --ph-sep: rgba(48,44,40,.05);
+  --ph-row-bg: rgba(255,255,253,.58);
+  --ph-row-hover: rgba(255,255,253,.80);
+  --ph-input-bg: rgba(255,255,253,.82);
+  --ph-input-border: rgba(48,44,40,.08);
+  /* 发送按钮：石板灰 pill（Nube 风格） */
+  --ph-send-btn: rgba(148,144,140,.90);
   --ph-send-icon: #fff;
-  --ph-chat-me-bubble: linear-gradient(135deg,#7d9b8a,#a3bab0);
+  /* 聊天气泡：我方灰色胶囊，对方纯白 */
+  --ph-chat-me-bubble: rgba(148,144,140,.88);
   --ph-chat-me-text: #fff;
-  --ph-chat-them-bubble: rgba(255,253,250,.92);
-  --ph-chat-them-text: rgba(28,22,16,.88);
-  --ph-tabbar-bg: rgba(253,252,250,.82);
-  --ph-tabbar-border: rgba(255,255,255,.80);
-  --ph-tabbar-on: #7d9b8a;
-  --ph-tabbar-off: rgba(22,18,14,.32);
-  --ph-appbar-bg: rgba(253,252,250,.85);
-  --ph-appbody-bg: rgba(250,249,247,.88);
-  --ph-topbar-bg: rgba(253,252,250,.85);
-  --ph-topbar-border: rgba(255,255,255,.80);
-  --ph-topbar-title: rgba(28,22,16,.88);
-  --ph-topbar-btn: rgba(28,22,16,.44);
-  --ph-sticker-bg: rgba(246,243,239,.80);
-  --ph-input-area-bg: rgba(249,247,243,.80);
-  --ph-input-text: rgba(28,22,16,.88);
-  --ph-input-ph: rgba(28,22,16,.28);
-  --ph-wechat-me-bubble: linear-gradient(135deg,#7d9b8a,#a3bab0);
+  --ph-chat-them-bubble: rgba(255,255,253,.90);
+  --ph-chat-them-text: rgba(48,44,40,.84);
+  /* 导航栏/底栏 */
+  --ph-tabbar-bg: rgba(240,238,233,.88);
+  --ph-tabbar-border: rgba(255,255,255,.72);
+  --ph-tabbar-on: rgba(48,44,40,.82);
+  --ph-tabbar-off: rgba(48,44,40,.28);
+  --ph-appbar-bg: rgba(240,238,233,.90);
+  --ph-appbody-bg: rgba(236,234,229,.92);
+  --ph-topbar-bg: rgba(240,238,233,.90);
+  --ph-topbar-border: rgba(255,255,255,.72);
+  --ph-topbar-title: rgba(48,44,40,.82);
+  --ph-topbar-btn: rgba(48,44,40,.40);
+  --ph-sticker-bg: rgba(232,230,225,.82);
+  --ph-input-area-bg: rgba(236,234,229,.84);
+  --ph-input-text: rgba(48,44,40,.84);
+  --ph-input-ph: rgba(48,44,40,.26);
+  /* 微信聊天 */
+  --ph-wechat-me-bubble: rgba(148,144,140,.88);
   --ph-wechat-me-text: #fff;
-  --ph-wechat-them-bubble: rgba(255,253,250,.92);
-  --ph-wechat-them-text: rgba(28,22,16,.88);
-  --ph-wechat-bg: rgba(242,240,237,.65);
-  --ph-plus-popup-bg: rgba(52,46,38,.90);
-  --ph-modal-bg: rgba(254,252,249,.96);
-  --ph-modal-text: rgba(28,22,16,.88);
-  --ph-confirm-bg: rgba(255,255,254,.98);
-  --ph-confirm-text: rgba(28,22,16,.88);
-  --ph-confirm-sep: rgba(28,22,16,.07);
-  --ph-confirm-cancel: rgba(28,22,16,.44);
-  --ph-confirm-danger: #c0392b;
-  --ph-wallpaper-base: #f5f5f7;   /* 同 GPT: 浅灰白 */
+  --ph-wechat-them-bubble: rgba(255,255,253,.90);
+  --ph-wechat-them-text: rgba(48,44,40,.84);
+  --ph-wechat-bg: rgba(228,226,221,.70);
+  --ph-plus-popup-bg: rgba(60,56,52,.92);
+  /* 模态/确认框 */
+  --ph-modal-bg: rgba(244,242,238,.97);
+  --ph-modal-text: rgba(48,44,40,.84);
+  --ph-confirm-bg: rgba(248,246,242,.99);
+  --ph-confirm-text: rgba(48,44,40,.84);
+  --ph-confirm-sep: rgba(48,44,40,.06);
+  --ph-confirm-cancel: rgba(48,44,40,.40);
+  --ph-confirm-danger: #b0392b;
+  --ph-wallpaper-base: #eae8e3;
   --ph-ico-list: rgba(255,253,250,.95);
-  /* GPT-aligned shell/status */
-  --ph-shell-border: rgba(255,255,255,.58);
-  --ph-shell-shadow: 0 28px 72px rgba(118,130,155,.16), 0 10px 24px rgba(118,130,155,.08);
-  --ph-status-fg: rgba(32,40,53,.86);
-  --ph-status-shadow: 0 1px 0 rgba(255,255,255,.50);
-  --ph-home-label: rgba(38,45,58,.70);
-  --ph-app-icon-bg: linear-gradient(180deg, rgba(255,255,255,.55), rgba(244,247,251,.38));
-  --ph-app-icon-border: rgba(255,255,255,.88);
-  --ph-app-icon-shadow: 0 12px 28px rgba(112,126,152,.12);
-  --ph-dock-surface: rgba(255,255,255,.32);
-  --ph-dock-line: rgba(255,255,255,.52);
-  --ph-discover-bg: rgba(255,255,254,.72);
-  --ph-discover-border: rgba(22,18,14,.040);
-  --ph-discover-name: rgba(22,18,14,.85);
-  --ph-discover-arrow: rgba(22,18,14,.18);
-  --ph-searchbox-bg: rgba(255,255,254,.70);
-  --ph-searchbox-text: rgba(22,18,14,.38);
+  /* Shell */
+  --ph-shell-border: rgba(255,255,255,.62);
+  --ph-shell-shadow: 0 28px 72px rgba(100,94,86,.10), 0 8px 20px rgba(100,94,86,.06);
+  --ph-status-fg: rgba(48,44,40,.76);
+  --ph-status-shadow: 0 1px 0 rgba(255,255,255,.55);
+  --ph-home-label: rgba(48,44,40,.62);
+  --ph-app-icon-bg: linear-gradient(180deg,rgba(255,255,255,.60),rgba(248,246,242,.42));
+  --ph-app-icon-border: rgba(255,255,255,.82);
+  --ph-app-icon-shadow: 0 8px 22px rgba(100,94,86,.10);
+  --ph-dock-surface: rgba(255,255,255,.30);
+  --ph-dock-line: rgba(255,255,255,.54);
+  --ph-discover-bg: rgba(255,255,253,.68);
+  --ph-discover-border: rgba(48,44,40,.04);
+  --ph-discover-name: rgba(48,44,40,.80);
+  --ph-discover-arrow: rgba(48,44,40,.16);
+  --ph-searchbox-bg: rgba(255,255,253,.66);
+  --ph-searchbox-text: rgba(48,44,40,.36);
 }
 
 /* ── medieval：深棕皮革 ── */
@@ -1713,11 +1759,13 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   transition:transform .35s cubic-bezier(0.25,0.8,0.25,1);
   transform-origin:bottom right;
 }
-/* frost shell：精细高光 + 阴影（GPT-aligned） */
+/* frost shell：Nube 风·奶油磨砂玻璃 */
 #${ID}[data-theme="frost"] .phShell{
+  border-color: rgba(255,255,255,.62);
+  box-shadow: 0 28px 72px rgba(100,94,86,.10), 0 8px 20px rgba(100,94,86,.06), inset 0 1px 0 rgba(255,255,255,.82);
   background:
-    linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.03)),
-    var(--ph-bg-primary);
+    linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.04)),
+    #eae8e3;
 }
 /* modern shell */
 #${ID}[data-theme="modern"] .phShell{
