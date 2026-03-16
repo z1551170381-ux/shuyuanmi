@@ -3727,13 +3727,13 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 /* 有背景图时加半透明遮罩提升文字可读性 */
 #${ID} .wxOfflineWrap[style*="background-image"]{ background-color:rgba(0,0,0,.25); background-blend-mode:darken; }
 #${ID} .wxOfflineParagraph{
-  font-size:14px; line-height:2.0; color:rgba(255,255,255,.92);
-  margin-bottom:20px; text-indent:0; position:relative;
+  font-size:14px; line-height:2.2; color:rgba(255,255,255,.92);
+  margin-bottom:28px; text-indent:0; position:relative;
   animation:phBubbleIn .25s ease-out;
-  padding:12px 16px; border-radius:12px;
+  padding:14px 18px; border-radius:12px;
   background:rgba(0,0,0,.35); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
   text-shadow:0 1px 3px rgba(0,0,0,.5);
-  letter-spacing:0.03em;
+  letter-spacing:0.04em; word-spacing:0.06em;
 }
 /* 无背景图时回退到浅色方案 */
 #${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph{
@@ -3750,9 +3750,9 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID} .wxOfflineParagraph .rpText{ display:block; }
 #${ID} .wxOfflineParagraph .rpAction{
-  font-style:normal; display:block; margin:6px 0;
-  color:rgba(255,255,200,.72); font-size:13px; line-height:1.9;
-  letter-spacing:0.02em;
+  font-style:normal; display:block; margin:8px 0;
+  color:rgba(255,255,200,.82); font-size:14px; line-height:2.3;
+  letter-spacing:0.04em; word-spacing:0.05em;
 }
 #${ID} .wxOfflineTimeSep{
   text-align:center; font-size:11px; color:rgba(255,255,255,.45);
@@ -3786,9 +3786,9 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 /* 环境描写块（舞台指示） */
 #${ID} .wxOfflineParagraph.rpStageDir{
   border-left:0; text-align:center; font-style:normal;
-  color:rgba(255,255,255,.6); background:rgba(0,0,0,.18);
-  font-size:12.5px; line-height:1.85; padding:8px 16px;
-  letter-spacing:0.04em;
+  color:rgba(255,255,255,.72); background:rgba(0,0,0,.18);
+  font-size:13.5px; line-height:2.2; padding:14px 18px;
+  letter-spacing:0.04em; margin-bottom:28px;
 }
 #${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineParagraph.rpStageDir{
   color:rgba(100,90,70,.55); background:rgba(0,0,0,.03);
@@ -15629,7 +15629,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             <div style="font-size:13px;font-weight:600;color:rgba(20,24,28,.82);margin-bottom:8px;">线下美化</div>
             <div style="font-size:11px;color:rgba(20,24,28,.42);margin-bottom:6px;">段落 HTML 可用 {{speaker}} {{formatted}} {{role}} {{time}}；场景头可用 {{sceneName}} {{sceneDesc}}</div>
             <div style="font-size:11px;color:rgba(20,24,28,.45);margin-bottom:6px;">线下 CSS</div>
-            <textarea data-el="beautifyOfflineCSS" rows="4" placeholder="例如：.wxOfflineParagraph{line-height:2;color:#5d4632;}" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;background:rgba(255,255,255,.78);">${esc((styles.offlineStyle&&styles.offlineStyle.css)||'')}</textarea>
+            <textarea data-el="beautifyOfflineCSS" rows="4" placeholder="旁白间距：.wxOfflineParagraph.rpStageDir{line-height:2.4;margin-bottom:36px;} 对话间距：.wxOfflineParagraph{line-height:2.2;}" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;background:rgba(255,255,255,.78);">${esc((styles.offlineStyle&&styles.offlineStyle.css)||'')}</textarea>
             <div style="font-size:11px;color:rgba(20,24,28,.45);margin:10px 0 6px;">线下段落 HTML</div>
             <textarea data-el="beautifyOfflineHTML" rows="4" placeholder="例如：<div class='wxOfflineParagraph {{role}}'>{{formatted}}</div>" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;background:rgba(255,255,255,.78);">${esc((styles.offlineStyle&&styles.offlineStyle.paragraphHTML)||'')}</textarea>
             <div style="font-size:11px;color:rgba(20,24,28,.45);margin:10px 0 6px;">线下场景头 HTML</div>
