@@ -884,20 +884,20 @@ function ensureTuneStyle(){
   -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur) * .18)) saturate(107%) !important;
 }
 
-/* 聊天顶栏 + 输入栏：壁纸透出，毛玻璃感更强 */
+/* 聊天顶栏 + 输入栏：跟随 App 清晰度设置的卡片玻璃透明度(phAppA)和模糊度(phAppBlur) */
 #${ID}[data-theme="frost"] .wxTopBar{
-  background: rgba(255,255,255, calc(var(--ph-frost-bar-a) * 0.55)) !important;
-  border-color: rgba(255,255,255,.22) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.28) !important;
-  backdrop-filter: blur(28px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(140%) !important;
+  background: rgba(255,255,255, calc(var(--phAppA, .52) * 0.68)) !important;
+  border-color: rgba(255,255,255, calc(var(--phAppA, .52) * 0.50)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255, calc(var(--phAppA, .52) * 0.42)) !important;
+  backdrop-filter: blur(var(--phAppBlur, 16px)) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(var(--phAppBlur, 16px)) saturate(130%) !important;
 }
 #${ID}[data-theme="frost"] .wxChatInputBar{
-  background: rgba(255,255,255, calc(var(--ph-frost-bar-a) * 0.52)) !important;
-  border-top-color: rgba(255,255,255,.20) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.26) !important;
-  backdrop-filter: blur(28px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(140%) !important;
+  background: rgba(255,255,255, calc(var(--phAppA, .52) * 0.65)) !important;
+  border-top-color: rgba(255,255,255, calc(var(--phAppA, .52) * 0.45)) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(var(--phAppBlur, 16px)) saturate(130%) !important;
+  -webkit-backdrop-filter: blur(var(--phAppBlur, 16px)) saturate(130%) !important;
 }
 
 #${ID}[data-theme="frost"] .phAppBody{
@@ -2238,34 +2238,23 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   width:375px; height:750px; max-width:96vw; max-height:90vh;
   border-radius:38px; position:relative; overflow:hidden;
   background:var(--ph-bg-primary);
-  border:1.5px solid rgba(255,255,255,.35);
+  border:1px solid rgba(255,255,255,.22);
   box-shadow:
-    0 0 0 1px rgba(0,0,0,.12),
-    0 0 0 3.5px rgba(255,255,255,.22),
-    0 0 0 5px rgba(0,0,0,.06),
-    inset 0 1px 0 rgba(255,255,255,.12),
-    0 32px 90px var(--ph-shadow);
+    inset 0 1px 0 rgba(255,255,255,.10),
+    0 28px 80px var(--ph-shadow);
   transition:transform .2s ease;
   transform-origin:top left;
 }
-/* frost shell：磨砂玻璃边框质感 — 多层环，用暖奶油半透明色代替纯白，视觉上像磨砂玻璃切面 */
+/* frost shell — ring blur is handled by phRingLayer above */
 #${ID}[data-theme="frost"] .phShell{
   background:
-    linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.04)),
+    linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,.03)),
     var(--ph-bg-primary);
-  border: 1.5px solid rgba(255,255,255,.42);
+  border-color: rgba(255,255,255,.28);
   box-shadow:
-    /* 最内层：细微暗边收口 */
-    inset 0 -1px 0 rgba(120,110,100,.05),
-    inset 0 1.5px 0 rgba(255,255,255,.75),
-    /* 第1圈：暖奶油半透明——这是玻璃折射层，不用纯白 */
-    0 0 0 3px rgba(235,228,220,.48),
-    /* 第2圈：半透深暗收口，让环不"飘"  */
-    0 0 0 4.5px rgba(140,128,115,.14),
-    /* 第3圈：外发光，给整体托底 */
-    0 0 0 6px rgba(220,215,208,.18),
-    /* 环境阴影 */
-    0 28px 72px rgba(100,94,86,.16), 0 10px 28px rgba(100,94,86,.10);
+    inset 0 1.5px 0 rgba(255,255,255,.68),
+    inset 0 -1px 0 rgba(120,110,100,.04),
+    0 28px 72px rgba(100,94,86,.15), 0 10px 28px rgba(100,94,86,.09);
 }
 /* modern shell */
 #${ID}[data-theme="modern"] .phShell{
@@ -2276,6 +2265,50 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   width:100%; height:100%; max-width:none; max-height:none; border-radius:28px;
 }
 #${ID} .phPillIcon{ display:none; }
+
+/* ---------- Frosted Ring Layer (outside phShell overflow) ---------- */
+/* phRingLayer sits between phBackdrop and phShell.
+   It matches phShell's size+position exactly but uses a negative inset
+   to show only the ring area. It has backdrop-filter so the ring
+   actually blurs whatever is behind the phone — real frosted glass. */
+#${ID} .phRingLayer{
+  display: none;
+  position: absolute;
+  /* match phShell: same size, same center */
+  width: 375px; height: 750px;
+  max-width: 96vw; max-height: 90vh;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 42px;           /* slightly larger than phShell's 38px */
+  z-index: 4;                    /* above phShell (z-index:auto) but below UI */
+  pointer-events: none;
+  /* The ring border width */
+  border: 8px solid transparent;
+  /* Clip-path: show only the ring border area via box model */
+  background: transparent;
+  /* backdrop-filter applied to the border area */
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  /* Tint the ring with a warm semi-transparent overlay */
+  box-shadow:
+    inset 0 0 0 8px rgba(235,225,210,.28),  /* warm cream inner ring fill */
+    0 0 0 1px rgba(200,188,172,.22);         /* subtle outer edge */
+}
+#${ID}.full .phRingLayer{ display: block; }
+/* frost theme: warmer ring tint */
+#${ID}[data-theme="frost"] .phRingLayer{
+  border-radius: 54px;           /* match frost phShell's 50px + ring width */
+  box-shadow:
+    inset 0 0 0 8px rgba(240,230,215,.30),
+    0 0 0 1px rgba(210,198,182,.20);
+}
+/* mini mode: match mini shell radius */
+#${ID}.mini .phRingLayer{
+  display: block;
+  border-radius: 34px;
+  width: 100%; height: 100%;
+  left: 0; top: 0; transform: none;
+}
 
 /* ---------- Drag handle ---------- */
 #${ID} .phDragHint{
@@ -5590,6 +5623,7 @@ function buildHTML(){
         return `
 <div class="phPillIcon">📱</div>
 <div class="phBackdrop"></div>
+<div class="phRingLayer"></div>
 <div class="phShell" data-ph="shell">
   <div class="phWallpaper"></div>
   <div class="phDragHint"></div>
