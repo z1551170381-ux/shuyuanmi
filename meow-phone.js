@@ -15849,6 +15849,18 @@ const npc = _wxGetChatTargetMeta(npcId);
             <div style="margin-top:6px;height:60px;background:linear-gradient(135deg,#e8f5e9,#c8e6c9);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;">🗺️</div>
             ${editedTag}
           </div>`;
+        } else if (mt === 'landmark'){
+          var _lmEmoji = esc(meta.landmarkEmoji || '📍');
+          var _lmDesc2 = meta.desc ? '<div style="font-size:10px;color:rgba(20,24,28,.4);margin-top:2px;">'+esc(meta.desc)+'</div>' : '';
+          var _lmFrom = meta.fromNpc ? '<div style="font-size:10px;color:rgba(20,24,28,.3);margin-top:3px;">邀你前往</div>' : '';
+          contentHtml = '<div class="wxCBContent wxCBSpecial" style="padding:0;overflow:hidden;border-radius:10px;min-width:160px;cursor:pointer;" data-act="wxLandmarkTap" data-lmname="'+esc(meta.landmarkName||'')+'">'
+            + '<div style="height:52px;background:linear-gradient(135deg,#e8f5e9,#a5d6a7);display:flex;align-items:center;justify-content:center;font-size:28px;">'+_lmEmoji+'</div>'
+            + '<div style="padding:7px 10px 8px;background:rgba(255,255,255,.95);">'
+            + '<div style="font-size:12px;font-weight:600;">📍 '+esc(meta.landmarkName||'位置')+'</div>'
+            + _lmDesc2 + _lmFrom
+            + '</div>'
+            + editedTag
+            + '</div>';
         } else if (mt === 'redpack'){
           contentHtml = `<div class="wxCBContent wxCBSpecial" style="padding:0;overflow:hidden;border-radius:10px;min-width:180px;">
             <div style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;padding:12px 14px;">
@@ -16052,6 +16064,30 @@ const npc = _wxGetChatTargetMeta(npcId);
               _saveCharState(npcId, _sAttr);
             }
           }catch(e){ console.warn('[AttrChange] error:', e); }
+        }
+
+        // ★ NPC 主动发地标位置卡片
+        if (parsed.sendLocation){
+          try{
+            var _mapDL = _mapLoad();
+            var _lmL = (_mapDL&&_mapDL.landmarks||[]).find(function(l){ return (l.customName||l.name)===parsed.sendLocation; });
+            var _lmMetaL = {
+              type: 'landmark',
+              landmarkName: parsed.sendLocation,
+              landmarkEmoji: _lmL ? _lmL.emoji : '📍',
+              desc: _lmL ? (_lmL.tags||[]).slice(0,2).map(function(t){ var m={trees:'绿树环绕',flowers:'鲜花盛开',coffee:'咖啡飘香',cozy:'温馨舒适',sea:'海风轻拂',quiet:'安静祥和',art:'艺术气息',books:'书香满溢',campfire:'篝火温暖',stars:'星空璀璨',food:'美食飘香',exercise:'充满活力'}; return m[t]||t; }).filter(Boolean).join('、') : '',
+              fromNpc: true,
+              _logText: '[地标] '+parsed.sendLocation
+            };
+            var _msgsLoc = root.querySelector('[data-ph="chatMsgs"]');
+            pushLog(npcId, 'them', '[地标] '+parsed.sendLocation);
+            bumpThread(npcId, { lastMsg:'📍 '+parsed.sendLocation, lastTime:ts, unread:0 });
+            if(_msgsLoc){ _wxAppendBubble(_msgsLoc, npc, 'them', '[地标] '+parsed.sendLocation, ts, _lmMetaL); requestAnimationFrame(function(){ _msgsLoc.scrollTop = _msgsLoc.scrollHeight; }); }
+          }catch(e){}
+          // 如果没有附加文字就直接结束
+          if (!cleanText || cleanText === '…') return;
+          // 稍微延迟再发文字（让地标卡和文字分两条）
+          await new Promise(function(r){ setTimeout(r, 400); });
         }
 
         // 写消息日志
@@ -16609,7 +16645,17 @@ const npc = _wxGetChatTargetMeta(npcId);
         s = s.replace(/\[发语音\]/gi, '').trim();
         s = s.replace(/\[发表情[:：][^\]]*\]?/gi, '').trim();
 
-        return { cleanText: s, sendVoice: sendVoice, stickerGroup: stickerGroup, stickerIdx: stickerIdx, stateUpdate: stateUpdate, attrChanges: attrChanges };
+        // 检测 [发位置:地标名]
+        var sendLocation = null;
+        var locTagMatch = s.match(/\[发位置[:：]([^\]]+)\]/i);
+        if (locTagMatch){
+          sendLocation = locTagMatch[1].trim();
+          s = s.replace(locTagMatch[0], '').trim();
+        }
+        // 兜底清理（防残留）
+        s = s.replace(/\[发位置[:：][^\]]*\]?/gi, '').trim();
+
+        return { cleanText: s, sendVoice: sendVoice, stickerGroup: stickerGroup, stickerIdx: stickerIdx, stateUpdate: stateUpdate, attrChanges: attrChanges, sendLocation: sendLocation };
       }
 
       function _convertSpecialTags(text){
@@ -21560,11 +21606,37 @@ const npc = _wxGetChatTargetMeta(npcId);
           }
         }catch(e){}
 
+        // 读取住所（我的家 + 角色的家）
+        var homeEntries = [];
+        try{
+          var _mapH = _mapLoad();
+          if(_mapH){
+            if(_mapH.myHouseId){
+              var _myH = (_mapH.houses||[]).find(function(h){ return h.id===_mapH.myHouseId; });
+              if(_myH) homeEntries.push({ name:'我的家（'+_myH.name+'）', emoji:'🏠', isMapLandmark:true, lmId:_myH.id, tags:[], lm:_myH, isHome:true, homeDesc:'用户的家' });
+            }
+            if(_mapH.npcHouses && _mapH.npcHouses[npcId]){
+              var _npcH = (_mapH.houses||[]).find(function(h){ return h.id===_mapH.npcHouses[npcId]; });
+              var _db2 = loadContactsDB(); var _npc2 = findContactById(_db2, npcId);
+              if(_npcH) homeEntries.push({ name:(_npc2?_npc2.name:'对方')+'的家（'+_npcH.name+'）', emoji:'🏡', isMapLandmark:true, lmId:_npcH.id, tags:[], lm:_npcH, isHome:true, homeDesc:(_npc2?_npc2.name:'角色')+'的家' });
+            }
+          }
+        }catch(e){}
+
         let optHtml = '';
+
+        // 住所分组
+        if(homeEntries.length){
+          optHtml += '<div style="font-size:10px;color:rgba(20,24,28,.4);padding:6px 12px 3px;font-weight:500;">🏠 住所</div>';
+          homeEntries.forEach(function(loc, i){
+            optHtml += '<div data-act="cpLocPick" data-type="home" data-idx="'+i+'" style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;">'
+              + '<span style="font-size:16px;">'+loc.emoji+'</span><span>'+esc(loc.name)+'</span></div>';
+          });
+        }
 
         // 地图地标分组（如果有）
         if(mapLandmarks.length){
-          optHtml += `<div style="font-size:10px;color:rgba(20,24,28,.4);padding:6px 12px 3px;font-weight:500;">🗺 地图地标</div>`;
+          optHtml += '<div style="font-size:10px;color:rgba(20,24,28,.4);padding:6px 12px 3px;font-weight:500;'+(homeEntries.length?'margin-top:4px;':'')+'">🗺 地图地标</div>';
           mapLandmarks.forEach((loc, i) => {
             optHtml += `<div data-act="cpLocPick" data-type="map" data-idx="${i}" style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;">
               <span style="font-size:16px;">${loc.emoji||'📍'}</span><span>${esc(loc.name)}</span>
@@ -21593,6 +21665,29 @@ const npc = _wxGetChatTargetMeta(npcId);
           el.addEventListener('click', () => {
             const type = el.getAttribute('data-type');
             const idx = parseInt(el.getAttribute('data-idx'));
+            // 住所与地标处理逻辑相同，复用 map 分支
+            if(type === 'home'){
+              const lmInfo = homeEntries[idx];
+              if(!lmInfo) return;
+              var autoDescHome = lmInfo.homeDesc || lmInfo.name;
+              ov.remove();
+              var curModeH = 'online';
+              try{ curModeH = _getChatMode(npcId) || 'online'; }catch(e){}
+              if(curModeH === 'offline'){
+                var newSceneH = { name:lmInfo.name, location:lmInfo.name, description:autoDescHome+'。', bgImage:'', customPrompt:'' };
+                try{ _saveSceneData(npcId, newSceneH); }catch(e){}
+                try{
+                  var titleElH = root.querySelector('[data-ph="appTitle"]');
+                  if(titleElH) titleElH.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ph-accent,#07c160);margin-right:4px;vertical-align:middle;"></span>线下 · '+esc(lmInfo.name);
+                }catch(e){}
+                try{ toast('📍 场景已切换到「'+lmInfo.name+'」'); }catch(e){}
+              } else {
+                _cpSendSpecial(npcId, lmInfo.emoji+' '+lmInfo.name,
+                  { type:'landmark', landmarkName:lmInfo.name, landmarkEmoji:lmInfo.emoji, desc:autoDescHome, _logText:'[地标] '+lmInfo.name });
+                setTimeout(function(){ _aiReplyForSpecial(npcId, ['好，我过去找你。','等我一下～','我马上到。','好的，在家等你。']); }, 600);
+              }
+              return;
+            }
             if(type === 'map'){
               const lmInfo = mapLandmarks[idx];
               if(!lmInfo) return;
@@ -31668,6 +31763,25 @@ function _buildMapPromptBlock(npcId){
     var mapData = _mapLoad();
     if(!mapData || !mapData.generated) return '';
     var lines = ['【地图环境：'+esc(mapData.name)+'】'];
+
+    // 全部地标列表（让 AI 知道可用名称）
+    var allLmList = (mapData.landmarks||[]).map(function(lm){
+      return (lm.emoji||'📍')+(lm.customName||lm.name);
+    });
+    if(allLmList.length) lines.push('小镇地标：'+allLmList.join('、'));
+
+    // 住所
+    if(mapData.myHouseId){
+      var _mh = (mapData.houses||[]).find(function(h){ return h.id===mapData.myHouseId; });
+      if(_mh) lines.push('用户的家：🏠'+_mh.name);
+    }
+    if(mapData.npcHouses && mapData.npcHouses[npcId]){
+      var _nh = (mapData.houses||[]).find(function(h){ return h.id===mapData.npcHouses[npcId]; });
+      if(_nh) lines.push('你自己的家：🏡'+_nh.name);
+    }
+
+    // 告知 AI 可以发位置
+    lines.push('你可以在消息中写 [发位置:地标名] 来分享某个地标，地标名必须完全匹配上面列出的名称。');
 
     // 当前场景（如果从地图触发了线下场景）
     var scene = _loadSceneData(npcId);
