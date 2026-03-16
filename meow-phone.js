@@ -16207,6 +16207,43 @@ const npc = _wxGetChatTargetMeta(npcId);
             }
           }catch(e){}
         }
+
+        // ★ 检测 NPC 消息里是否主动提出打电话/语音/连麦 → 延迟弹来电弹窗
+        try{
+          var _callKeywords = /打电话|语音通话|语音吧|连麦|视频通话|视频吧|给你打|打给你|接一下|接电话|通个话|打过去|打过来|要不要打|要不打个/;
+          if(_callKeywords.test(cleanText)){
+            var _db_ck = loadContactsDB();
+            var _npc_ck = findContactById(_db_ck, npcId) || { id:npcId, name:String(npcId), avatar:'' };
+            var _isVideo = /视频/.test(cleanText);
+            setTimeout(function(){
+              if(typeof _showIncomingCall === 'function'){
+                _showIncomingCall(npcId, _npc_ck.name||npcId, _npc_ck.avatar||'', _isVideo?'video':'voice',
+                  function(){ // 接听
+                    try{
+                      if(state.app !== 'chatDetail' || state.chatTarget !== npcId){ openChat(npcId); }
+                      setTimeout(function(){ try{ _cpStartCall(npcId, _npc_ck, _isVideo?'video':'voice'); }catch(e){} }, 400);
+                    }catch(e){}
+                  },
+                  function(){ // 拒接 → NPC发一条"没事哦"
+                    try{
+                      pushLog(npcId, 'system', '📵 未接来电（'+(_npc_ck.name||npcId)+'）');
+                      bumpThread(npcId, { lastMsg:'📵 未接来电', lastTime:Date.now(), unread:1 });
+                      setTimeout(function(){
+                        var _declineTexts = ['没事，你在忙吧', '没关系的', '……不接也行', '下次吧'];
+                        var _dt = _declineTexts[Math.floor(Math.random()*_declineTexts.length)];
+                        if(typeof _insertOnlineProactiveMessage==='function'){
+                          var _ins2 = _insertOnlineProactiveMessage(npcId, _dt, { kind:'random' });
+                          if(_ins2){ bumpThread(npcId, { lastMsg:_dt, lastTime:_ins2.ts, unread:1 }); }
+                        }
+                        if(state.chatTarget===npcId && state.app==='chatDetail'){ try{ renderChatDetail(npcId); }catch(e){} }
+                      }, 5000 + Math.random()*5000);
+                    }catch(e){}
+                  }
+                );
+              }
+            }, 2000 + Math.random()*2000); // 2~4秒后弹，模拟拨号延迟
+          }
+        }catch(e){}
       }
 
       // ===== 【PhoneAI 模块】新增 =====
@@ -25007,7 +25044,7 @@ function bindPageScroll(){
 
                 // 冷却：同一角色 30 分钟内不重复推
                 var lastPush = _lastFgPushCheck[npcId] || 0;
-                if (Date.now() - lastPush < 30 * 60 * 1000) return;
+                if (Date.now() - lastPush < 12 * 60 * 1000) return;
 
                 var s3 = _loadCharState(npcId);
                 if (!s3 || !s3.attrs) return;
@@ -25028,9 +25065,12 @@ function bindPageScroll(){
                 var lonelyThresh3 = 100 - dep3 * 0.35 - socialDrive3 * 0.2;
                 var lonely3 = s3.attrs.loneliness || 0;
                 var energy3 = s3.attrs.energy || 0;
-                if (lonely3 <= lonelyThresh3) return;
-                if (energy3 < 30) return;
-                if (h4 < 8 || h4 > 23) return; // 深夜/清晨不推
+                var mood3 = s3.attrs.mood || 0;
+                var lonelyOk = lonely3 > lonelyThresh3;
+                var moodOk = mood3 >= 75 && energy3 >= 40; // 心情很好时也可能主动联系
+                if (!lonelyOk && !moodOk) return;
+                if (energy3 < 20) return;
+                // 时间窗口：不限（由 _canCall 在来电分支里单独控制）
 
                 _lastFgPushCheck[npcId] = Date.now();
                 _setProactiveAttemptState(npcId, 'random', { tryAt: Date.now(), status:'trying', reason:'foreground_timer', failReason:'' });
@@ -25062,8 +25102,8 @@ function bindPageScroll(){
                     var _p5 = sSnap.personality || {};
                     var _sd5 = (_p5.socialDrive != null) ? _p5.socialDrive : 50;
                     var _h5 = new Date().getHours();
-                    var _callChance = (_sd5 >= 70) ? 0.35 : (_sd5 >= 50 ? 0.18 : 0.08);
-                    var _canCall = _h5 >= 20 && _h5 <= 2; // 20点到02点才打电话
+                    var _callChance = (_sd5 >= 70) ? 0.55 : (_sd5 >= 50 ? 0.35 : 0.18);
+                    var _canCall = _h5 >= 20 || _h5 <= 2; // 晚8点到凌晨2点
                     var _doCall = _canCall && Math.random() < _callChance;
 
                     if(_doCall){
