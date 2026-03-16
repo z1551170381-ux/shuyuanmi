@@ -16051,8 +16051,8 @@ const npc = _wxGetChatTargetMeta(npcId);
       // ★ 来电弹窗（外层作用域，_writeAIReply / LifePush 均可直接调用）
       function _showIncomingCall(npcId, npcName, avatarHint, callType, onAccept, onDecline){
         try{
-          // 挂到手机 root 节点内，而不是 doc.body（避免弹到手机外面）
-          var _icRoot = doc.getElementById('meow-phone-root') || doc.body;
+          // 挂到 phShell 内，保持在手机边框内
+          var _icRoot = (doc.getElementById('meow-phone-root') && doc.getElementById('meow-phone-root').querySelector('.phShell')) || doc.getElementById('meow-phone-root') || doc.body;
           var existingIC = _icRoot.querySelector('.meowIncomingCall');
           if(existingIC) existingIC.remove();
           var existingToast = _icRoot.querySelector('.meowLifePushToast');
