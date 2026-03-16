@@ -8366,6 +8366,9 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
         renderApp(id);
       }
 
+      // ★ 来电弹窗共享引用（由 LifePush 模块初始化后赋值，供 _writeAIReply 跨闭包调用）
+      var _triggerIncomingCall = null;
+
       function openChat(contactId){
         state._innerStack = [];
         try{ PhoneAI.abort(); _hideTypingIndicator(); _hideBubbleMenu(); _hideQuoteBar(); root.querySelectorAll('.wxEditMsgOverlay').forEach(function(o){o.remove();}); }catch(e){}
@@ -16243,8 +16246,8 @@ const npc = _wxGetChatTargetMeta(npcId);
               var _npc_ck = findContactById(_db_ck, npcId) || { id:npcId, name:String(npcId), avatar:'' };
               var _isVideo = /视频/.test(_hitText);
               setTimeout(function(){
-                if(typeof _showIncomingCall === 'function'){
-                  _showIncomingCall(npcId, _npc_ck.name||npcId, _npc_ck.avatar||'', _isVideo?'video':'voice',
+                if(typeof _triggerIncomingCall === 'function'){
+                  _triggerIncomingCall(npcId, _npc_ck.name||npcId, _npc_ck.avatar||'', _isVideo?'video':'voice',
                     function(){ // 接听
                       try{
                         if(state.app !== 'chatDetail' || state.chatTarget !== npcId){ openChat(npcId); }
@@ -25023,6 +25026,10 @@ function bindPageScroll(){
 
             }catch(e){ console.warn('[IncomingCall] error:', e); }
           }
+          // ★ 暴露到外层作用域，供 _writeAIReply 跨闭包调用
+          _triggerIncomingCall = _showIncomingCall;
+          // ★ 同时挂到 window，方便控制台调试
+          try{ window._meowIncomingCall = _showIncomingCall; }catch(e){}
 
           function _showLifePushToast(npcId, npcName, avatarHint, text, onTap){
             try{
