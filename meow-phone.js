@@ -29526,8 +29526,9 @@ function _mapOpenRoom(container, mapData, houseId){
     if(isMyH || npcOwner){
       html += '<button data-act="roomToggleEdit"'+(_editMode?' class="active"':'')+'>'+(_editMode?'✓ 完成':'🔧 装修')+'</button>';
     }
-    if(npcOwner){
-      var _chibCfg = (typeof _getChibiSettings==='function') ? _getChibiSettings(npcOwner) : null;
+    var _chibOwner = npcOwner || (isMyH ? 'me' : null);
+    if(_chibOwner){
+      var _chibCfg = (typeof _getChibiSettings==='function') ? _getChibiSettings(_chibOwner) : null;
       html += '<button data-act="roomChibiEdit" style="'+(_chibCfg&&_chibCfg.enabled?'color:#07c160;':'')+'" title="角色设置">👤</button>';
     }
     html += '<span style="font-size:10px;color:rgba(20,24,28,.35);">💰$'+_roomGetBalance()+'</span>';
@@ -29746,19 +29747,18 @@ function _mapOpenRoom(container, mapData, houseId){
 
     // === 常驻装饰（已移除） ===
 
-    // ★ Chibi 角色
-    if(npcOwner){
+    // ★ Chibi 角色（我的家 or NPC家都支持）
+    var _chibOwnerKey = npcOwner || (isMyH ? 'me' : null);
+    if(_chibOwnerKey){
       try{
-        var _chibiFn = (typeof _getChibiSettings==='function') ? _getChibiSettings(npcOwner) : null;
+        var _chibiFn = (typeof _getChibiSettings==='function') ? _getChibiSettings(_chibOwnerKey) : null;
         if(_chibiFn && _chibiFn.enabled){
-          var _chibScene = _getChibiScene(npcOwner);
+          var _chibScene = _getChibiScene(_chibOwnerKey);
           var _chibScale = _chibiFn.scale || 0.42;
           var _chibSvg = _chibiFurnSVG({ gender:_chibiFn.gender, hairStyle:_chibiFn.hairStyle, hairColor:_chibiFn.hairColor, skinColor:_chibiFn.skinColor, coatColor:_chibiFn.coatColor, catEars:_chibiFn.catEars, acc:_chibiFn.acc, outfit:_chibiFn.outfit, scene:_chibScene, scale:_chibScale });
 
-          // ★ 根据场景定位到对应家具上
           var _cx = typeof _chibiFn.posX === 'number' ? _chibiFn.posX : 150;
           var _cy = typeof _chibiFn.posY === 'number' ? _chibiFn.posY : 100;
-          // 自动吸附到对应家具位置
           try{
             var _snapType = _chibScene==='sleep' ? 'bed' : _chibScene==='eat' ? 'stove' : _chibScene==='sit' ? 'sofa' : null;
             if(_snapType){
@@ -30168,8 +30168,9 @@ function _mapOpenRoom(container, mapData, houseId){
     }
 
     if(act==='roomChibiEdit'){
-      if(npcOwner){
-        _openChibiEditor(container, npcOwner, npcOwnerName, function(){ renderRoom(); });
+      var _chibEditOwner = npcOwner || (isMyH ? 'me' : null);
+      if(_chibEditOwner){
+        _openChibiEditor(container, _chibEditOwner, npcOwner ? npcOwnerName : '我', function(){ renderRoom(); });
       }
       return;
     }
