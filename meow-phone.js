@@ -16051,70 +16051,51 @@ const npc = _wxGetChatTargetMeta(npcId);
       // ★ 来电弹窗（外层作用域，_writeAIReply / LifePush 均可直接调用）
       function _showIncomingCall(npcId, npcName, avatarHint, callType, onAccept, onDecline){
         try{
-          // 挂到 #meow-phone-root（不是 phShell，phShell 有 overflow:hidden 会裁剪）
-          var _icRootEl = document.getElementById('meow-phone-root');
-          if(!_icRootEl){ // 手机还没打开则先确保 root 存在
-            try{ ensureRoot(); _icRootEl = document.getElementById('meow-phone-root'); }catch(e){}
-          }
-          if(!_icRootEl) return;
-
-          // 清除旧来电弹窗
-          _icRootEl.querySelectorAll('.meowIncomingCall').forEach(function(e){ e.remove(); });
+          // 清除旧弹窗
+          document.querySelectorAll('.meowIncomingCall').forEach(function(e){ e.remove(); });
 
           var avatarImg = (typeof phoneGetAvatar === 'function') ? phoneGetAvatar(npcId) : null;
           var avatarHtml = avatarImg
             ? '<img src="'+avatarImg+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>'
             : '<span style="font-size:28px;font-weight:700;color:#fff;">'+((avatarHint||(npcName||'?')).charAt(0))+'</span>';
           var isVideo = (callType === 'video');
-          var labelText = isVideo ? '📹 视频通话来电' : '📞 语音通话来电';
+
+          // 找到手机 shell 的视口坐标，让弹窗精准覆盖在手机上
+          var _shellRect = null;
+          try{
+            var _shellEl = document.querySelector('#meow-phone-root .phShell') || document.getElementById('meow-phone-root');
+            if(_shellEl) _shellRect = _shellEl.getBoundingClientRect();
+          }catch(e){}
 
           var overlay = document.createElement('div');
           overlay.className = 'meowIncomingCall';
-          // phShell 是 root 内部居中的子元素，来电覆盖层要盖在它上方
-          // 用绝对定位配合 phShell 的 getBoundingClientRect 精准定位
-          var _shell = _icRootEl.querySelector('.phShell');
-          if(_shell){
-            var _sr = _shell.getBoundingClientRect();
-            var _rr = _icRootEl.getBoundingClientRect();
-            overlay.style.cssText = 'position:absolute;'
-              + 'left:'+(_sr.left-_rr.left)+'px;'
-              + 'top:'+(_sr.top-_rr.top)+'px;'
-              + 'width:'+_sr.width+'px;'
-              + 'z-index:9999;background:rgba(18,18,24,.96);'
-              + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;'
-              + 'border-radius:38px;padding:40px 20px;';
-          } else {
-            overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(18,18,24,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;';
-          }
+          // position:fixed + shell坐标，绕过所有 overflow:hidden
+          var _st = _shellRect
+            ? 'position:fixed;left:'+Math.round(_shellRect.left)+'px;top:'+Math.round(_shellRect.top)+'px;width:'+Math.round(_shellRect.width)+'px;height:'+Math.round(_shellRect.height)+'px;border-radius:38px;'
+            : 'position:fixed;top:10%;left:50%;transform:translateX(-50%);width:320px;border-radius:24px;';
+          overlay.style.cssText = _st
+            + 'z-index:2147483647;background:rgba(18,18,24,.96);backdrop-filter:blur(20px);'
+            + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
+
           overlay.innerHTML =
-            '<div style="font-size:11px;color:rgba(255,255,255,.45);letter-spacing:1px;">'+labelText+'</div>'
-            +'<div style="width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 0 0 6px rgba(255,255,255,.08);">'+avatarHtml+'</div>'
-            +'<div style="font-size:22px;font-weight:700;color:#fff;">'+((npcName||npcId)||'')+'</div>'
-            +'<div style="display:flex;gap:48px;margin-top:16px;">'
+            '<div style="font-size:11px;color:rgba(255,255,255,.45);letter-spacing:1px;">'+(isVideo?'📹 视频通话来电':'📞 语音通话来电')+'</div>'
+            +'<div style="width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 0 0 8px rgba(255,255,255,.07);">'+avatarHtml+'</div>'
+            +'<div style="font-size:22px;font-weight:700;color:#fff;">'+(npcName||npcId||'')+'</div>'
+            +'<div style="display:flex;gap:56px;margin-top:8px;">'
             +'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">'
-            +'<button data-icbtn="decline" style="width:60px;height:60px;border-radius:50%;background:#ef4444;border:0;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;">📵</button>'
+            +'<button data-icbtn="decline" style="width:64px;height:64px;border-radius:50%;background:#ef4444;border:0;font-size:28px;cursor:pointer;">📵</button>'
             +'<span style="font-size:12px;color:rgba(255,255,255,.55);">拒接</span></div>'
             +'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">'
-            +'<button data-icbtn="accept" style="width:60px;height:60px;border-radius:50%;background:#22c55e;border:0;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;">📞</button>'
+            +'<button data-icbtn="accept" style="width:64px;height:64px;border-radius:50%;background:#22c55e;border:0;font-size:28px;cursor:pointer;">📞</button>'
             +'<span style="font-size:12px;color:rgba(255,255,255,.55);">接听</span></div>'
             +'</div>';
 
-          _icRootEl.appendChild(overlay);
+          document.body.appendChild(overlay);
           try{ if(navigator.vibrate) navigator.vibrate([300,200,300]); }catch(e){}
 
           function _dismiss(){ if(overlay.isConnected) overlay.remove(); }
 
-          overlay.querySelector('[data-icbtn="accept"]').addEventListener('click', function(e){
-            e.stopPropagation(); _dismiss();
-            try{ if(onAccept) onAccept(); }catch(e2){}
-          });
-          overlay.querySelector('[data-icbtn="decline"]').addEventListener('click', function(e){
-            e.stopPropagation(); _dismiss();
-            try{ if(onDecline) onDecline(); }catch(e2){}
-          });
-
-          // 25秒自动挂断
-          var autoHangup = setTimeout(function(){
+          var _autoHangup = setTimeout(function(){
             if(overlay.isConnected){
               _dismiss();
               try{
@@ -16123,8 +16104,15 @@ const npc = _wxGetChatTargetMeta(npcId);
               }catch(e){}
             }
           }, 25000);
-          overlay.querySelector('[data-icbtn="accept"]').addEventListener('click', function(){ clearTimeout(autoHangup); });
-          overlay.querySelector('[data-icbtn="decline"]').addEventListener('click', function(){ clearTimeout(autoHangup); });
+
+          overlay.querySelector('[data-icbtn="accept"]').addEventListener('click', function(e){
+            e.stopPropagation(); clearTimeout(_autoHangup); _dismiss();
+            try{ if(onAccept) onAccept(); }catch(e2){}
+          });
+          overlay.querySelector('[data-icbtn="decline"]').addEventListener('click', function(e){
+            e.stopPropagation(); clearTimeout(_autoHangup); _dismiss();
+            try{ if(onDecline) onDecline(); }catch(e2){}
+          });
 
         }catch(e){ console.warn('[IncomingCall] error:', e); }
       }
