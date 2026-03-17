@@ -14394,6 +14394,7 @@ const npc = _wxGetChatTargetMeta(npcId);
               loadMoreBtn.querySelector('button').addEventListener('click', function(){
                 _offOffset = Math.max(0, fromIdx - OFFLINE_PAGE);
                 _renderOfflinePage(_offOffset);
+                requestAnimationFrame(function(){ try{ msgs.scrollTop = 0; }catch(e){} });
               });
               msgs.appendChild(loadMoreBtn);
             }
@@ -14444,11 +14445,12 @@ const npc = _wxGetChatTargetMeta(npcId);
             if(fromIdx > 0){
               const loadMoreBtn = doc.createElement('div');
               loadMoreBtn.style.cssText = 'text-align:center;padding:8px 0 4px;';
-              loadMoreBtn.innerHTML = '<button style="font-size:11px;padding:5px 14px;border-radius:20px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.85);color:rgba(20,24,28,.5);cursor:pointer;">查看更早的 ' + Math.min(fromIdx, PAGE) + ' 条消息</button>';
+              var _canLoad = Math.min(fromIdx, PAGE);
+              loadMoreBtn.innerHTML = '<button style="font-size:11px;padding:5px 14px;border-radius:20px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.85);color:rgba(20,24,28,.5);cursor:pointer;">查看更早的 ' + _canLoad + ' 条（共' + fromIdx + '条更早）</button>';
               loadMoreBtn.querySelector('button').addEventListener('click', function(){
                 var newFrom = Math.max(0, fromIdx - PAGE);
                 _offset = newFrom;
-                _renderPage(newFrom, false);
+                _renderPage(newFrom, true);
               });
               msgs.appendChild(loadMoreBtn);
             }
@@ -25827,6 +25829,20 @@ function _getLogForModeBranch(npcId, mode){
   var activeBranch = (typeof _getActiveBranch === 'function') ? _getActiveBranch(npcId) : 'main';
   var targetMode = _normChatMode(mode || _getChatMode(npcId));
   var log = getLog(npcId);
+
+  if(targetMode === 'offline'){
+    // 线下：mode==='offline' 的 + 老版本没有 mode 标签但实际是线下内容的消息
+    // 判断：如果整条日志里有任何 mode==='offline' 的消息，则无标签消息按「在第一条有标签消息之前」判断
+    // 如果完全没有带标签的消息（旧数据），则返回所有无标签消息（向后兼容）
+    return _safeArr(log).filter(function(m){
+      var mb = m.branch || 'main';
+      if(mb !== activeBranch) return false;
+      var mm = m.mode ? _normChatMode(m.mode) : null;
+      return mm === 'offline'; // 只取明确标记的
+    });
+  }
+
+  // 线上：明确标记 online 的 + 没有 mode 标签的（旧数据默认线上）
   return _safeArr(log).filter(function(m){
     var mb = m.branch || 'main';
     var mm = _normChatMode(m.mode || 'online');
@@ -27133,9 +27149,18 @@ function _openTimelineViewer(npcId){
       return (a.createdAt || 0) - (b.createdAt || 0);
     });
     var info = _getPendingInfo();
-    // 实时读当前模式的真实条数（删消息后自动更新）
+    // 실시간으로 현재 모드의 실제 메시지 수 계산
     var _targetModeLog = _getLogForModeBranch(npcId, _normChatMode(viewMode));
     var _realLogLen = _targetModeLog.length;
+    // 전체 로그에서 untagged 메시지 포함한 실제 총 수
+    var _fullLog = [];
+    try{ _fullLog = getLog(npcId); }catch(e){}
+    var _untaggedCount = 0;
+    try{
+      var _activeBr = (typeof _getActiveBranch==='function') ? _getActiveBranch(npcId) : 'main';
+      _untaggedCount = _fullLog.filter(function(m){ return (m.branch||'main')===_activeBr && !m.mode; }).length;
+    }catch(e){}
+
     var _tl2 = _loadTimeline(npcId);
     var _bucket2 = _getTimelineModeState(_tl2, _normChatMode(viewMode), true);
     var _realLastEnd = _bucket2.entries.length > 0
@@ -27144,6 +27169,10 @@ function _openTimelineViewer(npcId){
     var _realRemaining = Math.max(0, _realLogLen - _realLastEnd);
 
     var statusText = _modeLabel(viewMode) + '共 ' + _realLogLen + ' 条';
+    // 如果是线上且有大量无标签消息，提示用户
+    if(viewMode !== 'offline' && _untaggedCount > 0){
+      statusText += '（含 '+_untaggedCount+' 条旧消息未分类，已按线上计入）';
+    }
     if (_realLastEnd > 0) statusText += '，已总结至第 ' + _realLastEnd + ' 条';
     if (_realRemaining > 0){
       var _cs = _getChunkSize();
