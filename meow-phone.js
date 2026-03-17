@@ -6432,10 +6432,18 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             return;
           }
           if (act === 'wxCHDelSummary'){
+            e.stopPropagation();
             const nid = t.getAttribute('data-chnpcid');
             if (!nid) return;
-            try{ saveChatSummary(nid, { summaryText:'', updatedAt:0 }); }catch(e){}
-            try{ toast('已删除总结'); }catch(e){}
+            // 移除 thread 里的总结数据
+            try{ saveChatSummary(nid, { summaryText:'', updatedAt:0 }); }catch(e2){}
+            // 同时从 threads 里删除该 thread
+            try{
+              var _ths = loadThreads();
+              _ths.list = _safeArr(_ths.list).filter(function(x){ return String(x.id) !== String(nid); });
+              saveThreads(_ths);
+            }catch(e2){}
+            try{ toast('已删除'); }catch(e2){}
             const c = root.querySelector('[data-ph="chatTabContent"]');
             if (c) renderChatHistoryPage(c);
             return;
@@ -6535,6 +6543,37 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
                 }
               }catch(e){ try{toast('生成异常');}catch(_){} }
             })();
+            return;
+          }
+          if (act === 'wxCHDetailEdit'){
+            const nid = t.getAttribute('data-chnpcid');
+            if (!nid) return;
+            const sumData = getChatSummary(nid, _getChatMode(nid));
+            const curText = (sumData && sumData.summaryText) || '';
+            // 弹出编辑弹层
+            const editOv = doc.createElement('div');
+            editOv.style.cssText = 'position:absolute;inset:0;z-index:99999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:12px;';
+            editOv.innerHTML = '<div style="width:100%;max-width:280px;max-height:calc(100% - 24px);background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.18);overflow-y:auto;">'
+              + '<div style="font-size:14px;font-weight:600;color:rgba(20,24,28,.82);">编辑总结</div>'
+              + '<textarea data-el="chEditTA" style="width:100%;height:240px;border:1px solid rgba(0,0,0,.1);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.65;resize:vertical;box-sizing:border-box;background:rgba(255,255,255,.9);color:rgba(20,24,28,.82);font-family:inherit;outline:none;">'+esc(curText)+'</textarea>'
+              + '<div style="display:flex;gap:8px;justify-content:flex-end;">'
+              + '<button data-el="chEditCancel" style="padding:8px 18px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.92);font-size:13px;cursor:pointer;color:rgba(20,24,28,.6);">取消</button>'
+              + '<button data-el="chEditSave" style="padding:8px 18px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>'
+              + '</div></div>';
+            root.appendChild(editOv);
+            const ta = editOv.querySelector('[data-el="chEditTA"]');
+            if (ta) setTimeout(function(){ ta.focus(); }, 100);
+            editOv.querySelector('[data-el="chEditCancel"]').addEventListener('click', function(){ editOv.remove(); });
+            editOv.querySelector('[data-el="chEditSave"]').addEventListener('click', function(){
+              const newText = ta ? ta.value : '';
+              const sd = getChatSummary(nid, _getChatMode(nid)) || {};
+              sd.summaryText = newText;
+              sd.updatedAt = Date.now();
+              saveChatSummary(nid, sd, _getChatMode(nid));
+              editOv.remove();
+              try{ toast('总结已保存'); }catch(e2){}
+              renderChatHistoryDetailPage(nid);
+            });
             return;
           }
           if (act === 'wxCHDetailClear'){
@@ -10696,6 +10735,7 @@ ${lines}
         // 底部操作栏
         html += `<div style="display:flex;gap:8px;justify-content:center;padding-top:8px;">
           <button data-act="wxCHDetailCopy" data-chnpcid="${esc(npcId)}" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">📋 复制</button>
+          <button data-act="wxCHDetailEdit" data-chnpcid="${esc(npcId)}" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">✏️ 编辑</button>
           <button data-act="wxCHDetailRegen" data-chnpcid="${esc(npcId)}" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">🔄 重新生成</button>
           <button data-act="wxCHDetailClear" data-chnpcid="${esc(npcId)}" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);font-size:12px;color:#ef4444;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">🗑 清空</button>
         </div>`;
@@ -24332,20 +24372,20 @@ function renderSettingsUIApp(container){
       function renderSettingsAccentColor(container){
         const cfg = phoneLoadSettings();
         const currentHex = cfg.accentHex || '';
-        // 莫兰迪预设色盘（去彩、低饱和、温润）
+        // 莫兰迪 + 玻璃风预设色盘（低饱和、温润、搭配毛玻璃质感）
         const presets = [
-          {id:'default',  label:'跟随主题', hex:''},
-          {id:'sage',     label:'鼠尾草绿', hex:'#7d9b8a'},
-          {id:'dustblue', label:'雾灰蓝',   hex:'#7a92a8'},
-          {id:'clay',     label:'陶土棕',   hex:'#a0826d'},
-          {id:'mauve',    label:'雾玫瑰',   hex:'#a8888e'},
-          {id:'dusk',     label:'暮色紫',   hex:'#8b84a8'},
-          {id:'sand',     label:'暖沙棕',   hex:'#a89878'},
-          {id:'slate',    label:'蓝石板',   hex:'#6b84a0'},
-          {id:'rosewood', label:'玫瑰木',   hex:'#9e6b72'},
-          {id:'eucalyptus',label:'桉树绿',  hex:'#6b9484'},
-          {id:'lavender', label:'薰衣草',   hex:'#9688b0'},
-          {id:'umber',    label:'暖棕赭',   hex:'#8e7660'},
+          {id:'default',   label:'跟随主题', hex:''},
+          {id:'smokepink', label:'烟粉',     hex:'#c9a4a8'},
+          {id:'fogblue',   label:'雾蓝',     hex:'#94afc7'},
+          {id:'lightgold', label:'浅金',     hex:'#c9b896'},
+          {id:'sage',      label:'鼠尾草',   hex:'#7d9b8a'},
+          {id:'dustblue',  label:'雾灰蓝',   hex:'#7a92a8'},
+          {id:'clay',      label:'陶土棕',   hex:'#a0826d'},
+          {id:'mauve',     label:'雾玫瑰',   hex:'#a8888e'},
+          {id:'dusk',      label:'暮色紫',   hex:'#8b84a8'},
+          {id:'sand',      label:'暖沙棕',   hex:'#a89878'},
+          {id:'rosewood',  label:'玫瑰木',   hex:'#9e6b72'},
+          {id:'lavender',  label:'薰衣草',   hex:'#9688b0'},
         ];
         const activeId = presets.find(p=>p.hex===currentHex)?.id || (currentHex?'custom':'default');
 
@@ -24931,9 +24971,13 @@ function bindPageScroll(){
         if (!shell) return;
         shell.style.transform = 'scale(' + state.scale + ')';
         shell.style.transformOrigin = 'top left';
+        // ★ 手机壳（phRingLayer）跟随 shell 缩放
+        const ring = root.querySelector('.phRingLayer');
+        if (ring){
+          ring.style.transform = 'translate(-50%,-50%) scale(' + state.scale + ')';
+        }
         const label = root.querySelector('[data-ph="zoomLabel"]');
         if (label) label.textContent = Math.round(state.scale * 100) + '%';
-        // 更新缩放栏位置：需要跟随缩放后 shell 底部
         const zbar = root.querySelector('.phZoomBar');
         if (zbar){
           const rawH = shell.offsetHeight || 750;
@@ -26877,7 +26921,12 @@ function _rebuildEntryDisplayText(entry){
   if (s.storyTime) display.push('⏰ ' + s.storyTime);
   if (s.facts && s.facts.length) display.push('📋 事实：\n' + s.facts.map(function(f){ return '  · ' + f; }).join('\n'));
   if (s.quotes && s.quotes.length) display.push('💬 原话：\n' + s.quotes.map(function(q){ return '  「' + q + '」'; }).join('\n'));
-  if (s.turning && s.turning.length) display.push('⚡ 转折：\n' + s.turning.map(function(t){ return '  · ' + t; }).join('\n'));
+  if (s.events && s.events.length) display.push('📌 事件：
+' + s.events.map(function(t){ return '  · ' + t; }).join('
+'));
+  else if (s.turning && s.turning.length) display.push('📌 事件：
+' + s.turning.map(function(t){ return '  · ' + t; }).join('
+'));
   if (s.props && s.props.length) display.push('🎒 道具：' + s.props.join('、'));
   if (s.todos && s.todos.length) display.push('📝 待办：\n' + s.todos.map(function(t){ return '  ' + (t.done ? '✅' : '☐') + ' ' + t.text; }).join('\n'));
   entry.displayText = display.join('\n\n');
@@ -26900,9 +26949,38 @@ async function _generateTimelineEntry(npcId, fromIdx, toIdx, mode, opts){
 
   var db = loadContactsDB();
   var npc = findContactById(db, npcId) || { name:String(npcId) };
+
+  // 消息正文不加时间前缀，日期范围单独作为上下文注入
   var dialogText = selected.map(function(m){
     return (m.role === 'me' ? '用户' : npc.name) + ': ' + String(m.text||'').slice(0, 300);
   }).join('\n');
+
+  // 计算这批消息的真实日期范围
+  var _firstTs = selected[0] && selected[0].t ? Number(selected[0].t) : 0;
+  var _lastTs = selected[selected.length-1] && selected[selected.length-1].t ? Number(selected[selected.length-1].t) : 0;
+  var _dateRangeStr = '';
+  try{
+    var _d1 = new Date(_firstTs), _d2 = new Date(_lastTs);
+    var _wd = ['日','一','二','三','四','五','六'];
+    var _fmtD = function(d){ return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日（周'+_wd[d.getDay()]+'）'; };
+    var _fmtT = function(d){ return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
+    if(_d1.toDateString() === _d2.toDateString()){
+      _dateRangeStr = _fmtD(_d1) + ' ' + _fmtT(_d1) + '—' + _fmtT(_d2);
+    } else {
+      _dateRangeStr = _fmtD(_d1)+' '+_fmtT(_d1) + ' 至 ' + _fmtD(_d2)+' '+_fmtT(_d2);
+    }
+  }catch(e){}
+
+  // 故事日期（如设置了故事时间模式）
+  var _storyDateStr = '';
+  try{
+    var _cfg = phoneLoadSettings();
+    if(_cfg.timeMode === 'story' && _cfg.storyDate) _storyDateStr = _cfg.storyDate;
+  }catch(e){}
+
+  var _dateHint = '';
+  if(_dateRangeStr) _dateHint += '真实时间：' + _dateRangeStr;
+  if(_storyDateStr) _dateHint += (_dateHint ? '　' : '') + '故事时间：' + _storyDateStr;
 
   var lastTodos = [];
   if (tlMode.entries.length > 0){
@@ -26922,34 +27000,34 @@ async function _generateTimelineEntry(npcId, fromIdx, toIdx, mode, opts){
     : '';
 
   var defaultPrompt = targetMode === 'offline'
-    ? `你是一个客观的剧情记录员。以下内容来自线下见面 / 场景互动，请更重视场景变化、动作、事件推进与关系变化。请输出纯 JSON（不要 markdown 代码块）：
+    ? `你是剧情记录员，只记录客观发生的事，不做任何评价或定论。对话有时间范围标注，请在 storyTime 里写出日期和时段（如"3月17日 深夜"）。请输出纯 JSON（不要 markdown 代码块）：
 {
-  "storyTime": "提取的故事内时间（如有）",
-  "facts": ["客观事实1", "客观事实2"],
-  "quotes": ["重要原话1", "重要原话2"],
-  "turning": ["转折点或重要决定"],
-  "props": ["新出现或使用的道具/物品"],
+  "storyTime": "日期+时段，如：3月17日 深夜至18日凌晨",
+  "facts": ["发生了什么事（只写事实，不写这意味着什么）"],
+  "quotes": ["值得记录的原话"],
+  "events": ["值得标注的具体事件，只写发生了什么，不写关系影响或意义"],
+  "props": ["出现或使用的具体物品/地点"],
   "todos": [{"text":"待办内容","done":false}]
 }
 ${todoHint}
-只记录客观事实，不主观评价。摘取关键原话。`
-    : `你是一个客观的剧情记录员。以下内容来自手机线上聊天，请更重视手机聊天里的关键信息、关系变化、承诺、待办与重要原话。请输出纯 JSON（不要 markdown 代码块）：
+严禁出现"关系取得突破""首次主动""关系进一步"之类的评价性语言，只记录行为本身。`
+    : `你是剧情记录员，只记录客观发生的事，不做任何评价或定论。对话有时间范围标注，请在 storyTime 里写出日期和时段（如"3月15日 晚上至次日中午"）。请输出纯 JSON（不要 markdown 代码块）：
 {
-  "storyTime": "提取的故事内时间（如有）",
-  "facts": ["客观事实1", "客观事实2"],
-  "quotes": ["重要原话1", "重要原话2"],
-  "turning": ["转折点或重要决定"],
-  "props": ["新出现或使用的道具/物品"],
+  "storyTime": "日期+时段，如：3月15日 晚上至次日中午",
+  "facts": ["发生了什么事（只写事实，不写这意味着什么）"],
+  "quotes": ["值得记录的原话"],
+  "events": ["值得标注的具体事件，只写发生了什么，不写关系影响或意义"],
+  "props": ["出现或使用的具体物品/地点"],
   "todos": [{"text":"待办内容","done":false}]
 }
 ${todoHint}
-只记录客观事实，不主观评价。摘取关键原话。`;
+严禁出现"关系取得突破""首次主动""关系进一步"之类的评价性语言，只记录行为本身。`;
   var systemPrompt = customPrompt || defaultPrompt;
 
   try{
     var result = await PhoneAI.chat({
       system: systemPrompt,
-      messages: [{ role:'user', content:'对话片段（第' + (fromIdx+1) + '~' + (toIdx+1) + '条）：\n' + dialogText.slice(0, 3000) }],
+      messages: [{ role:'user', content: (_dateHint ? _dateHint + '\n\n' : '') + '对话片段（第' + (fromIdx+1) + '~' + (toIdx+1) + '条）：\n' + dialogText.slice(0, 3000) }],
       temperature: 0.3,
       maxTokens: 800,
       channel: 'background',
@@ -27009,7 +27087,7 @@ ${todoHint}
     if (structured.storyTime) display.push('⏰ ' + structured.storyTime);
     if (structured.facts && structured.facts.length) display.push('📋 事实：\n' + structured.facts.map(function(f){ return '  · ' + f; }).join('\n'));
     if (structured.quotes && structured.quotes.length) display.push('💬 原话：\n' + structured.quotes.map(function(q){ return '  「' + q + '」'; }).join('\n'));
-    if (structured.turning && structured.turning.length) display.push('⚡ 转折：\n' + structured.turning.map(function(t){ return '  · ' + t; }).join('\n'));
+    if (structured.events && structured.events.length) display.push('⚡ 转折：\n' + structured.events.map(function(t){ return '  · ' + t; }).join('\n'));
     if (structured.props && structured.props.length) display.push('🎒 道具：' + structured.props.join('、'));
     if (structured.todos && structured.todos.length) display.push('📝 待办：\n' + structured.todos.map(function(t){ return '  ' + (t.done ? '✅' : '☐') + ' ' + t.text; }).join('\n'));
 
@@ -27111,11 +27189,16 @@ function _openTimelineViewer(npcId){
   }
   function _rebuildEntryDisplay(entry){
     if (!entry || !entry.structured) return;
-    var s = entry.structured, display = [];
+  if (s.events && s.events.length) display.push('📌 事件：
+' + s.events.map(function(t){ return '  · ' + t; }).join('
+'));
+  else if (s.turning && s.turning.length) display.push('📌 事件：
+' + s.turning.map(function(t){ return '  · ' + t; }).join('
+'));
     if (s.storyTime) display.push('⏰ ' + s.storyTime);
     if (s.facts && s.facts.length) display.push('📋 事实：\n' + s.facts.map(function(f){ return '  · ' + f; }).join('\n'));
     if (s.quotes && s.quotes.length) display.push('💬 原话：\n' + s.quotes.map(function(q){ return '  「' + q + '」'; }).join('\n'));
-    if (s.turning && s.turning.length) display.push('⚡ 转折：\n' + s.turning.map(function(t){ return '  · ' + t; }).join('\n'));
+    if (s.events && s.events.length || s.turning && s.turning.length) display.push('⚡ 转折：\n' + ((s.events||s.turning)||[]).map(function(t){ return '  · ' + t; }).join('\n'));
     if (s.props && s.props.length) display.push('🎒 道具：' + s.props.join('、'));
     if (s.todos && s.todos.length) display.push('📝 待办：\n' + s.todos.map(function(t){ return '  ' + (t.done ? '✅' : '☐') + ' ' + t.text; }).join('\n'));
     entry.displayText = display.join('\n\n');
@@ -27132,7 +27215,9 @@ function _openTimelineViewer(npcId){
     });
     if (!allTodos.length) return '';
     var h = '<div style="margin:10px 0;padding:10px 12px;background:var(--ph-glass,rgba(255,255,255,.78));border-radius:10px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.06));">';
-    h += '<div style="font-size:12px;font-weight:600;color:rgba(20,24,28,.6);margin-bottom:6px;">待办跟踪</div>';
+    h += '<div style="font-size:12px;font-weight:600;color:rgba(20,24,28,.6);margin-bottom:6px;">待办跟踪 <span style="font-weight:400;color:rgba(20,24,28,.3);">'+allTodos.length+'项</span></div>';
+    // 最多显示约3条高度，超出滚动
+    h += '<div style="max-height:108px;overflow-y:auto;">';
     allTodos.forEach(function(t){
       var ds = t.done ? 'text-decoration:line-through;color:rgba(20,24,28,.3);' : 'color:rgba(20,24,28,.7);';
       h += '<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:4px;padding:3px 0;">'
@@ -27142,6 +27227,7 @@ function _openTimelineViewer(npcId){
         + '<button data-act="todoDel" data-eidx="'+t.entryIdx+'" data-tidx="'+t.todoIdx+'" style="flex-shrink:0;font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.8);cursor:pointer;color:rgba(20,24,28,.35);">✕</button>'
         + '</div>';
     });
+    h += '</div>';
     h += '<button data-act="todoAdd" style="margin-top:4px;font-size:11px;padding:4px 10px;border-radius:6px;border:1px dashed rgba(0,0,0,.1);background:transparent;cursor:pointer;color:rgba(20,24,28,.35);width:100%;">+ 添加待办</button></div>';
     return h;
   }
@@ -27262,9 +27348,18 @@ function _openTimelineViewer(npcId){
   var modal = ov.querySelector('.wxCPModal');
   if (!modal) modal = ov; // fallback
 
-  function refresh(){
+  function refresh(preserveScroll){
     var rootEl = modal.querySelector('[data-el="tlRoot"]');
-    if (rootEl) rootEl.innerHTML = renderBody();
+    if (!rootEl) return;
+    // 保存滚动位置
+    var entriesEl = preserveScroll ? rootEl.querySelector('[data-el="tlEntries"]') : null;
+    var savedScroll = entriesEl ? entriesEl.scrollTop : 0;
+    rootEl.innerHTML = renderBody();
+    // 恢复滚动位置
+    if (preserveScroll && savedScroll > 0){
+      var newEntriesEl = rootEl.querySelector('[data-el="tlEntries"]');
+      if (newEntriesEl) requestAnimationFrame(function(){ newEntriesEl.scrollTop = savedScroll; });
+    }
   }
 
   // ---- 编辑弹层 ----
@@ -27329,14 +27424,11 @@ function _openTimelineViewer(npcId){
     // ---- 第一步删除（显示确认按钮）----
     if (act === 'tlDel'){
       _pendingDeleteIdx = parseInt(t.getAttribute('data-tlidx'));
-      console.log('[TL] 准备删除 idx=' + _pendingDeleteIdx);
-      refresh();
+      refresh(true); // 保留滚动位置
       return;
     }
-    // ---- 第二步删除（真正执行）----
     if (act === 'tlDelConfirm'){
       var idx = parseInt(t.getAttribute('data-tlidx'));
-      console.log('[TL] 确认删除 idx=' + idx);
       var tl = _loadTimeline(npcId);
       var bucket = _getTimelineModeState(tl, viewMode, true);
       if (idx >= 0 && idx < bucket.entries.length){
@@ -27346,13 +27438,12 @@ function _openTimelineViewer(npcId){
         try{ toast('已删除'); }catch(e){}
       }
       _pendingDeleteIdx = -1;
-      refresh();
+      refresh(true); // 保留滚动位置
       return;
     }
-    // ---- 取消删除 ----
     if (act === 'tlDelCancel'){
       _pendingDeleteIdx = -1;
-      refresh();
+      refresh(true);
       return;
     }
     // ---- 编辑 ----
