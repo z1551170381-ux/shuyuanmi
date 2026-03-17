@@ -1113,12 +1113,13 @@ function ensureTuneStyle(){
   box-shadow: 0 2px 8px rgba(100,94,86,.06), inset 0 1px 0 rgba(255,255,255,.90);
 }
 #${ID}[data-theme="frost"] .sOptionBtn.active{
-  background: rgba(255,255,255,.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  color: var(--ph-accent, rgba(48,44,40,.88));
-  border-color: var(--ph-accent, rgba(48,44,40,.20));
-  box-shadow: 0 2px 12px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.95);
+  background: linear-gradient(160deg, rgba(60,56,52,.78) 0%, rgba(48,44,40,.88) 100%);
+  color: rgba(255,255,255,.92);
+  border-color: rgba(255,255,255,.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.15),
+    inset 0 -1px 0 rgba(0,0,0,.12),
+    0 3px 10px rgba(48,44,40,.22);
   font-weight: 600;
 }
 
@@ -24400,14 +24401,17 @@ function renderSettingsUIApp(container){
         presets.forEach(p=>{
           const isActive = activeId===p.id;
           const swatchBg = p.hex ? `background:${p.hex};` : 'background:linear-gradient(135deg,#7d9b8a,#a3bab0);';
+          const activeBg = isActive
+            ? 'background:linear-gradient(160deg,rgba(60,56,52,.72),rgba(48,44,40,.82));box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 3px 8px rgba(48,44,40,.18);'
+            : 'background:var(--ph-glass);';
           html += `<button class="sAccentPreset${isActive?' active':''}" data-apresetid="${p.id}" data-ahex="${p.hex}"
             style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px;
-              border-radius:12px;border:1.5px solid ${isActive?'var(--ph-accent)':'var(--ph-sep)'};
-              background:var(--ph-glass);cursor:pointer;transition:all .15s;">
+              border-radius:12px;border:1.5px solid ${isActive?'rgba(255,255,255,.22)':'var(--ph-sep)'};
+              ${activeBg}cursor:pointer;transition:all .15s;">
             <div style="width:32px;height:32px;border-radius:50%;${swatchBg}
               box-shadow:0 2px 6px rgba(0,0,0,.12);
-              ${isActive?'box-shadow:0 0 0 2px var(--ph-accent), 0 2px 6px rgba(0,0,0,.12);':''}"></div>
-            <span style="font-size:10px;color:var(--ph-text-sub);line-height:1.2;text-align:center;">${p.label}</span>
+              ${isActive?'box-shadow:0 0 0 2.5px rgba(255,255,255,.7), 0 2px 8px rgba(0,0,0,.18);':''}"></div>
+            <span style="font-size:10px;color:${isActive?'rgba(255,255,255,.85)':'var(--ph-text-sub)'};line-height:1.2;text-align:center;">${p.label}</span>
           </button>`;
         });
 
@@ -27210,10 +27214,10 @@ function _openTimelineViewer(npcId){
     });
     if (!allTodos.length) return '';
     var h = '<div style="margin:10px 0;padding:10px 12px;'
-      + 'background:rgba(255,255,255,.45);'
-      + 'backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);'
-      + 'border-radius:12px;border:1px solid rgba(255,255,255,.6);'
-      + 'box-shadow:0 2px 12px rgba(0,0,0,.06);">';
+      + 'background:linear-gradient(145deg,rgba(255,255,255,.82),rgba(240,236,230,.68));'
+      + 'border-radius:12px;'
+      + 'border:1px solid rgba(255,255,255,.75);'
+      + 'box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 2px 8px rgba(0,0,0,.06);">';
     h += '<div style="font-size:12px;font-weight:600;color:rgba(20,24,28,.6);margin-bottom:6px;">待办跟踪 <span style="font-weight:400;color:rgba(20,24,28,.3);">'+allTodos.length+'项</span></div>';
     // 最多显示约3条高度，超出滚动
     h += '<div style="max-height:108px;overflow-y:auto;">';
@@ -27468,7 +27472,7 @@ function _openTimelineViewer(npcId){
         _saveTimeline(npcId, tl);
         _syncSummaryFromTimeline(npcId, viewMode);
       }
-      refresh();
+      refresh(true);
       return;
     }
     if (act === 'todoEdit'){
@@ -27484,7 +27488,7 @@ function _openTimelineViewer(npcId){
           _saveTimeline(npcId, tl);
           _syncSummaryFromTimeline(npcId, viewMode);
         }
-        refresh();
+        refresh(true);
       });
       return;
     }
@@ -27499,7 +27503,7 @@ function _openTimelineViewer(npcId){
         _saveTimeline(npcId, tl);
         _syncSummaryFromTimeline(npcId, viewMode);
       }
-      refresh();
+      refresh(true);
       return;
     }
     if (act === 'todoAdd'){
