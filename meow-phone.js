@@ -25641,7 +25641,7 @@ function _insertOnlineProactiveMessage(npcId, text, opts){
     lg.map[id] ||= [];
     lg.map[id].push({ role:'them', text:finalText, t:ts, fromLife:true, mode:'online', branch:branch, insertedAt:now, proactiveKind:kind });
     lg.map[id].sort(function(a,b){ return Number(a.t||0) - Number(b.t||0); });
-    if (lg.map[id].length > 200) lg.map[id] = lg.map[id].slice(-200);
+    // 上限交由 pushLog 统一管理（10000条），这里不再截断
     saveLogs(lg);
     var th = loadThreads();
     var thr = th.list.find(function(x){ return String(x.id) === String(npcId); });
