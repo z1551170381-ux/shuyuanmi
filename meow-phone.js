@@ -2327,22 +2327,27 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   transition:transform .2s ease;
   transform-origin:top left;
 }
-/* frost 主题：我的气泡 + 发送键 用强调色但保持磨砂质感 */
-#${ID}[data-theme="frost"] .wxChatBubble.me .wxCBContent{
-  background: color-mix(in srgb, var(--ph-accent, #a8888e) 38%, rgba(255,255,255,.68)) !important;
-  backdrop-filter: blur(16px) saturate(120%);
-  -webkit-backdrop-filter: blur(16px) saturate(120%);
-  color: rgba(28,24,22,.88) !important;
-  border: 1px solid color-mix(in srgb, var(--ph-accent, #a8888e) 20%, rgba(255,255,255,.85)) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 2px 8px rgba(0,0,0,.06);
+/* frost 主题：所有强调色元素统一磨砂玻璃质感 */
+#${ID}[data-theme="frost"] .wxChatBubble.me .wxCBContent,
+#${ID}[data-theme="frost"] .wxChatSendBtn,
+#${ID}[data-theme="frost"] .phModalBtn.primary,
+#${ID}[data-theme="frost"] .forumPostBtn,
+#${ID}[data-theme="frost"] .forumDMChatSend,
+#${ID}[data-theme="frost"] .forumDMBubble.mine,
+#${ID}[data-theme="frost"] .feedCommentInput button {
+  background: color-mix(in srgb, var(--ph-accent, #a8888e) 62%, rgba(255,255,255,.35)) !important;
+  backdrop-filter: blur(16px) saturate(118%);
+  -webkit-backdrop-filter: blur(16px) saturate(118%);
+  color: rgba(255,255,255,.95) !important;
+  border-color: color-mix(in srgb, var(--ph-accent, #a8888e) 28%, rgba(255,255,255,.55)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 2px 8px rgba(0,0,0,.08) !important;
 }
-#${ID}[data-theme="frost"] .wxChatSendBtn{
-  background: color-mix(in srgb, var(--ph-accent, #a8888e) 42%, rgba(255,255,255,.6)) !important;
-  backdrop-filter: blur(16px) saturate(120%);
-  -webkit-backdrop-filter: blur(16px) saturate(120%);
-  color: rgba(28,24,22,.85) !important;
-  border: 1px solid color-mix(in srgb, var(--ph-accent, #a8888e) 15%, rgba(255,255,255,.88)) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.85), 0 2px 8px rgba(0,0,0,.06);
+/* toggle 开关 */
+#${ID}[data-theme="frost"] .sToggle.on,
+#${ID}[data-theme="frost"] .wxReminderToggle.on {
+  background: color-mix(in srgb, var(--ph-accent, #a8888e) 58%, rgba(255,255,255,.4)) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 #${ID}[data-theme="frost"] .phShell{
   background:
