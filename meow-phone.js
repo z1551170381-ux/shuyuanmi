@@ -16040,8 +16040,27 @@ const npc = _wxGetChatTargetMeta(npcId);
             signal: AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined
           });
           if (!resp.ok) return { ok:false, error:'TTS API 错误 ' + resp.status };
-          var blob = await resp.blob();
-          var audioUrl = URL.createObjectURL(blob);
+          // ★ 兼容三种返回格式：1) 直接音频流  2) JSON {audioUrl}  3) JSON {audio: base64}
+          var contentType = resp.headers.get('content-type') || '';
+          var audioUrl;
+          if (contentType.indexOf('application/json') >= 0 || contentType.indexOf('text/json') >= 0){
+            var json = await resp.json();
+            if (json.audioUrl || json.audio_url || json.url){
+              audioUrl = json.audioUrl || json.audio_url || json.url;
+            } else if (json.audio){
+              var b64 = json.audio;
+              var byteChars = atob(b64);
+              var byteArr = new Uint8Array(byteChars.length);
+              for (var _i=0; _i<byteChars.length; _i++) byteArr[_i] = byteChars.charCodeAt(_i);
+              var blob2 = new Blob([byteArr], { type:'audio/mpeg' });
+              audioUrl = URL.createObjectURL(blob2);
+            } else {
+              return { ok:false, error:'TTS返回JSON但无法找到音频字段' };
+            }
+          } else {
+            var blob = await resp.blob();
+            audioUrl = URL.createObjectURL(blob);
+          }
           return { ok:true, audioUrl: audioUrl };
         }catch(e){
           return { ok:false, error: String(e && e.message || e) };
@@ -16738,11 +16757,13 @@ const npc = _wxGetChatTargetMeta(npcId);
         var stickerIdx = -1;
 
         // 检测 [发语音] + 频率节流
-        if (/\[发语音\]/i.test(s)){
+        // ★ 兼容多种写法：[发语音] [语音消息] [voice] [发送语音] [语音] 及全角括号版本
+        var _voiceTagRe = /[\[【](发语音|语音消息|voice|发送语音|语音)[\]】]/i;
+        if (_voiceTagRe.test(s)){
           var _now_ts = Date.now();
           var _timeSinceLast = _now_ts - _lastVoiceSentAt;
-          // 节流：距上次语音不足60秒 或 消息计数不足5条 → 强制剥离
-          if (_timeSinceLast > 60000 && _voiceMsgCount >= 5){
+          // 节流：距上次语音超60秒 或 已累计5条消息 → 允许（用 || 确保冷启动/首条也能正常触发）
+          if (_timeSinceLast > 60000 || _voiceMsgCount >= 5){
             sendVoice = true;
             _lastVoiceSentAt = _now_ts;
             _voiceMsgCount = 0;
@@ -16750,7 +16771,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             // 静默剥离，不发语音
             sendVoice = false;
           }
-          s = s.replace(/\[发语音\]/gi, '').trim();
+          s = s.replace(_voiceTagRe, '').trim();
         }
         _voiceMsgCount++;
 
