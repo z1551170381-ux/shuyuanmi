@@ -2327,22 +2327,22 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   transition:transform .2s ease;
   transform-origin:top left;
 }
-/* frost 主题：我的气泡 + 发送键 改成磨砂玻璃，不用强调色 */
+/* frost 主题：我的气泡 + 发送键 用强调色但保持磨砂质感 */
 #${ID}[data-theme="frost"] .wxChatBubble.me .wxCBContent{
-  background: rgba(255,255,255,.58) !important;
-  backdrop-filter: blur(18px) saturate(120%);
-  -webkit-backdrop-filter: blur(18px) saturate(120%);
+  background: color-mix(in srgb, var(--ph-accent, #a8888e) 38%, rgba(255,255,255,.68)) !important;
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
   color: rgba(28,24,22,.88) !important;
-  border: 1px solid rgba(255,255,255,.78) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.92), 0 2px 8px rgba(0,0,0,.06);
+  border: 1px solid color-mix(in srgb, var(--ph-accent, #a8888e) 20%, rgba(255,255,255,.85)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 2px 8px rgba(0,0,0,.06);
 }
 #${ID}[data-theme="frost"] .wxChatSendBtn{
-  background: rgba(255,255,255,.52) !important;
-  backdrop-filter: blur(18px) saturate(120%);
-  -webkit-backdrop-filter: blur(18px) saturate(120%);
-  color: rgba(28,24,22,.82) !important;
-  border: 1px solid rgba(255,255,255,.75) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 2px 8px rgba(0,0,0,.06);
+  background: color-mix(in srgb, var(--ph-accent, #a8888e) 42%, rgba(255,255,255,.6)) !important;
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  color: rgba(28,24,22,.85) !important;
+  border: 1px solid color-mix(in srgb, var(--ph-accent, #a8888e) 15%, rgba(255,255,255,.88)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.85), 0 2px 8px rgba(0,0,0,.06);
 }
 #${ID}[data-theme="frost"] .phShell{
   background:
@@ -21395,14 +21395,12 @@ const npc = _wxGetChatTargetMeta(npcId);
         root.querySelectorAll('.wxCPOverlay').forEach(o=>o.remove());
         const ov = doc.createElement('div');
         ov.className = 'wxCPOverlay';
-        ov.style.cssText = 'position:absolute;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:12px;';
+        ov.style.cssText = 'position:absolute;inset:0;z-index:9999;background:rgba(200,196,192,.55);backdrop-filter:blur(32px) saturate(110%);-webkit-backdrop-filter:blur(32px) saturate(110%);display:flex;align-items:center;justify-content:center;padding:12px;';
         ov.innerHTML = `<div class="wxCPModal" style="
-          background:rgba(240,240,242,.82);
-          backdrop-filter:blur(48px) saturate(120%);
-          -webkit-backdrop-filter:blur(48px) saturate(120%);
+          background:rgba(248,246,243,.92);
           border-radius:20px;width:100%;max-width:280px;padding:20px;
-          border:1px solid rgba(255,255,255,.7);
-          box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 12px 40px rgba(0,0,0,.14);
+          border:1px solid rgba(255,255,255,.82);
+          box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 8px 32px rgba(0,0,0,.1);
           max-height:calc(100% - 48px);overflow-y:auto;
         ">${innerHtml}</div>`;
         ov.addEventListener('click', (e)=>{ if(e.target===ov) ov.remove(); });
@@ -24548,7 +24546,8 @@ function renderSettingsUIApp(container){
           root.style.setProperty('--ph-accent', hex);
           root.style.setProperty('--ph-accent2', light);
           root.style.setProperty('--ph-accent-grad', `linear-gradient(135deg,${hex},${light})`);
-          // frost 主题下气泡/发送键由 CSS 直接控制（磨砂玻璃），不用强调色覆盖
+          // frost 主题下气泡/发送键通过 CSS color-mix 自动混入强调色做磨砂玻璃质感
+          // 非 frost 主题用纯强调色
           const _isFrost = root.getAttribute('data-theme') === 'frost';
           if (!_isFrost) {
             root.style.setProperty('--ph-send-btn', hex);
