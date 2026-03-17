@@ -14379,23 +14379,47 @@ const npc = _wxGetChatTargetMeta(npcId);
           tip.innerHTML = '<em class="rpAction">（场景就绪，等待你的行动…）</em>';
           msgs.appendChild(tip);
         } else {
-          var lastTimeLabel = '';
-          for (var i = 0; i < log.length; i++){
-            var x = log[i];
-            // ★ 时间分隔线：每隔一段时间或每条消息都显示时间+地点
-            var _msgTime = _fmtTime(x.t || _now());
-            if(_msgTime !== lastTimeLabel){
-              var timeSep = doc.createElement('div');
-              timeSep.className = 'wxOfflineTimeSep';
-              var _sceneLabel = (scene && scene.name) ? ' · ' + scene.name : '';
-              timeSep.textContent = _msgTime + _sceneLabel;
-              msgs.appendChild(timeSep);
-              lastTimeLabel = _msgTime;
+          // ★ 分页：默认渲染最近 50 条，顶部加「查看更早消息」按钮
+          var OFFLINE_PAGE = 50;
+          var _offOffset = Math.max(0, log.length - OFFLINE_PAGE);
+
+          function _renderOfflinePage(fromIdx){
+            msgs.innerHTML = '';
+            // 顶部加载更早按钮
+            if(fromIdx > 0){
+              var loadMoreBtn = doc.createElement('div');
+              loadMoreBtn.style.cssText = 'text-align:center;padding:8px 0 4px;';
+              var _earlier = Math.min(fromIdx, OFFLINE_PAGE);
+              loadMoreBtn.innerHTML = '<button style="font-size:11px;padding:5px 14px;border-radius:20px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.85);color:rgba(20,24,28,.5);cursor:pointer;">查看更早的 '+_earlier+' 条</button>';
+              loadMoreBtn.querySelector('button').addEventListener('click', function(){
+                _offOffset = Math.max(0, fromIdx - OFFLINE_PAGE);
+                _renderOfflinePage(_offOffset);
+              });
+              msgs.appendChild(loadMoreBtn);
             }
-            _renderOfflineParagraph(msgs, npc, x.role, x.text, x.t, x);
+            var slice = log.slice(fromIdx);
+            var lastTimeLabel = '';
+            for(var i = 0; i < slice.length; i++){
+              var x = slice[i];
+              var _msgTime = _fmtTime(x.t || _now());
+              if(_msgTime !== lastTimeLabel){
+                var timeSep = doc.createElement('div');
+                timeSep.className = 'wxOfflineTimeSep';
+                var _sceneLabel = (scene && scene.name) ? ' · '+scene.name : '';
+                timeSep.textContent = _msgTime + _sceneLabel;
+                msgs.appendChild(timeSep);
+                lastTimeLabel = _msgTime;
+              }
+              _renderOfflineParagraph(msgs, npc, x.role, x.text, x.t, x);
+            }
           }
+
+          _renderOfflinePage(_offOffset);
+          // 供 _refreshChatUI 重绑定用
+          if(msgs) msgs._renderOfflinePage = _renderOfflinePage;
         }
         requestAnimationFrame(function(){ try{ msgs.scrollTop = msgs.scrollHeight; }catch(e){} });
+        _initBubbleLongPress();
       }
 
       /* --- 子渲染：填充历史消息 --- */
@@ -26737,20 +26761,13 @@ function _syncSummaryFromTimeline(npcId, mode){
 function _getTimelinePendingRange(npcId, mode, maxChunk){
   var targetMode = _normChatMode(mode || _getChatMode(npcId));
   var log = _getLogForModeBranch(npcId, targetMode);
-  // 如果过滤后的日志为空，尝试用全量日志作为 fallback
-  if (log.length === 0){
-    try{
-      var fullLog = getLog(npcId);
-      if (fullLog && fullLog.length > 0){
-        console.warn('[Timeline] 过滤后日志为空但全量日志有', fullLog.length, '条，使用全量日志');
-        log = fullLog;
-      }
-    }catch(e){}
-  }
+  // 不再 fallback 到全量日志 - 如果模式过滤后为空就返回 null
+  if (log.length === 0) return null;
   var tl = _loadTimeline(npcId);
   var bucket = _getTimelineModeState(tl, targetMode, true);
   var lastEnd = bucket.entries.length > 0 ? bucket.entries[bucket.entries.length - 1].range[1] + 1 : 0;
-  console.log('[Timeline] pendingRange: logLen='+log.length+', entries='+bucket.entries.length+', lastEnd='+lastEnd+', mode='+targetMode);
+  // 如果 lastEnd 超出当前日志长度（可能是删消息后），重置为日志长度
+  if (lastEnd > log.length) lastEnd = log.length;
   if (lastEnd >= log.length) return null;
   var endIdx = log.length - 1;
   if (maxChunk && maxChunk > 0 && (endIdx - lastEnd + 1) > maxChunk){
@@ -27116,24 +27133,23 @@ function _openTimelineViewer(npcId){
       return (a.createdAt || 0) - (b.createdAt || 0);
     });
     var info = _getPendingInfo();
-    // 重新计算实际线下/线上条数（避免删除消息后数字过期）
+    // 实时读当前模式的真实条数（删消息后自动更新）
     var _targetModeLog = _getLogForModeBranch(npcId, _normChatMode(viewMode));
     var _realLogLen = _targetModeLog.length;
     var _tl2 = _loadTimeline(npcId);
     var _bucket2 = _getTimelineModeState(_tl2, _normChatMode(viewMode), true);
-    var _realLastEnd = _bucket2.entries.length > 0 ? _bucket2.entries[_bucket2.entries.length-1].range[1]+1 : 0;
+    var _realLastEnd = _bucket2.entries.length > 0
+      ? Math.min(_bucket2.entries[_bucket2.entries.length-1].range[1]+1, _realLogLen)
+      : 0;
     var _realRemaining = Math.max(0, _realLogLen - _realLastEnd);
-    var _totalAllModes = 0;
-    try{ _totalAllModes = getLog(npcId).length; }catch(e){}
 
-    var statusText = '已总结至第 ' + _realLastEnd + ' 条';
-    statusText += '，' + _modeLabel(viewMode) + '共 ' + _realLogLen + ' 条';
-    if(_totalAllModes > _realLogLen) statusText += '（全部模式共 '+_totalAllModes+' 条）';
+    var statusText = _modeLabel(viewMode) + '共 ' + _realLogLen + ' 条';
+    if (_realLastEnd > 0) statusText += '，已总结至第 ' + _realLastEnd + ' 条';
     if (_realRemaining > 0){
       var _cs = _getChunkSize();
       statusText += '，还有 ' + _realRemaining + ' 条未总结';
-      if(_realRemaining < _cs) statusText += '（未达到每次总结的 ' + _cs + ' 条，点「生成总结」可手动触发）';
-    } else {
+      if (_realRemaining < _cs) statusText += '（不足 ' + _cs + ' 条可手动点「生成总结」触发）';
+    } else if (_realLastEnd > 0) {
       statusText += '，已全部总结 ✓';
     }
     // ★ 线下模式显示字数统计
