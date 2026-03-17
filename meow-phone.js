@@ -26921,12 +26921,8 @@ function _rebuildEntryDisplayText(entry){
   if (s.storyTime) display.push('⏰ ' + s.storyTime);
   if (s.facts && s.facts.length) display.push('📋 事实：\n' + s.facts.map(function(f){ return '  · ' + f; }).join('\n'));
   if (s.quotes && s.quotes.length) display.push('💬 原话：\n' + s.quotes.map(function(q){ return '  「' + q + '」'; }).join('\n'));
-  if (s.events && s.events.length) display.push('📌 事件：
-' + s.events.map(function(t){ return '  · ' + t; }).join('
-'));
-  else if (s.turning && s.turning.length) display.push('📌 事件：
-' + s.turning.map(function(t){ return '  · ' + t; }).join('
-'));
+  if (s.events && s.events.length) display.push('📌 事件：\n' + s.events.map(function(t){ return '  · ' + t; }).join('\n'));
+  else if (s.turning && s.turning.length) display.push('📌 事件：\n' + s.turning.map(function(t){ return '  · ' + t; }).join('\n'));
   if (s.props && s.props.length) display.push('🎒 道具：' + s.props.join('、'));
   if (s.todos && s.todos.length) display.push('📝 待办：\n' + s.todos.map(function(t){ return '  ' + (t.done ? '✅' : '☐') + ' ' + t.text; }).join('\n'));
   entry.displayText = display.join('\n\n');
@@ -27189,12 +27185,8 @@ function _openTimelineViewer(npcId){
   }
   function _rebuildEntryDisplay(entry){
     if (!entry || !entry.structured) return;
-  if (s.events && s.events.length) display.push('📌 事件：
-' + s.events.map(function(t){ return '  · ' + t; }).join('
-'));
-  else if (s.turning && s.turning.length) display.push('📌 事件：
-' + s.turning.map(function(t){ return '  · ' + t; }).join('
-'));
+  if (s.events && s.events.length) display.push('📌 事件：\n' + s.events.map(function(t){ return '  · ' + t; }).join('\n'));
+  else if (s.turning && s.turning.length) display.push('📌 事件：\n' + s.turning.map(function(t){ return '  · ' + t; }).join('\n'));
     if (s.storyTime) display.push('⏰ ' + s.storyTime);
     if (s.facts && s.facts.length) display.push('📋 事实：\n' + s.facts.map(function(f){ return '  · ' + f; }).join('\n'));
     if (s.quotes && s.quotes.length) display.push('💬 原话：\n' + s.quotes.map(function(q){ return '  「' + q + '」'; }).join('\n'));
