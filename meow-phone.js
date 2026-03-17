@@ -1113,13 +1113,15 @@ function ensureTuneStyle(){
   box-shadow: 0 2px 8px rgba(100,94,86,.06), inset 0 1px 0 rgba(255,255,255,.90);
 }
 #${ID}[data-theme="frost"] .sOptionBtn.active{
-  background: linear-gradient(160deg, rgba(60,56,52,.78) 0%, rgba(48,44,40,.88) 100%);
-  color: rgba(255,255,255,.92);
-  border-color: rgba(255,255,255,.18);
+  background: rgba(255,255,255,.55);
+  backdrop-filter: blur(20px) saturate(130%);
+  -webkit-backdrop-filter: blur(20px) saturate(130%);
+  color: rgba(48,44,40,.9);
+  border-color: rgba(255,255,255,.9);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.15),
-    inset 0 -1px 0 rgba(0,0,0,.12),
-    0 3px 10px rgba(48,44,40,.22);
+    inset 0 1.5px 0 rgba(255,255,255,.95),
+    inset 0 -1px 0 rgba(180,170,158,.15),
+    0 2px 12px rgba(100,94,86,.12);
   font-weight: 600;
 }
 
@@ -21379,9 +21381,12 @@ const npc = _wxGetChatTargetMeta(npcId);
         ov.className = 'wxCPOverlay';
         ov.style.cssText = 'position:absolute;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:12px;';
         ov.innerHTML = `<div class="wxCPModal" style="
-          background:rgba(255,255,255,.96);backdrop-filter:blur(12px);
-          border-radius:16px;width:100%;max-width:280px;padding:20px;
-          box-shadow:0 8px 32px rgba(0,0,0,.18);
+          background:rgba(245,241,236,.72);
+          backdrop-filter:blur(28px) saturate(140%);
+          -webkit-backdrop-filter:blur(28px) saturate(140%);
+          border-radius:20px;width:100%;max-width:280px;padding:20px;
+          border:1px solid rgba(255,255,255,.65);
+          box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 12px 40px rgba(100,94,86,.18);
           max-height:calc(100% - 48px);overflow-y:auto;
         ">${innerHtml}</div>`;
         ov.addEventListener('click', (e)=>{ if(e.target===ov) ov.remove(); });
@@ -24402,16 +24407,16 @@ function renderSettingsUIApp(container){
           const isActive = activeId===p.id;
           const swatchBg = p.hex ? `background:${p.hex};` : 'background:linear-gradient(135deg,#7d9b8a,#a3bab0);';
           const activeBg = isActive
-            ? 'background:linear-gradient(160deg,rgba(60,56,52,.72),rgba(48,44,40,.82));box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 3px 8px rgba(48,44,40,.18);'
+            ? 'background:rgba(255,255,255,.55);backdrop-filter:blur(20px) saturate(130%);-webkit-backdrop-filter:blur(20px) saturate(130%);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),0 2px 10px rgba(100,94,86,.1);'
             : 'background:var(--ph-glass);';
           html += `<button class="sAccentPreset${isActive?' active':''}" data-apresetid="${p.id}" data-ahex="${p.hex}"
             style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px;
-              border-radius:12px;border:1.5px solid ${isActive?'rgba(255,255,255,.22)':'var(--ph-sep)'};
+              border-radius:12px;border:1.5px solid ${isActive?'rgba(255,255,255,.88)':'var(--ph-sep)'};
               ${activeBg}cursor:pointer;transition:all .15s;">
             <div style="width:32px;height:32px;border-radius:50%;${swatchBg}
               box-shadow:0 2px 6px rgba(0,0,0,.12);
-              ${isActive?'box-shadow:0 0 0 2.5px rgba(255,255,255,.7), 0 2px 8px rgba(0,0,0,.18);':''}"></div>
-            <span style="font-size:10px;color:${isActive?'rgba(255,255,255,.85)':'var(--ph-text-sub)'};line-height:1.2;text-align:center;">${p.label}</span>
+              ${isActive?'box-shadow:0 0 0 2.5px rgba(255,255,255,.85), 0 2px 8px rgba(0,0,0,.14);':''}"></div>
+            <span style="font-size:10px;color:${isActive?'rgba(48,44,40,.85)':'var(--ph-text-sub)'};line-height:1.2;text-align:center;">${p.label}</span>
           </button>`;
         });
 
