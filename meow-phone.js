@@ -16136,11 +16136,15 @@ const npc = _wxGetChatTargetMeta(npcId);
       async function _writeAIReply(npcId, npc, rawText, ts){
         var parsed = _parseAISpecialTags(rawText);
         var cleanText = parsed.cleanText || rawText;
-        // 二次兜底：确保没有系统标签残留在显示文本中
-        cleanText = cleanText.replace(/\[属性[:：][^\]]*\]?/gi, '')
-                             .replace(/\[状态[:：][^\]]*\]?/gi, '')
+        // 二次兜底：确保没有系统标签残留在显示文本中（含跨行、不完整括号情形）
+        cleanText = cleanText
+                             .replace(/\[属性[:：][^\]]*?\]?/gis, '')
+                             .replace(/\[状态[:：][^\]]*?\]?/gis, '')
                              .replace(/\[发语音\]/gi, '')
-                             .replace(/\[发表情[:：][^\]]*\]?/gi, '')
+                             .replace(/\[发位置[:：][^\]]*?\]?/gi, '')
+                             .replace(/\[发表情[:：][^\]]*?\]?/gi, '')
+                             // 当前属性值：... 这整行也清掉
+                             .replace(/当前属性值：[^\n]*/g, '')
                              // ★ 清理 rpAction 等伪标签（所有变体：有无引号、有无>、跨行）
                              .replace(/"rpAction"\s*>?\s*/g, '')
                              .replace(/"rpDialog"\s*>?\s*/g, '')
@@ -19405,16 +19409,14 @@ const npc = _wxGetChatTargetMeta(npcId);
           var arr = logs.map && logs.map[id];
           if (!arr || !arr.length) return false;
           var tsNum = Number(ts);
-          var idx = -1;
-          for (var i = arr.length - 1; i >= 0; i--){
-            if (Number(arr[i].t) === tsNum){ idx = i; break; }
-          }
-          if (idx < 0) return false;
-          arr.splice(idx, 1);
+          // 删除所有匹配该ts的条目（线下模式一条消息可能对应多段，但存储时只存一条）
+          var origLen = arr.length;
+          logs.map[id] = arr.filter(function(m){ return Number(m.t) !== tsNum; });
+          if (logs.map[id].length === origLen) return false;
           saveLogs(logs);
           // ★ 重新同步线程列表的最新消息预览
           try{
-            var _lastEntry = arr.filter(function(m){ return !m.recalled; }).slice(-1)[0];
+            var _lastEntry = logs.map[id].filter(function(m){ return !m.recalled; }).slice(-1)[0];
             if(_lastEntry) bumpThread(npcId, { lastMsg:_lastEntry.text, lastTime:_lastEntry.t });
           }catch(e){}
           return true;
@@ -19541,7 +19543,14 @@ const npc = _wxGetChatTargetMeta(npcId);
             return;
           }
 
-          _deleteLogByTs(npcId, ts);
+          // 删除该条及之后的所有消息（避免线下模式只删一条导致上下文错乱）
+          var _regenMode = (typeof _getChatMode==='function') ? _getChatMode(npcId) : 'online';
+          if(_regenMode === 'offline'){
+            // 线下：删除该ts及之后的全部同模式消息
+            _deleteLogsAfterTs(npcId, Number(ts) - 1);
+          } else {
+            _deleteLogByTs(npcId, ts);
+          }
           _refreshChatUI(npcId);
 
           await _triggerAIReply(npcId);
@@ -27107,17 +27116,30 @@ function _openTimelineViewer(npcId){
       return (a.createdAt || 0) - (b.createdAt || 0);
     });
     var info = _getPendingInfo();
-    // ★ 显示当前模式过滤后的条数，并附上全量总数帮助理解
+    // 重新计算实际线下/线上条数（避免删除消息后数字过期）
+    var _targetModeLog = _getLogForModeBranch(npcId, _normChatMode(viewMode));
+    var _realLogLen = _targetModeLog.length;
+    var _tl2 = _loadTimeline(npcId);
+    var _bucket2 = _getTimelineModeState(_tl2, _normChatMode(viewMode), true);
+    var _realLastEnd = _bucket2.entries.length > 0 ? _bucket2.entries[_bucket2.entries.length-1].range[1]+1 : 0;
+    var _realRemaining = Math.max(0, _realLogLen - _realLastEnd);
     var _totalAllModes = 0;
     try{ _totalAllModes = getLog(npcId).length; }catch(e){}
-    var _modeFilterNote = (_totalAllModes > info.logLength) ? '（全部模式共'+_totalAllModes+'条）' : '';
-    var statusText = '已总结至第 ' + info.lastEnd + ' 条，当前模式共 ' + info.logLength + ' 条' + _modeFilterNote;
-    if (info.remaining > 0) statusText += '，剩余 ' + info.remaining + ' 条未总结';
+
+    var statusText = '已总结至第 ' + _realLastEnd + ' 条';
+    statusText += '，' + _modeLabel(viewMode) + '共 ' + _realLogLen + ' 条';
+    if(_totalAllModes > _realLogLen) statusText += '（全部模式共 '+_totalAllModes+' 条）';
+    if (_realRemaining > 0){
+      var _cs = _getChunkSize();
+      statusText += '，还有 ' + _realRemaining + ' 条未总结';
+      if(_realRemaining < _cs) statusText += '（未达到每次总结的 ' + _cs + ' 条，点「生成总结」可手动触发）';
+    } else {
+      statusText += '，已全部总结 ✓';
+    }
     // ★ 线下模式显示字数统计
     if(_normChatMode(viewMode) === 'offline'){
       try{
-        var _offLog = _getLogForModeBranch(npcId, 'offline');
-        var _totalChars = _offLog.reduce(function(s,m){ return s+String(m.text||'').length; },0);
+        var _totalChars = _targetModeLog.reduce(function(s,m){ return s+String(m.text||'').length; },0);
         statusText += ' · 共约 ' + (_totalChars >= 10000 ? Math.round(_totalChars/1000)+'k' : _totalChars) + ' 字';
       }catch(e){}
     }
