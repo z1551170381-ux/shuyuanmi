@@ -1113,10 +1113,13 @@ function ensureTuneStyle(){
   box-shadow: 0 2px 8px rgba(100,94,86,.06), inset 0 1px 0 rgba(255,255,255,.90);
 }
 #${ID}[data-theme="frost"] .sOptionBtn.active{
-  background: rgba(48,44,40,.82);
-  color: #fff;
-  border-color: transparent;
-  box-shadow: 0 3px 14px rgba(48,44,40,.18);
+  background: rgba(255,255,255,.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: var(--ph-accent, rgba(48,44,40,.88));
+  border-color: var(--ph-accent, rgba(48,44,40,.20));
+  box-shadow: 0 2px 12px rgba(0,0,0,.08), inset 0 1px 0 rgba(255,255,255,.95);
+  font-weight: 600;
 }
 
 /* 发送按钮：宽扁胶囊 */
@@ -14799,9 +14802,9 @@ const npc = _wxGetChatTargetMeta(npcId);
                     <span style="font-size:12px;color:rgba(20,24,28,.55);flex:1;">楼自动生成一次总结</span>
                   </div>
                   <div style="font-size:11px;color:rgba(20,24,28,.45);margin-bottom:6px;">线上总结词：</div>
-                  <textarea data-el="sumPromptOnline" rows="3" placeholder="例如：更偏手机聊天纪要、关系变化、关键信息点" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;background:rgba(255,255,255,.6);">${esc(charEx.onlineSummaryPrompt||'')}</textarea>
+                  <textarea data-el="sumPromptOnline" rows="3" placeholder="例如：更偏手机聊天纪要、关系变化、关键信息点" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;background:rgba(255,255,255,.6);">${esc(charEx.onlineSummaryPrompt||'你是剧情记录员，只记录客观发生的事，不做任何评价或定论。对话有时间范围标注，请在 storyTime 里写出日期和时段。请输出纯 JSON：{"storyTime":"日期+时段","facts":["发生了什么事（只写事实）"],"quotes":["值得记录的原话"],"events":["具体事件，只写发生了什么"],"props":["出现的物品/地点"],"todos":[{"text":"待办","done":false}]}。严禁出现"关系取得突破""首次主动""关系进一步"之类的评价性语言。')}</textarea>
                   <div style="font-size:11px;color:rgba(20,24,28,.45);margin:10px 0 6px;">线下总结模板：</div>
-                  <textarea data-el="sumPromptOffline" rows="3" placeholder="例如：更偏线下见面、动作、场景、事件推进" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;background:rgba(255,255,255,.6);">${esc(charEx.offlineSummaryTemplate||'')}</textarea>
+                  <textarea data-el="sumPromptOffline" rows="3" placeholder="例如：更偏线下见面、动作、场景、事件推进" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;background:rgba(255,255,255,.6);">${esc(charEx.offlineSummaryTemplate||'你是剧情记录员，只记录客观发生的事，不做任何评价或定论。以下内容来自线下见面/场景互动，对话有时间范围标注，请在 storyTime 里写出日期和时段。请输出纯 JSON：{"storyTime":"日期+时段","facts":["发生了什么事（只写事实）"],"quotes":["值得记录的原话"],"events":["具体事件，只写发生了什么"],"props":["出现的物品/地点"],"todos":[{"text":"待办","done":false}]}。严禁出现评价性语言，只记录行为本身。')}</textarea>
                   <div style="font-size:11px;color:rgba(20,24,28,.45);margin:10px 0 6px;">聊天专属总结词：</div>
                   <textarea data-el="sumPromptChat" rows="3" placeholder="该角色专属总结补充，线上线下都会带上" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;background:rgba(255,255,255,.6);">${esc(sharedPrompt)}</textarea>
                   <div style="font-size:11px;color:rgba(20,24,28,.45);margin:10px 0 6px;">线上聊天附加提示词：</div>
@@ -27185,12 +27188,12 @@ function _openTimelineViewer(npcId){
   }
   function _rebuildEntryDisplay(entry){
     if (!entry || !entry.structured) return;
-  if (s.events && s.events.length) display.push('📌 事件：\n' + s.events.map(function(t){ return '  · ' + t; }).join('\n'));
-  else if (s.turning && s.turning.length) display.push('📌 事件：\n' + s.turning.map(function(t){ return '  · ' + t; }).join('\n'));
+    var s = entry.structured, display = [];
     if (s.storyTime) display.push('⏰ ' + s.storyTime);
     if (s.facts && s.facts.length) display.push('📋 事实：\n' + s.facts.map(function(f){ return '  · ' + f; }).join('\n'));
     if (s.quotes && s.quotes.length) display.push('💬 原话：\n' + s.quotes.map(function(q){ return '  「' + q + '」'; }).join('\n'));
-    if (s.events && s.events.length || s.turning && s.turning.length) display.push('⚡ 转折：\n' + ((s.events||s.turning)||[]).map(function(t){ return '  · ' + t; }).join('\n'));
+    if (s.events && s.events.length) display.push('📌 事件：\n' + s.events.map(function(t){ return '  · ' + t; }).join('\n'));
+    else if (s.turning && s.turning.length) display.push('📌 事件：\n' + s.turning.map(function(t){ return '  · ' + t; }).join('\n'));
     if (s.props && s.props.length) display.push('🎒 道具：' + s.props.join('、'));
     if (s.todos && s.todos.length) display.push('📝 待办：\n' + s.todos.map(function(t){ return '  ' + (t.done ? '✅' : '☐') + ' ' + t.text; }).join('\n'));
     entry.displayText = display.join('\n\n');
@@ -27206,7 +27209,11 @@ function _openTimelineViewer(npcId){
       }
     });
     if (!allTodos.length) return '';
-    var h = '<div style="margin:10px 0;padding:10px 12px;background:var(--ph-glass,rgba(255,255,255,.78));border-radius:10px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.06));">';
+    var h = '<div style="margin:10px 0;padding:10px 12px;'
+      + 'background:rgba(255,255,255,.45);'
+      + 'backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);'
+      + 'border-radius:12px;border:1px solid rgba(255,255,255,.6);'
+      + 'box-shadow:0 2px 12px rgba(0,0,0,.06);">';
     h += '<div style="font-size:12px;font-weight:600;color:rgba(20,24,28,.6);margin-bottom:6px;">待办跟踪 <span style="font-weight:400;color:rgba(20,24,28,.3);">'+allTodos.length+'项</span></div>';
     // 最多显示约3条高度，超出滚动
     h += '<div style="max-height:108px;overflow-y:auto;">';
