@@ -26777,16 +26777,42 @@ function _syncSummaryFromTimeline(npcId, mode){
 function _getTimelinePendingRange(npcId, mode, maxChunk){
   var targetMode = _normChatMode(mode || _getChatMode(npcId));
   var log = _getLogForModeBranch(npcId, targetMode);
-  // 不再 fallback 到全量日志 - 如果模式过滤后为空就返回 null
   if (log.length === 0) return null;
   var tl = _loadTimeline(npcId);
   var bucket = _getTimelineModeState(tl, targetMode, true);
-  var lastEnd = bucket.entries.length > 0 ? bucket.entries[bucket.entries.length - 1].range[1] + 1 : 0;
-  // 如果 lastEnd 超出当前日志长度（可能是删消息后），重置为日志长度
-  if (lastEnd > log.length) lastEnd = log.length;
-  if (lastEnd >= log.length) return null;
+
+  var lastEnd = 0;
+
+  if(bucket.entries.length > 0){
+    var lastEntry = bucket.entries[bucket.entries.length - 1];
+
+    // ★ 思路二：优先用 tailHashes 定位，不依赖位置索引
+    if(lastEntry.tailHashes && lastEntry.tailHashes.length > 0){
+      // 在日志里从后往前找能匹配 tailHashes 任意一条的最晚位置
+      var hashSet = {};
+      lastEntry.tailHashes.forEach(function(h){ hashSet[h] = true; });
+      var matchIdx = -1;
+      for(var i = log.length - 1; i >= 0; i--){
+        if(hashSet[_msgHash(log[i])]){
+          matchIdx = i;
+          break;
+        }
+      }
+      if(matchIdx >= 0){
+        lastEnd = matchIdx + 1; // 从匹配到的最晚那条之后继续
+      } else {
+        // 所有3条都找不到（消息被删了）→ fallback 到 range 索引
+        lastEnd = Math.min(lastEntry.range[1] + 1, log.length);
+      }
+    } else {
+      // 旧条目没有 tailHashes → 用原来的 range 索引
+      lastEnd = Math.min(lastEntry.range[1] + 1, log.length);
+    }
+  }
+
+  if(lastEnd >= log.length) return null;
   var endIdx = log.length - 1;
-  if (maxChunk && maxChunk > 0 && (endIdx - lastEnd + 1) > maxChunk){
+  if(maxChunk && maxChunk > 0 && (endIdx - lastEnd + 1) > maxChunk){
     endIdx = lastEnd + maxChunk - 1;
   }
   return { fromIdx:lastEnd, toIdx:endIdx, logLength:log.length, hasMore: endIdx < log.length - 1 };
@@ -26829,6 +26855,19 @@ function _generateSourceHash(msgs){
     hash |= 0;
   }
   return 'h_' + Math.abs(hash).toString(36);
+}
+
+// 对单条消息生成短哈希（用于思路二：末尾3条消息定位）
+function _msgHash(m){
+  var str = (m.role||'') + '|' + String(m.text||'').slice(0, 80);
+  var h = 0;
+  for(var i = 0; i < str.length; i++){ h = ((h << 5) - h) + str.charCodeAt(i); h |= 0; }
+  return Math.abs(h).toString(36);
+}
+
+// 生成区间末尾最多3条消息的哈希数组（用于定位总结进度）
+function _tailHashes(msgs){
+  return msgs.slice(-3).map(_msgHash);
 }
 
 // 独立版本的 entry display 重建（供 _generateTimelineEntry 内部去重使用）
@@ -26979,6 +27018,7 @@ ${todoHint}
       range: [fromIdx, toIdx],
       mode: targetMode,
       sourceHash: sourceHash,
+      tailHashes: _tailHashes(selected), // ★ 末尾3条消息哈希，用于定位总结进度
       promptVersion: 2,
       storyTime: structured.storyTime || '',
       structured: structured,
