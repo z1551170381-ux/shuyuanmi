@@ -2327,7 +2327,23 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   transition:transform .2s ease;
   transform-origin:top left;
 }
-/* frost shell — ring blur is handled by phRingLayer above */
+/* frost 主题：我的气泡 + 发送键 改成磨砂玻璃，不用强调色 */
+#${ID}[data-theme="frost"] .wxChatBubble.me .wxCBContent{
+  background: rgba(255,255,255,.58) !important;
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+  color: rgba(28,24,22,.88) !important;
+  border: 1px solid rgba(255,255,255,.78) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.92), 0 2px 8px rgba(0,0,0,.06);
+}
+#${ID}[data-theme="frost"] .wxChatSendBtn{
+  background: rgba(255,255,255,.52) !important;
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+  color: rgba(28,24,22,.82) !important;
+  border: 1px solid rgba(255,255,255,.75) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 2px 8px rgba(0,0,0,.06);
+}
 #${ID}[data-theme="frost"] .phShell{
   background:
     linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,.03)),
@@ -21381,12 +21397,12 @@ const npc = _wxGetChatTargetMeta(npcId);
         ov.className = 'wxCPOverlay';
         ov.style.cssText = 'position:absolute;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:12px;';
         ov.innerHTML = `<div class="wxCPModal" style="
-          background:rgba(245,241,236,.72);
-          backdrop-filter:blur(28px) saturate(140%);
-          -webkit-backdrop-filter:blur(28px) saturate(140%);
+          background:rgba(240,240,242,.82);
+          backdrop-filter:blur(48px) saturate(120%);
+          -webkit-backdrop-filter:blur(48px) saturate(120%);
           border-radius:20px;width:100%;max-width:280px;padding:20px;
-          border:1px solid rgba(255,255,255,.65);
-          box-shadow:inset 0 1px 0 rgba(255,255,255,.85),0 12px 40px rgba(100,94,86,.18);
+          border:1px solid rgba(255,255,255,.7);
+          box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 12px 40px rgba(0,0,0,.14);
           max-height:calc(100% - 48px);overflow-y:auto;
         ">${innerHtml}</div>`;
         ov.addEventListener('click', (e)=>{ if(e.target===ov) ov.remove(); });
@@ -24532,11 +24548,14 @@ function renderSettingsUIApp(container){
           root.style.setProperty('--ph-accent', hex);
           root.style.setProperty('--ph-accent2', light);
           root.style.setProperty('--ph-accent-grad', `linear-gradient(135deg,${hex},${light})`);
-          // 同步依赖 accent 的衍生变量
-          root.style.setProperty('--ph-send-btn', hex);
+          // frost 主题下气泡/发送键由 CSS 直接控制（磨砂玻璃），不用强调色覆盖
+          const _isFrost = root.getAttribute('data-theme') === 'frost';
+          if (!_isFrost) {
+            root.style.setProperty('--ph-send-btn', hex);
+            root.style.setProperty('--ph-chat-me-bubble', `linear-gradient(135deg,${hex},${light})`);
+            root.style.setProperty('--ph-wechat-me-bubble', `linear-gradient(135deg,${hex},${light})`);
+          }
           root.style.setProperty('--ph-tabbar-on', hex);
-          root.style.setProperty('--ph-chat-me-bubble', `linear-gradient(135deg,${hex},${light})`);
-          root.style.setProperty('--ph-wechat-me-bubble', `linear-gradient(135deg,${hex},${light})`);
         } else {
           // 移除覆盖，回到主题 CSS 变量默认值
           ['--ph-accent','--ph-accent2','--ph-accent-grad',
