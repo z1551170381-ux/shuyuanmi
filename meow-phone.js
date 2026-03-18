@@ -2889,10 +2889,10 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .phModalMask{
   position:absolute; inset:0; z-index:9999;
   display:flex; align-items:center; justify-content:center;
-  background:rgba(0,0,0,.18);
-  backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px);
+  background:transparent;
+  backdrop-filter:none; -webkit-backdrop-filter:none;
 }
-#${ID}[data-theme="frost"] .phModalMask{ background:rgba(0,0,0,.10); }
+#${ID}[data-theme="frost"] .phModalMask{ background:transparent; }
 #${ID} .phModalCard{
   width:min(330px, calc(100% - 28px));
   border-radius:18px;
@@ -3376,7 +3376,8 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 /* === Confirm Dialog (删除确认) === */
 #${ID} .wxConfirmOverlay{
   position:absolute; inset:0; z-index:9999;
-  background:rgba(0,0,0,.45);
+  background:transparent;
+  backdrop-filter:none; -webkit-backdrop-filter:none;
   display:flex; align-items:center; justify-content:center;
   animation:phFadeIn .15s ease-out;
 }
@@ -3716,7 +3717,8 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 /* === 编辑消息弹窗 === */
 #${ID} .wxEditMsgOverlay{
   position:absolute; inset:0; z-index:9000;
-  background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center;
+  background:transparent; backdrop-filter:none; -webkit-backdrop-filter:none;
+  display:flex; align-items:center; justify-content:center;
   padding:20px; animation:wxCPFadeIn .16s ease;
 }
 #${ID} .wxEditMsgBox{
@@ -4266,7 +4268,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 /* 头像自定义弹窗 */
 #${ID} .phAvatarPopup{
   position:absolute; inset:0; z-index:90;
-  background:rgba(20,30,50,.18); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  background:transparent; backdrop-filter:none; -webkit-backdrop-filter:none;
   display:flex; flex-direction:column; justify-content:center; align-items:center;
 }
 #${ID} .phAvatarPopupInner{
@@ -4275,6 +4277,61 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   border:1px solid rgba(255,255,255,.9);
   box-shadow:0 12px 40px rgba(80,100,140,.18);
 }
+
+/* ---------- Overlay Mask Cleanup + Map Frost Glass ---------- */
+#${ID} .phModalMask,
+#${ID} .wxConfirmOverlay,
+#${ID} .wxEditMsgOverlay,
+#${ID} .wxCPOverlay,
+#${ID} .mapDetailOverlay,
+#${ID} .phAvatarOverlay,
+#${ID} .phAvatarPopup{
+  background:transparent !important;
+  backdrop-filter:none !important;
+  -webkit-backdrop-filter:none !important;
+}
+#${ID} .wxConfirmBox,
+#${ID} .wxEditMsgBox,
+#${ID} .phModalCard,
+#${ID} .phAvatarPopupInner,
+#${ID} .wxCPModal{
+  background:var(--ph-glass-strong) !important;
+  border:1px solid var(--ph-glass-border) !important;
+  box-shadow:0 12px 34px rgba(80,100,140,.12), 0 1px 0 rgba(255,255,255,.80) inset !important;
+  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .72)) saturate(118%) !important;
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .72)) saturate(118%) !important;
+}
+#${ID} .mapDetailCard,
+#${ID} .mapRoomHeader,
+#${ID} .mapEditorBar{
+  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .08)) !important;
+  border-color:rgba(255,255,255,.48) !important;
+  box-shadow:0 12px 32px rgba(80,100,140,.10), 0 1px 0 rgba(255,255,255,.80) inset !important;
+  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .74)) saturate(118%) !important;
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .74)) saturate(118%) !important;
+}
+#${ID} .mapDetailSectionTitle{ color:var(--ph-text-dim) !important; }
+#${ID} .mapActRow,
+#${ID} .mapNoteInput,
+#${ID} .mapRoomZoomBar button,
+#${ID} .mapZoomBtn,
+#${ID} .mapToolBtn,
+#${ID} .mapRoomToolbar button,
+#${ID} .mapEdBtn,
+#${ID} .mapEdEmojiBtn{
+  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .03)) !important;
+  border-color:rgba(255,255,255,.42) !important;
+  box-shadow:0 8px 18px rgba(80,100,140,.06), 0 1px 0 rgba(255,255,255,.72) inset !important;
+  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .54)) saturate(114%) !important;
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .54)) saturate(114%) !important;
+}
+#${ID} .mapToolBtnAccent{
+  background:var(--ph-accent-grad) !important;
+  border-color:transparent !important;
+  color:#fff !important;
+  box-shadow:0 10px 22px rgba(80,100,140,.10) !important;
+}
+
 
 /* ---------- Forum (Weibo-like) ---------- */
 #${ID} .forumHeader{
@@ -4654,11 +4711,13 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 @keyframes mapFadeIn{ from{opacity:0;} to{opacity:1;} }
 #${ID} .mapDetailCard{
   width:92%; max-height:72%; overflow-y:auto;
-  background: rgba(248,245,240, 0.90);
-  border-radius:22px 22px 0 0; padding:16px;
-  box-shadow:0 -6px 32px rgba(100,94,86,.16);
-  border:1px solid rgba(255,255,255,.60);
+  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .08));
+  border-radius:24px 24px 0 0; padding:16px;
+  box-shadow:0 -8px 36px rgba(80,100,140,.10), 0 1px 0 rgba(255,255,255,.82) inset;
+  border:1px solid rgba(255,255,255,.62);
   border-bottom:none;
+  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .78)) saturate(118%);
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .78)) saturate(118%);
   animation:mapSlideUp .25s ease;
   scrollbar-width:none;
   position:relative; z-index:1;
@@ -4683,12 +4742,15 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID} .mapActRow{
   display:flex; align-items:center; gap:8px;
-  padding:10px 12px; margin-bottom:4px;
-  background:rgba(255,255,255,0.5); border-radius:10px;
-  border:1px solid rgba(0,0,0,0.04); cursor:pointer;
-  transition:background .15s;
+  padding:10px 12px; margin-bottom:6px;
+  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .04)); border-radius:14px;
+  border:1px solid rgba(255,255,255,.46); cursor:pointer;
+  box-shadow:0 1px 0 rgba(255,255,255,.72) inset, 0 8px 18px rgba(80,100,140,.05);
+  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .52)) saturate(115%);
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .52)) saturate(115%);
+  transition:background .15s, transform .15s;
 }
-#${ID} .mapActRow:hover{ background:rgba(255,255,255,0.8); }
+#${ID} .mapActRow:hover{ background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .10)); }
 #${ID} .mapActRow:active{ transform:scale(0.98); }
 #${ID} .mapActLabel{ flex:1; font-size:13px; font-weight:500; color:rgba(20,24,28,0.8); }
 #${ID} .mapActCost{ font-size:12px; color:#e67e22; font-weight:600; }
@@ -4700,10 +4762,12 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   background:transparent; outline:none; width:120px; color:rgba(20,24,28,0.85);
 }
 #${ID} .mapNoteInput{
-  width:100%; padding:8px 10px; border:1px solid rgba(0,0,0,0.06);
-  border-radius:8px; font-size:12px; outline:none; resize:none;
-  background:rgba(255,255,255,0.4); font-family:inherit; box-sizing:border-box;
-  color:rgba(20,24,28,0.7);
+  width:100%; padding:8px 10px; border:1px solid rgba(255,255,255,.46);
+  border-radius:12px; font-size:12px; outline:none; resize:none;
+  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .02)); font-family:inherit; box-sizing:border-box;
+  color:rgba(20,24,28,0.72);
+  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .46)) saturate(112%);
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .46)) saturate(112%);
 }
 #${ID} .mapLogItem{
   display:flex; gap:6px; align-items:baseline;
@@ -5521,7 +5585,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
             overlay.className = 'phAvatarOverlay';
             overlay.setAttribute('data-ph-avatar-overlay','1');
             // ✅ 遮罩样式：仅在 phone root 内生效，不动 document.body
-            overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(30,40,60,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;';
+            overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:9999;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;display:flex;align-items:center;justify-content:center;';
 
             const popup = doc.createElement('div');
             popup.className = 'phAvatarPopup';
@@ -21400,12 +21464,14 @@ const npc = _wxGetChatTargetMeta(npcId);
         root.querySelectorAll('.wxCPOverlay').forEach(o=>o.remove());
         const ov = doc.createElement('div');
         ov.className = 'wxCPOverlay';
-        ov.style.cssText = 'position:absolute;inset:0;z-index:9999;background:rgba(200,196,192,.55);backdrop-filter:blur(32px) saturate(110%);-webkit-backdrop-filter:blur(32px) saturate(110%);display:flex;align-items:center;justify-content:center;padding:12px;';
+        ov.style.cssText = 'position:absolute;inset:0;z-index:9999;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;display:flex;align-items:center;justify-content:center;padding:12px;';
         ov.innerHTML = `<div class="wxCPModal" style="
-          background:rgba(248,246,243,.92);
+          background:var(--ph-glass-strong);
           border-radius:20px;width:100%;max-width:280px;padding:20px;
-          border:1px solid rgba(255,255,255,.82);
-          box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 8px 32px rgba(0,0,0,.1);
+          border:1px solid var(--ph-glass-border);
+          box-shadow:inset 0 1px 0 rgba(255,255,255,.82), 0 14px 34px rgba(80,100,140,.12);
+          backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .72)) saturate(118%);
+          -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .72)) saturate(118%);
           max-height:calc(100% - 48px);overflow-y:auto;
         ">${innerHtml}</div>`;
         ov.addEventListener('click', (e)=>{ if(e.target===ov) ov.remove(); });
