@@ -1113,16 +1113,10 @@ function ensureTuneStyle(){
   box-shadow: 0 2px 8px rgba(100,94,86,.06), inset 0 1px 0 rgba(255,255,255,.90);
 }
 #${ID}[data-theme="frost"] .sOptionBtn.active{
-  background: rgba(255,255,255,.55);
-  backdrop-filter: blur(20px) saturate(130%);
-  -webkit-backdrop-filter: blur(20px) saturate(130%);
-  color: rgba(48,44,40,.9);
-  border-color: rgba(255,255,255,.9);
-  box-shadow:
-    inset 0 1.5px 0 rgba(255,255,255,.95),
-    inset 0 -1px 0 rgba(180,170,158,.15),
-    0 2px 12px rgba(100,94,86,.12);
-  font-weight: 600;
+  background: rgba(48,44,40,.82);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 3px 14px rgba(48,44,40,.18);
 }
 
 /* 发送按钮：宽扁胶囊 */
@@ -1580,47 +1574,6 @@ function ensureTuneStyle(){
   font-size:14px; color:rgba(255,255,255,.4); background:transparent; border:0; cursor:pointer;
   padding:0; flex-shrink:0; line-height:1; align-self:flex-start;
 }
-.meowIncomingCall{
-  position:fixed; top:0; left:0; right:0; width:100%;
-  background:rgba(18,18,24,.96); backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px);
-  border-bottom-left-radius:24px; border-bottom-right-radius:24px;
-  border-bottom:1px solid rgba(255,255,255,.12);
-  padding:32px 20px 28px;
-  box-shadow:0 12px 48px rgba(0,0,0,.6);
-  opacity:0; transform:translateY(-100%);
-  transition:opacity .35s, transform .4s cubic-bezier(.22,1,.36,1);
-  pointer-events:none; z-index:2147483647;
-  display:flex; flex-direction:column; align-items:center; gap:10px;
-}
-.meowIncomingCall.show{ opacity:1; transform:translateY(0); pointer-events:auto; }
-.meowIncomingCall .icAvatar{
-  width:72px; height:72px; border-radius:50%;
-  background:rgba(255,255,255,.15); overflow:hidden;
-  display:flex; align-items:center; justify-content:center;
-  font-size:28px; font-weight:700; color:#fff;
-  box-shadow:0 0 0 4px rgba(255,255,255,.1);
-  animation:icPulse 2s ease-in-out infinite;
-}
-.meowIncomingCall .icAvatar img{ width:100%; height:100%; object-fit:cover; }
-@keyframes icPulse{
-  0%,100%{ box-shadow:0 0 0 4px rgba(255,255,255,.1); }
-  50%{ box-shadow:0 0 0 10px rgba(255,255,255,.04); }
-}
-.meowIncomingCall .icLabel{ font-size:11px; color:rgba(255,255,255,.4); letter-spacing:1px; }
-.meowIncomingCall .icName{ font-size:20px; font-weight:700; color:#fff; }
-.meowIncomingCall .icBtns{ display:flex; gap:32px; margin-top:8px; }
-.meowIncomingCall .icBtn{
-  display:flex; flex-direction:column; align-items:center; gap:6px;
-  font-size:11px; color:rgba(255,255,255,.55); cursor:pointer; background:transparent; border:0;
-}
-.meowIncomingCall .icBtnCircle{
-  width:56px; height:56px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center; font-size:24px;
-  transition:transform .15s;
-}
-.meowIncomingCall .icBtn:active .icBtnCircle{ transform:scale(.92); }
-.meowIncomingCall .icBtnCircle.accept{ background:#22c55e; }
-.meowIncomingCall .icBtnCircle.decline{ background:#ef4444; }
     `;
     (doc.head || doc.documentElement).appendChild(lpSt);
   }catch(e){}
@@ -2327,28 +2280,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   transition:transform .2s ease;
   transform-origin:top left;
 }
-/* frost 主题：所有强调色元素统一磨砂玻璃质感 */
-#${ID}[data-theme="frost"] .wxChatBubble.me .wxCBContent,
-#${ID}[data-theme="frost"] .wxChatSendBtn,
-#${ID}[data-theme="frost"] .phModalBtn.primary,
-#${ID}[data-theme="frost"] .forumPostBtn,
-#${ID}[data-theme="frost"] .forumDMChatSend,
-#${ID}[data-theme="frost"] .forumDMBubble.mine,
-#${ID}[data-theme="frost"] .feedCommentInput button {
-  background: color-mix(in srgb, var(--ph-accent, #a8888e) 62%, rgba(255,255,255,.35)) !important;
-  backdrop-filter: blur(16px) saturate(118%);
-  -webkit-backdrop-filter: blur(16px) saturate(118%);
-  color: rgba(255,255,255,.95) !important;
-  border-color: color-mix(in srgb, var(--ph-accent, #a8888e) 28%, rgba(255,255,255,.55)) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.3), 0 2px 8px rgba(0,0,0,.08) !important;
-}
-/* toggle 开关 */
-#${ID}[data-theme="frost"] .sToggle.on,
-#${ID}[data-theme="frost"] .wxReminderToggle.on {
-  background: color-mix(in srgb, var(--ph-accent, #a8888e) 58%, rgba(255,255,255,.4)) !important;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
+/* frost shell — ring blur is handled by phRingLayer above */
 #${ID}[data-theme="frost"] .phShell{
   background:
     linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,.03)),
@@ -2376,15 +2308,14 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
    actually blurs whatever is behind the phone — real frosted glass. */
 /* ---------- Frosted Ring Layer — 透明手机壳效果 ---------- */
 #${ID} .phRingLayer{
-  display: none;
-  position: absolute;
-  width: calc(375px + 10px); height: calc(750px + 10px);
-  max-width: calc(96vw + 10px); max-height: calc(90vh + 10px);
-  left: 50%; top: 50%;
-  transform: translate(-50%, -50%);
-  border-radius: 43px;
-  z-index: 1;
-  pointer-events: none;
+  display:none;
+  position:absolute;
+  left:-5px; top:-5px;
+  width:385px; height:760px;
+  max-width:calc(96vw + 10px); max-height:calc(90vh + 10px);
+  border-radius:43px;
+  z-index:1;
+  pointer-events:none;
   background: rgba(210,200,185,.32);
   backdrop-filter: blur(6px) saturate(115%);
   -webkit-backdrop-filter: blur(6px) saturate(115%);
@@ -2393,8 +2324,9 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
     inset 0 -1px 0 rgba(150,138,122,.22),
     0 0 0 0.5px rgba(160,148,132,.18),
     0 24px 64px rgba(100,94,86,.16);
+  transform-origin:top left;
 }
-#${ID}.full .phRingLayer{ display: block; }
+#${ID}.full .phRingLayer{ display:block; }
 
 /* frost: 实心透明手机壳质感 */
 #${ID}[data-theme="frost"] .phRingLayer{
@@ -2444,21 +2376,113 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 /* ---------- Zoom bar ---------- */
 #${ID} .phZoomBar{
   display:none; position:absolute; bottom:-48px; left:50%; transform:translateX(-50%);
-  background:rgba(30,30,50,.88); border-radius:22px; padding:5px 12px;
-  gap:10px; align-items:center; z-index:100; white-space:nowrap;
-  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,.15);
-  box-shadow:0 4px 16px rgba(0,0,0,.3);
+  padding:6px 10px; gap:8px; align-items:center; z-index:100; white-space:nowrap;
+  border-radius:20px;
+  background:rgba(30,30,50,.72);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow:0 10px 28px rgba(0,0,0,.20);
 }
 #${ID}.full .phZoomBar{ display:flex; }
 #${ID} .phZoomBtn{
-  appearance:none; border:0; background:rgba(255,255,255,.12); border-radius:50%;
-  width:32px; height:32px; color:#fff; font-size:18px; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; transition:background .15s;
+  appearance:none; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.12); border-radius:999px;
+  width:30px; height:30px; color:#fff; font-size:17px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:background .15s, transform .15s;
   flex-shrink:0;
 }
-#${ID} .phZoomBtn:hover{ background:rgba(255,255,255,.25); }
-#${ID} .phZoomLabel{ color:rgba(255,255,255,.75); font-size:12px; min-width:38px; text-align:center; }
+#${ID} .phZoomBtn:hover{ background:rgba(255,255,255,.20); }
+#${ID} .phZoomLabel{ color:rgba(255,255,255,.78); font-size:12px; min-width:42px; text-align:center; font-weight:600; }
+
+/* ---------- Frost glass active control unifier ---------- */
+#${ID}[data-theme="frost"] .sOptionBtn.active,
+#${ID}[data-theme="frost"] .themeCard.active,
+#${ID}[data-theme="frost"] .weTypeOpt.active,
+#${ID}[data-theme="frost"] .weSizeOpt.active,
+#${ID}[data-theme="frost"] .weShapeOpt.active,
+#${ID}[data-theme="frost"] .settingRow .sToggle.on,
+#${ID}[data-theme="frost"] .sToggle.on,
+#${ID}[data-theme="frost"] .mapToolBtnAccent,
+#${ID}[data-theme="frost"] .mapRoomToolbar button.active,
+#${ID}[data-theme="frost"] .mapEdBtn.on,
+#${ID}[data-theme="frost"] .mapEdEmojiBtn.on,
+#${ID}[data-theme="frost"] .mapEdColorBtn.on,
+#${ID}[data-theme="frost"] .phModalBtn.primary,
+#${ID}[data-theme="frost"] .phAppBody button[style*="var(--ph-accent-grad)"],
+#${ID}[data-theme="frost"] .phAppBody button[style*="background:var(--ph-accent"],
+#${ID}[data-theme="frost"] .phAppBody button[style*="background: var(--ph-accent"],
+#${ID}[data-theme="frost"] .phAppBody .mapActRow[style*="rgba(7,193,96,0.06)"]{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,.14)),
+    color-mix(in srgb, var(--ph-accent, #b89f86) 16%, rgba(255,255,255,.14)) !important;
+  color: color-mix(in srgb, var(--ph-accent, #b89f86) 74%, rgba(36,30,24,.96)) !important;
+  border: 1px solid color-mix(in srgb, var(--ph-accent, #b89f86) 28%, rgba(255,255,255,.60)) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.52), 0 10px 24px rgba(120,106,92,.08) !important;
+  backdrop-filter: blur(calc(var(--phAppBlur, 16px) * .72)) saturate(128%) !important;
+  -webkit-backdrop-filter: blur(calc(var(--phAppBlur, 16px) * .72)) saturate(128%) !important;
+}
+#${ID}[data-theme="frost"] .settingRow .sToggle.on::after,
+#${ID}[data-theme="frost"] .sToggle.on::after{
+  background: rgba(255,255,255,.92) !important;
+  box-shadow: 0 2px 8px rgba(120,108,96,.18) !important;
+}
+#${ID}[data-theme="frost"] .mapEdTab.on{
+  color: color-mix(in srgb, var(--ph-accent, #b89f86) 78%, rgba(30,24,20,.96)) !important;
+  border-bottom-color: color-mix(in srgb, var(--ph-accent, #b89f86) 58%, rgba(255,255,255,.72)) !important;
+}
+#${ID}[data-theme="frost"] .phZoomBar,
+#${ID}[data-theme="frost"] .mapZoomBar,
+#${ID}[data-theme="frost"] .mapRoomZoomBar{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.30), rgba(255,255,255,.12)),
+    rgba(230,226,220,.22) !important;
+  border: 1px solid rgba(255,255,255,.34) !important;
+  box-shadow: 0 14px 32px rgba(95,90,84,.12), inset 0 1px 0 rgba(255,255,255,.45) !important;
+  backdrop-filter: blur(calc(var(--phAppBlur, 16px) * .82)) saturate(132%) !important;
+  -webkit-backdrop-filter: blur(calc(var(--phAppBlur, 16px) * .82)) saturate(132%) !important;
+}
+#${ID}[data-theme="frost"] .phZoomBtn,
+#${ID}[data-theme="frost"] .mapZoomBtn,
+#${ID}[data-theme="frost"] .mapRoomZoomBar button{
+  background: rgba(255,255,255,.22) !important;
+  border: 1px solid rgba(255,255,255,.26) !important;
+  color: rgba(38,34,30,.78) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.48) !important;
+}
+#${ID}[data-theme="frost"] .phZoomLabel,
+#${ID}[data-theme="frost"] .mapRoomTimeLabel{ color: rgba(38,34,30,.72) !important; }
+#${ID} .mapFlatIcon,
+#${ID} .mapDetailEmoji,
+#${ID} .mapFurnSlot .fe{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
+  vertical-align:middle;
+  color: var(--ph-icon-inner-tint, rgba(20,24,28,.56));
+}
+#${ID} .mapFlatIcon svg,
+#${ID} .mapDetailEmoji svg,
+#${ID} .mapEdEmojiBtn svg,
+#${ID} .mapFurnSlot .fe svg{
+  width:100%;
+  height:100%;
+  display:block;
+}
+#${ID} .mapDetailEmoji{ width:44px; height:44px; margin:0 auto 4px; }
+#${ID} .mapEdEmojiBtn{ font-size:0; }
+#${ID} .mapEdEmojiBtn .mapFlatIcon{ width:20px; height:20px; pointer-events:none; }
+#${ID} .mapFurnSlot .fe{ width:22px; height:22px; font-size:0; position:relative; }
+#${ID} .mapFurnSlot.locked .fe::after{
+  content:'';
+  position:absolute;
+  right:-3px;
+  bottom:-2px;
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:rgba(255,255,255,.92);
+  box-shadow:0 1px 4px rgba(0,0,0,.12);
+}
 
 /* ---------- Wallpaper ---------- */
 #${ID} .phWallpaper{
@@ -2889,10 +2913,10 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .phModalMask{
   position:absolute; inset:0; z-index:9999;
   display:flex; align-items:center; justify-content:center;
-  background:transparent;
-  backdrop-filter:none; -webkit-backdrop-filter:none;
+  background:rgba(0,0,0,.18);
+  backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px);
 }
-#${ID}[data-theme="frost"] .phModalMask{ background:transparent; }
+#${ID}[data-theme="frost"] .phModalMask{ background:rgba(0,0,0,.10); }
 #${ID} .phModalCard{
   width:min(330px, calc(100% - 28px));
   border-radius:18px;
@@ -3376,8 +3400,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 /* === Confirm Dialog (删除确认) === */
 #${ID} .wxConfirmOverlay{
   position:absolute; inset:0; z-index:9999;
-  background:transparent;
-  backdrop-filter:none; -webkit-backdrop-filter:none;
+  background:rgba(0,0,0,.45);
   display:flex; align-items:center; justify-content:center;
   animation:phFadeIn .15s ease-out;
 }
@@ -3717,8 +3740,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 /* === 编辑消息弹窗 === */
 #${ID} .wxEditMsgOverlay{
   position:absolute; inset:0; z-index:9000;
-  background:transparent; backdrop-filter:none; -webkit-backdrop-filter:none;
-  display:flex; align-items:center; justify-content:center;
+  background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center;
   padding:20px; animation:wxCPFadeIn .16s ease;
 }
 #${ID} .wxEditMsgBox{
@@ -4268,7 +4290,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 /* 头像自定义弹窗 */
 #${ID} .phAvatarPopup{
   position:absolute; inset:0; z-index:90;
-  background:transparent; backdrop-filter:none; -webkit-backdrop-filter:none;
+  background:rgba(20,30,50,.18); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
   display:flex; flex-direction:column; justify-content:center; align-items:center;
 }
 #${ID} .phAvatarPopupInner{
@@ -4277,61 +4299,6 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   border:1px solid rgba(255,255,255,.9);
   box-shadow:0 12px 40px rgba(80,100,140,.18);
 }
-
-/* ---------- Overlay Mask Cleanup + Map Frost Glass ---------- */
-#${ID} .phModalMask,
-#${ID} .wxConfirmOverlay,
-#${ID} .wxEditMsgOverlay,
-#${ID} .wxCPOverlay,
-#${ID} .mapDetailOverlay,
-#${ID} .phAvatarOverlay,
-#${ID} .phAvatarPopup{
-  background:transparent !important;
-  backdrop-filter:none !important;
-  -webkit-backdrop-filter:none !important;
-}
-#${ID} .wxConfirmBox,
-#${ID} .wxEditMsgBox,
-#${ID} .phModalCard,
-#${ID} .phAvatarPopupInner,
-#${ID} .wxCPModal{
-  background:var(--ph-glass-strong) !important;
-  border:1px solid var(--ph-glass-border) !important;
-  box-shadow:0 12px 34px rgba(80,100,140,.12), 0 1px 0 rgba(255,255,255,.80) inset !important;
-  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .72)) saturate(118%) !important;
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .72)) saturate(118%) !important;
-}
-#${ID} .mapDetailCard,
-#${ID} .mapRoomHeader,
-#${ID} .mapEditorBar{
-  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .08)) !important;
-  border-color:rgba(255,255,255,.48) !important;
-  box-shadow:0 12px 32px rgba(80,100,140,.10), 0 1px 0 rgba(255,255,255,.80) inset !important;
-  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .74)) saturate(118%) !important;
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .74)) saturate(118%) !important;
-}
-#${ID} .mapDetailSectionTitle{ color:var(--ph-text-dim) !important; }
-#${ID} .mapActRow,
-#${ID} .mapNoteInput,
-#${ID} .mapRoomZoomBar button,
-#${ID} .mapZoomBtn,
-#${ID} .mapToolBtn,
-#${ID} .mapRoomToolbar button,
-#${ID} .mapEdBtn,
-#${ID} .mapEdEmojiBtn{
-  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .03)) !important;
-  border-color:rgba(255,255,255,.42) !important;
-  box-shadow:0 8px 18px rgba(80,100,140,.06), 0 1px 0 rgba(255,255,255,.72) inset !important;
-  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .54)) saturate(114%) !important;
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .54)) saturate(114%) !important;
-}
-#${ID} .mapToolBtnAccent{
-  background:var(--ph-accent-grad) !important;
-  border-color:transparent !important;
-  color:#fff !important;
-  box-shadow:0 10px 22px rgba(80,100,140,.10) !important;
-}
-
 
 /* ---------- Forum (Weibo-like) ---------- */
 #${ID} .forumHeader{
@@ -4694,9 +4661,10 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   display:flex; align-items:center; justify-content:center; gap:4px;
 }
 #${ID} .mapToolBtnAccent{
-  background: var(--ph-accent-grad);
-  color: #fff !important;
-  border-color: transparent;
+  background: linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,.14)), color-mix(in srgb, var(--ph-accent, #b89f86) 16%, rgba(255,255,255,.12));
+  color: color-mix(in srgb, var(--ph-accent, #b89f86) 76%, rgba(36,30,24,.96)) !important;
+  border-color: color-mix(in srgb, var(--ph-accent, #b89f86) 28%, rgba(255,255,255,.55));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.52), 0 8px 18px rgba(120,106,92,.08);
 }
 #${ID} .mapToolBtn:active{ transform:scale(0.96); }
 /* Map Detail Overlay */
@@ -4711,13 +4679,11 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 @keyframes mapFadeIn{ from{opacity:0;} to{opacity:1;} }
 #${ID} .mapDetailCard{
   width:92%; max-height:72%; overflow-y:auto;
-  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .08));
-  border-radius:24px 24px 0 0; padding:16px;
-  box-shadow:0 -8px 36px rgba(80,100,140,.10), 0 1px 0 rgba(255,255,255,.82) inset;
-  border:1px solid rgba(255,255,255,.62);
+  background: linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,.14)), rgba(248,245,240, 0.54);
+  border-radius:22px 22px 0 0; padding:16px;
+  box-shadow:0 -6px 32px rgba(100,94,86,.16);
+  border:1px solid rgba(255,255,255,.60);
   border-bottom:none;
-  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .78)) saturate(118%);
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .78)) saturate(118%);
   animation:mapSlideUp .25s ease;
   scrollbar-width:none;
   position:relative; z-index:1;
@@ -4742,15 +4708,12 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID} .mapActRow{
   display:flex; align-items:center; gap:8px;
-  padding:10px 12px; margin-bottom:6px;
-  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .04)); border-radius:14px;
-  border:1px solid rgba(255,255,255,.46); cursor:pointer;
-  box-shadow:0 1px 0 rgba(255,255,255,.72) inset, 0 8px 18px rgba(80,100,140,.05);
-  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .52)) saturate(115%);
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .52)) saturate(115%);
-  transition:background .15s, transform .15s;
+  padding:10px 12px; margin-bottom:4px;
+  background:rgba(255,255,255,0.5); border-radius:10px;
+  border:1px solid rgba(0,0,0,0.04); cursor:pointer;
+  transition:background .15s;
 }
-#${ID} .mapActRow:hover{ background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .10)); }
+#${ID} .mapActRow:hover{ background:rgba(255,255,255,0.8); }
 #${ID} .mapActRow:active{ transform:scale(0.98); }
 #${ID} .mapActLabel{ flex:1; font-size:13px; font-weight:500; color:rgba(20,24,28,0.8); }
 #${ID} .mapActCost{ font-size:12px; color:#e67e22; font-weight:600; }
@@ -4762,12 +4725,10 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   background:transparent; outline:none; width:120px; color:rgba(20,24,28,0.85);
 }
 #${ID} .mapNoteInput{
-  width:100%; padding:8px 10px; border:1px solid rgba(255,255,255,.46);
-  border-radius:12px; font-size:12px; outline:none; resize:none;
-  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .02)); font-family:inherit; box-sizing:border-box;
-  color:rgba(20,24,28,0.72);
-  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .46)) saturate(112%);
-  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .46)) saturate(112%);
+  width:100%; padding:8px 10px; border:1px solid rgba(0,0,0,0.06);
+  border-radius:8px; font-size:12px; outline:none; resize:none;
+  background:rgba(255,255,255,0.4); font-family:inherit; box-sizing:border-box;
+  color:rgba(20,24,28,0.7);
 }
 #${ID} .mapLogItem{
   display:flex; gap:6px; align-items:baseline;
@@ -4800,7 +4761,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   font-size:11px; cursor:pointer; color:rgba(20,24,28,0.6); transition:all .15s;
 }
 #${ID} .mapRoomToolbar button:hover{ background:rgba(0,0,0,0.1); }
-#${ID} .mapRoomToolbar button.active{ background:rgba(100,160,80,0.2); color:#4A8A3A; }
+#${ID} .mapRoomToolbar button.active{ background:linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,.14)), color-mix(in srgb, var(--ph-accent, #b89f86) 14%, rgba(255,255,255,.12)); color:color-mix(in srgb, var(--ph-accent, #b89f86) 76%, rgba(36,30,24,.96)); border:1px solid color-mix(in srgb, var(--ph-accent, #b89f86) 28%, rgba(255,255,255,.55)); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px); }
 #${ID} .mapRoomSvgWrap{
   flex:1; min-height:200px; display:flex; align-items:center; justify-content:center; overflow:hidden;
   position:relative; touch-action:none; user-select:none; -webkit-user-select:none;
@@ -4910,7 +4871,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   color:rgba(20,24,28,0.65);
 }
 #${ID} .mapEdBtn:active{ transform:scale(0.95); }
-#${ID} .mapEdBtn.on{ background:var(--ph-accent,#07c160); color:#fff; border-color:transparent; }
+#${ID} .mapEdBtn.on{ background:linear-gradient(180deg, rgba(255,255,255,.34), rgba(255,255,255,.14)), color-mix(in srgb, var(--ph-accent, #b89f86) 14%, rgba(255,255,255,.12)); color:color-mix(in srgb, var(--ph-accent, #b89f86) 76%, rgba(36,30,24,.96)); border-color:color-mix(in srgb, var(--ph-accent, #b89f86) 28%, rgba(255,255,255,.55)); box-shadow:inset 0 1px 0 rgba(255,255,255,.52), 0 8px 18px rgba(120,106,92,.08); }
 #${ID} .mapEdBtn.danger{ color:#e74c3c; border-color:rgba(231,76,60,0.2); }
 #${ID} .mapEdEmojiGrid{
   display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;
@@ -4921,13 +4882,13 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   display:flex; align-items:center; justify-content:center;
 }
 #${ID} .mapEdEmojiBtn:hover{ background:rgba(0,0,0,0.05); }
-#${ID} .mapEdEmojiBtn.on{ border-color:var(--ph-accent,#07c160); background:rgba(7,193,96,0.1); }
+#${ID} .mapEdEmojiBtn.on{ border-color:color-mix(in srgb, var(--ph-accent, #b89f86) 28%, rgba(255,255,255,.55)); background:linear-gradient(180deg, rgba(255,255,255,.30), rgba(255,255,255,.12)), color-mix(in srgb, var(--ph-accent, #b89f86) 14%, rgba(255,255,255,.10)); box-shadow:inset 0 1px 0 rgba(255,255,255,.48), 0 8px 18px rgba(120,106,92,.08); }
 #${ID} .mapEdColorRow{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
 #${ID} .mapEdColorBtn{
   width:28px; height:28px; border-radius:50%; cursor:pointer;
   border:2px solid transparent; transition:border-color .15s;
 }
-#${ID} .mapEdColorBtn.on{ border-color:var(--ph-accent,#07c160); box-shadow:0 0 0 2px rgba(7,193,96,0.2); }
+#${ID} .mapEdColorBtn.on{ border-color:color-mix(in srgb, var(--ph-accent, #b89f86) 32%, rgba(255,255,255,.55)); box-shadow:0 0 0 2px color-mix(in srgb, var(--ph-accent, #b89f86) 18%, rgba(255,255,255,.10)); }
 /* Editor overlay: control points */
 #${ID} .mapCtrlPt{
   cursor:grab; transition:r 0.1s;
@@ -5585,7 +5546,7 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
             overlay.className = 'phAvatarOverlay';
             overlay.setAttribute('data-ph-avatar-overlay','1');
             // ✅ 遮罩样式：仅在 phone root 内生效，不动 document.body
-            overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:9999;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;display:flex;align-items:center;justify-content:center;';
+            overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(30,40,60,.22);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;';
 
             const popup = doc.createElement('div');
             popup.className = 'phAvatarPopup';
@@ -6523,18 +6484,10 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             return;
           }
           if (act === 'wxCHDelSummary'){
-            e.stopPropagation();
             const nid = t.getAttribute('data-chnpcid');
             if (!nid) return;
-            // 移除 thread 里的总结数据
-            try{ saveChatSummary(nid, { summaryText:'', updatedAt:0 }); }catch(e2){}
-            // 同时从 threads 里删除该 thread
-            try{
-              var _ths = loadThreads();
-              _ths.list = _safeArr(_ths.list).filter(function(x){ return String(x.id) !== String(nid); });
-              saveThreads(_ths);
-            }catch(e2){}
-            try{ toast('已删除'); }catch(e2){}
+            try{ saveChatSummary(nid, { summaryText:'', updatedAt:0 }); }catch(e){}
+            try{ toast('已删除总结'); }catch(e){}
             const c = root.querySelector('[data-ph="chatTabContent"]');
             if (c) renderChatHistoryPage(c);
             return;
@@ -6634,37 +6587,6 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
                 }
               }catch(e){ try{toast('生成异常');}catch(_){} }
             })();
-            return;
-          }
-          if (act === 'wxCHDetailEdit'){
-            const nid = t.getAttribute('data-chnpcid');
-            if (!nid) return;
-            const sumData = getChatSummary(nid, _getChatMode(nid));
-            const curText = (sumData && sumData.summaryText) || '';
-            // 弹出编辑弹层
-            const editOv = doc.createElement('div');
-            editOv.style.cssText = 'position:absolute;inset:0;z-index:99999;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:12px;';
-            editOv.innerHTML = '<div style="width:100%;max-width:280px;max-height:calc(100% - 24px);background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.18);overflow-y:auto;">'
-              + '<div style="font-size:14px;font-weight:600;color:rgba(20,24,28,.82);">编辑总结</div>'
-              + '<textarea data-el="chEditTA" style="width:100%;height:240px;border:1px solid rgba(0,0,0,.1);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.65;resize:vertical;box-sizing:border-box;background:rgba(255,255,255,.9);color:rgba(20,24,28,.82);font-family:inherit;outline:none;">'+esc(curText)+'</textarea>'
-              + '<div style="display:flex;gap:8px;justify-content:flex-end;">'
-              + '<button data-el="chEditCancel" style="padding:8px 18px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.92);font-size:13px;cursor:pointer;color:rgba(20,24,28,.6);">取消</button>'
-              + '<button data-el="chEditSave" style="padding:8px 18px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>'
-              + '</div></div>';
-            root.appendChild(editOv);
-            const ta = editOv.querySelector('[data-el="chEditTA"]');
-            if (ta) setTimeout(function(){ ta.focus(); }, 100);
-            editOv.querySelector('[data-el="chEditCancel"]').addEventListener('click', function(){ editOv.remove(); });
-            editOv.querySelector('[data-el="chEditSave"]').addEventListener('click', function(){
-              const newText = ta ? ta.value : '';
-              const sd = getChatSummary(nid, _getChatMode(nid)) || {};
-              sd.summaryText = newText;
-              sd.updatedAt = Date.now();
-              saveChatSummary(nid, sd, _getChatMode(nid));
-              editOv.remove();
-              try{ toast('总结已保存'); }catch(e2){}
-              renderChatHistoryDetailPage(nid);
-            });
             return;
           }
           if (act === 'wxCHDetailClear'){
@@ -8494,9 +8416,6 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
         }catch(e){}
         renderApp(id);
       }
-
-      // ★ 来电弹窗共享引用（已移至外层，此行保留作兼容占位）
-      var _triggerIncomingCall = null;
 
       function openChat(contactId){
         state._innerStack = [];
@@ -10826,7 +10745,6 @@ ${lines}
         // 底部操作栏
         html += `<div style="display:flex;gap:8px;justify-content:center;padding-top:8px;">
           <button data-act="wxCHDetailCopy" data-chnpcid="${esc(npcId)}" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">📋 复制</button>
-          <button data-act="wxCHDetailEdit" data-chnpcid="${esc(npcId)}" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">✏️ 编辑</button>
           <button data-act="wxCHDetailRegen" data-chnpcid="${esc(npcId)}" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">🔄 重新生成</button>
           <button data-act="wxCHDetailClear" data-chnpcid="${esc(npcId)}" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);font-size:12px;color:#ef4444;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;">🗑 清空</button>
         </div>`;
@@ -14510,48 +14428,23 @@ const npc = _wxGetChatTargetMeta(npcId);
           tip.innerHTML = '<em class="rpAction">（场景就绪，等待你的行动…）</em>';
           msgs.appendChild(tip);
         } else {
-          // ★ 分页：默认渲染最近 50 条，顶部加「查看更早消息」按钮
-          var OFFLINE_PAGE = 50;
-          var _offOffset = Math.max(0, log.length - OFFLINE_PAGE);
-
-          function _renderOfflinePage(fromIdx){
-            msgs.innerHTML = '';
-            // 顶部加载更早按钮
-            if(fromIdx > 0){
-              var loadMoreBtn = doc.createElement('div');
-              loadMoreBtn.style.cssText = 'text-align:center;padding:8px 0 4px;';
-              var _earlier = Math.min(fromIdx, OFFLINE_PAGE);
-              loadMoreBtn.innerHTML = '<button style="font-size:11px;padding:5px 14px;border-radius:20px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.85);color:rgba(20,24,28,.5);cursor:pointer;">查看更早的 '+_earlier+' 条</button>';
-              loadMoreBtn.querySelector('button').addEventListener('click', function(){
-                _offOffset = Math.max(0, fromIdx - OFFLINE_PAGE);
-                _renderOfflinePage(_offOffset);
-                requestAnimationFrame(function(){ try{ msgs.scrollTop = 0; }catch(e){} });
-              });
-              msgs.appendChild(loadMoreBtn);
+          var lastTimeLabel = '';
+          for (var i = 0; i < log.length; i++){
+            var x = log[i];
+            // ★ 时间分隔线：每隔一段时间或每条消息都显示时间+地点
+            var _msgTime = _fmtTime(x.t || _now());
+            if(_msgTime !== lastTimeLabel){
+              var timeSep = doc.createElement('div');
+              timeSep.className = 'wxOfflineTimeSep';
+              var _sceneLabel = (scene && scene.name) ? ' · ' + scene.name : '';
+              timeSep.textContent = _msgTime + _sceneLabel;
+              msgs.appendChild(timeSep);
+              lastTimeLabel = _msgTime;
             }
-            var slice = log.slice(fromIdx);
-            var lastTimeLabel = '';
-            for(var i = 0; i < slice.length; i++){
-              var x = slice[i];
-              var _msgTime = _fmtTime(x.t || _now());
-              if(_msgTime !== lastTimeLabel){
-                var timeSep = doc.createElement('div');
-                timeSep.className = 'wxOfflineTimeSep';
-                var _sceneLabel = (scene && scene.name) ? ' · '+scene.name : '';
-                timeSep.textContent = _msgTime + _sceneLabel;
-                msgs.appendChild(timeSep);
-                lastTimeLabel = _msgTime;
-              }
-              _renderOfflineParagraph(msgs, npc, x.role, x.text, x.t, x);
-            }
+            _renderOfflineParagraph(msgs, npc, x.role, x.text, x.t, x);
           }
-
-          _renderOfflinePage(_offOffset);
-          // 供 _refreshChatUI 重绑定用
-          if(msgs) msgs._renderOfflinePage = _renderOfflinePage;
         }
         requestAnimationFrame(function(){ try{ msgs.scrollTop = msgs.scrollHeight; }catch(e){} });
-        _initBubbleLongPress();
       }
 
       /* --- 子渲染：填充历史消息 --- */
@@ -14576,12 +14469,11 @@ const npc = _wxGetChatTargetMeta(npcId);
             if(fromIdx > 0){
               const loadMoreBtn = doc.createElement('div');
               loadMoreBtn.style.cssText = 'text-align:center;padding:8px 0 4px;';
-              var _canLoad = Math.min(fromIdx, PAGE);
-              loadMoreBtn.innerHTML = '<button style="font-size:11px;padding:5px 14px;border-radius:20px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.85);color:rgba(20,24,28,.5);cursor:pointer;">查看更早的 ' + _canLoad + ' 条（共' + fromIdx + '条更早）</button>';
+              loadMoreBtn.innerHTML = '<button style="font-size:11px;padding:5px 14px;border-radius:20px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.85);color:rgba(20,24,28,.5);cursor:pointer;">查看更早的 ' + Math.min(fromIdx, PAGE) + ' 条消息</button>';
               loadMoreBtn.querySelector('button').addEventListener('click', function(){
                 var newFrom = Math.max(0, fromIdx - PAGE);
                 _offset = newFrom;
-                _renderPage(newFrom, true);
+                _renderPage(newFrom, false);
               });
               msgs.appendChild(loadMoreBtn);
             }
@@ -14890,9 +14782,9 @@ const npc = _wxGetChatTargetMeta(npcId);
                     <span style="font-size:12px;color:rgba(20,24,28,.55);flex:1;">楼自动生成一次总结</span>
                   </div>
                   <div style="font-size:11px;color:rgba(20,24,28,.45);margin-bottom:6px;">线上总结词：</div>
-                  <textarea data-el="sumPromptOnline" rows="3" placeholder="例如：更偏手机聊天纪要、关系变化、关键信息点" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;background:rgba(255,255,255,.6);">${esc(charEx.onlineSummaryPrompt||'你是剧情记录员，只记录客观发生的事，不做任何评价或定论。对话有时间范围标注，请在 storyTime 里写出日期和时段。请输出纯 JSON：{"storyTime":"日期+时段","facts":["发生了什么事（只写事实）"],"quotes":["值得记录的原话"],"events":["具体事件，只写发生了什么"],"props":["出现的物品/地点"],"todos":[{"text":"待办","done":false}]}。严禁出现"关系取得突破""首次主动""关系进一步"之类的评价性语言。')}</textarea>
+                  <textarea data-el="sumPromptOnline" rows="3" placeholder="例如：更偏手机聊天纪要、关系变化、关键信息点" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;background:rgba(255,255,255,.6);">${esc(charEx.onlineSummaryPrompt||'')}</textarea>
                   <div style="font-size:11px;color:rgba(20,24,28,.45);margin:10px 0 6px;">线下总结模板：</div>
-                  <textarea data-el="sumPromptOffline" rows="3" placeholder="例如：更偏线下见面、动作、场景、事件推进" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;background:rgba(255,255,255,.6);">${esc(charEx.offlineSummaryTemplate||'你是剧情记录员，只记录客观发生的事，不做任何评价或定论。以下内容来自线下见面/场景互动，对话有时间范围标注，请在 storyTime 里写出日期和时段。请输出纯 JSON：{"storyTime":"日期+时段","facts":["发生了什么事（只写事实）"],"quotes":["值得记录的原话"],"events":["具体事件，只写发生了什么"],"props":["出现的物品/地点"],"todos":[{"text":"待办","done":false}]}。严禁出现评价性语言，只记录行为本身。')}</textarea>
+                  <textarea data-el="sumPromptOffline" rows="3" placeholder="例如：更偏线下见面、动作、场景、事件推进" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;background:rgba(255,255,255,.6);">${esc(charEx.offlineSummaryTemplate||'')}</textarea>
                   <div style="font-size:11px;color:rgba(20,24,28,.45);margin:10px 0 6px;">聊天专属总结词：</div>
                   <textarea data-el="sumPromptChat" rows="3" placeholder="该角色专属总结补充，线上线下都会带上" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.08);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;background:rgba(255,255,255,.6);">${esc(sharedPrompt)}</textarea>
                   <div style="font-size:11px;color:rgba(20,24,28,.45);margin:10px 0 6px;">线上聊天附加提示词：</div>
@@ -16050,18 +15942,6 @@ const npc = _wxGetChatTargetMeta(npcId);
             <div style="margin-top:6px;height:60px;background:linear-gradient(135deg,#e8f5e9,#c8e6c9);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:20px;">🗺️</div>
             ${editedTag}
           </div>`;
-        } else if (mt === 'landmark'){
-          var _lmEmoji = esc(meta.landmarkEmoji || '📍');
-          var _lmDesc2 = meta.desc ? '<div style="font-size:10px;color:rgba(20,24,28,.4);margin-top:2px;">'+esc(meta.desc)+'</div>' : '';
-          var _lmFrom = meta.fromNpc ? '<div style="font-size:10px;color:rgba(20,24,28,.3);margin-top:3px;">邀你前往</div>' : '';
-          contentHtml = '<div class="wxCBContent wxCBSpecial" style="padding:0;overflow:hidden;border-radius:10px;min-width:160px;cursor:pointer;" data-act="wxLandmarkTap" data-lmname="'+esc(meta.landmarkName||'')+'">'
-            + '<div style="height:52px;background:linear-gradient(135deg,#e8f5e9,#a5d6a7);display:flex;align-items:center;justify-content:center;font-size:28px;">'+_lmEmoji+'</div>'
-            + '<div style="padding:7px 10px 8px;background:rgba(255,255,255,.95);">'
-            + '<div style="font-size:12px;font-weight:600;">📍 '+esc(meta.landmarkName||'位置')+'</div>'
-            + _lmDesc2 + _lmFrom
-            + '</div>'
-            + editedTag
-            + '</div>';
         } else if (mt === 'redpack'){
           contentHtml = `<div class="wxCBContent wxCBSpecial" style="padding:0;overflow:hidden;border-radius:10px;min-width:180px;">
             <div style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;padding:12px 14px;">
@@ -16197,111 +16077,23 @@ const npc = _wxGetChatTargetMeta(npcId);
             signal: AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined
           });
           if (!resp.ok) return { ok:false, error:'TTS API 错误 ' + resp.status };
-          // ★ 兼容三种返回格式：1) 直接音频流  2) JSON {audioUrl}  3) JSON {audio: base64}
-          var contentType = resp.headers.get('content-type') || '';
-          var audioUrl;
-          if (contentType.indexOf('application/json') >= 0 || contentType.indexOf('text/json') >= 0){
-            var json = await resp.json();
-            if (json.audioUrl || json.audio_url || json.url){
-              audioUrl = json.audioUrl || json.audio_url || json.url;
-            } else if (json.audio){
-              var b64 = json.audio;
-              var byteChars = atob(b64);
-              var byteArr = new Uint8Array(byteChars.length);
-              for (var _i=0; _i<byteChars.length; _i++) byteArr[_i] = byteChars.charCodeAt(_i);
-              var blob2 = new Blob([byteArr], { type:'audio/mpeg' });
-              audioUrl = URL.createObjectURL(blob2);
-            } else {
-              return { ok:false, error:'TTS返回JSON但无法找到音频字段' };
-            }
-          } else {
-            var blob = await resp.blob();
-            audioUrl = URL.createObjectURL(blob);
-          }
+          var blob = await resp.blob();
+          var audioUrl = URL.createObjectURL(blob);
           return { ok:true, audioUrl: audioUrl };
         }catch(e){
           return { ok:false, error: String(e && e.message || e) };
         }
       }
 
-      // ★ 来电弹窗
-      function _showIncomingCall(npcId, npcName, avatarHint, callType, onAccept, onDecline){
-        // 手机没打开就先打开，再重试
-        var _shell = document.querySelector('#meow-phone-root .phShell');
-        if(!_shell){
-          try{ MEOW.phone.showFull(); }catch(e){}
-          setTimeout(function(){ _showIncomingCall(npcId, npcName, avatarHint, callType, onAccept, onDecline); }, 700);
-          return;
-        }
-        // 清除旧来电
-        _shell.querySelectorAll('.meowIncomingCallOv').forEach(function(e){ e.remove(); });
-
-        var _img = (typeof phoneGetAvatar==='function') ? phoneGetAvatar(npcId) : null;
-        var _av = _img ? '<img src="'+_img+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>'
-                       : '<span style="font-size:32px;font-weight:700;color:#fff;">'+(npcName||'?').charAt(0)+'</span>';
-
-        var ov = document.createElement('div');
-        ov.className = 'meowIncomingCallOv';
-        ov.setAttribute('style',
-          'position:absolute !important;top:0 !important;left:0 !important;right:0 !important;bottom:0 !important;'
-          +'z-index:99999 !important;background:rgba(18,18,24,.95);'
-          +'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;');
-        ov.innerHTML = ''
-          +'<div style="font-size:11px;color:rgba(255,255,255,.4);letter-spacing:1.5px;">'+(callType==='video'?'📹 视频通话来电':'📞 语音通话来电')+'</div>'
-          +'<div style="width:84px;height:84px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 0 0 8px rgba(255,255,255,.06);">'+_av+'</div>'
-          +'<div style="font-size:22px;font-weight:700;color:#fff;">'+(npcName||npcId||'')+'</div>'
-          +'<div style="display:flex;gap:60px;margin-top:12px;">'
-            +'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">'
-              +'<button data-ic="decline" style="width:64px;height:64px;border-radius:50%;background:#ef4444;border:0;font-size:28px;cursor:pointer;">📵</button>'
-              +'<span style="font-size:12px;color:rgba(255,255,255,.5);">拒接</span>'
-            +'</div>'
-            +'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;">'
-              +'<button data-ic="accept" style="width:64px;height:64px;border-radius:50%;background:#22c55e;border:0;font-size:28px;cursor:pointer;">📞</button>'
-              +'<span style="font-size:12px;color:rgba(255,255,255,.5);">接听</span>'
-            +'</div>'
-          +'</div>';
-
-        _shell.appendChild(ov);
-        try{ if(navigator.vibrate) navigator.vibrate([300,200,300]); }catch(e){}
-
-        var _done = false;
-        function _dismiss(){ if(!_done){ _done=true; if(ov.isConnected) ov.remove(); } }
-        var _hang = setTimeout(function(){
-          if(!_done){ _dismiss();
-            try{ pushLog(npcId,'system','📵 未接来电（'+(npcName||npcId)+'）'); bumpThread(npcId,{lastMsg:'📵 未接来电',lastTime:Date.now(),unread:1}); }catch(e){}
-          }
-        }, 25000);
-        ov.querySelector('[data-ic="accept"]').addEventListener('click', function(e){
-          e.stopPropagation(); clearTimeout(_hang); _dismiss();
-          try{ if(onAccept) onAccept(); }catch(e2){ console.warn('[IC]',e2); }
-        });
-        ov.querySelector('[data-ic="decline"]').addEventListener('click', function(e){
-          e.stopPropagation(); clearTimeout(_hang); _dismiss();
-          try{ if(onDecline) onDecline(); }catch(e2){}
-        });
-      }
-      try{ window._meowIncomingCall = _showIncomingCall; }catch(e){}
-      try{ window._meowStartCall = function(npcId, callType, isIncoming){
-        try{
-          var _db = loadContactsDB();
-          var _npc = findContactById(_db, npcId) || {id:npcId, name:String(npcId), avatar:''};
-          _cpStartCall(npcId, _npc, callType || 'voice', !!isIncoming);
-        }catch(e){ console.warn('[meowStartCall]', e); }
-      }; }catch(e){}
-
-      // ===== _writeAIReply：统一写入 AI 回复气泡 =====
+      // ===== _writeAIReply：统一写入 AI 回复气泡（处理语音/表情标记）=====
       async function _writeAIReply(npcId, npc, rawText, ts){
         var parsed = _parseAISpecialTags(rawText);
         var cleanText = parsed.cleanText || rawText;
-        // 二次兜底：确保没有系统标签残留在显示文本中（含跨行、不完整括号情形）
-        cleanText = cleanText
-                             .replace(/\[属性[:：][^\]]*?\]?/gis, '')
-                             .replace(/\[状态[:：][^\]]*?\]?/gis, '')
+        // 二次兜底：确保没有系统标签残留在显示文本中
+        cleanText = cleanText.replace(/\[属性[:：][^\]]*\]?/gi, '')
+                             .replace(/\[状态[:：][^\]]*\]?/gi, '')
                              .replace(/\[发语音\]/gi, '')
-                             .replace(/\[发位置[:：][^\]]*?\]?/gi, '')
-                             .replace(/\[发表情[:：][^\]]*?\]?/gi, '')
-                             // 当前属性值：... 这整行也清掉
-                             .replace(/当前属性值：[^\n]*/g, '')
+                             .replace(/\[发表情[:：][^\]]*\]?/gi, '')
                              // ★ 清理 rpAction 等伪标签（所有变体：有无引号、有无>、跨行）
                              .replace(/"rpAction"\s*>?\s*/g, '')
                              .replace(/"rpDialog"\s*>?\s*/g, '')
@@ -16353,30 +16145,6 @@ const npc = _wxGetChatTargetMeta(npcId);
               _saveCharState(npcId, _sAttr);
             }
           }catch(e){ console.warn('[AttrChange] error:', e); }
-        }
-
-        // ★ NPC 主动发地标位置卡片
-        if (parsed.sendLocation){
-          try{
-            var _mapDL = _mapLoad();
-            var _lmL = (_mapDL&&_mapDL.landmarks||[]).find(function(l){ return (l.customName||l.name)===parsed.sendLocation; });
-            var _lmMetaL = {
-              type: 'landmark',
-              landmarkName: parsed.sendLocation,
-              landmarkEmoji: _lmL ? _lmL.emoji : '📍',
-              desc: _lmL ? (_lmL.tags||[]).slice(0,2).map(function(t){ var m={trees:'绿树环绕',flowers:'鲜花盛开',coffee:'咖啡飘香',cozy:'温馨舒适',sea:'海风轻拂',quiet:'安静祥和',art:'艺术气息',books:'书香满溢',campfire:'篝火温暖',stars:'星空璀璨',food:'美食飘香',exercise:'充满活力'}; return m[t]||t; }).filter(Boolean).join('、') : '',
-              fromNpc: true,
-              _logText: '[地标] '+parsed.sendLocation
-            };
-            var _msgsLoc = root.querySelector('[data-ph="chatMsgs"]');
-            pushLog(npcId, 'them', '[地标] '+parsed.sendLocation);
-            bumpThread(npcId, { lastMsg:'📍 '+parsed.sendLocation, lastTime:ts, unread:0 });
-            if(_msgsLoc){ _wxAppendBubble(_msgsLoc, npc, 'them', '[地标] '+parsed.sendLocation, ts, _lmMetaL); requestAnimationFrame(function(){ _msgsLoc.scrollTop = _msgsLoc.scrollHeight; }); }
-          }catch(e){}
-          // 如果没有附加文字就直接结束
-          if (!cleanText || cleanText === '…') return;
-          // 稍微延迟再发文字（让地标卡和文字分两条）
-          await new Promise(function(r){ setTimeout(r, 400); });
         }
 
         // 写消息日志
@@ -16454,76 +16222,6 @@ const npc = _wxGetChatTargetMeta(npcId);
             }
           }catch(e){}
         }
-
-        // ★ 检测 NPC 消息里是否主动提出打电话/语音/连麦 → 延迟弹来电弹窗
-        // 检测范围：当前这条 + 最近10条 them 消息（防止关键词出现在上一条但当前条没有）
-        try{
-          var _callKeywords = /打电话|语音通话|语音吧|连麦|视频通话|视频吧|给你打|打给你|接一下|接电话|通个话|打过去|打过来|要不要打|要不打个|\[发起通话\]/;
-          // 冷却：10分钟内不重复弹
-          var _callCooldownKey = 'meow_call_trigger_' + String(npcId);
-          var _lastCallTrigger = 0;
-          try{ _lastCallTrigger = parseInt(localStorage.getItem(_callCooldownKey)||'0')||0; }catch(e){}
-          var _callCooldownOk = Date.now() - _lastCallTrigger > 10 * 60 * 1000;
-
-          if(_callCooldownOk){
-            // 先检测当前这条
-            var _hitText = '';
-            if(_callKeywords.test(cleanText)){
-              _hitText = cleanText;
-            } else {
-              // 再扫最近10条 them 消息
-              try{
-                var _recentLog = _getLogForModeBranch ? _getLogForModeBranch(npcId, _getChatMode(npcId)) : [];
-                var _recentThem = _recentLog.filter(function(m){ return m.role==='them' && !m.recalled; }).slice(-10);
-                for(var _ri=_recentThem.length-1; _ri>=0; _ri--){
-                  if(_callKeywords.test(_recentThem[_ri].text||'')){
-                    _hitText = _recentThem[_ri].text;
-                    break;
-                  }
-                }
-              }catch(e){}
-            }
-
-            if(_hitText){
-              try{ localStorage.setItem(_callCooldownKey, String(Date.now())); }catch(e){}
-              var _db_ck = loadContactsDB();
-              var _npc_ck = findContactById(_db_ck, npcId) || { id:npcId, name:String(npcId), avatar:'' };
-              var _isVideo = /视频/.test(_hitText);
-              setTimeout(function(){
-                if(typeof _showIncomingCall === 'function'){
-                  _showIncomingCall(npcId, _npc_ck.name||npcId, _npc_ck.avatar||'', _isVideo?'video':'voice',
-                    function(){ // 接听
-                      try{
-                        var _ct2 = _isVideo ? 'video' : 'voice';
-                        if(state.app !== 'chatDetail' || state.chatTarget !== npcId){ openChat(npcId); }
-                        setTimeout(function(){
-                          try{
-                            if(typeof window._meowStartCall==='function') window._meowStartCall(npcId, _ct2, true);
-                          }catch(e){ console.warn('[IC accept]',e); }
-                        }, 300);
-                      }catch(e){}
-                    },
-                    function(){ // 拒接
-                      try{
-                        pushLog(npcId, 'system', '📵 未接来电（'+(_npc_ck.name||npcId)+'）');
-                        bumpThread(npcId, { lastMsg:'📵 未接来电', lastTime:Date.now(), unread:1 });
-                        setTimeout(function(){
-                          var _declineTexts = ['没事，你在忙吧', '没关系的', '……不接也行', '下次吧'];
-                          var _dt = _declineTexts[Math.floor(Math.random()*_declineTexts.length)];
-                          if(typeof _insertOnlineProactiveMessage==='function'){
-                            var _ins2 = _insertOnlineProactiveMessage(npcId, _dt, { kind:'random' });
-                            if(_ins2){ bumpThread(npcId, { lastMsg:_dt, lastTime:_ins2.ts, unread:1 }); }
-                          }
-                          if(state.chatTarget===npcId && state.app==='chatDetail'){ try{ renderChatDetail(npcId); }catch(e){} }
-                        }, 5000 + Math.random()*5000);
-                      }catch(e){}
-                    }
-                  );
-                }
-              }, 2000 + Math.random()*2000);
-            }
-          }
-        }catch(e){}
       }
 
       // ===== 【PhoneAI 模块】新增 =====
@@ -16918,13 +16616,11 @@ const npc = _wxGetChatTargetMeta(npcId);
         var stickerIdx = -1;
 
         // 检测 [发语音] + 频率节流
-        // ★ 兼容多种写法：[发语音] [语音消息] [voice] [发送语音] [语音] 及全角括号版本
-        var _voiceTagRe = /[\[【](发语音|语音消息|voice|发送语音|语音)[\]】]/i;
-        if (_voiceTagRe.test(s)){
+        if (/\[发语音\]/i.test(s)){
           var _now_ts = Date.now();
           var _timeSinceLast = _now_ts - _lastVoiceSentAt;
-          // 节流：距上次语音超60秒 或 已累计5条消息 → 允许（用 || 确保冷启动/首条也能正常触发）
-          if (_timeSinceLast > 60000 || _voiceMsgCount >= 5){
+          // 节流：距上次语音不足60秒 或 消息计数不足5条 → 强制剥离
+          if (_timeSinceLast > 60000 && _voiceMsgCount >= 5){
             sendVoice = true;
             _lastVoiceSentAt = _now_ts;
             _voiceMsgCount = 0;
@@ -16932,7 +16628,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             // 静默剥离，不发语音
             sendVoice = false;
           }
-          s = s.replace(_voiceTagRe, '').trim();
+          s = s.replace(/\[发语音\]/gi, '').trim();
         }
         _voiceMsgCount++;
 
@@ -17006,17 +16702,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         s = s.replace(/\[发语音\]/gi, '').trim();
         s = s.replace(/\[发表情[:：][^\]]*\]?/gi, '').trim();
 
-        // 检测 [发位置:地标名]
-        var sendLocation = null;
-        var locTagMatch = s.match(/\[发位置[:：]([^\]]+)\]/i);
-        if (locTagMatch){
-          sendLocation = locTagMatch[1].trim();
-          s = s.replace(locTagMatch[0], '').trim();
-        }
-        // 兜底清理（防残留）
-        s = s.replace(/\[发位置[:：][^\]]*\]?/gi, '').trim();
-
-        return { cleanText: s, sendVoice: sendVoice, stickerGroup: stickerGroup, stickerIdx: stickerIdx, stateUpdate: stateUpdate, attrChanges: attrChanges, sendLocation: sendLocation };
+        return { cleanText: s, sendVoice: sendVoice, stickerGroup: stickerGroup, stickerIdx: stickerIdx, stateUpdate: stateUpdate, attrChanges: attrChanges };
       }
 
       function _convertSpecialTags(text){
@@ -17567,7 +17253,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         if (_isOfflineMode){
           parts.push('---\n【回复格式（线下模式）】\n直接写小说段落，无需任何特殊标记。\n- 旁白/动作/环境：用 *星号包裹*\n- 台词：用"引号"\n- 不要输出任何代码、标签或符号，只有纯文字\n- 2~4段，段间空行\n\n【状态同步（末尾必加）】\n[状态:穿着=...,正在=...,心声=...]\n[属性:心情+5]（只写变化的）' + _attrHint + _customEntryHint);
         } else {
-          parts.push('---\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息的长度随机变化：有的很短（1-5字，如"嗯""好的""？"），有的中等（一两句话），偶尔有一条较长的。\n模拟真实手机聊天的节奏感——不要把所有内容压缩成一段话。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长的\n\n示例格式：\n嗯|||怎么了？|||你今天怎么这么安静\n\n【通话触发指令】\n当你想主动发起语音通话时（如想听对方声音、深夜想连麦、情绪激动想打电话），在消息里自然说出意图，必须使用以下词语之一才能触发来电：\n"打电话" / "语音吧" / "连麦" / "给你打" / "打给你" / "接一下" / "接电话" / "通个话" / "要不打个电话"\n例如："睡不着……要不打给你？" 或 "我想听你声音，语音吧"\n想发起视频通话时，说"视频通话" 或 "视频吧"。\n⚠ 不要无故触发，只在情绪/场景自然需要时才用。\n\n【状态同步（必须执行）】\n每次回复时，你必须在最后一条消息的末尾附加两个标记（标记不会显示给用户）。\n\n标记1 - 状态描述：根据当前对话内容和场景，更新你的穿着、正在做什么、以及内心独白：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。\n\n标记2 - 属性变化：根据对话中发生的事情，输出属性的变化量（正数为增加，负数为减少）：\n[属性:属性名+数值,属性名-数值]\n可用属性：精力、心情、健康、饱腹、如厕、娱乐（值域0-100，只写有变化的）\n变化量要合理：吃饭→饱腹+30~50，聊天开心→心情+5~15，运动→精力-10~20、健康+5\n如果对话没有涉及属性变化（纯闲聊），可以只写 [属性:心情+3] 之类的微调。' + _attrHint + '\n\n完整示例：\n吃饱了，舒服～ [状态:穿着=家居服,正在=收拾碗筷,心声=泡面也还行] [属性:饱腹+40,心情+5,娱乐-3]' + _customEntryHint + voiceInstructions + stkForAI);
+          parts.push('---\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息的长度随机变化：有的很短（1-5字，如"嗯""好的""？"），有的中等（一两句话），偶尔有一条较长的。\n模拟真实手机聊天的节奏感——不要把所有内容压缩成一段话。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长\n\n示例格式：\n嗯|||怎么了？|||你今天怎么这么安静\n\n【状态同步（必须执行）】\n每次回复时，你必须在最后一条消息的末尾附加两个标记（标记不会显示给用户）。\n\n标记1 - 状态描述：根据当前对话内容和场景，更新你的穿着、正在做什么、以及内心独白：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。\n\n标记2 - 属性变化：根据对话中发生的事情，输出属性的变化量（正数为增加，负数为减少）：\n[属性:属性名+数值,属性名-数值]\n可用属性：精力、心情、健康、饱腹、如厕、娱乐（值域0-100，只写有变化的）\n变化量要合理：吃饭→饱腹+30~50，聊天开心→心情+5~15，运动→精力-10~20、健康+5\n如果对话没有涉及属性变化（纯闲聊），可以只写 [属性:心情+3] 之类的微调。' + _attrHint + '\n\n完整示例：\n吃饱了，舒服～ [状态:穿着=家居服,正在=收拾碗筷,心声=泡面也还行] [属性:饱腹+40,心情+5,娱乐-3]' + _customEntryHint + voiceInstructions + stkForAI);
         }
 
         return parts.join('\n\n');
@@ -19566,14 +19252,16 @@ const npc = _wxGetChatTargetMeta(npcId);
           var arr = logs.map && logs.map[id];
           if (!arr || !arr.length) return false;
           var tsNum = Number(ts);
-          // 删除所有匹配该ts的条目（线下模式一条消息可能对应多段，但存储时只存一条）
-          var origLen = arr.length;
-          logs.map[id] = arr.filter(function(m){ return Number(m.t) !== tsNum; });
-          if (logs.map[id].length === origLen) return false;
+          var idx = -1;
+          for (var i = arr.length - 1; i >= 0; i--){
+            if (Number(arr[i].t) === tsNum){ idx = i; break; }
+          }
+          if (idx < 0) return false;
+          arr.splice(idx, 1);
           saveLogs(logs);
           // ★ 重新同步线程列表的最新消息预览
           try{
-            var _lastEntry = logs.map[id].filter(function(m){ return !m.recalled; }).slice(-1)[0];
+            var _lastEntry = arr.filter(function(m){ return !m.recalled; }).slice(-1)[0];
             if(_lastEntry) bumpThread(npcId, { lastMsg:_lastEntry.text, lastTime:_lastEntry.t });
           }catch(e){}
           return true;
@@ -19700,14 +19388,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             return;
           }
 
-          // 删除该条及之后的所有消息（避免线下模式只删一条导致上下文错乱）
-          var _regenMode = (typeof _getChatMode==='function') ? _getChatMode(npcId) : 'online';
-          if(_regenMode === 'offline'){
-            // 线下：删除该ts及之后的全部同模式消息
-            _deleteLogsAfterTs(npcId, Number(ts) - 1);
-          } else {
-            _deleteLogByTs(npcId, ts);
-          }
+          _deleteLogByTs(npcId, ts);
           _refreshChatUI(npcId);
 
           await _triggerAIReply(npcId);
@@ -21464,14 +21145,11 @@ const npc = _wxGetChatTargetMeta(npcId);
         root.querySelectorAll('.wxCPOverlay').forEach(o=>o.remove());
         const ov = doc.createElement('div');
         ov.className = 'wxCPOverlay';
-        ov.style.cssText = 'position:absolute;inset:0;z-index:9999;background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;display:flex;align-items:center;justify-content:center;padding:12px;';
+        ov.style.cssText = 'position:absolute;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:12px;';
         ov.innerHTML = `<div class="wxCPModal" style="
-          background:var(--ph-glass-strong);
-          border-radius:20px;width:100%;max-width:280px;padding:20px;
-          border:1px solid var(--ph-glass-border);
-          box-shadow:inset 0 1px 0 rgba(255,255,255,.82), 0 14px 34px rgba(80,100,140,.12);
-          backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .72)) saturate(118%);
-          -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .72)) saturate(118%);
+          background:rgba(255,255,255,.96);backdrop-filter:blur(12px);
+          border-radius:16px;width:100%;max-width:280px;padding:20px;
+          box-shadow:0 8px 32px rgba(0,0,0,.18);
           max-height:calc(100% - 48px);overflow-y:auto;
         ">${innerHtml}</div>`;
         ov.addEventListener('click', (e)=>{ if(e.target===ov) ov.remove(); });
@@ -21546,7 +21224,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         });
       }
 
-      function _cpStartCall(npcId, npc, callType, isIncoming){
+      function _cpStartCall(npcId, npc, callType){
         var startTime = Date.now();
         var avatarSrc = phoneGetAvatar(npcId);
         var avatarHtml = avatarSrc
@@ -21563,7 +21241,8 @@ const npc = _wxGetChatTargetMeta(npcId);
             + '<div class="callVideoAvatar callAvatarBreath">' + avatarHtml + '</div>'
             + '<div style="position:absolute;top:14px;left:14px;">'
             +   '<div class="callName" style="font-size:15px;">' + esc(npc.name) + '</div>'
-            +   '<div class="callStatus" data-el="callStatus">'+(isIncoming?'已接听…':'正在呼叫…')+'</div>'            +   '<div class="callTimer" data-el="callTimer"></div>'
+            +   '<div class="callStatus" data-el="callStatus">正在呼叫…</div>'
+            +   '<div class="callTimer" data-el="callTimer"></div>'
             + '</div>'
             + '<div style="position:absolute;top:14px;right:14px;width:80px;height:106px;border-radius:12px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:24px;color:rgba(255,255,255,.3);">👤</div>'
             + '</div>'
@@ -21584,7 +21263,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             + '<div class="callAvatar callAvatarBreath">' + avatarHtml + '</div>'
             + '</div>'
             + '<div class="callName">' + esc(npc.name) + '</div>'
-            + '<div class="callStatus" data-el="callStatus">'+(isIncoming?'已接听…':'正在呼叫…')+'</div>'
+            + '<div class="callStatus" data-el="callStatus">正在呼叫…</div>'
             + '<div class="callTimer" data-el="callTimer"></div>'
             + '<div class="callWave" data-el="callWave"><span></span><span></span><span></span><span></span><span></span></div>'
             + '<div class="callTranscript" data-el="callTranscript"></div>'
@@ -21702,7 +21381,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           setStatus('对方思考中…'); setWave('active');
           stopSTT(); // ★ 确保 TTS 播放前停止识别，防拾音冲突
           try{
-            var recentMsgs = _getRecentMessagesForAPI(npcId, 20);
+            var recentMsgs = _getRecentMessagesForAPI(npcId, 6);
             // 追加通话中的对话
             for(var ti=0; ti<transcript.length; ti++){
               var tt = transcript[ti];
@@ -21714,22 +21393,19 @@ const npc = _wxGetChatTargetMeta(npcId);
             var npcInfo = findContactById(cdb, npcId) || {name:String(npcId),profile:''};
             var bhv = (typeof _loadCharBehavior==='function') ? _loadCharBehavior(npcId) : {};
 
-            // ★ 复用完整 buildSystemPrompt（角色卡/世界书/线上下记录/性格/关系全部带入）
-            var sysP = '';
-            try{ sysP = buildSystemPrompt(npcId); }catch(e){}
-            // 追加通话专属覆盖指令（放在最后权重最高，覆盖格式要求）
-            sysP += '\n\n【⚠ 当前正在进行'+(isVideo?'视频':'语音')+'通话，以下规则覆盖上方所有格式要求】'
-              + '\n- 口语化说话，每次1~3句，简短自然，像真实打电话一样'
-              + '\n- 禁止输出 ||| 分隔符，禁止输出 [状态:] [属性:] 等任何标记'
-              + '\n- 禁止括号动作描写，禁止表情符号，只说话'
-              + '\n- 可以用语气词：嗯、啊、哈哈、诶、喂、哦'
-              + '\n- 直接开口说话，不加任何前缀或角色名'
-              + (bhv.doing ? '\n- 你现在正在：'+bhv.doing : '');
+            var sysP = '你正在和用户进行'+(isVideo?'视频':'语音')+'通话。你扮演的是「'+esc(npcInfo.name)+'」。'
+              + (npcInfo.profile ? '\n角色简介：'+npcInfo.profile.slice(0,200) : '')
+              + (bhv.wearing ? '\n当前穿着：'+bhv.wearing : '')
+              + (bhv.doing ? '\n正在做：'+bhv.doing : '')
+              + '\n\n【通话回复要求】'
+              + '\n像真实通话一样自然口语化，每次1~3句简短回复。'
+              + '\n可以用语气词（嗯、啊、哈哈），不要用括号动作描述，不要用表情符号。'
+              + '\n直接说话，不加标记或前缀。';
 
             var result = await PhoneAI.chat({
               system: sysP,
               messages: recentMsgs.slice(-12),
-              temperature: 0.88, maxTokens: 300, timeout: 20
+              temperature: 0.88, maxTokens: 150, timeout: 20
             });
 
             if(ended) return;
@@ -21839,7 +21515,6 @@ const npc = _wxGetChatTargetMeta(npcId);
         });
 
         // ---- 模拟接通 ----
-        // 来电接听：立即接通，不显示"正在呼叫"等待；去电：正常延迟
         var connectDelay = setTimeout(function(){
           if(ended) return;
           connected = true; connectTime = Date.now();
@@ -21851,7 +21526,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             if(timerEl) timerEl.textContent = String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
           }, 1000);
           updateModeUI();
-          // 对方先开口
+          // 对方先开口（直接调AI，不走processUserSaid以避免假的me消息）
           setTimeout(function(){
             if(ended) return;
             aiProcessing = true;
@@ -21860,17 +21535,9 @@ const npc = _wxGetChatTargetMeta(npcId);
               try{
                 var cdb2 = loadContactsDB();
                 var npcInfo2 = findContactById(cdb2, npcId) || {name:String(npcId)};
-                // 来电接听时：对方先说话（是对方打来的，对方主动开口）
-                // 去电时：对方接起来打招呼
-                var greetSys = isIncoming
-                  ? '你是「'+esc(npcInfo2.name)+'」，你刚才主动打电话给用户，对方接听了。用一句简短口语化的话开口（比如"接了"、"喂，听得到吗"）。不要括号动作，纯对话。'
-                  : '你是「'+esc(npcInfo2.name)+'」，刚接起用户打来的'+(isVideo?'视频':'语音')+'电话。用一句简短口语化的话接电话（比如"喂？怎么了~"）。不要括号动作，纯对话。';
-                var greetMsg = isIncoming
-                  ? '[用户接听了你打来的'+(isVideo?'视频':'语音')+'通话]'
-                  : '[用户拨打了'+(isVideo?'视频':'语音')+'通话]';
                 var greetResult = await PhoneAI.chat({
-                  system: greetSys,
-                  messages:[{role:'user',content: greetMsg}],
+                  system:'你是「'+esc(npcInfo2.name)+'」，刚接起用户打来的'+(isVideo?'视频':'语音')+'电话。用一句简短口语化的话接电话（比如"喂？怎么了~"）。不要括号动作，纯对话。',
+                  messages:[{role:'user',content:'[用户拨打了'+(isVideo?'视频':'语音')+'通话]'}],
                   temperature:0.9, maxTokens:60, timeout:12
                 });
                 if(ended) return;
@@ -21898,7 +21565,7 @@ const npc = _wxGetChatTargetMeta(npcId);
               }
             })();
           }, 300);
-        }, isIncoming ? 0 : (1800 + Math.random()*1200));
+        }, 1800 + Math.random()*1200);
 
         // ---- 挂断 ----
         function doHangup(){
@@ -21986,37 +21653,11 @@ const npc = _wxGetChatTargetMeta(npcId);
           }
         }catch(e){}
 
-        // 读取住所（我的家 + 角色的家）
-        var homeEntries = [];
-        try{
-          var _mapH = _mapLoad();
-          if(_mapH){
-            if(_mapH.myHouseId){
-              var _myH = (_mapH.houses||[]).find(function(h){ return h.id===_mapH.myHouseId; });
-              if(_myH) homeEntries.push({ name:'我的家（'+_myH.name+'）', emoji:'🏠', isMapLandmark:true, lmId:_myH.id, tags:[], lm:_myH, isHome:true, homeDesc:'用户的家' });
-            }
-            if(_mapH.npcHouses && _mapH.npcHouses[npcId]){
-              var _npcH = (_mapH.houses||[]).find(function(h){ return h.id===_mapH.npcHouses[npcId]; });
-              var _db2 = loadContactsDB(); var _npc2 = findContactById(_db2, npcId);
-              if(_npcH) homeEntries.push({ name:(_npc2?_npc2.name:'对方')+'的家（'+_npcH.name+'）', emoji:'🏡', isMapLandmark:true, lmId:_npcH.id, tags:[], lm:_npcH, isHome:true, homeDesc:(_npc2?_npc2.name:'角色')+'的家' });
-            }
-          }
-        }catch(e){}
-
         let optHtml = '';
-
-        // 住所分组
-        if(homeEntries.length){
-          optHtml += '<div style="font-size:10px;color:rgba(20,24,28,.4);padding:6px 12px 3px;font-weight:500;">🏠 住所</div>';
-          homeEntries.forEach(function(loc, i){
-            optHtml += '<div data-act="cpLocPick" data-type="home" data-idx="'+i+'" style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;">'
-              + '<span style="font-size:16px;">'+loc.emoji+'</span><span>'+esc(loc.name)+'</span></div>';
-          });
-        }
 
         // 地图地标分组（如果有）
         if(mapLandmarks.length){
-          optHtml += '<div style="font-size:10px;color:rgba(20,24,28,.4);padding:6px 12px 3px;font-weight:500;'+(homeEntries.length?'margin-top:4px;':'')+'">🗺 地图地标</div>';
+          optHtml += `<div style="font-size:10px;color:rgba(20,24,28,.4);padding:6px 12px 3px;font-weight:500;">🗺 地图地标</div>`;
           mapLandmarks.forEach((loc, i) => {
             optHtml += `<div data-act="cpLocPick" data-type="map" data-idx="${i}" style="padding:10px 12px;border-bottom:1px solid rgba(0,0,0,.06);cursor:pointer;font-size:13px;display:flex;align-items:center;gap:6px;">
               <span style="font-size:16px;">${loc.emoji||'📍'}</span><span>${esc(loc.name)}</span>
@@ -22045,29 +21686,6 @@ const npc = _wxGetChatTargetMeta(npcId);
           el.addEventListener('click', () => {
             const type = el.getAttribute('data-type');
             const idx = parseInt(el.getAttribute('data-idx'));
-            // 住所与地标处理逻辑相同，复用 map 分支
-            if(type === 'home'){
-              const lmInfo = homeEntries[idx];
-              if(!lmInfo) return;
-              var autoDescHome = lmInfo.homeDesc || lmInfo.name;
-              ov.remove();
-              var curModeH = 'online';
-              try{ curModeH = _getChatMode(npcId) || 'online'; }catch(e){}
-              if(curModeH === 'offline'){
-                var newSceneH = { name:lmInfo.name, location:lmInfo.name, description:autoDescHome+'。', bgImage:'', customPrompt:'' };
-                try{ _saveSceneData(npcId, newSceneH); }catch(e){}
-                try{
-                  var titleElH = root.querySelector('[data-ph="appTitle"]');
-                  if(titleElH) titleElH.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ph-accent,#07c160);margin-right:4px;vertical-align:middle;"></span>线下 · '+esc(lmInfo.name);
-                }catch(e){}
-                try{ toast('📍 场景已切换到「'+lmInfo.name+'」'); }catch(e){}
-              } else {
-                _cpSendSpecial(npcId, lmInfo.emoji+' '+lmInfo.name,
-                  { type:'landmark', landmarkName:lmInfo.name, landmarkEmoji:lmInfo.emoji, desc:autoDescHome, _logText:'[地标] '+lmInfo.name });
-                setTimeout(function(){ _aiReplyForSpecial(npcId, ['好，我过去找你。','等我一下～','我马上到。','好的，在家等你。']); }, 600);
-              }
-              return;
-            }
             if(type === 'map'){
               const lmInfo = mapLandmarks[idx];
               if(!lmInfo) return;
@@ -24466,20 +24084,20 @@ function renderSettingsUIApp(container){
       function renderSettingsAccentColor(container){
         const cfg = phoneLoadSettings();
         const currentHex = cfg.accentHex || '';
-        // 莫兰迪 + 玻璃风预设色盘（低饱和、温润、搭配毛玻璃质感）
+        // 莫兰迪预设色盘（去彩、低饱和、温润）
         const presets = [
-          {id:'default',   label:'跟随主题', hex:''},
-          {id:'smokepink', label:'烟粉',     hex:'#c9a4a8'},
-          {id:'fogblue',   label:'雾蓝',     hex:'#94afc7'},
-          {id:'lightgold', label:'浅金',     hex:'#c9b896'},
-          {id:'sage',      label:'鼠尾草',   hex:'#7d9b8a'},
-          {id:'dustblue',  label:'雾灰蓝',   hex:'#7a92a8'},
-          {id:'clay',      label:'陶土棕',   hex:'#a0826d'},
-          {id:'mauve',     label:'雾玫瑰',   hex:'#a8888e'},
-          {id:'dusk',      label:'暮色紫',   hex:'#8b84a8'},
-          {id:'sand',      label:'暖沙棕',   hex:'#a89878'},
-          {id:'rosewood',  label:'玫瑰木',   hex:'#9e6b72'},
-          {id:'lavender',  label:'薰衣草',   hex:'#9688b0'},
+          {id:'default',  label:'跟随主题', hex:''},
+          {id:'sage',     label:'鼠尾草绿', hex:'#7d9b8a'},
+          {id:'dustblue', label:'雾灰蓝',   hex:'#7a92a8'},
+          {id:'clay',     label:'陶土棕',   hex:'#a0826d'},
+          {id:'mauve',    label:'雾玫瑰',   hex:'#a8888e'},
+          {id:'dusk',     label:'暮色紫',   hex:'#8b84a8'},
+          {id:'sand',     label:'暖沙棕',   hex:'#a89878'},
+          {id:'slate',    label:'蓝石板',   hex:'#6b84a0'},
+          {id:'rosewood', label:'玫瑰木',   hex:'#9e6b72'},
+          {id:'eucalyptus',label:'桉树绿',  hex:'#6b9484'},
+          {id:'lavender', label:'薰衣草',   hex:'#9688b0'},
+          {id:'umber',    label:'暖棕赭',   hex:'#8e7660'},
         ];
         const activeId = presets.find(p=>p.hex===currentHex)?.id || (currentHex?'custom':'default');
 
@@ -24491,17 +24109,14 @@ function renderSettingsUIApp(container){
         presets.forEach(p=>{
           const isActive = activeId===p.id;
           const swatchBg = p.hex ? `background:${p.hex};` : 'background:linear-gradient(135deg,#7d9b8a,#a3bab0);';
-          const activeBg = isActive
-            ? 'background:rgba(255,255,255,.55);backdrop-filter:blur(20px) saturate(130%);-webkit-backdrop-filter:blur(20px) saturate(130%);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95),0 2px 10px rgba(100,94,86,.1);'
-            : 'background:var(--ph-glass);';
           html += `<button class="sAccentPreset${isActive?' active':''}" data-apresetid="${p.id}" data-ahex="${p.hex}"
             style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px;
-              border-radius:12px;border:1.5px solid ${isActive?'rgba(255,255,255,.88)':'var(--ph-sep)'};
-              ${activeBg}cursor:pointer;transition:all .15s;">
+              border-radius:12px;border:1.5px solid ${isActive?'var(--ph-accent)':'var(--ph-sep)'};
+              background:var(--ph-glass);cursor:pointer;transition:all .15s;">
             <div style="width:32px;height:32px;border-radius:50%;${swatchBg}
               box-shadow:0 2px 6px rgba(0,0,0,.12);
-              ${isActive?'box-shadow:0 0 0 2.5px rgba(255,255,255,.85), 0 2px 8px rgba(0,0,0,.14);':''}"></div>
-            <span style="font-size:10px;color:${isActive?'rgba(48,44,40,.85)':'var(--ph-text-sub)'};line-height:1.2;text-align:center;">${p.label}</span>
+              ${isActive?'box-shadow:0 0 0 2px var(--ph-accent), 0 2px 6px rgba(0,0,0,.12);':''}"></div>
+            <span style="font-size:10px;color:var(--ph-text-sub);line-height:1.2;text-align:center;">${p.label}</span>
           </button>`;
         });
 
@@ -24617,15 +24232,11 @@ function renderSettingsUIApp(container){
           root.style.setProperty('--ph-accent', hex);
           root.style.setProperty('--ph-accent2', light);
           root.style.setProperty('--ph-accent-grad', `linear-gradient(135deg,${hex},${light})`);
-          // frost 主题下气泡/发送键通过 CSS color-mix 自动混入强调色做磨砂玻璃质感
-          // 非 frost 主题用纯强调色
-          const _isFrost = root.getAttribute('data-theme') === 'frost';
-          if (!_isFrost) {
-            root.style.setProperty('--ph-send-btn', hex);
-            root.style.setProperty('--ph-chat-me-bubble', `linear-gradient(135deg,${hex},${light})`);
-            root.style.setProperty('--ph-wechat-me-bubble', `linear-gradient(135deg,${hex},${light})`);
-          }
+          // 同步依赖 accent 的衍生变量
+          root.style.setProperty('--ph-send-btn', hex);
           root.style.setProperty('--ph-tabbar-on', hex);
+          root.style.setProperty('--ph-chat-me-bubble', `linear-gradient(135deg,${hex},${light})`);
+          root.style.setProperty('--ph-wechat-me-bubble', `linear-gradient(135deg,${hex},${light})`);
         } else {
           // 移除覆盖，回到主题 CSS 变量默认值
           ['--ph-accent','--ph-accent2','--ph-accent-grad',
@@ -25047,8 +24658,10 @@ function bindPageScroll(){
         const vh = W.innerHeight || doc.documentElement.clientHeight || 600;
         const s = state.scale || 1;
         const shell = root.querySelector('.phShell');
-        const rawW = shell ? shell.offsetWidth : Math.min(375, vw * 0.96);
-        const rawH = shell ? shell.offsetHeight : Math.min(750, vh * 0.90);
+        const ring = root.querySelector('.phRingLayer');
+        const ref = (state.mode === 'full' && ring) ? ring : shell;
+        const rawW = ref ? ref.offsetWidth : Math.min(375, vw * 0.96);
+        const rawH = ref ? ref.offsetHeight : Math.min(750, vh * 0.90);
         const rw = rawW * s;
         const rh = rawH * s;
         const x = Math.max(0, (vw - rw) / 2);
@@ -25069,20 +24682,22 @@ function bindPageScroll(){
 
       function applyScale(){
         const shell = root.querySelector('.phShell');
+        const ring = root.querySelector('.phRingLayer');
         if (!shell) return;
         shell.style.transform = 'scale(' + state.scale + ')';
         shell.style.transformOrigin = 'top left';
-        // ★ 手机壳（phRingLayer）跟随 shell 缩放
-        const ring = root.querySelector('.phRingLayer');
         if (ring){
-          ring.style.transform = 'translate(-50%,-50%) scale(' + state.scale + ')';
+          ring.style.transform = 'scale(' + state.scale + ')';
+          ring.style.transformOrigin = 'top left';
+          ring.style.left = '-5px';
+          ring.style.top = '-5px';
         }
         const label = root.querySelector('[data-ph="zoomLabel"]');
         if (label) label.textContent = Math.round(state.scale * 100) + '%';
         const zbar = root.querySelector('.phZoomBar');
         if (zbar){
-          const rawH = shell.offsetHeight || 750;
-          zbar.style.top = (rawH * state.scale + 8) + 'px';
+          const rawH = (ring ? ring.offsetHeight : shell.offsetHeight) || 750;
+          zbar.style.top = (rawH * state.scale + 10) + 'px';
           zbar.style.bottom = 'auto';
         }
       }
@@ -25129,7 +24744,9 @@ function bindPageScroll(){
           root.classList.add('mini');
           // mini 模式不应用 scale transform
           const shell = root.querySelector('.phShell');
+          const ring = root.querySelector('.phRingLayer');
           if (shell){ shell.style.transform = ''; }
+          if (ring){ ring.style.transform = ''; ring.style.left=''; ring.style.top=''; }
           applyPosition();
           if (state.chatTarget) renderChatDetail(state.chatTarget);
           else openApp('chats');
@@ -25235,7 +24852,7 @@ function bindPageScroll(){
 
         // ★ 前台实时推送：每2.5分钟检查，触发条件满足时 AI 生成消息 + 弹窗
         try{
-
+          // 弹窗显示函数
           function _showLifePushToast(npcId, npcName, avatarHint, text, onTap){
             try{
               var existing = doc.querySelector('.meowLifePushToast');
@@ -25287,7 +24904,7 @@ function bindPageScroll(){
 
                 // 冷却：同一角色 30 分钟内不重复推
                 var lastPush = _lastFgPushCheck[npcId] || 0;
-                if (Date.now() - lastPush < 12 * 60 * 1000) return;
+                if (Date.now() - lastPush < 30 * 60 * 1000) return;
 
                 var s3 = _loadCharState(npcId);
                 if (!s3 || !s3.attrs) return;
@@ -25308,12 +24925,9 @@ function bindPageScroll(){
                 var lonelyThresh3 = 100 - dep3 * 0.35 - socialDrive3 * 0.2;
                 var lonely3 = s3.attrs.loneliness || 0;
                 var energy3 = s3.attrs.energy || 0;
-                var mood3 = s3.attrs.mood || 0;
-                var lonelyOk = lonely3 > lonelyThresh3;
-                var moodOk = mood3 >= 75 && energy3 >= 40; // 心情很好时也可能主动联系
-                if (!lonelyOk && !moodOk) return;
-                if (energy3 < 20) return;
-                // 时间窗口：不限（由 _canCall 在来电分支里单独控制）
+                if (lonely3 <= lonelyThresh3) return;
+                if (energy3 < 30) return;
+                if (h4 < 8 || h4 > 23) return; // 深夜/清晨不推
 
                 _lastFgPushCheck[npcId] = Date.now();
                 _setProactiveAttemptState(npcId, 'random', { tryAt: Date.now(), status:'trying', reason:'foreground_timer', failReason:'' });
@@ -25340,48 +24954,6 @@ function bindPageScroll(){
                     if (!inserted5) return;
                     var ts5 = inserted5.ts;
                     fgText = inserted5.text;
-
-                    // ★ 来电概率：社交主动性高 + 当前不在深夜 → 有概率触发来电而非文字
-                    var _p5 = sSnap.personality || {};
-                    var _sd5 = (_p5.socialDrive != null) ? _p5.socialDrive : 50;
-                    var _h5 = new Date().getHours();
-                    var _callChance = (_sd5 >= 70) ? 0.55 : (_sd5 >= 50 ? 0.35 : 0.18);
-                    var _canCall = _h5 >= 20 || _h5 <= 2; // 晚8点到凌晨2点
-                    var _doCall = _canCall && Math.random() < _callChance;
-
-                    if(_doCall){
-                      // 来电模式：弹来电弹窗，接听后进入通话
-                      var _db5 = loadContactsDB();
-                      var _npc5 = findContactById(_db5, nId) || { id:nId, name:String(nId), avatar:'', profile:'' };
-                      // 记录一条「正在拨打」系统消息（接听后会有通话记录覆盖）
-                      _showIncomingCall(nId, _npc5.name||nId, _npc5.avatar||'', 'voice',
-                        function(){ // 接听
-                          try{
-                            if(state.app !== 'chatDetail' || state.chatTarget !== nId){ openChat(nId); }
-                            setTimeout(function(){
-                              try{
-                                if(typeof window._meowStartCall==='function') window._meowStartCall(nId, 'voice', true);
-                              }catch(e){}
-                            }, 300);
-                          }catch(e){}
-                        },
-                        function(){ // 拒接 → 留一条未接来电 + 随后发一条"你怎么不接"风格文字
-                          try{
-                            pushLog(nId, 'system', '📵 未接来电（'+(_npc5.name||nId)+'）');
-                            bumpThread(nId, { lastMsg:'📵 未接来电', lastTime:Date.now(), unread:1 });
-                            // 延迟发一条"打扰到你了"风格消息
-                            setTimeout(function(){
-                              var _missedTexts = ['……你在忙吗', '没接到，等你有空', '打扰你了吗', '刚才想找你说说话'];
-                              var _mt = _missedTexts[Math.floor(Math.random()*_missedTexts.length)];
-                              var _ins = _insertOnlineProactiveMessage(nId, _mt, { kind:'random' });
-                              if(_ins){ bumpThread(nId, { lastMsg:_mt.slice(0,30), lastTime:_ins.ts, unread:1 }); }
-                              if(state.chatTarget===nId && state.app==='chatDetail'){ try{ renderChatDetail(nId); }catch(e){} }
-                            }, 8000 + Math.random()*12000);
-                          }catch(e){}
-                        }
-                      );
-                      return; // 来电模式不走下方文字推送流程
-                    }
 
                     // 更新 thread 未读
                     bumpThread(nId, { lastMsg:fgText.slice(0,30)+(fgText.length>30?'…':''), lastTime:ts5, unread:(function(){
@@ -25786,7 +25358,7 @@ function _insertOnlineProactiveMessage(npcId, text, opts){
     lg.map[id] ||= [];
     lg.map[id].push({ role:'them', text:finalText, t:ts, fromLife:true, mode:'online', branch:branch, insertedAt:now, proactiveKind:kind });
     lg.map[id].sort(function(a,b){ return Number(a.t||0) - Number(b.t||0); });
-    // 上限交由 pushLog 统一管理（10000条），这里不再截断
+    if (lg.map[id].length > 200) lg.map[id] = lg.map[id].slice(-200);
     saveLogs(lg);
     var th = loadThreads();
     var thr = th.list.find(function(x){ return String(x.id) === String(npcId); });
@@ -25974,20 +25546,6 @@ function _getLogForModeBranch(npcId, mode){
   var activeBranch = (typeof _getActiveBranch === 'function') ? _getActiveBranch(npcId) : 'main';
   var targetMode = _normChatMode(mode || _getChatMode(npcId));
   var log = getLog(npcId);
-
-  if(targetMode === 'offline'){
-    // 线下：mode==='offline' 的 + 老版本没有 mode 标签但实际是线下内容的消息
-    // 判断：如果整条日志里有任何 mode==='offline' 的消息，则无标签消息按「在第一条有标签消息之前」判断
-    // 如果完全没有带标签的消息（旧数据），则返回所有无标签消息（向后兼容）
-    return _safeArr(log).filter(function(m){
-      var mb = m.branch || 'main';
-      if(mb !== activeBranch) return false;
-      var mm = m.mode ? _normChatMode(m.mode) : null;
-      return mm === 'offline'; // 只取明确标记的
-    });
-  }
-
-  // 线上：明确标记 online 的 + 没有 mode 标签的（旧数据默认线上）
   return _safeArr(log).filter(function(m){
     var mb = m.branch || 'main';
     var mm = _normChatMode(m.mode || 'online');
@@ -25996,44 +25554,8 @@ function _getLogForModeBranch(npcId, mode){
 }
 
 // ========== Phase 3B：场景系统 ==========
-// ========== 场景预设包 · 5种风格 × 3模块 ==========
-var SCENE_PRESETS = {
-  romance: {
-    label: '💔 酸涩恋爱',
-    basic: '写作视角：以第一人称"我"进行，*星号内容*是自己的动作、感知与内心，台词用"引号"。\n贴人设要领：严格沿用角色卡中的说话方式和性格，不要因为"线下"就变得更柔或更甜，情绪浓度与线上一致。\n写作手法：用身体感知替代情感直述（余光、停顿、无意识的小动作），情绪藏在细节里，不挑明、不总结，留白比说透更有力。',
-    style: '句式短促，节奏忽快忽慢。感官描写优先（触感、气息、光线、声音），少用抽象形容词（如"心疼""感动"）。内心独白夹在动作之间，点到即止。对话不写满，留给对方接话的空间。',
-    special: '每条回复至少包含一处具体微小细节（如指尖碰到杯沿、视线在某处停了一秒）。禁止用旁白直接解释情感（如"他知道她在乎他"）。情绪转折靠行为触发，不靠叙述说明。'
-  },
-  elite: {
-    label: '🏢 高干权贵',
-    basic: '写作视角：第一人称，*星号*写克制的外显动作（整理袖口、放下杯子、沉默片刻），内心戏极少外露。\n贴人设要领：台词精炼，绝不说多余的话；角色卡定义的强势/冷淡/温柔等特质原样保留，不因场景变软或变暖。\n写作手法：镜头感叙事，像电影分镜——先写环境一笔，再写角色动作，最后给台词，节奏干净。',
-    style: '句子短而有力，段落不拖。肢体动作替代情感表达（推过去一份文件、窗外看了一眼、沉默三秒才开口）。环境细节要有质感但不堆砌，一两笔足够。禁止大段内心独白。',
-    special: '场景道具须与身份匹配（办公室、车、酒会等），一个细节胜过大段描述。情感转折须有具体触发点，不能无缘无故变温柔。可用外部事件打断（电话、敲门）制造张力，但别滥用。'
-  },
-  adventure: {
-    label: '⚔️ 冒险小说',
-    basic: '写作视角：第一人称或近第三人称均可，以角色卡为准；动作描写务必精准，有力度有重量感。\n贴人设要领：冒险场景不等于人设变粗糙，角色卡里的幽默、怯懦、执着等特质在危机中反而要放大。\n写作手法：以"行动-反应"推进，每条回复有明确的动态变化，不在原地踏步；紧张场景用短句，缓和时可放长。',
-    style: '动词优先，少用形容词堆叠。环境描写服务于紧张感（能见度、地形、声音），不做风景散文。对话直接、有信息量，废话在危险场景里没有位置。',
-    special: '每场景须有至少一项现实约束（体力/时间/物资/敌情），不能无限开挂。战斗或逃跑以回合推进，给用户留出决策空间。角色会犯错、会受伤，完美应对反而破坏代入感。'
-  },
-  ancient: {
-    label: '🏮 古言古风',
-    basic: '写作视角：第一人称，*星号*写古风化的动作与环境感知（"轻拢衣袖""烛火一晃"），台词用"引号"，措辞雅而不涩。\n贴人设要领：角色卡定义的性格（傲/柔/腹黑/赤诚）一字不改，只是表达方式换成古语；不要因为古风就变得比角色卡更温柔或更疏离。\n写作手法：借景抒情为主，情感藏在环境描写里；诗句或典故点缀即可，不强行堆砌；对话留余韵，说七分留三分。',
-    style: '多四字短语，句式有对偶感，但不必句句工整。景物描写精炼（一句话一个画面），忌散文化铺陈。情感词汇用行为替代（垂眸、停顿、转身），不用现代心理描写词汇。',
-    special: '时代细节自洽（称谓、器物、礼仪），一处错误会出戏。严禁出现现代词汇与思维逻辑。重大情感转折可借古言惯用手法（误会/错过/替身/重逢），但须有铺垫。'
-  },
-  medieval: {
-    label: '🔮 中世纪魔法',
-    basic: '写作视角：第一人称，*星号*写异世界化的感知（魔法施放的身体感受、种族特有的感官），台词可带角色种族/职业的语气特色。\n贴人设要领：角色卡里的性格底色在异世界同样适用，世界观不同不代表人设要变；把角色卡的现代语境动作翻译成异世界等价物即可。\n写作手法：用具体的世界细节（货币/地名/节日/魔法规则）建立沉浸感，而不是靠大量描述"这是个奇幻世界"；细节越日常越真实。',
-    style: '史诗感与生活感并存，不必全程宏大叙事。魔法描写须有独特感官质感（温度、颜色、声音、代价），禁止"发出一道光"式的敷衍。环境描写一两笔奇幻细节足够，不铺满。',
-    special: '世界设定前后严格自洽，魔法必须有代价或限制。重要规则一旦建立不能随意推翻。异世界日常细节（吃什么、用什么货币、怎么问路）比战斗描写更能建立代入感。'
-  }
-};
-
-var SCENE_PRESET_DEFAULT = { packageId:'', basic:{ enabled:false, text:'' }, style:{ enabled:false, text:'' }, special:{ enabled:false, text:'' } };
-
 function _loadSceneData(npcId){
-  return _phLoad('scene_'+String(npcId), { name:'', location:'', description:'', presetData: SCENE_PRESET_DEFAULT });
+  return _phLoad('scene_'+String(npcId), { name:'', location:'', description:'' });
 }
 function _saveSceneData(npcId, data){
   _phSave('scene_'+String(npcId), data);
@@ -26172,103 +25694,6 @@ function _renderOfflineParagraph(container, npc, role, text, ts, meta){
   });
 }
 
-// 自动把过长的线下文本切成更自然的段落（优先保留原有空行）
-function _autoParagraphizeOfflineText(text){
-  var src = String(text || '').replace(/\r\n?/g, '\n').trim();
-  if (!src) return '';
-  if (/\n\s*\n/.test(src)) return src;
-
-  function splitSentenceUnits(line){
-    var units = [];
-    var s = String(line || '').trim();
-    if (!s) return units;
-    if (/^\*[^*]+\*$/.test(s)) return [s];
-    var buf = '';
-    var starCount = 0;
-    for (var i = 0; i < s.length; i++){
-      var ch = s.charAt(i);
-      buf += ch;
-      if (ch === '*') starCount++;
-      if (starCount % 2 === 1) continue;
-      var isEnd = /[。！？!?]/.test(ch);
-      if (!isEnd && ch === '…'){
-        var prev = s.charAt(i - 1);
-        var next = s.charAt(i + 1);
-        if (prev !== '…' && next !== '…') isEnd = true;
-        if (prev === '…' && next !== '…') isEnd = true;
-      }
-      if (isEnd){
-        while (i + 1 < s.length && /["”』」》）)】]/.test(s.charAt(i + 1))){
-          i++;
-          buf += s.charAt(i);
-        }
-        units.push(buf.trim());
-        buf = '';
-      }
-    }
-    if (buf.trim()) units.push(buf.trim());
-    return units.length ? units : [s];
-  }
-
-  function splitLongUnit(unit){
-    var u = String(unit || '').trim();
-    if (!u || u.length <= 54) return [u];
-    var parts = [];
-    var buf = '';
-    for (var i = 0; i < u.length; i++){
-      var ch = u.charAt(i);
-      buf += ch;
-      if (/[，、；：]/.test(ch) && buf.length >= 24){
-        parts.push(buf.trim());
-        buf = '';
-      }
-    }
-    if (buf.trim()) parts.push(buf.trim());
-    return parts.length ? parts : [u];
-  }
-
-  var out = [];
-  src.split(/\n+/).forEach(function(rawLine){
-    var line = rawLine.trim();
-    if (!line) return;
-    if (/^\*[^*]+\*$/.test(line) || line.length <= 90){
-      out.push(line);
-      return;
-    }
-    var units = [];
-    splitSentenceUnits(line).forEach(function(unit){
-      splitLongUnit(unit).forEach(function(part){
-        if (part && part.trim()) units.push(part.trim());
-      });
-    });
-    if (!units.length){
-      out.push(line);
-      return;
-    }
-    var buf = [];
-    var bufLen = 0;
-    units.forEach(function(unit){
-      var u = String(unit || '').trim();
-      if (!u) return;
-      var shouldBreak = false;
-      if (buf.length >= 2) shouldBreak = true;
-      if (!shouldBreak && bufLen >= 58) shouldBreak = true;
-      if (!shouldBreak && /["「]/.test(u) && buf.length >= 1) shouldBreak = true;
-      if (!shouldBreak && bufLen + u.length > 76 && buf.length >= 1) shouldBreak = true;
-      if (shouldBreak){
-        out.push(buf.join(''));
-        buf = [u];
-        bufLen = u.length;
-      } else {
-        buf.push(u);
-        bufLen += u.length;
-      }
-    });
-    if (buf.length) out.push(buf.join(''));
-  });
-  return out.join('\n\n');
-}
-
 // 解析文本为舞台剧段落
 function _parseTheaterSegments(text, speaker, role){
   var segments = [];
@@ -26280,29 +25705,27 @@ function _parseTheaterSegments(text, speaker, role){
     .replace(/rpDialog\s*>?\s*/g, '')
     .replace(/^>\s*/gm, '')
     .replace(/^\s*"rp[A-Za-z]+"\s*$/gm, '')  // 单独一行的 "rpXxx"
-    .replace(/\r\n?/g, '\n')
     .trim();
 
-  if (!/\n\s*\n/.test(cleaned)){
-    cleaned = _autoParagraphizeOfflineText(cleaned);
-  }
+  // 按换行拆段
+  var lines = cleaned.split(/\n+/).filter(function(l){ return l.trim(); });
 
-  var blocks = cleaned.split(/\n\s*\n+/).map(function(block){ return String(block || '').trim(); }).filter(function(block){ return block; });
+  var actionBuf = [];   // 动作/环境描写缓冲
+  var dialogBuf = [];   // 对话缓冲
 
-  function pushStage(textLine){
-    var joined = String(textLine || '').trim().replace(/^\*|\*$/g, '').trim();
-    if (!joined) return;
+  function flushAction(){
+    if(!actionBuf.length) return;
+    var joined = actionBuf.join(' ');
     segments.push({
       type: 'stage',
       html: '<em class="rpAction">— ' + esc(joined) + ' —</em>'
     });
+    actionBuf = [];
   }
-
-  function pushSpeech(lines){
-    var safeLines = (lines || []).map(function(d){ return String(d || '').trim(); }).filter(function(d){ return d; });
-    if (!safeLines.length) return;
+  function flushDialog(){
+    if(!dialogBuf.length) return;
     var nameTag = '<span class="rpSpeaker">' + esc(speaker) + '</span>';
-    var formatted = safeLines.map(function(d){
+    var formatted = dialogBuf.map(function(d){
       return esc(d)
         .replace(/\*([^*]+)\*/g, '<em class="rpAction">$1</em>')
         .replace(/"([^"]+)"/g, '<span class="rpDialog">"$1"</span>')
@@ -26312,50 +25735,30 @@ function _parseTheaterSegments(text, speaker, role){
       type: 'speech',
       html: nameTag + '<span class="rpText">' + formatted + '</span>'
     });
+    dialogBuf = [];
   }
 
-  blocks.forEach(function(block){
-    var lines = block.split(/\n+/).map(function(line){ return String(line || '').trim(); }).filter(function(line){ return line; });
-    if (!lines.length) return;
-
-    var onlyAction = lines.every(function(line){ return /^\*[^*]+\*$/.test(line); });
-    if (onlyAction){
-      pushStage(lines.map(function(line){ return line.replace(/^\*|\*$/g, '').trim(); }).join(' '));
+  lines.forEach(function(line){
+    var trimmed = line.trim();
+    // 纯动作行（整行被*...*包裹）
+    var pureActionMatch = trimmed.match(/^\*([^*]+)\*$/);
+    if (pureActionMatch){
+      flushDialog();
+      actionBuf.push(pureActionMatch[1]);
       return;
     }
-
-    var actionBuf = [];
-    var dialogBuf = [];
-    function flushAction(){
-      if(!actionBuf.length) return;
-      pushStage(actionBuf.join(' '));
-      actionBuf = [];
+    // 有对话引号的行视为对话段
+    if (/["「]/.test(trimmed) || /^[^\*]/.test(trimmed)){
+      flushAction();
+      dialogBuf.push(trimmed);
+    } else {
+      // 其余归为动作描写
+      flushDialog();
+      actionBuf.push(trimmed);
     }
-    function flushDialog(){
-      if(!dialogBuf.length) return;
-      pushSpeech(dialogBuf.slice());
-      dialogBuf = [];
-    }
-
-    lines.forEach(function(line){
-      var trimmed = line.trim();
-      var pureActionMatch = trimmed.match(/^\*([^*]+)\*$/);
-      if (pureActionMatch){
-        flushDialog();
-        actionBuf.push(pureActionMatch[1]);
-        return;
-      }
-      if (/["「]/.test(trimmed) || /^[^\*]/.test(trimmed)){
-        flushAction();
-        dialogBuf.push(trimmed);
-      } else {
-        flushDialog();
-        actionBuf.push(trimmed);
-      }
-    });
-    flushAction();
-    flushDialog();
   });
+  flushAction();
+  flushDialog();
 
   // 如果没有拆出任何段落，退回普通渲染
   if(!segments.length){
@@ -26395,34 +25798,16 @@ function _buildOfflinePromptAddition(npcId){
   var scene = _loadSceneData(npcId);
   var lines = [
     '【线下面对面模式】',
-    '你现在进入面对面场景，但你的性格、语气、说话习惯、与用户的关系，完全延续角色卡设定，不要变。',
-    '格式上的区别仅仅是：动作/旁白用 *星号包裹*，台词用"引号"，这不是让你变成另一个人。',
-    '其他格式规则：',
+    '你现在和用户面对面，不是在手机上聊天。',
+    '写作规则：',
+    '- 动作/旁白/环境 → 用 *星号包裹*（第一人称写自己的动作）',
+    '- 台词 → 用"引号"',
     '- 不输出任何代码、标签或特殊符号，只有纯文字、星号、引号',
-    '- 篇幅自然，不必凑段落数，跟线上聊天一样有来有回即可',
+    '- 2~4段，段间空行',
   ];
   if (scene.location) lines.push('\n当前地点：' + scene.location);
   if (scene.description){
     lines.push('场景说明：' + scene.description);
-  }
-
-  // 注入已启用的预设模块
-  var pd = scene.presetData;
-  if (pd) {
-    var presetLines = [];
-    if (pd.basic && pd.basic.enabled && String(pd.basic.text||'').trim()){
-      presetLines.push('【角色基础人设】\n' + String(pd.basic.text).trim());
-    }
-    if (pd.style && pd.style.enabled && String(pd.style.text||'').trim()){
-      presetLines.push('【文风写作风格】\n' + String(pd.style.text).trim());
-    }
-    if (pd.special && pd.special.enabled && String(pd.special.text||'').trim()){
-      presetLines.push('【特殊规则】\n' + String(pd.special.text).trim());
-    }
-    if (presetLines.length){
-      lines.push('\n【⚠ 场景预设模块 — 严格遵守以下规则，与人设保持一致 ⚠】');
-      presetLines.forEach(function(l){ lines.push(l); });
-    }
   }
 
   // 追加自定义提示词预设（最高优先级标注）
@@ -26437,123 +25822,52 @@ function _buildOfflinePromptAddition(npcId){
 // ========== Phase 3F：场景编辑弹窗 ==========
 function _openSceneEditor(npcId){
   var scene = _loadSceneData(npcId);
-  // 兼容旧数据，确保 presetData 存在
-  var pd = scene.presetData || { packageId:'', basic:{enabled:false,text:''}, style:{enabled:false,text:''}, special:{enabled:false,text:''} };
-
-  // ---- 构建预设包选择器 HTML ----
-  var pkgOpts = '<option value="">— 不套用模板 —</option>';
-  Object.keys(SCENE_PRESETS).forEach(function(k){
-    var sel = pd.packageId === k ? ' selected' : '';
-    pkgOpts += '<option value="'+k+'"'+sel+'>'+esc(SCENE_PRESETS[k].label)+'</option>';
-  });
-
-  function _moduleCardHtml(moduleKey, moduleLabel, moduleIcon, moduleDesc){
-    var m = pd[moduleKey] || { enabled:false, text:'' };
-    var chk = m.enabled ? ' checked' : '';
-    var toggleId = 'pm_toggle_'+moduleKey;
-    return '<div data-pm="'+moduleKey+'" style="margin-bottom:8px;border:1px solid rgba(0,0,0,.08);border-radius:10px;overflow:hidden;background:rgba(255,255,255,.7);">'
-      + '<div style="display:flex;align-items:center;padding:8px 10px;background:rgba(0,0,0,.025);gap:8px;">'
-      + '<span style="font-size:15px;">'+moduleIcon+'</span>'
-      + '<div style="flex:1;">'
-      + '<div style="font-size:12px;font-weight:600;color:rgba(20,24,28,.75);">'+moduleLabel+'</div>'
-      + '<div style="font-size:10px;color:rgba(20,24,28,.35);">'+moduleDesc+'</div>'
-      + '</div>'
-      + '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:11px;color:rgba(20,24,28,.5);">'
-      + '<span data-pm-state="'+moduleKey+'">'+( m.enabled ? '注入中' : '已关闭' )+'</span>'
-      + '<div style="position:relative;width:36px;height:20px;flex-shrink:0;">'
-      + '<input id="'+toggleId+'" type="checkbox" data-pm-chk="'+moduleKey+'"'+chk+' style="opacity:0;position:absolute;width:100%;height:100%;margin:0;cursor:pointer;z-index:1;"/>'
-      + '<div data-pm-track="'+moduleKey+'" style="position:absolute;inset:0;border-radius:10px;transition:background .2s;background:'+(m.enabled?'var(--ph-accent,#07c160)':'rgba(0,0,0,.15)')+';"></div>'
-      + '<div data-pm-thumb="'+moduleKey+'" style="position:absolute;top:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);left:'+(m.enabled?'18px':'2px')+';"></div>'
-      + '</div></label></div>'
-      + '<textarea data-pm-txt="'+moduleKey+'" rows="3" style="width:100%;padding:8px 10px;border:0;font-size:11px;line-height:1.55;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;background:transparent;color:rgba(20,24,28,.7);">'+esc(m.text||'')+'</textarea>'
-      + '</div>';
-  }
-
-  var presetSection = '<div style="margin-bottom:10px;">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">'
-    + '<div style="font-size:12px;color:rgba(20,24,28,.5);font-weight:600;">🎭 预设模块注入</div>'
-    + '<div style="font-size:10px;color:rgba(20,24,28,.3);">开启=注入到系统提示词</div>'
-    + '</div>'
-    + '<div style="margin-bottom:8px;">'
-    + '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:4px;">套用风格模板</div>'
-    + '<select data-el="presetPkg" style="width:100%;padding:7px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;background:#fff;outline:none;color:rgba(20,24,28,.8);">'+pkgOpts+'</select>'
-    + '</div>'
-    + _moduleCardHtml('basic','基础人设','🧠','角色核心性格与互动基准')
-    + _moduleCardHtml('style','文风','✍️','叙述语言、句式节奏与写作腔调')
-    + _moduleCardHtml('special','特殊规则','⚡','特定场景机制、禁忌与强制要求')
-    + '</div>';
-
-  var inner = ''
-    + '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">☕ 场景设置</div>'
-    + '<div style="margin-bottom:8px;">'
-    + '<button data-el="sceneFromMap" style="width:100%;padding:9px;border-radius:10px;border:1px solid rgba(7,193,96,.2);background:rgba(7,193,96,.06);font-size:12px;color:var(--ph-accent,#07c160);cursor:pointer;font-weight:500;">📍 从地图选地标</button>'
-    + '</div>'
-    + '<div style="margin-bottom:8px;">'
-    + '<div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">场景名称</div>'
-    + '<input data-el="sceneName" value="'+esc(scene.name||'')+'" placeholder="如：咖啡厅、家中客厅" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;"/>'
-    + '</div>'
-    + '<div style="margin-bottom:8px;">'
-    + '<div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">地点</div>'
-    + '<input data-el="sceneLoc" value="'+esc(scene.location||'')+'" placeholder="如：城市里的一家安静咖啡厅" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;"/>'
-    + '</div>'
-    + '<div style="margin-bottom:8px;">'
-    + '<div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">场景描述（可选）</div>'
-    + '<textarea data-el="sceneDesc" rows="3" placeholder="环境描述、氛围、时间等" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;">'+esc(scene.description||'')+'</textarea>'
-    + '</div>'
-    + presetSection
-    + '<div style="margin-bottom:10px;">'
-    + '<div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">📝 自定义追加提示词（可选）</div>'
-    + '<div style="font-size:10px;color:rgba(20,24,28,.3);margin-bottom:4px;">在预设基础上再追加，优先级最高</div>'
-    + '<textarea data-el="scenePrompt" rows="3" placeholder="如：偶尔提到某段共同回忆……" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;">'+esc(scene.customPrompt||'')+'</textarea>'
-    + '</div>'
-    + '<div style="margin-bottom:10px;">'
-    + '<div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">🖼 场景背景图（可选）</div>'
-    + '<div style="font-size:10px;color:rgba(20,24,28,.3);margin-bottom:4px;">为这个场景设置专属背景图，切换场景时背景也跟着换</div>'
-    + (scene.bgImage ? '<div style="width:100%;height:80px;border-radius:8px;overflow:hidden;margin-bottom:6px;border:1px solid rgba(0,0,0,.08);"><img src="'+esc(scene.bgImage)+'" style="width:100%;height:100%;object-fit:cover;"/></div>' : '')
-    + '<div style="display:flex;gap:6px;">'
-    + '<input data-el="sceneBgUrl" type="text" value="'+esc(scene.bgImage||'')+'" placeholder="粘贴背景图片链接…" style="flex:1;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;"/>'
-    + (scene.bgImage ? '<button data-el="sceneBgClear" style="padding:8px 10px;border-radius:8px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.1));background:var(--ph-glass,rgba(255,255,255,.8));color:rgba(20,24,28,.55);font-size:11px;cursor:pointer;flex-shrink:0;">清除</button>' : '')
-    + '</div>'
-    + '</div>'
-    + '<div style="display:flex;gap:8px;">'
-    + '<button data-el="sceneSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>'
-    + '<button data-el="sceneCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button>'
-    + '</div>';
-
+  var inner = `
+    <div style="font-size:14px;font-weight:600;margin-bottom:8px;">☕ 场景设置</div>
+    <div style="margin-bottom:8px;">
+      <button data-el="sceneFromMap" style="width:100%;padding:9px;border-radius:10px;border:1px solid rgba(7,193,96,.2);background:rgba(7,193,96,.06);font-size:12px;color:var(--ph-accent,#07c160);cursor:pointer;font-weight:500;">📍 从地图选地标</button>
+    </div>
+    <div style="margin-bottom:8px;">
+      <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">场景名称</div>
+      <input data-el="sceneName" value="${esc(scene.name||'')}" placeholder="如：咖啡厅、家中客厅" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;"/>
+    </div>
+    <div style="margin-bottom:8px;">
+      <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">地点</div>
+      <input data-el="sceneLoc" value="${esc(scene.location||'')}" placeholder="如：城市里的一家安静咖啡厅" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;"/>
+    </div>
+    <div style="margin-bottom:8px;">
+      <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">场景描述（可选）</div>
+      <textarea data-el="sceneDesc" rows="3" placeholder="环境描述、氛围、时间等" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;">${esc(scene.description||'')}</textarea>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">📝 提示词预设（可选）</div>
+      <div style="font-size:10px;color:rgba(20,24,28,.3);margin-bottom:4px;">自定义AI在此场景中的行为风格，如语气、描写偏好、剧情设定等，会追加到系统提示词中</div>
+      <textarea data-el="scenePrompt" rows="4" placeholder="例如：&#10;描写时着重渲染海边的氛围，风声、潮汐声此起彼伏。&#10;角色语气温柔但带点小心翼翼，好像在试探。&#10;偶尔穿插对过去回忆的描写。" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;outline:none;resize:vertical;font-family:inherit;line-height:1.5;box-sizing:border-box;">${esc(scene.customPrompt||'')}</textarea>
+    </div>
+    <div style="margin-bottom:10px;">
+      <div style="font-size:12px;color:rgba(20,24,28,.5);margin-bottom:4px;">🖼 场景背景图（可选）</div>
+      <div style="font-size:10px;color:rgba(20,24,28,.3);margin-bottom:4px;">为这个场景设置专属背景图，切换场景时背景也跟着换</div>
+      ${scene.bgImage ? '<div style="width:100%;height:80px;border-radius:8px;overflow:hidden;margin-bottom:6px;border:1px solid rgba(0,0,0,.08);"><img src="'+esc(scene.bgImage)+'" style="width:100%;height:100%;object-fit:cover;"/></div>' : ''}
+      <div style="display:flex;gap:6px;">
+        <input data-el="sceneBgUrl" type="text" value="${esc(scene.bgImage||'')}" placeholder="粘贴背景图片链接…" style="flex:1;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:12px;outline:none;box-sizing:border-box;"/>
+        ${scene.bgImage ? '<button data-el="sceneBgClear" style="padding:8px 10px;border-radius:8px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.1));background:var(--ph-glass,rgba(255,255,255,.8));color:rgba(20,24,28,.55);font-size:11px;cursor:pointer;flex-shrink:0;">清除</button>' : ''}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button data-el="sceneSave" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent, #07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">保存</button>
+      <button data-el="sceneCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.9);font-size:13px;cursor:pointer;">取消</button>
+    </div>`;
   var ov = _cpShowOverlay(inner);
   ov.querySelector('[data-el="sceneCancel"]')?.addEventListener('click', function(){ ov.remove(); });
 
-  // ---- 预设包选择器：套用模板 ----
-  ov.querySelector('[data-el="presetPkg"]')?.addEventListener('change', function(){
-    var pkgId = this.value;
-    var pkg = pkgId ? SCENE_PRESETS[pkgId] : null;
-    ['basic','style','special'].forEach(function(mk){
-      var ta = ov.querySelector('[data-pm-txt="'+mk+'"]');
-      if(ta) ta.value = pkg ? (pkg[mk]||'') : '';
-    });
-  });
-
-  // ---- 切换开关动画 ----
-  ov.addEventListener('change', function(ev){
-    var chkEl = ev.target.closest('[data-pm-chk]');
-    if(!chkEl) return;
-    var mk = chkEl.getAttribute('data-pm-chk');
-    var on = chkEl.checked;
-    var track = ov.querySelector('[data-pm-track="'+mk+'"]');
-    var thumb = ov.querySelector('[data-pm-thumb="'+mk+'"]');
-    var stateEl = ov.querySelector('[data-pm-state="'+mk+'"]');
-    if(track) track.style.background = on ? 'var(--ph-accent,#07c160)' : 'rgba(0,0,0,.15)';
-    if(thumb) thumb.style.left = on ? '18px' : '2px';
-    if(stateEl) stateEl.textContent = on ? '注入中' : '已关闭';
-  });
-
-  // ---- 从地图选地标 ----
+  // 从地图选地标
   ov.querySelector('[data-el="sceneFromMap"]')?.addEventListener('click', function(){
     try{
       var mapData = _mapLoad();
       if(!mapData || !mapData.landmarks || !mapData.landmarks.length){
         toast('地图还没有生成，请先打开地图 App'); return;
       }
+      // 构建地标列表弹窗
       var lmH = '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">📍 选择地标</div>';
       lmH += '<div style="max-height:250px;overflow-y:auto;scrollbar-width:none;">';
       mapData.landmarks.forEach(function(lm){
@@ -26574,17 +25888,19 @@ function _openSceneEditor(npcId){
           var lm2 = mapData.landmarks.find(function(l){ return l.id===lmId; });
           if(!lm2){ lmOv.remove(); return; }
           var dn2 = lm2.customName || lm2.name;
+          // 自动填入场景编辑器
           var nameInp = ov.querySelector('[data-el="sceneName"]');
           var locInp = ov.querySelector('[data-el="sceneLoc"]');
           var descInp = ov.querySelector('[data-el="sceneDesc"]');
           if(nameInp) nameInp.value = dn2;
           if(locInp) locInp.value = dn2;
+          // 用tags生成描述
           var tagDesc3 = {trees:'绿树环绕',flowers:'鲜花盛开',coffee:'咖啡飘香',cozy:'氛围温馨',sea:'海风轻拂',quiet:'安静祥和',art:'充满艺术气息',books:'书香满溢',campfire:'篝火温暖',stars:'星空璀璨',food:'美食飘香',sing:'音乐萦绕',exercise:'充满活力',fun:'热闹非凡',steam:'雾气缭绕',sand:'细沙柔软',water:'水波荡漾'};
           var descWords = (lm2.tags||[]).slice(0,3).map(function(t){ return tagDesc3[t]||''; }).filter(Boolean).join('，');
           var autoDesc = dn2+'，'+(descWords||'一个有趣的地方')+'。';
           if(descInp) descInp.value = autoDesc;
           lmOv.remove();
-          // 立即保存（保持与地图交互一致），presetData继承当前状态
+          // ★ 立即保存场景（与地图app互动行为一致，不需要再点保存）
           var bgInp = ov.querySelector('[data-el="sceneBgUrl"]');
           var promptInp = ov.querySelector('[data-el="scenePrompt"]');
           var savedScene = {
@@ -26592,17 +25908,19 @@ function _openSceneEditor(npcId){
             location: dn2,
             description: autoDesc,
             bgImage: (bgInp&&bgInp.value||'').trim(),
-            customPrompt: (promptInp&&promptInp.value||'').trim(),
-            presetData: _readPresetDataFromOv(ov)
+            customPrompt: (promptInp&&promptInp.value||'').trim()
           };
           _saveSceneData(npcId, savedScene);
           try{ toast('📍 已选择「'+dn2+'」并保存场景'); }catch(e){}
+
+          // ★ 同步更新标题栏（与地图地标互动保持一致）
           try{
             var titleEl = root.querySelector('[data-ph="appTitle"]');
             if (titleEl && _getChatMode(npcId) === 'offline'){
               titleEl.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ph-accent,#07c160);margin-right:4px;vertical-align:middle;"></span>线下 · ' + esc(dn2);
             }
           }catch(e){}
+          // 更新线下场景卡
           try{
             var sceneCard2 = root.querySelector('.wxOfflineSceneCard');
             if(sceneCard2){
@@ -26616,31 +25934,30 @@ function _openSceneEditor(npcId){
       });
     }catch(e){ try{toast('读取地图失败');}catch(e2){} }
   });
-
   ov.querySelector('[data-el="sceneBgClear"]')?.addEventListener('click', function(){
     var bgInp = ov.querySelector('[data-el="sceneBgUrl"]');
     if (bgInp) bgInp.value = '';
     this.style.display = 'none';
   });
-
   ov.querySelector('[data-el="sceneSave"]')?.addEventListener('click', function(){
     var newScene = {
       name: (ov.querySelector('[data-el="sceneName"]')?.value||'').trim(),
       location: (ov.querySelector('[data-el="sceneLoc"]')?.value||'').trim(),
       description: (ov.querySelector('[data-el="sceneDesc"]')?.value||'').trim(),
       bgImage: (ov.querySelector('[data-el="sceneBgUrl"]')?.value||'').trim(),
-      customPrompt: (ov.querySelector('[data-el="scenePrompt"]')?.value||'').trim(),
-      presetData: _readPresetDataFromOv(ov)
+      customPrompt: (ov.querySelector('[data-el="scenePrompt"]')?.value||'').trim()
     };
     _saveSceneData(npcId, newScene);
     ov.remove();
     try{ toast('场景已保存'); }catch(e){}
+    // 刷新标题
     try{
       var titleEl = root.querySelector('[data-ph="appTitle"]');
       if (titleEl && _getChatMode(npcId) === 'offline'){
         titleEl.textContent = '🎭 线下 · ' + (newScene.name || '未命名');
       }
     }catch(e){}
+    // 刷新线下背景
     try{
       var msgsEl = root.querySelector('[data-ph="chatMsgs"]');
       if (msgsEl){
@@ -26655,21 +25972,6 @@ function _openSceneEditor(npcId){
       }
     }catch(e){}
   });
-}
-
-// 从弹窗 DOM 读取三模块状态
-function _readPresetDataFromOv(ov){
-  var pkgSel = ov.querySelector('[data-el="presetPkg"]');
-  var result = { packageId: pkgSel ? (pkgSel.value||'') : '' };
-  ['basic','style','special'].forEach(function(mk){
-    var chk = ov.querySelector('[data-pm-chk="'+mk+'"]');
-    var ta = ov.querySelector('[data-pm-txt="'+mk+'"]');
-    result[mk] = {
-      enabled: !!(chk && chk.checked),
-      text: (ta && ta.value||'').trim()
-    };
-  });
-  return result;
 }
 
 // ========== Phase 4A：分支数据管理 ==========
@@ -26922,42 +26224,23 @@ function _syncSummaryFromTimeline(npcId, mode){
 function _getTimelinePendingRange(npcId, mode, maxChunk){
   var targetMode = _normChatMode(mode || _getChatMode(npcId));
   var log = _getLogForModeBranch(npcId, targetMode);
-  if (log.length === 0) return null;
+  // 如果过滤后的日志为空，尝试用全量日志作为 fallback
+  if (log.length === 0){
+    try{
+      var fullLog = getLog(npcId);
+      if (fullLog && fullLog.length > 0){
+        console.warn('[Timeline] 过滤后日志为空但全量日志有', fullLog.length, '条，使用全量日志');
+        log = fullLog;
+      }
+    }catch(e){}
+  }
   var tl = _loadTimeline(npcId);
   var bucket = _getTimelineModeState(tl, targetMode, true);
-
-  var lastEnd = 0;
-
-  if(bucket.entries.length > 0){
-    var lastEntry = bucket.entries[bucket.entries.length - 1];
-
-    // ★ 思路二：优先用 tailHashes 定位，不依赖位置索引
-    if(lastEntry.tailHashes && lastEntry.tailHashes.length > 0){
-      // 在日志里从后往前找能匹配 tailHashes 任意一条的最晚位置
-      var hashSet = {};
-      lastEntry.tailHashes.forEach(function(h){ hashSet[h] = true; });
-      var matchIdx = -1;
-      for(var i = log.length - 1; i >= 0; i--){
-        if(hashSet[_msgHash(log[i])]){
-          matchIdx = i;
-          break;
-        }
-      }
-      if(matchIdx >= 0){
-        lastEnd = matchIdx + 1; // 从匹配到的最晚那条之后继续
-      } else {
-        // 所有3条都找不到（消息被删了）→ fallback 到 range 索引
-        lastEnd = Math.min(lastEntry.range[1] + 1, log.length);
-      }
-    } else {
-      // 旧条目没有 tailHashes → 用原来的 range 索引
-      lastEnd = Math.min(lastEntry.range[1] + 1, log.length);
-    }
-  }
-
-  if(lastEnd >= log.length) return null;
+  var lastEnd = bucket.entries.length > 0 ? bucket.entries[bucket.entries.length - 1].range[1] + 1 : 0;
+  console.log('[Timeline] pendingRange: logLen='+log.length+', entries='+bucket.entries.length+', lastEnd='+lastEnd+', mode='+targetMode);
+  if (lastEnd >= log.length) return null;
   var endIdx = log.length - 1;
-  if(maxChunk && maxChunk > 0 && (endIdx - lastEnd + 1) > maxChunk){
+  if (maxChunk && maxChunk > 0 && (endIdx - lastEnd + 1) > maxChunk){
     endIdx = lastEnd + maxChunk - 1;
   }
   return { fromIdx:lastEnd, toIdx:endIdx, logLength:log.length, hasMore: endIdx < log.length - 1 };
@@ -27002,19 +26285,6 @@ function _generateSourceHash(msgs){
   return 'h_' + Math.abs(hash).toString(36);
 }
 
-// 对单条消息生成短哈希（用于思路二：末尾3条消息定位）
-function _msgHash(m){
-  var str = (m.role||'') + '|' + String(m.text||'').slice(0, 80);
-  var h = 0;
-  for(var i = 0; i < str.length; i++){ h = ((h << 5) - h) + str.charCodeAt(i); h |= 0; }
-  return Math.abs(h).toString(36);
-}
-
-// 生成区间末尾最多3条消息的哈希数组（用于定位总结进度）
-function _tailHashes(msgs){
-  return msgs.slice(-3).map(_msgHash);
-}
-
 // 独立版本的 entry display 重建（供 _generateTimelineEntry 内部去重使用）
 function _rebuildEntryDisplayText(entry){
   if (!entry || !entry.structured) return;
@@ -27022,8 +26292,7 @@ function _rebuildEntryDisplayText(entry){
   if (s.storyTime) display.push('⏰ ' + s.storyTime);
   if (s.facts && s.facts.length) display.push('📋 事实：\n' + s.facts.map(function(f){ return '  · ' + f; }).join('\n'));
   if (s.quotes && s.quotes.length) display.push('💬 原话：\n' + s.quotes.map(function(q){ return '  「' + q + '」'; }).join('\n'));
-  if (s.events && s.events.length) display.push('📌 事件：\n' + s.events.map(function(t){ return '  · ' + t; }).join('\n'));
-  else if (s.turning && s.turning.length) display.push('📌 事件：\n' + s.turning.map(function(t){ return '  · ' + t; }).join('\n'));
+  if (s.turning && s.turning.length) display.push('⚡ 转折：\n' + s.turning.map(function(t){ return '  · ' + t; }).join('\n'));
   if (s.props && s.props.length) display.push('🎒 道具：' + s.props.join('、'));
   if (s.todos && s.todos.length) display.push('📝 待办：\n' + s.todos.map(function(t){ return '  ' + (t.done ? '✅' : '☐') + ' ' + t.text; }).join('\n'));
   entry.displayText = display.join('\n\n');
@@ -27046,38 +26315,9 @@ async function _generateTimelineEntry(npcId, fromIdx, toIdx, mode, opts){
 
   var db = loadContactsDB();
   var npc = findContactById(db, npcId) || { name:String(npcId) };
-
-  // 消息正文不加时间前缀，日期范围单独作为上下文注入
   var dialogText = selected.map(function(m){
     return (m.role === 'me' ? '用户' : npc.name) + ': ' + String(m.text||'').slice(0, 300);
   }).join('\n');
-
-  // 计算这批消息的真实日期范围
-  var _firstTs = selected[0] && selected[0].t ? Number(selected[0].t) : 0;
-  var _lastTs = selected[selected.length-1] && selected[selected.length-1].t ? Number(selected[selected.length-1].t) : 0;
-  var _dateRangeStr = '';
-  try{
-    var _d1 = new Date(_firstTs), _d2 = new Date(_lastTs);
-    var _wd = ['日','一','二','三','四','五','六'];
-    var _fmtD = function(d){ return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日（周'+_wd[d.getDay()]+'）'; };
-    var _fmtT = function(d){ return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
-    if(_d1.toDateString() === _d2.toDateString()){
-      _dateRangeStr = _fmtD(_d1) + ' ' + _fmtT(_d1) + '—' + _fmtT(_d2);
-    } else {
-      _dateRangeStr = _fmtD(_d1)+' '+_fmtT(_d1) + ' 至 ' + _fmtD(_d2)+' '+_fmtT(_d2);
-    }
-  }catch(e){}
-
-  // 故事日期（如设置了故事时间模式）
-  var _storyDateStr = '';
-  try{
-    var _cfg = phoneLoadSettings();
-    if(_cfg.timeMode === 'story' && _cfg.storyDate) _storyDateStr = _cfg.storyDate;
-  }catch(e){}
-
-  var _dateHint = '';
-  if(_dateRangeStr) _dateHint += '真实时间：' + _dateRangeStr;
-  if(_storyDateStr) _dateHint += (_dateHint ? '　' : '') + '故事时间：' + _storyDateStr;
 
   var lastTodos = [];
   if (tlMode.entries.length > 0){
@@ -27097,34 +26337,34 @@ async function _generateTimelineEntry(npcId, fromIdx, toIdx, mode, opts){
     : '';
 
   var defaultPrompt = targetMode === 'offline'
-    ? `你是剧情记录员，只记录客观发生的事，不做任何评价或定论。对话有时间范围标注，请在 storyTime 里写出日期和时段（如"3月17日 深夜"）。请输出纯 JSON（不要 markdown 代码块）：
+    ? `你是一个客观的剧情记录员。以下内容来自线下见面 / 场景互动，请更重视场景变化、动作、事件推进与关系变化。请输出纯 JSON（不要 markdown 代码块）：
 {
-  "storyTime": "日期+时段，如：3月17日 深夜至18日凌晨",
-  "facts": ["发生了什么事（只写事实，不写这意味着什么）"],
-  "quotes": ["值得记录的原话"],
-  "events": ["值得标注的具体事件，只写发生了什么，不写关系影响或意义"],
-  "props": ["出现或使用的具体物品/地点"],
+  "storyTime": "提取的故事内时间（如有）",
+  "facts": ["客观事实1", "客观事实2"],
+  "quotes": ["重要原话1", "重要原话2"],
+  "turning": ["转折点或重要决定"],
+  "props": ["新出现或使用的道具/物品"],
   "todos": [{"text":"待办内容","done":false}]
 }
 ${todoHint}
-严禁出现"关系取得突破""首次主动""关系进一步"之类的评价性语言，只记录行为本身。`
-    : `你是剧情记录员，只记录客观发生的事，不做任何评价或定论。对话有时间范围标注，请在 storyTime 里写出日期和时段（如"3月15日 晚上至次日中午"）。请输出纯 JSON（不要 markdown 代码块）：
+只记录客观事实，不主观评价。摘取关键原话。`
+    : `你是一个客观的剧情记录员。以下内容来自手机线上聊天，请更重视手机聊天里的关键信息、关系变化、承诺、待办与重要原话。请输出纯 JSON（不要 markdown 代码块）：
 {
-  "storyTime": "日期+时段，如：3月15日 晚上至次日中午",
-  "facts": ["发生了什么事（只写事实，不写这意味着什么）"],
-  "quotes": ["值得记录的原话"],
-  "events": ["值得标注的具体事件，只写发生了什么，不写关系影响或意义"],
-  "props": ["出现或使用的具体物品/地点"],
+  "storyTime": "提取的故事内时间（如有）",
+  "facts": ["客观事实1", "客观事实2"],
+  "quotes": ["重要原话1", "重要原话2"],
+  "turning": ["转折点或重要决定"],
+  "props": ["新出现或使用的道具/物品"],
   "todos": [{"text":"待办内容","done":false}]
 }
 ${todoHint}
-严禁出现"关系取得突破""首次主动""关系进一步"之类的评价性语言，只记录行为本身。`;
+只记录客观事实，不主观评价。摘取关键原话。`;
   var systemPrompt = customPrompt || defaultPrompt;
 
   try{
     var result = await PhoneAI.chat({
       system: systemPrompt,
-      messages: [{ role:'user', content: (_dateHint ? _dateHint + '\n\n' : '') + '对话片段（第' + (fromIdx+1) + '~' + (toIdx+1) + '条）：\n' + dialogText.slice(0, 3000) }],
+      messages: [{ role:'user', content:'对话片段（第' + (fromIdx+1) + '~' + (toIdx+1) + '条）：\n' + dialogText.slice(0, 3000) }],
       temperature: 0.3,
       maxTokens: 800,
       channel: 'background',
@@ -27184,7 +26424,7 @@ ${todoHint}
     if (structured.storyTime) display.push('⏰ ' + structured.storyTime);
     if (structured.facts && structured.facts.length) display.push('📋 事实：\n' + structured.facts.map(function(f){ return '  · ' + f; }).join('\n'));
     if (structured.quotes && structured.quotes.length) display.push('💬 原话：\n' + structured.quotes.map(function(q){ return '  「' + q + '」'; }).join('\n'));
-    if (structured.events && structured.events.length) display.push('⚡ 转折：\n' + structured.events.map(function(t){ return '  · ' + t; }).join('\n'));
+    if (structured.turning && structured.turning.length) display.push('⚡ 转折：\n' + structured.turning.map(function(t){ return '  · ' + t; }).join('\n'));
     if (structured.props && structured.props.length) display.push('🎒 道具：' + structured.props.join('、'));
     if (structured.todos && structured.todos.length) display.push('📝 待办：\n' + structured.todos.map(function(t){ return '  ' + (t.done ? '✅' : '☐') + ' ' + t.text; }).join('\n'));
 
@@ -27193,7 +26433,6 @@ ${todoHint}
       range: [fromIdx, toIdx],
       mode: targetMode,
       sourceHash: sourceHash,
-      tailHashes: _tailHashes(selected), // ★ 末尾3条消息哈希，用于定位总结进度
       promptVersion: 2,
       storyTime: structured.storyTime || '',
       structured: structured,
@@ -27290,8 +26529,7 @@ function _openTimelineViewer(npcId){
     if (s.storyTime) display.push('⏰ ' + s.storyTime);
     if (s.facts && s.facts.length) display.push('📋 事实：\n' + s.facts.map(function(f){ return '  · ' + f; }).join('\n'));
     if (s.quotes && s.quotes.length) display.push('💬 原话：\n' + s.quotes.map(function(q){ return '  「' + q + '」'; }).join('\n'));
-    if (s.events && s.events.length) display.push('📌 事件：\n' + s.events.map(function(t){ return '  · ' + t; }).join('\n'));
-    else if (s.turning && s.turning.length) display.push('📌 事件：\n' + s.turning.map(function(t){ return '  · ' + t; }).join('\n'));
+    if (s.turning && s.turning.length) display.push('⚡ 转折：\n' + s.turning.map(function(t){ return '  · ' + t; }).join('\n'));
     if (s.props && s.props.length) display.push('🎒 道具：' + s.props.join('、'));
     if (s.todos && s.todos.length) display.push('📝 待办：\n' + s.todos.map(function(t){ return '  ' + (t.done ? '✅' : '☐') + ' ' + t.text; }).join('\n'));
     entry.displayText = display.join('\n\n');
@@ -27307,14 +26545,8 @@ function _openTimelineViewer(npcId){
       }
     });
     if (!allTodos.length) return '';
-    var h = '<div style="margin:10px 0;padding:10px 12px;'
-      + 'background:linear-gradient(145deg,rgba(255,255,255,.82),rgba(240,236,230,.68));'
-      + 'border-radius:12px;'
-      + 'border:1px solid rgba(255,255,255,.75);'
-      + 'box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 2px 8px rgba(0,0,0,.06);">';
-    h += '<div style="font-size:12px;font-weight:600;color:rgba(20,24,28,.6);margin-bottom:6px;">待办跟踪 <span style="font-weight:400;color:rgba(20,24,28,.3);">'+allTodos.length+'项</span></div>';
-    // 最多显示约3条高度，超出滚动
-    h += '<div style="max-height:108px;overflow-y:auto;">';
+    var h = '<div style="margin:10px 0;padding:10px 12px;background:var(--ph-glass,rgba(255,255,255,.78));border-radius:10px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.06));">';
+    h += '<div style="font-size:12px;font-weight:600;color:rgba(20,24,28,.6);margin-bottom:6px;">待办跟踪</div>';
     allTodos.forEach(function(t){
       var ds = t.done ? 'text-decoration:line-through;color:rgba(20,24,28,.3);' : 'color:rgba(20,24,28,.7);';
       h += '<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:4px;padding:3px 0;">'
@@ -27324,7 +26556,6 @@ function _openTimelineViewer(npcId){
         + '<button data-act="todoDel" data-eidx="'+t.entryIdx+'" data-tidx="'+t.todoIdx+'" style="flex-shrink:0;font-size:10px;padding:1px 5px;border-radius:3px;border:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.8);cursor:pointer;color:rgba(20,24,28,.35);">✕</button>'
         + '</div>';
     });
-    h += '</div>';
     h += '<button data-act="todoAdd" style="margin-top:4px;font-size:11px;padding:4px 10px;border-radius:6px;border:1px dashed rgba(0,0,0,.1);background:transparent;cursor:pointer;color:rgba(20,24,28,.35);width:100%;">+ 添加待办</button></div>';
     return h;
   }
@@ -27372,42 +26603,17 @@ function _openTimelineViewer(npcId){
       return (a.createdAt || 0) - (b.createdAt || 0);
     });
     var info = _getPendingInfo();
-    // 실시간으로 현재 모드의 실제 메시지 수 계산
-    var _targetModeLog = _getLogForModeBranch(npcId, _normChatMode(viewMode));
-    var _realLogLen = _targetModeLog.length;
-    // 전체 로그에서 untagged 메시지 포함한 실제 총 수
-    var _fullLog = [];
-    try{ _fullLog = getLog(npcId); }catch(e){}
-    var _untaggedCount = 0;
-    try{
-      var _activeBr = (typeof _getActiveBranch==='function') ? _getActiveBranch(npcId) : 'main';
-      _untaggedCount = _fullLog.filter(function(m){ return (m.branch||'main')===_activeBr && !m.mode; }).length;
-    }catch(e){}
-
-    var _tl2 = _loadTimeline(npcId);
-    var _bucket2 = _getTimelineModeState(_tl2, _normChatMode(viewMode), true);
-    var _realLastEnd = _bucket2.entries.length > 0
-      ? Math.min(_bucket2.entries[_bucket2.entries.length-1].range[1]+1, _realLogLen)
-      : 0;
-    var _realRemaining = Math.max(0, _realLogLen - _realLastEnd);
-
-    var statusText = _modeLabel(viewMode) + '共 ' + _realLogLen + ' 条';
-    // 如果是线上且有大量无标签消息，提示用户
-    if(viewMode !== 'offline' && _untaggedCount > 0){
-      statusText += '（含 '+_untaggedCount+' 条旧消息未分类，已按线上计入）';
-    }
-    if (_realLastEnd > 0) statusText += '，已总结至第 ' + _realLastEnd + ' 条';
-    if (_realRemaining > 0){
-      var _cs = _getChunkSize();
-      statusText += '，还有 ' + _realRemaining + ' 条未总结';
-      if (_realRemaining < _cs) statusText += '（不足 ' + _cs + ' 条可手动点「生成总结」触发）';
-    } else if (_realLastEnd > 0) {
-      statusText += '，已全部总结 ✓';
-    }
+    // ★ 显示当前模式过滤后的条数，并附上全量总数帮助理解
+    var _totalAllModes = 0;
+    try{ _totalAllModes = getLog(npcId).length; }catch(e){}
+    var _modeFilterNote = (_totalAllModes > info.logLength) ? '（全部模式共'+_totalAllModes+'条）' : '';
+    var statusText = '已总结至第 ' + info.lastEnd + ' 条，当前模式共 ' + info.logLength + ' 条' + _modeFilterNote;
+    if (info.remaining > 0) statusText += '，剩余 ' + info.remaining + ' 条未总结';
     // ★ 线下模式显示字数统计
     if(_normChatMode(viewMode) === 'offline'){
       try{
-        var _totalChars = _targetModeLog.reduce(function(s,m){ return s+String(m.text||'').length; },0);
+        var _offLog = _getLogForModeBranch(npcId, 'offline');
+        var _totalChars = _offLog.reduce(function(s,m){ return s+String(m.text||'').length; },0);
         statusText += ' · 共约 ' + (_totalChars >= 10000 ? Math.round(_totalChars/1000)+'k' : _totalChars) + ' 字';
       }catch(e){}
     }
@@ -27445,18 +26651,9 @@ function _openTimelineViewer(npcId){
   var modal = ov.querySelector('.wxCPModal');
   if (!modal) modal = ov; // fallback
 
-  function refresh(preserveScroll){
+  function refresh(){
     var rootEl = modal.querySelector('[data-el="tlRoot"]');
-    if (!rootEl) return;
-    // 保存滚动位置
-    var entriesEl = preserveScroll ? rootEl.querySelector('[data-el="tlEntries"]') : null;
-    var savedScroll = entriesEl ? entriesEl.scrollTop : 0;
-    rootEl.innerHTML = renderBody();
-    // 恢复滚动位置
-    if (preserveScroll && savedScroll > 0){
-      var newEntriesEl = rootEl.querySelector('[data-el="tlEntries"]');
-      if (newEntriesEl) requestAnimationFrame(function(){ newEntriesEl.scrollTop = savedScroll; });
-    }
+    if (rootEl) rootEl.innerHTML = renderBody();
   }
 
   // ---- 编辑弹层 ----
@@ -27521,11 +26718,14 @@ function _openTimelineViewer(npcId){
     // ---- 第一步删除（显示确认按钮）----
     if (act === 'tlDel'){
       _pendingDeleteIdx = parseInt(t.getAttribute('data-tlidx'));
-      refresh(true); // 保留滚动位置
+      console.log('[TL] 准备删除 idx=' + _pendingDeleteIdx);
+      refresh();
       return;
     }
+    // ---- 第二步删除（真正执行）----
     if (act === 'tlDelConfirm'){
       var idx = parseInt(t.getAttribute('data-tlidx'));
+      console.log('[TL] 确认删除 idx=' + idx);
       var tl = _loadTimeline(npcId);
       var bucket = _getTimelineModeState(tl, viewMode, true);
       if (idx >= 0 && idx < bucket.entries.length){
@@ -27535,12 +26735,13 @@ function _openTimelineViewer(npcId){
         try{ toast('已删除'); }catch(e){}
       }
       _pendingDeleteIdx = -1;
-      refresh(true); // 保留滚动位置
+      refresh();
       return;
     }
+    // ---- 取消删除 ----
     if (act === 'tlDelCancel'){
       _pendingDeleteIdx = -1;
-      refresh(true);
+      refresh();
       return;
     }
     // ---- 编辑 ----
@@ -27566,7 +26767,7 @@ function _openTimelineViewer(npcId){
         _saveTimeline(npcId, tl);
         _syncSummaryFromTimeline(npcId, viewMode);
       }
-      refresh(true);
+      refresh();
       return;
     }
     if (act === 'todoEdit'){
@@ -27582,7 +26783,7 @@ function _openTimelineViewer(npcId){
           _saveTimeline(npcId, tl);
           _syncSummaryFromTimeline(npcId, viewMode);
         }
-        refresh(true);
+        refresh();
       });
       return;
     }
@@ -27597,7 +26798,7 @@ function _openTimelineViewer(npcId){
         _saveTimeline(npcId, tl);
         _syncSummaryFromTimeline(npcId, viewMode);
       }
-      refresh(true);
+      refresh();
       return;
     }
     if (act === 'todoAdd'){
@@ -28330,6 +27531,47 @@ function _mapEnsure(){
 }
 
 // ---- SVG 构建 ----
+function _mapIconMarkup(emoji, size, cls){
+  size = size || 18;
+  cls = cls || 'mapFlatIcon';
+  var raw = '';
+  try{ raw = _phFlatIcon(emoji); }catch(e){ raw = ''; }
+  var wrapStyle = 'width:'+size+'px;height:'+size+'px;display:inline-flex;align-items:center;justify-content:center;line-height:1;vertical-align:middle;color:var(--ph-icon-inner-tint, rgba(20,24,28,.56));flex-shrink:0;';
+  if(typeof raw === 'string' && /<svg/i.test(raw)){
+    raw = raw.replace(/<svg\b([^>]*)>/i, function(m, attrs){
+      attrs = (attrs||'').replace(/\s(width|height)=["'][^"']*["']/g, '');
+      if(!/class=/.test(attrs)) attrs += ' class="phIco"';
+      return '<svg'+attrs+' width="'+size+'" height="'+size+'" style="width:'+size+'px;height:'+size+'px;display:block;">';
+    });
+    return '<span class="'+cls+'" style="'+wrapStyle+'">'+raw+'</span>';
+  }
+  var key = String(emoji||'').replace(/\uFE0F/g,'');
+  var fb = {
+    '🏪':'<path d="M4 9.5h16v9.5H4z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 9.5 7 5h10l1.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 14.5h6v4H9z" fill="currentColor" opacity=".18"/>',
+    '🎪':'<path d="M3 19 12 5l9 14z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 5v14" stroke="currentColor" stroke-width="1.8"/><path d="M7 19v-4m10 4v-4" stroke="currentColor" stroke-width="1.8"/>',
+    '⛪':'<path d="M5 20V9l7-5 7 5v11z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5M9.5 9.5h5" stroke="currentColor" stroke-width="1.8"/>',
+    '🏟':'<path d="M4 18c2-4 5-6 8-6s6 2 8 6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 10h14" stroke="currentColor" stroke-width="1.8"/><path d="M7 7h10" stroke="currentColor" stroke-width="1.8"/>',
+    '🎡':'<circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><path d="M12 5v5m0 4v5M5 12h5m4 0h5M7.2 7.2l3.5 3.5m2.6 2.6 3.5 3.5m0-9.6-3.5 3.5m-2.6 2.6-3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
+    '🗼':'<path d="M12 4 7 20h10L12 4z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 12h6M8 16h8" stroke="currentColor" stroke-width="1.5"/>',
+    '🌋':'<path d="M4 19 10 9h4l6 10z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 6c0-1.2 1.4-1.7 1.4-3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+    '⛰':'<path d="M3 19 9 9l4 6 2-3 6 7z" fill="none" stroke="currentColor" stroke-width="1.8"/>',
+    '🏋':'<path d="M7 8v8m10-8v8M4 10h3m10 0h3M4 14h3m10 0h3M10 12h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    '🛒':'<path d="M4 6h2l2 9h8l2-6H7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="18" r="1.3" fill="currentColor"/><circle cx="16" cy="18" r="1.3" fill="currentColor"/>',
+    '💊':'<path d="M9 7a4 4 0 1 1 5.7 5.7L10 17.4A4 4 0 0 1 4.3 11.7L9 7z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 8l8 8" stroke="currentColor" stroke-width="1.8"/>',
+    '🎓':'<path d="M3 10 12 6l9 4-9 4-9-4z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 12v3c0 1.2 2.2 2.5 5 2.5s5-1.3 5-2.5v-3" stroke="currentColor" stroke-width="1.8"/>',
+    '👥':'<circle cx="9" cy="9" r="2.5" fill="currentColor" opacity=".9"/><circle cx="15.5" cy="9.5" r="2.2" fill="currentColor" opacity=".55"/><path d="M4.5 18c.6-2.5 2.8-4 5.5-4s4.9 1.5 5.5 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M13 18c.3-1.8 1.8-3 3.8-3 1.2 0 2.2.4 3 .9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".8"/>',
+    '🚪':'<path d="M7 4h10v16H7z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="14" cy="12" r="1.2" fill="currentColor"/>',
+    '🏠':'<path d="M4 10.5 12 4l8 6.5V20H4z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 20v-5h4v5" fill="none" stroke="currentColor" stroke-width="1.8"/>',
+    '🛏':'<path d="M4 13h16v5H4z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6 13V9h4a2 2 0 0 1 2 2v2M4 18V8M20 18v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    '🛋':'<path d="M5 11.5A2.5 2.5 0 0 1 7.5 9H16a3 3 0 0 1 3 3v4H5z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 19v-3m10 3v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    '🍳':'<circle cx="11" cy="12" r="5.5" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="11" cy="12" r="2" fill="currentColor" opacity=".22"/><path d="M16 8l3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    '💡':'<path d="M12 4a5 5 0 0 0-3.4 8.7c.7.6 1.1 1.3 1.2 2.1h4.4c.1-.8.5-1.5 1.2-2.1A5 5 0 0 0 12 4z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 18h4M10.5 21h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    '🛁':'<path d="M5 13h14v3a3 3 0 0 1-3 3H9a4 4 0 0 1-4-4z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 13V9a2 2 0 0 1 4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    '🚽':'<path d="M7 5h8v4H7z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 9h6a2 2 0 0 1 2 2c0 4-2 7-5 7s-5-3-5-6V9z" fill="none" stroke="currentColor" stroke-width="1.8"/>'
+  }[key] || '<path d="M12 21s-6-4.35-6-10a6 6 0 1 1 12 0c0 5.65-6 10-6 10zm0-7.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>';
+  return '<span class="'+cls+'" style="'+wrapStyle+'"><svg class="phIco" viewBox="0 0 24 24" width="'+size+'" height="'+size+'" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+fb+'</svg></span>';
+}
+
 function _mapBuildSVG(mapData){
   var pal = mapData.palette || MAP_PALETTES[0];
   var islandD = _mapIslandPath(mapData.islandPts);
@@ -29289,7 +28531,7 @@ function renderMapApp(body){
     }
 
     var html = '<div class="mapDetailCard"><div class="mapDetailClose" data-act="mapDetailClose">✕</div>';
-    html += '<div class="mapDetailHead"><span class="mapDetailEmoji">🏡</span>';
+    html += '<div class="mapDetailHead">'+_mapIconMarkup('🏠', 40, 'mapDetailEmoji')+'';
     html += '<div class="mapDetailName">'+esc(house.name)+'</div>';
     html += '<div class="mapDetailAtmo">'+statusText+(htDef?' · '+htDef.label:'')+'</div></div>';
     html += '<div class="mapDetailSection">'+btns+'</div></div>';
@@ -29702,7 +28944,7 @@ function _mapOpenEditor(body, mapData, gestureCtrl){
       addHtml += '<div style="margin-bottom:8px;"><input data-el="newLmName" placeholder="地标名称" maxlength="15" style="width:100%;padding:8px 10px;border:1px solid rgba(0,0,0,.1);border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;"/></div>';
       addHtml += '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:4px;">选择图标</div>';
       addHtml += '<div class="mapEdEmojiGrid">';
-      addEmojis.forEach(function(em,ei){ addHtml += '<button class="mapEdEmojiBtn" data-emoji="'+em+'">'+em+'</button>'; });
+      addEmojis.forEach(function(em,ei){ addHtml += '<button class="mapEdEmojiBtn" data-emoji="'+em+'">'+_mapIconMarkup(em, 20, 'mapFlatIcon')+'</button>'; });
       addHtml += '</div>';
       addHtml += '<div style="display:flex;gap:8px;margin-top:10px;">';
       addHtml += '<button data-el="newLmOk" style="flex:1;padding:10px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:13px;font-weight:600;cursor:pointer;">添加到地图中心</button>';
@@ -31562,7 +30804,7 @@ function _mapOpenRoom(container, mapData, houseId){
           if(_csO) _curSL = ' · '+_csO.label;
         }
         html += '<div class="mapFurnSlot" style="position:relative;" data-furnid="'+f.id+'" data-furntype="'+f.type+'">';
-        html += '<span class="fe" data-act="'+(_editMode?'roomMove':'roomUse')+'" data-furnid="'+f.id+'" data-furntype="'+f.type+'">'+cat.emoji+'</span>';
+        html += '<span class="fe" data-act="'+(_editMode?'roomMove':'roomUse')+'" data-furnid="'+f.id+'" data-furntype="'+f.type+'">'+_mapIconMarkup(cat.emoji, 22, 'mapFlatIcon')+'</span>';
         html += '<span class="fn" data-act="'+(_editMode?'roomMove':'roomUse')+'" data-furnid="'+f.id+'" data-furntype="'+f.type+'">'+cat.label+_curSL+(_editMode?' 📍':'')+'</span>';
         html += '<span class="fd" data-act="'+(_editMode?'roomMove':'roomUse')+'" data-furnid="'+f.id+'" data-furntype="'+f.type+'">'+(_editMode?'点击后拖到新位置':fxDesc.join(' '))+'</span>';
         if(cat.styles && cat.styles.length > 1 && !_editMode){
@@ -31571,14 +30813,14 @@ function _mapOpenRoom(container, mapData, houseId){
         html += '</div>';
       } else {
         html += '<div class="mapFurnSlot locked" data-act="roomBuy" data-furntype="'+f.type+'" data-furnid="'+f.id+'">';
-        html += '<span class="fe">'+cat.emoji+'</span>';
+        html += '<span class="fe">'+_mapIconMarkup(cat.emoji, 22, 'mapFlatIcon')+'</span>';
         html += '<span class="fn">'+cat.label+' 🔒</span>';
         html += '<span class="fd">$'+cat.cost+'</span>';
         html += '</div>';
       }
     });
     if(isMyH){
-      html += '<div class="mapFurnSlot" data-act="roomShop" style="border-style:dashed;opacity:0.6;"><span class="fe">➕</span><span class="fn">购买家具</span></div>';
+      html += '<div class="mapFurnSlot" data-act="roomShop" style="border-style:dashed;opacity:0.6;"><span class="fe">'+_mapIconMarkup('➕', 20, 'mapFlatIcon')+'</span><span class="fn">购买家具</span></div>';
     }
     html += '</div>';
 
@@ -32314,25 +31556,6 @@ function _buildMapPromptBlock(npcId){
     var mapData = _mapLoad();
     if(!mapData || !mapData.generated) return '';
     var lines = ['【地图环境：'+esc(mapData.name)+'】'];
-
-    // 全部地标列表（让 AI 知道可用名称）
-    var allLmList = (mapData.landmarks||[]).map(function(lm){
-      return (lm.emoji||'📍')+(lm.customName||lm.name);
-    });
-    if(allLmList.length) lines.push('小镇地标：'+allLmList.join('、'));
-
-    // 住所
-    if(mapData.myHouseId){
-      var _mh = (mapData.houses||[]).find(function(h){ return h.id===mapData.myHouseId; });
-      if(_mh) lines.push('用户的家：🏠'+_mh.name);
-    }
-    if(mapData.npcHouses && mapData.npcHouses[npcId]){
-      var _nh = (mapData.houses||[]).find(function(h){ return h.id===mapData.npcHouses[npcId]; });
-      if(_nh) lines.push('你自己的家：🏡'+_nh.name);
-    }
-
-    // 告知 AI 可以发位置
-    lines.push('你可以在消息中写 [发位置:地标名] 来分享某个地标，地标名必须完全匹配上面列出的名称。');
 
     // 当前场景（如果从地图触发了线下场景）
     var scene = _loadSceneData(npcId);
