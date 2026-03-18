@@ -2380,8 +2380,9 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   position: absolute;
   width: calc(375px + 10px); height: calc(750px + 10px);
   max-width: calc(96vw + 10px); max-height: calc(90vh + 10px);
-  left: 50%; top: 50%;
-  transform: translate(-50%, -50%);
+  left: -5px; top: -5px;
+  transform: none;
+  transform-origin: top left;
   border-radius: 43px;
   z-index: 1;
   pointer-events: none;
@@ -2443,21 +2444,23 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 
 /* ---------- Zoom bar ---------- */
 #${ID} .phZoomBar{
-  display:none; position:absolute; bottom:-48px; left:50%; transform:translateX(-50%);
-  background:rgba(30,30,50,.88); border-radius:22px; padding:5px 12px;
-  gap:10px; align-items:center; z-index:100; white-space:nowrap;
-  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,.15);
-  box-shadow:0 4px 16px rgba(0,0,0,.3);
+  display:none; position:absolute; bottom:-50px; left:50%; transform:translateX(-50%);
+  background: linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.12));
+  border-radius:999px; padding:6px 10px;
+  gap:8px; align-items:center; z-index:100; white-space:nowrap;
+  backdrop-filter:blur(18px) saturate(118%); -webkit-backdrop-filter:blur(18px) saturate(118%);
+  border:1px solid rgba(255,255,255,.36);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 10px 24px rgba(100,94,86,.14);
 }
 #${ID}.full .phZoomBar{ display:flex; }
 #${ID} .phZoomBtn{
-  appearance:none; border:0; background:rgba(255,255,255,.12); border-radius:50%;
-  width:32px; height:32px; color:#fff; font-size:18px; cursor:pointer;
-  display:flex; align-items:center; justify-content:center; transition:background .15s;
+  appearance:none; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.16); border-radius:50%;
+  width:32px; height:32px; color:var(--ph-text); font-size:18px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; transition:background .15s, border-color .15s, transform .15s;
   flex-shrink:0;
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
 }
-#${ID} .phZoomBtn:hover{ background:rgba(255,255,255,.25); }
+#${ID} .phZoomBtn:hover{ background:rgba(255,255,255,.24); border-color:rgba(255,255,255,.3); }
 #${ID} .phZoomLabel{ color:rgba(255,255,255,.75); font-size:12px; min-width:38px; text-align:center; }
 
 /* ---------- Wallpaper ---------- */
@@ -25276,29 +25279,22 @@ function bindPageScroll(){
         shell.style.transform = 'scale(' + state.scale + ')';
         shell.style.transformOrigin = 'top left';
         const shellRect = shell.getBoundingClientRect();
-        // ★ 手机壳（phRingLayer）跟随 shell 缩放与定位
+        // ★ 手机壳（phRingLayer）始终和 shell 同原点缩放，避免缩小时错位分离
         const ring = root.querySelector('.phRingLayer');
         if (ring){
-          if (state.mode === 'mini'){
-            ring.style.transform = 'scale(' + state.scale + ')';
-            ring.style.transformOrigin = 'top left';
-            ring.style.left = '-5px';
-            ring.style.top = '-5px';
-          } else {
-            ring.style.transform = 'translate(-50%,-50%) scale(' + state.scale + ')';
-            ring.style.transformOrigin = 'center center';
-            ring.style.left = '50%';
-            ring.style.top = '50%';
-          }
+          ring.style.transform = 'scale(' + state.scale + ')';
+          ring.style.transformOrigin = 'top left';
+          ring.style.left = '-5px';
+          ring.style.top = '-5px';
         }
         const label = root.querySelector('[data-ph="zoomLabel"]');
         if (label) label.textContent = Math.round(state.scale * 100) + '%';
         const zbar = root.querySelector('.phZoomBar');
         if (zbar){
           const rawH = shell.offsetHeight || 750;
-          zbar.style.top = (rawH * state.scale + 8) + 'px';
+          zbar.style.top = (rawH * state.scale + 14) + 'px';
           zbar.style.bottom = 'auto';
-          zbar.style.left = ((shellRect.width / 2) || 188) + 'px';
+          zbar.style.left = ((shell.offsetWidth * state.scale) / 2 || 188) + 'px';
           zbar.style.transform = 'translateX(-50%)';
         }
       }
