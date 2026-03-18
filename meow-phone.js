@@ -4310,6 +4310,48 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .74)) saturate(118%) !important;
   -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .74)) saturate(118%) !important;
 }
+#${ID} .mapRoomSettingsOverlay{ background:transparent !important; }
+#${ID} .mapRoomSettingsModal{
+  width:min(340px, calc(100% - 34px)) !important;
+  max-width:min(340px, calc(100% - 34px)) !important;
+  border-radius:22px !important;
+  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .04)) !important;
+  border:1px solid rgba(255,255,255,.52) !important;
+  box-shadow:0 12px 32px rgba(80,100,140,.10), 0 1px 0 rgba(255,255,255,.80) inset !important;
+  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .74)) saturate(118%) !important;
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .74)) saturate(118%) !important;
+}
+#${ID} .mapRoomSettingsModal textarea,
+#${ID} .mapRoomSettingsModal input{
+  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .08)) !important;
+  border:1px solid rgba(255,255,255,.52) !important;
+  box-shadow:0 6px 14px rgba(80,100,140,.05), 0 1px 0 rgba(255,255,255,.72) inset !important;
+  color:var(--ph-text) !important;
+}
+#${ID} .mapRoomSettingsModal [data-el="rsGenerate"],
+#${ID} .mapRoomSettingsModal [data-el="rsClear"],
+#${ID} .mapRoomSettingsModal [data-el="rsClose"]{
+  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .03)) !important;
+  border:1px solid rgba(255,255,255,.48) !important;
+  color:var(--ph-icon-inner-tint, var(--ph-text)) !important;
+  box-shadow:0 8px 18px rgba(80,100,140,.06), 0 1px 0 rgba(255,255,255,.72) inset !important;
+  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .54)) saturate(114%) !important;
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .54)) saturate(114%) !important;
+}
+#${ID} .mapRoomSettingsModal [data-el="rsGenerate"]{ font-weight:600; }
+#${ID} .mapRoomSettingsModal [data-el="rsClear"],
+#${ID} .mapRoomSettingsModal [data-el="rsClose"]{ opacity:.96; }
+#${ID} .phModalCard [data-act="mapManualGenLogs"],
+#${ID} .phModalCard [data-act="mapClearLogs"],
+#${ID} .phModalCard [data-afm-val="logCount"],
+#${ID} .phModalCard [data-afm-ta="customPrompt"]{
+  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .03)) !important;
+  border:1px solid rgba(255,255,255,.48) !important;
+  color:var(--ph-icon-inner-tint, var(--ph-text)) !important;
+  box-shadow:0 8px 18px rgba(80,100,140,.06), 0 1px 0 rgba(255,255,255,.72) inset !important;
+  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .54)) saturate(114%) !important;
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .54)) saturate(114%) !important;
+}
 #${ID} .mapDetailSectionTitle{ color:var(--ph-text-dim) !important; }
 #${ID} .mapActRow,
 #${ID} .mapNoteInput,
@@ -4668,8 +4710,9 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .mapLm:hover .mapLmLabel{ opacity:1; }
 #${ID} .mapLm .mapHomeBadge{ font-size:7px; pointer-events:none; }
 #${ID} .mapZoomBar{
-  position:absolute; right:6px; bottom:50px;
-  display:flex; flex-direction:column; gap:3px; z-index:28;
+  position:absolute; right:8px; bottom:50px;
+  width:40px;
+  display:flex; flex-direction:column; gap:3px; z-index:28; align-items:center;
 }
 #${ID} .mapZoomBtn{
   width:28px; height:28px; border-radius:50%; border:0;
@@ -4678,6 +4721,24 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   box-shadow:0 1px 6px rgba(0,0,0,0.1);
   font-size:14px; font-weight:600; cursor:pointer;
   color:rgba(20,24,28,0.7); display:flex; align-items:center; justify-content:center;
+  margin:0 auto;
+}
+#${ID} .mapZoomBar .zDirRow,
+#${ID} .mapRoomZoomBar .zDirRow{
+  width:38px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  margin:0 auto;
+}
+#${ID} .mapZoomBar .zDirRow button,
+#${ID} .mapRoomZoomBar .zDirRow button{
+  width:18px !important;
+  height:18px !important;
+  min-width:18px;
+  font-size:9px !important;
+  padding:0;
 }
 #${ID} .mapZoomBtn:active{ transform:scale(0.9); }
 #${ID} .mapToolbar{
@@ -4894,9 +4955,10 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID} .mapZoomBtn[data-act^="mapPan"],
 #${ID} .mapRoomZoomBar button[data-act^="roomPan"]{
-  width:24px !important; height:24px !important; border-radius:50% !important;
+  width:20px !important; height:20px !important; border-radius:50% !important;
 }
-#${ID} .mapZoomBtn[data-act^="mapPan"]{ font-size:11px !important; }
+#${ID} .mapZoomBtn[data-act^="mapPan"],
+#${ID} .mapRoomZoomBar button[data-act^="roomPan"]{ font-size:9px !important; }
 #${ID} .mapNameEditInput{
   font-size:16px; font-weight:700; text-align:center;
   border:0; border-bottom:2px solid var(--ph-accent,#07c160);
@@ -4977,8 +5039,8 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID} .mapRoomLog::-webkit-scrollbar{ display:none; }
 #${ID} .mapRoomZoomBar{
-  position:absolute; right:4px; bottom:6px; z-index:5;
-  width:74px;
+  position:absolute; right:8px; bottom:8px; z-index:5;
+  width:40px;
   display:flex; flex-direction:column; gap:2px; align-items:center;
 }
 #${ID} .mapRoomZoomBar button{
@@ -4988,16 +5050,6 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID} .mapRoomZoomBar > button{ margin:0 auto; }
 #${ID} .mapRoomZoomBar button:active{ transform:scale(0.9); }
-#${ID} .mapRoomZoomBar .zDirRow{
-  width:72px;
-  display:grid;
-  grid-template-columns:repeat(3, 22px);
-  justify-content:center;
-  gap:3px;
-}
-#${ID} .mapRoomZoomBar .zDirRow button{ width:22px; height:22px; font-size:10px; margin:0 auto; }
-#${ID} .mapRoomZoomBar .zDirRow button:first-child{ grid-column:1; }
-#${ID} .mapRoomZoomBar .zDirRow button:last-child{ grid-column:3; }
 #${ID} .mapRoomTimeLabel{
   position:absolute; left:8px; top:8px; z-index:5;
   font-size:10px; color:rgba(20,24,28,0.4); background:rgba(255,255,255,0.6);
@@ -25223,10 +25275,21 @@ function bindPageScroll(){
         if (!shell) return;
         shell.style.transform = 'scale(' + state.scale + ')';
         shell.style.transformOrigin = 'top left';
-        // ★ 手机壳（phRingLayer）跟随 shell 缩放
+        const shellRect = shell.getBoundingClientRect();
+        // ★ 手机壳（phRingLayer）跟随 shell 缩放与定位
         const ring = root.querySelector('.phRingLayer');
         if (ring){
-          ring.style.transform = 'translate(-50%,-50%) scale(' + state.scale + ')';
+          if (state.mode === 'mini'){
+            ring.style.transform = 'scale(' + state.scale + ')';
+            ring.style.transformOrigin = 'top left';
+            ring.style.left = '-5px';
+            ring.style.top = '-5px';
+          } else {
+            ring.style.transform = 'translate(-50%,-50%) scale(' + state.scale + ')';
+            ring.style.transformOrigin = 'center center';
+            ring.style.left = '50%';
+            ring.style.top = '50%';
+          }
         }
         const label = root.querySelector('[data-ph="zoomLabel"]');
         if (label) label.textContent = Math.round(state.scale * 100) + '%';
@@ -25235,6 +25298,8 @@ function bindPageScroll(){
           const rawH = shell.offsetHeight || 750;
           zbar.style.top = (rawH * state.scale + 8) + 'px';
           zbar.style.bottom = 'auto';
+          zbar.style.left = ((shellRect.width / 2) || 188) + 'px';
+          zbar.style.transform = 'translateX(-50%)';
         }
       }
 
@@ -29374,13 +29439,13 @@ function renderMapApp(body){
   zoomBar.innerHTML = '<button class="mapZoomBtn" data-act="mapZoomIn">+</button>'+
     '<button class="mapZoomBtn" data-act="mapZoomOut">−</button>'+
     '<button class="mapZoomBtn" data-act="mapZoomReset" style="font-size:11px;"><svg class="phIco" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.5v2.2M8 12.3v2.2M1.5 8h2.2M12.3 8h2.2M3.4 3.4l1.6 1.6M11 11l1.6 1.6M12.6 3.4L11 5M5 11l-1.6 1.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg></button>'+
-    '<div style="height:3px;"></div>'+
-    '<button class="mapZoomBtn" data-act="mapPanUp" style="font-size:10px;">▲</button>'+
-    '<div style="display:flex;gap:2px;justify-content:center;">'+
-    '<button class="mapZoomBtn" data-act="mapPanLeft" style="font-size:10px;">◀</button>'+
-    '<button class="mapZoomBtn" data-act="mapPanRight" style="font-size:10px;">▶</button>'+
+    '<div style="height:2px;"></div>'+
+    '<button class="mapZoomBtn" data-act="mapPanUp" style="font-size:9px;">▲</button>'+
+    '<div class="zDirRow">'+
+    '<button class="mapZoomBtn" data-act="mapPanLeft" style="font-size:9px;">◀</button>'+
+    '<button class="mapZoomBtn" data-act="mapPanRight" style="font-size:9px;">▶</button>'+
     '</div>'+
-    '<button class="mapZoomBtn" data-act="mapPanDown" style="font-size:10px;">▼</button>';
+    '<button class="mapZoomBtn" data-act="mapPanDown" style="font-size:9px;">▼</button>';
   wrap.appendChild(zoomBar);
 
   // 底部工具栏
@@ -30290,12 +30355,12 @@ function _roomUiIcon(key){
     case 'stove': case '🍳': return s('<path d="M4 6h16v12H4z"/><circle cx="9" cy="12" r="2.2" fill="white" opacity=".72"/><circle cx="15" cy="12" r="2.2" fill="white" opacity=".72"/><path d="M8 4V2m4 2V2m4 2V2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>');
     case 'lamp': case '💡': return s('<path d="M12 3a5 5 0 0 0-3 9v2h6v-2a5 5 0 0 0-3-9zm-2 13h4v2h-4zm.5 3h3v2h-3z"/>');
     case 'tv': case '📺': return s('<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M9 19h6M12 17v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>');
-    case 'game': case '🎮': return '<span class="mapRoomUiIcon">'+_phFlatIcon('🎮')+'</span>';
+    case 'game': case '🎮': return s('<path d="M7 10h10a4 4 0 0 1 4 4v2a3 3 0 0 1-3 3h-2l-2-2H10l-2 2H6a3 3 0 0 1-3-3v-2a4 4 0 0 1 4-4zm1.7 3.2v1.4H7.3v1.4h1.4v1.4h1.4V16h1.4v-1.4h1.4v-1.4h-1.4v-1.4zm7.8 1.2a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2zm2.7-1.6a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2z');
     case 'bath': case '🛁': return s('<path d="M5 12h14a2 2 0 0 1 2 2v1H3v-1a2 2 0 0 1 2-2zm2 3v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1M7 10V8a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>');
     case 'piano': case '🎹': return s('<rect x="4" y="5" width="16" height="14" rx="2"/><rect x="6" y="7" width="2" height="10" fill="white" opacity=".92"/><rect x="9" y="7" width="2" height="10" fill="white" opacity=".92"/><rect x="12" y="7" width="2" height="10" fill="white" opacity=".92"/><rect x="15" y="7" width="2" height="10" fill="white" opacity=".92"/><rect x="7.5" y="7" width="1.2" height="6"/><rect x="10.5" y="7" width="1.2" height="6"/><rect x="13.5" y="7" width="1.2" height="6"/>');
     case 'plant': case 'bigplant': case '🪴': return s('<path d="M8 20h8l-1-4H9l-1 4zm4-6c-3 0-5-2.2-5-5 3 0 5 2.2 5 5zm1 0c0-2.8 2-5 5-5 0 2.8-2 5-5 5z"/>');
-    case 'frame': case '🖼': return '<span class="mapRoomUiIcon">'+_phFlatIcon('🖼')+'</span>';
-    case 'shelf': case '📚': return '<span class="mapRoomUiIcon">'+_phFlatIcon('📚')+'</span>';
+    case 'frame': case '🖼': return s('<rect x="4" y="5" width="16" height="14" rx="2"/><rect x="6" y="7" width="12" height="10" rx="1.2" fill="white" opacity=".18"/><path d="M7.5 15l3.5-4 2.6 2.7 1.9-2.1 2 3.4" fill="none" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/><circle cx="10" cy="10" r="1.2" fill="white" opacity=".9"/>');
+    case 'shelf': case '📚': return s('<rect x="4" y="4" width="16" height="3" rx="1"/><rect x="4" y="10.5" width="16" height="3" rx="1"/><rect x="6" y="6" width="2.5" height="4.5" rx=".5" fill="white" opacity=".82"/><rect x="9.2" y="6" width="2" height="4.5" rx=".5" fill="white" opacity=".62"/><rect x="13" y="12.5" width="2.5" height="4.5" rx=".5" fill="white" opacity=".82"/><rect x="16.2" y="12.5" width="1.8" height="4.5" rx=".5" fill="white" opacity=".62"/>');
     case 'rug': return s('<rect x="4" y="6" width="16" height="12" rx="3"/><path d="M7 6v12M17 6v12M4 9h16M4 15h16" stroke="white" opacity=".5" stroke-width="1" fill="none"/>');
     case 'bar_counter': case 'coffee_table': return s('<rect x="5" y="10" width="14" height="4" rx="1.5"/><path d="M8 14v5M16 14v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>');
     case 'computer': return s('<rect x="4" y="5" width="16" height="11" rx="2"/><path d="M8 19h8M12 16v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>');
@@ -30304,18 +30369,18 @@ function _roomUiIcon(key){
     case 'shower': return s('<path d="M8 7a4 4 0 0 1 8 0v1h2v2h-7a4 4 0 0 0-3 1.35L6 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M14 11v3M16 11v2M12 11v2" stroke="currentColor" opacity=".55" stroke-width="1.3" stroke-linecap="round"/>');
     case 'sink_mirror': return s('<rect x="6" y="3" width="12" height="8" rx="2"/><rect x="8" y="14" width="8" height="4" rx="1"/><path d="M10 18v2M14 18v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>');
     case 'toilet': return s('<path d="M8 4h8v6a4 4 0 0 1-4 4H8V4zm2 12h5l1 4H9l1-4zm6-7h2a2 2 0 0 1 2 2v1h-4V9z"/>');
-    case 'window': case '🪟': return '<span class="mapRoomUiIcon">'+_phFlatIcon('🪟')+'</span>';
+    case 'window': case '🪟': return s('<rect x="5" y="4" width="14" height="16" rx="2"/><path d="M12 4v16M5 12h14" stroke="white" stroke-width="1.5" opacity=".92" fill="none"/><rect x="7" y="6" width="4" height="4" rx=".8" fill="white" opacity=".18"/><rect x="13" y="6" width="4" height="4" rx=".8" fill="white" opacity=".18"/><rect x="7" y="12" width="4" height="6" rx=".8" fill="white" opacity=".18"/><rect x="13" y="12" width="4" height="6" rx=".8" fill="white" opacity=".18"/>');
     case 'house': case 'home': case '🏠': case '🏡': return s('<path d="M4 11.5 12 5l8 6.5v8.5H4z"/><path d="M8.5 20v-6h7v6" fill="white" opacity=".82"/>');
     case 'door': return s('<path d="M6 4h10a2 2 0 0 1 2 2v14H4V6a2 2 0 0 1 2-2zm5 8.2a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>');
-    case 'money': case '💰': return '<span class="mapRoomUiIcon">'+_phFlatIcon('💰')+'</span>';
-    case 'calendar': case '🗓': return '<span class="mapRoomUiIcon">'+_phFlatIcon('🗓')+'</span>';
-    case 'search': case '🔍': return '<span class="mapRoomUiIcon">'+_phFlatIcon('🔍')+'</span>';
+    case 'money': case '💰': return s('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="5.2" fill="white" opacity=".16"/><path d="M12 7.8v8.4M9.3 9.8c0-1 1.1-1.8 2.7-1.8s2.7.8 2.7 1.8-1.1 1.6-2.7 1.9-2.7.9-2.7 1.9 1.1 1.9 2.7 1.9 2.7-.8 2.7-1.9" stroke="white" stroke-width="1.4" stroke-linecap="round" fill="none" opacity=".92"/>');
+    case 'calendar': case '🗓': return s('<rect x="4" y="5" width="16" height="15" rx="2"/><rect x="4" y="8" width="16" height="4" fill="white" opacity=".18"/><path d="M8 3.5v3M16 3.5v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/><rect x="8" y="13" width="8" height="5" rx="1" fill="white" opacity=".82"/>');
+    case 'search': case '🔍': return s('<circle cx="10.5" cy="10.5" r="5.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14.7 14.7 19 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>');
     case 'bookmark': case '🔖': return s('<path d="M7 3h10a2 2 0 0 1 2 2v16l-7-4-7 4V5a2 2 0 0 1 2-2z"/>');
-    case 'trash': case '🗑': return '<span class="mapRoomUiIcon">'+_phFlatIcon('🗑')+'</span>';
-    case 'edit': case '✏': return '<span class="mapRoomUiIcon">'+_phFlatIcon('✏')+'</span>';
-    case 'user': case '👤': return '<span class="mapRoomUiIcon">'+_phFlatIcon('👤')+'</span>';
-    case 'settings': case '⚙': return '<span class="mapRoomUiIcon">'+_phFlatIcon('⚙️')+'</span>';
-    case 'plus': case '➕': return '<span class="mapRoomUiIcon">'+_phFlatIcon('➕')+'</span>';
+    case 'trash': case '🗑': return s('<path d="M6 7h12l-1 13H7L6 7zm2-3h8l1 2H7l1-2zm-2 2h14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 10v6M14 10v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>');
+    case 'edit': case '✏': return s('<path d="M4 16.5 3 21l4.5-1L18.8 8.7 15.3 5.2 4 16.5z"/><path d="m14.2 4.5 2.1-2.1a1.8 1.8 0 0 1 2.5 0l1.3 1.3a1.8 1.8 0 0 1 0 2.5L18 8.3"/>');
+    case 'user': case '👤': return s('<circle cx="12" cy="8.2" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/>');
+    case 'settings': case '⚙': return s('<path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm8 3.5-.9-.4a7.8 7.8 0 0 0-.5-1.2l.5-.9-1.6-1.6-.9.5c-.4-.2-.8-.4-1.2-.5L14 5h-2l-.4.9a7.8 7.8 0 0 0-1.2.5l-.9-.5-1.6 1.6.5.9c-.2.4-.4.8-.5 1.2L5 12v2l.9.4c.1.4.3.8.5 1.2l-.5.9 1.6 1.6.9-.5c.4.2.8.4 1.2.5l.4.9h2l.4-.9c.4-.1.8-.3 1.2-.5l.9.5 1.6-1.6-.5-.9c.2-.4.4-.8.5-1.2l.9-.4v-2z"/>', '0 0 24 24', 17);
+    case 'plus': case '➕': return s('<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>');
     default:
       return '<span class="mapRoomUiIcon">'+(_phFlatIcon(key||'')||'')+'</span>';
   }
@@ -30776,6 +30841,9 @@ async function _openRoomSettings(container, mapData, houseId, npcId, npcName){
 
   var ov = (typeof _cpShowOverlay === 'function') ? _cpShowOverlay(inner) : null;
   if(!ov) return;
+  ov.classList.add('mapRoomSettingsOverlay');
+  var _rsModal = ov.querySelector('.wxCPModal');
+  if(_rsModal) _rsModal.classList.add('mapRoomSettingsModal');
 
   ov.querySelector('[data-el="rsClose"]')?.addEventListener('click', function(){ ov.remove(); });
 
