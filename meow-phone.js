@@ -9681,7 +9681,8 @@ function getNPCCandidatesFromRecentMainChat(){
         logs.map ||= {};
         const id = String(npcId);
         logs.map[id] ||= [];
-        var entry = { role, text:String(text||''), t:_now() };
+        // ★ 支持外部传入 ts（extra.t），确保和 _wxAppendBubble 的 ts 完全一致，delete才能匹配
+        var entry = { role, text:String(text||''), t:(extra && extra.t) ? Number(extra.t) : _now() };
         // ★ Phase 3: 模式标记
         var mode = _getChatMode(npcId);
         if (mode) entry.mode = mode;
@@ -9690,7 +9691,7 @@ function getNPCCandidatesFromRecentMainChat(){
         if (branch && branch !== 'main') entry.branch = branch;
         // 额外字段
         if (extra && typeof extra === 'object'){
-          for (var ek in extra){ if (extra.hasOwnProperty(ek)) entry[ek] = extra[ek]; }
+          for (var ek in extra){ if (extra.hasOwnProperty(ek) && ek !== 't') entry[ek] = extra[ek]; }
         }
         logs.map[id].push(entry);
         // 控制长度（安全上限，保留全部对话）
@@ -16809,7 +16810,7 @@ const npc = _wxGetChatTargetMeta(npcId);
               _logText: '[地标] '+parsed.sendLocation
             };
             var _msgsLoc = root.querySelector('[data-ph="chatMsgs"]');
-            pushLog(npcId, 'them', '[地标] '+parsed.sendLocation);
+            pushLog(npcId, 'them', '[地标] '+parsed.sendLocation, { t: ts });
             bumpThread(npcId, { lastMsg:'📍 '+parsed.sendLocation, lastTime:ts, unread:0 });
             if(_msgsLoc){ _wxAppendBubble(_msgsLoc, npc, 'them', '[地标] '+parsed.sendLocation, ts, _lmMetaL); requestAnimationFrame(function(){ _msgsLoc.scrollTop = _msgsLoc.scrollHeight; }); }
           }catch(e){}
@@ -16823,7 +16824,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             var _photoMeta = { type:'photo', caption: parsed.sendPhoto.caption, query: parsed.sendPhoto.query };
             var _msgsPhoto = root.querySelector('[data-ph="chatMsgs"]');
             var _photoLogText = '📷 ' + (parsed.sendPhoto.caption || '照片');
-            pushLog(npcId, 'them', _photoLogText);
+            pushLog(npcId, 'them', _photoLogText, { t: ts });
             bumpThread(npcId, { lastMsg: _photoLogText, lastTime: ts, unread: 0 });
             if (_msgsPhoto){
               _wxAppendBubble(_msgsPhoto, npc, 'them', _photoLogText, ts, _photoMeta);
@@ -16840,7 +16841,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             var _shareMeta = { type:'share', title: parsed.sendShare.title, desc: parsed.sendShare.desc, query: parsed.sendShare.query };
             var _msgsShare = root.querySelector('[data-ph="chatMsgs"]');
             var _shareLogText = '🔗 ' + (parsed.sendShare.title || '分享');
-            pushLog(npcId, 'them', _shareLogText);
+            pushLog(npcId, 'them', _shareLogText, { t: ts });
             bumpThread(npcId, { lastMsg: _shareLogText, lastTime: ts, unread: 0 });
             if (_msgsShare){
               _wxAppendBubble(_msgsShare, npc, 'them', _shareLogText, ts, _shareMeta);
@@ -16851,9 +16852,9 @@ const npc = _wxGetChatTargetMeta(npcId);
           await new Promise(function(r){ setTimeout(r, 500); });
         }
 
-        // 写消息日志
-        pushLog(npcId, 'them', cleanText);
-        bumpThread(npcId, { lastMsg: cleanText, lastTime: _now(), unread: 0 });
+        // 写消息日志（传入 ts 确保和气泡 data-msgts 完全一致，否则删除时匹配不上）
+        pushLog(npcId, 'them', cleanText, { t: ts });
+        bumpThread(npcId, { lastMsg: cleanText, lastTime: ts, unread: 0 });
 
         var msgsEl = root.querySelector('[data-ph="chatMsgs"]');
         if (!msgsEl) return;
@@ -18114,7 +18115,32 @@ const npc = _wxGetChatTargetMeta(npcId);
         if (_isOfflineMode){
           parts.push('---\n【回复格式（线下模式）】\n直接写小说段落，无需任何特殊标记。\n- 旁白/动作/环境：用 *星号包裹*\n- 台词：用"引号"\n- 不要输出任何代码、标签或符号，只有纯文字\n- 2~4段，段间空行\n\n【状态同步（末尾必加）】\n[状态:穿着=...,正在=...,心声=...]\n[属性:心情+5]（只写变化的）' + _attrHint + _customEntryHint);
         } else {
-          parts.push('---\n【★★★绝对禁止（最高优先级，任何情况不得违反）★★★】\n- 禁止用"其实""说真的""说实话""因为我""我之所以""我这样说是因为"开头解释自己\n- 禁止在回复里解释自己的行为、动机或为什么这么说\n- 禁止一条消息超过30个字（如需表达更多，拆成多条用|||分隔）\n- 禁止用书面语、长定语从句、排比句\n- 禁止输出任何XML/HTML标签（包括<think>、<thinking>等）\n\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息要短——1~15字是常态，最长不超过30字，超过必须拆条。\n长短混搭，节奏感比内容完整更重要。真人发微信从来不写完整长句。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长的\n\n好的示例（像真人）：\n嗯|||怎么了？|||你今天怎么这么安静\n哈|||什么鬼|||我没听懂\n\n坏的示例（禁止这样）：\n我刚才看到你发的消息，其实我觉得你说的也有道理，不过我想解释一下我的意思。\n\n【通话触发指令】\n当你想主动发起语音通话时（如想听对方声音、深夜想连麦、情绪激动想打电话），在消息里自然说出意图，必须使用以下词语之一才能触发来电：\n"打电话" / "语音吧" / "连麦" / "给你打" / "打给你" / "接一下" / "接电话" / "通个话" / "要不打个电话"\n例如："睡不着……要不打给你？" 或 "我想听你声音，语音吧"\n想发起视频通话时，说"视频通话" 或 "视频吧"。\n⚠ 不要无故触发，只在情绪/场景自然需要时才用。\n\n【状态同步（必须执行）】\n每次回复时，你必须在最后一条消息的末尾附加两个标记（标记不会显示给用户）。\n\n标记1 - 状态描述：根据当前对话内容和场景，更新你的穿着、正在做什么、以及内心独白：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。\n\n标记2 - 属性变化：根据对话中发生的事情，输出属性的变化量（正数为增加，负数为减少）：\n[属性:属性名+数值,属性名-数值]\n可用属性：精力、心情、健康、饱腹、如厕、娱乐（值域0-100，只写有变化的）\n变化量要合理：吃饭→饱腹+30~50，聊天开心→心情+5~15，运动→精力-10~20、健康+5\n如果对话没有涉及属性变化（纯闲聊），可以只写 [属性:心情+3] 之类的微调。' + _attrHint + '\n\n完整示例：\n吃饱了，舒服～ [状态:穿着=家居服,正在=收拾碗筷,心声=泡面也还行] [属性:饱腹+40,心情+5,娱乐-3]' + _customEntryHint + voiceInstructions + stkForAI + mediaForAI);
+          // ★ 根据角色"短句比例"参数动态生成格式规则，避免全局硬规则破坏内敛/腼腆角色的人设
+          var _bxFmt = _loadCharBehavior(npcId);
+          var _ssr = typeof _bxFmt.shortSentenceRatio === 'number' ? _bxFmt.shortSentenceRatio : 0.5;
+          var _fmtLengthRule, _fmtLengthHint, _fmtLengthBadExample;
+          if (_ssr >= 0.7){
+            // 短句型：严格限制，多拆条
+            _fmtLengthRule = '每条消息极短——1~10字是常态，最多20字，超过要拆成多条。';
+            _fmtLengthHint = '短句多，节奏快，能用一个词说清楚就不多说。';
+            _fmtLengthBadExample = '我觉得这件事情其实还挺有意思的，你有没有想过从另一个角度来看？';
+          } else if (_ssr <= 0.3){
+            // 长句型/内敛型：允许较完整的表达，但避免连篇大论
+            _fmtLengthRule = '每条消息可以是完整的一两句话，15~40字都正常，超过50字再考虑拆条。内敛的人说话本来就更完整，不要强行切碎。';
+            _fmtLengthHint = '句子可以有修饰语和转折，说话方式完整而不碎碎念。';
+            _fmtLengthBadExample = '好|||嗯嗯|||那就这样|||行吧';
+          } else {
+            // 中间型：默认
+            _fmtLengthRule = '每条消息长短自然——短的5~15字，中等的15~30字，一般不超过35字；超过要拆条。';
+            _fmtLengthHint = '长短结合，节奏感比内容完整更重要。';
+            _fmtLengthBadExample = '我刚才看到你发的消息，其实我觉得你说的也有道理，不过我想解释一下我的意思。';
+          }
+          // 是否允许解释自己（内敛腼腆角色本来就会解释，不该禁掉）
+          var _defenseNoExplainRule = (_bxFmt.defenseStyle === '解释' || _ssr <= 0.4)
+            ? '- 如果被误解或想说清楚，可以解释自己，但用角色本来的语气，不要用书面语或排比句'
+            : '- 避免无端主动解释自己的行为和动机，更不要用"其实""说真的"开头辩解';
+
+          parts.push('---\n【禁止输出（任何情况都不得违反）】\n- 禁止输出任何XML/HTML标签（包括<think>、<thinking>等）\n- 禁止一次性输出超过5条消息\n' + _defenseNoExplainRule + '\n\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n' + _fmtLengthRule + '\n' + _fmtLengthHint + '\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条\n\n好的示例：\n嗯|||怎么了？|||你今天怎么这么安静\n\n坏的示例（禁止这样）：\n' + _fmtLengthBadExample + '\n\n【通话触发指令】\n当你想主动发起语音通话时（如想听对方声音、深夜想连麦、情绪激动想打电话），在消息里自然说出意图，必须使用以下词语之一才能触发来电：\n"打电话" / "语音吧" / "连麦" / "给你打" / "打给你" / "接一下" / "接电话" / "通个话" / "要不打个电话"\n例如："睡不着……要不打给你？" 或 "我想听你声音，语音吧"\n想发起视频通话时，说"视频通话" 或 "视频吧"。\n⚠ 不要无故触发，只在情绪/场景自然需要时才用。\n\n【状态同步（必须执行）】\n每次回复时，你必须在最后一条消息的末尾附加两个标记（标记不会显示给用户）。\n\n标记1 - 状态描述：根据当前对话内容和场景，更新你的穿着、正在做什么、以及内心独白：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。\n\n标记2 - 属性变化：根据对话中发生的事情，输出属性的变化量（正数为增加，负数为减少）：\n[属性:属性名+数值,属性名-数值]\n可用属性：精力、心情、健康、饱腹、如厕、娱乐（值域0-100，只写有变化的）\n变化量要合理：吃饭→饱腹+30~50，聊天开心→心情+5~15，运动→精力-10~20、健康+5\n如果对话没有涉及属性变化（纯闲聊），可以只写 [属性:心情+3] 之类的微调。' + _attrHint + '\n\n完整示例：\n吃饱了，舒服～ [状态:穿着=家居服,正在=收拾碗筷,心声=泡面也还行] [属性:饱腹+40,心情+5,娱乐-3]' + _customEntryHint + voiceInstructions + stkForAI + mediaForAI);
         }
 
         return parts.join('\n\n');
