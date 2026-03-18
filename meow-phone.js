@@ -2846,15 +2846,18 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .phAppSubTitle.show{ display:flex; }
 #${ID} .phAppTitle.hasSubTitle .phAppTitleMain{ font-size:13px; }
 #${ID} .phSTDot{
-  display:inline-block; width:3px; height:3px; border-radius:50%;
-  background:currentColor;
-  animation:phSTBounce 1.1s ease-in-out infinite;
+  display:inline-block; width:4px; height:4px; border-radius:50%;
+  background:currentColor; flex-shrink:0;
+  animation:phSTBounce 1.4s ease-in-out infinite;
 }
-#${ID} .phSTDot:nth-child(2){ animation-delay:.2s; }
-#${ID} .phSTDot:nth-child(3){ animation-delay:.4s; }
+#${ID} .phSTDot:nth-child(1){ animation-duration:1.2s; animation-delay:0s; }
+#${ID} .phSTDot:nth-child(2){ animation-duration:1.5s; animation-delay:.18s; }
+#${ID} .phSTDot:nth-child(3){ animation-duration:1.1s; animation-delay:.42s; }
 @keyframes phSTBounce{
-  0%,60%,100%{ transform:translateY(0); opacity:.35; }
-  30%{ transform:translateY(-3px); opacity:1; }
+  0%,100%{ transform:translateY(0) scale(1); opacity:.28; }
+  25%{ transform:translateY(-4px) scale(1.15); opacity:1; }
+  55%{ transform:translateY(0) scale(.9); opacity:.4; }
+  75%{ transform:translateY(-2px) scale(1.05); opacity:.7; }
 }
 #${ID} .phNavBtn{
   appearance:none; border:0; background:transparent; color:var(--ph-text);
@@ -3577,23 +3580,61 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .wxChatBubble.me .wxCBContent.wxCBSpecial{
   background:rgba(149,236,105,.25)!important;
 }
-/* === Typing 指示器（三个跳动灰点） === */
+/* === Typing 指示器（消息列表里的气泡 + 三跳动点） === */
 #${ID} .wxTypingIndicator{ pointer-events:none; }
+#${ID} .wxTypingBubble{
+  /* 可见的气泡，左对齐，和对方气泡一致 */
+  display:flex; align-items:flex-end; gap:8px;
+  padding:4px 0 4px 12px; animation:wxTypBubbleFadeIn .18s ease;
+}
+@keyframes wxTypBubbleFadeIn{
+  from{ opacity:0; transform:translateY(6px); }
+  to{   opacity:1; transform:translateY(0); }
+}
+#${ID} .wxTypingBubble .wxTypBubbleAvatar{
+  width:36px; height:36px; border-radius:50%; overflow:hidden; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:15px; font-weight:600;
+  background:rgba(180,180,180,.22); color:rgba(20,24,28,.6);
+}
+#${ID} .wxTypingBubble .wxTypBubbleAvatar img{ width:100%; height:100%; object-fit:cover; }
 #${ID} .wxTypingContent{
-  display:flex!important; align-items:center; gap:4px;
-  padding:10px 14px!important; min-height:auto!important;
-  background:rgba(255,255,255,.88)!important;
+  display:flex!important; align-items:center; gap:5px;
+  padding:11px 15px!important; min-height:auto!important;
+  background:rgba(255,255,255,.9)!important;
+  border-radius:18px 18px 18px 4px!important;
+  box-shadow:0 1px 4px rgba(0,0,0,.08);
 }
 #${ID} .wxTypDot{
   display:inline-block; width:7px; height:7px; border-radius:50%;
-  background:rgba(20,24,28,.28);
-  animation: wxTypBounce 1.2s ease-in-out infinite;
+  background:rgba(20,24,28,.3); flex-shrink:0;
 }
-#${ID} .wxTypDot:nth-child(2){ animation-delay:.15s; }
-#${ID} .wxTypDot:nth-child(3){ animation-delay:.3s; }
-@keyframes wxTypBounce{
-  0%,60%,100%{ transform:translateY(0); opacity:.35; }
-  30%{ transform:translateY(-5px); opacity:.85; }
+#${ID} .wxTypDot:nth-child(1){
+  animation: wxTypD1 1.3s cubic-bezier(.36,.07,.19,.97) infinite;
+}
+#${ID} .wxTypDot:nth-child(2){
+  animation: wxTypD2 1.6s cubic-bezier(.36,.07,.19,.97) infinite;
+  animation-delay: .15s;
+}
+#${ID} .wxTypDot:nth-child(3){
+  animation: wxTypD3 1.1s cubic-bezier(.36,.07,.19,.97) infinite;
+  animation-delay: .35s;
+}
+@keyframes wxTypD1{
+  0%,100%{ transform:translateY(0) scale(1); opacity:.25; }
+  30%{ transform:translateY(-6px) scale(1.2); opacity:.9; background:rgba(20,24,28,.5); }
+  55%{ transform:translateY(1px) scale(.85); opacity:.3; }
+}
+@keyframes wxTypD2{
+  0%,100%{ transform:translateY(0) scale(1); opacity:.2; }
+  38%{ transform:translateY(-5px) scale(1.1); opacity:.85; }
+  62%{ transform:translateY(0) scale(.9); opacity:.28; }
+}
+@keyframes wxTypD3{
+  0%,100%{ transform:translateY(0) scale(1); opacity:.3; }
+  20%{ transform:translateY(-3px) scale(1.05); opacity:.6; }
+  42%{ transform:translateY(-6px) scale(1.18); opacity:.95; background:rgba(20,24,28,.55); }
+  68%{ transform:translateY(1px) scale(.88); opacity:.25; }
 }
 /* === 状态面板卡片（点头像弹出·速览版） === */
 #${ID} .wxStatePanelCard{
@@ -18407,51 +18448,73 @@ const npc = _wxGetChatTargetMeta(npcId);
         }catch(e){}
       }
 
-      function _showTypingIndicator(npcName){
+      function _showTypingIndicator(npcName, npc){
         _hideTypingIndicator();
         // 1. AppBar 显示"正在输入…"
         _showTypingInAppBar(npcName);
-        // 2. 消息列表底部加一个不可见占位节点，保证 scrollToBottom 正常
+        // 2. 消息列表里显示真实可见的气泡（头像 + 三跳动点）
         var msgs = root.querySelector('[data-ph="chatMsgs"]');
         if (!msgs) return;
         var el = doc.createElement('div');
-        el.className = 'wxChatBubble them wxTypingIndicator';
-        el.style.cssText = 'visibility:hidden;height:0;min-height:0;padding:0;margin:0;overflow:hidden;pointer-events:none;';
+        el.className = 'wxTypingBubble wxTypingIndicator';
+        // 头像
+        var avatarHtml = '';
+        try{
+          var _av = npc && (npc.avatar || (npc.name||'?').charAt(0));
+          var _avImg = (typeof phoneGetAvatar === 'function') ? phoneGetAvatar(npc && npc.id) : null;
+          if (_avImg){
+            avatarHtml = '<img src="' + _avImg + '" />';
+          } else if (_av && _av.length <= 2){
+            avatarHtml = _av;
+          } else if (_av && _av.startsWith('http')){
+            avatarHtml = '<img src="' + _av + '" />';
+          } else {
+            avatarHtml = (npcName || '?').charAt(0);
+          }
+        }catch(e){ avatarHtml = (npcName||'?').charAt(0); }
+        el.innerHTML = '<div class="wxTypBubbleAvatar">' + avatarHtml + '</div>'
+          + '<div class="wxCBContent wxTypingContent">'
+          + '<span class="wxTypDot"></span>'
+          + '<span class="wxTypDot"></span>'
+          + '<span class="wxTypDot"></span>'
+          + '</div>';
         msgs.appendChild(el);
         requestAnimationFrame(function(){ msgs.scrollTop = msgs.scrollHeight; });
       }
 
-      // ★ 真人感打字节奏：等待期间随机出现"停顿再继续"效果
-      // totalMs = AI 实际要等待的总时长；npcName 用于恢复 appbar 显示
-      // 返回一个 cancel 函数，可提前中止
-      function _realisticTypingRhythm(npcName, totalMs){
+      // ★ 真人感打字节奏：中途随机停顿再继续（用于单条消息的打字等待期）
+      // totalMs = 这条消息要"打"多久；返回 cancel 函数
+      function _realisticTypingRhythm(npcName, totalMs, npc){
         var cancelled = false;
         var cancel = function(){ cancelled = true; };
         (async function(){
           try{
             var elapsed = 0;
-            // 决定是否中途出现一次"停顿"（概率 40%，且总时长 > 1200ms 才做）
-            var doPause = totalMs > 1200 && Math.random() < 0.4;
+            // 概率 35%、且消息够长时：中途消失一下再回来（像在想怎么说）
+            var doPause = totalMs > 1400 && Math.random() < 0.35;
             if (doPause){
-              // 前半段打字时长（总时长的 30%~60%）
-              var firstPart = Math.floor(totalMs * (0.3 + Math.random() * 0.3));
+              var firstPart = Math.floor(totalMs * (0.35 + Math.random() * 0.25));
               await new Promise(function(r){ setTimeout(r, firstPart); });
               if (cancelled) return;
               elapsed += firstPart;
-              // 短暂消失 0.6~1.5 秒（像在想措辞）
               _hideTypingInAppBar();
-              var pauseMs = _randomBetween(600, 1500);
+              // 消息列表里的 bubble 也暂时变透明（不移除，避免布局跳动）
+              try{
+                var tb = root.querySelector('.wxTypingBubble.wxTypingIndicator');
+                if (tb) tb.style.opacity = '0';
+              }catch(e){}
+              var pauseMs = _randomBetween(500, 1200);
               await new Promise(function(r){ setTimeout(r, pauseMs); });
               if (cancelled) return;
               elapsed += pauseMs;
-              // 重新出现"正在输入"
               _showTypingInAppBar(npcName);
+              try{
+                var tb2 = root.querySelector('.wxTypingBubble.wxTypingIndicator');
+                if (tb2) tb2.style.opacity = '1';
+              }catch(e){}
             }
-            // 等剩余时间
             var remaining = totalMs - elapsed;
-            if (remaining > 0){
-              await new Promise(function(r){ setTimeout(r, remaining); });
-            }
+            if (remaining > 0) await new Promise(function(r){ setTimeout(r, remaining); });
           }catch(e){}
         })();
         return cancel;
@@ -20458,7 +20521,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         var mySeqId = PhoneAI._replySeqId;
         var myChatId = String(npcId);
 
-        _showTypingIndicator(npc.name);
+        _showTypingIndicator(npc.name, npc);
 
         var contextN = _getChatContextN();
         var contextMessages = _getRecentMessagesForAPI(npcId, contextN);
@@ -20470,43 +20533,50 @@ const npc = _wxGetChatTargetMeta(npcId);
         if (mySeqId !== PhoneAI._replySeqId || state.chatTarget !== myChatId){
           _hideTypingIndicator(); return;
         }
-        _hideTypingIndicator();
 
         if (!result.ok){
+          _hideTypingIndicator();
           if (result.error) try{ toast(result.error); }catch(e){}
           return;
         }
 
-        var cfg = phoneLoadSettings();
         var replies = parseMultiMessages(result.data);
+
         for (var ri = 0; ri < replies.length; ri++){
           if (mySeqId !== PhoneAI._replySeqId || state.chatTarget !== myChatId){
             _hideTypingIndicator(); return;
           }
-          // 首条：按文字长度计算停顿；后续条：重新 typing + 按长度停顿
-          var delayMs;
+
+          var msgLen0 = String(replies[ri] || '').replace(/\s/g,'').length;
+          var typeMs0;
+          if (msgLen0 <= 4)       typeMs0 = _randomBetween(350, 700);
+          else if (msgLen0 <= 10) typeMs0 = _randomBetween(700, 1300);
+          else if (msgLen0 <= 20) typeMs0 = _randomBetween(1200, 2000);
+          else                    typeMs0 = _randomBetween(1800, 2600);
+
           if (ri === 0){
-            var firstLen0 = String(replies[0] || '').replace(/\s/g,'').length;
-            delayMs = Math.max(400, Math.min(1800, firstLen0 * 35));
+            // 首条：api 刚回来，已在 typing，极短停顿刷新 bubble
+            _hideTypingIndicator();
+            await sleep(_randomBetween(80, 200));
+            if (mySeqId !== PhoneAI._replySeqId || state.chatTarget !== myChatId) return;
+            _showTypingIndicator(npc.name, npc);
           } else {
-            _showTypingIndicator(npc.name);
-            var thisLen0 = String(replies[ri] || '').replace(/\s/g,'').length;
-            delayMs = Math.max(600, Math.min(2200, thisLen0 * 30));
-            try{
-              var tEff = cfg.typingEffect || 'none';
-              if (tEff === 'typewriter') delayMs = Math.min(delayMs + 300, 2500);
-              else if (tEff === 'fadein') delayMs = Math.max(delayMs - 100, 500);
-            }catch(e){}
+            // 后续条：读完停顿 → 重新出现 typing
+            await sleep(_randomBetween(300, 850));
+            if (mySeqId !== PhoneAI._replySeqId || state.chatTarget !== myChatId){ _hideTypingIndicator(); return; }
+            _showTypingIndicator(npc.name, npc);
           }
-          // ★ 启动真人感打字节奏（中途随机停顿再继续）
-          var _rhythmCancel = null;
-          try{ _rhythmCancel = _realisticTypingRhythm(npc.name, delayMs); }catch(e){}
-          await sleep(delayMs);
-          if (_rhythmCancel) try{ _rhythmCancel(); }catch(e){}
+
+          var _rc0 = null;
+          try{ _rc0 = _realisticTypingRhythm(npc.name, typeMs0, npc); }catch(e){}
+          await sleep(typeMs0);
+          if (_rc0) try{ _rc0(); }catch(e){}
+
           if (mySeqId !== PhoneAI._replySeqId || state.chatTarget !== myChatId){
             _hideTypingIndicator(); return;
           }
-          if (ri > 0) _hideTypingIndicator();
+          _hideTypingIndicator();
+
           await _writeAIReply(npcId, npc, replies[ri], _now());
         }
 
@@ -21678,43 +21748,48 @@ const npc = _wxGetChatTargetMeta(npcId);
           // 4. 解析多条消息
           const replies = parseMultiMessages(result.data);
 
-          // 5. 逐条写入（带延迟 + typing 动画）
+          // 5. 逐条写入 —— 每条消息独立节奏：typing → 气泡 → 停顿 → typing → ...
           for (var ri=0; ri<replies.length; ri++){
-            // 检查序列是否仍有效
             if (mySeqId !== PhoneAI._replySeqId || state.chatTarget !== myChatId){
-              _hideTypingIndicator();
-              return;
+              _hideTypingIndicator(); return;
             }
 
-            // 首条消息也要有停顿：按文字长度计算（400–1800ms），其余条 600–2200ms
-            var delayMs;
+            // 这条消息要"打"多久（按字数，短消息快，长消息慢）
+            var msgLen = String(replies[ri] || '').replace(/\s/g,'').length;
+            // 短句 2~5字：400~700ms；中句 6~15字：700~1400ms；长句 16+字：1400~2500ms
+            var typeMs;
+            if (msgLen <= 4)       typeMs = _randomBetween(350, 700);
+            else if (msgLen <= 10) typeMs = _randomBetween(700, 1300);
+            else if (msgLen <= 20) typeMs = _randomBetween(1200, 2000);
+            else                   typeMs = _randomBetween(1800, 2600);
+
+            // 显示 typing bubble（首条：此时 typing 已经在显示了，只需刷新一下）
             if (ri === 0){
-              var firstLen = String(replies[0] || '').replace(/\s/g,'').length;
-              delayMs = Math.max(400, Math.min(1800, firstLen * 35));
+              // 首条：API 回来后有一个极短的"刚打完"停顿再出 bubble
+              _hideTypingIndicator();
+              await sleep(_randomBetween(80, 220));
+              if (mySeqId !== PhoneAI._replySeqId || state.chatTarget !== myChatId) return;
+              _showTypingIndicator(npc.name, npc);
             } else {
-              _showTypingIndicator(npc.name);
-              var thisLen = String(replies[ri] || '').replace(/\s/g,'').length;
-              delayMs = Math.max(600, Math.min(2200, thisLen * 30));
-              try{
-                var tEff = cfg.typingEffect || 'none';
-                if (tEff === 'typewriter') delayMs = Math.min(delayMs + 300, 2500);
-                else if (tEff === 'fadein') delayMs = Math.max(delayMs - 100, 500);
-              }catch(e){}
+              // 后续条：上条发完 → 短暂停顿（像在想下句）→ 重新出现 typing
+              var readPauseMs = _randomBetween(300, 900);
+              await sleep(readPauseMs);
+              if (mySeqId !== PhoneAI._replySeqId || state.chatTarget !== myChatId){ _hideTypingIndicator(); return; }
+              _showTypingIndicator(npc.name, npc);
             }
-            // ★ 真人感打字节奏
+
+            // 打字节奏（带随机停顿）
             var _rc = null;
-            try{ _rc = _realisticTypingRhythm(npc.name, delayMs); }catch(e){}
-            await sleep(delayMs);
+            try{ _rc = _realisticTypingRhythm(npc.name, typeMs, npc); }catch(e){}
+            await sleep(typeMs);
             if (_rc) try{ _rc(); }catch(e){}
 
-            // 再次检查
             if (mySeqId !== PhoneAI._replySeqId || state.chatTarget !== myChatId){
-              _hideTypingIndicator();
-              return;
+              _hideTypingIndicator(); return;
             }
-            if (ri > 0) _hideTypingIndicator();
+            _hideTypingIndicator();
 
-            // 写入消息（统一处理语音标记 + 表情标记）
+            // 气泡出现
             await _writeAIReply(npcId, npc, replies[ri], _now());
           }
 
