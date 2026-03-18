@@ -4799,6 +4799,55 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   width:1em; height:1em; display:block; fill:currentColor;
 }
 #${ID} .mapDetailEmoji svg{ width:40px; height:40px; color:var(--ph-icon-inner-tint, var(--ph-text)); }
+#${ID} .mapRoomUiIcon{ display:inline-flex; align-items:center; justify-content:center; line-height:1; color:var(--ph-icon-inner-tint, var(--ph-text-sub)); vertical-align:middle; }
+#${ID} .mapRoomUiIcon svg.phIco{ width:18px; height:18px; display:block; fill:currentColor !important; }
+#${ID} .mapFurnSlot .fe{ display:flex; align-items:center; justify-content:center; line-height:1; color:var(--ph-icon-inner-tint, var(--ph-text-sub)); }
+#${ID} .mapFurnSlot .fe svg.phIco{ width:22px; height:22px; display:block; fill:currentColor !important; }
+#${ID} .mapRoomHeader svg.phIco,
+#${ID} .mapRoomToolbar svg.phIco,
+#${ID} .mapRoomWrap [data-el="discoverLog"] svg.phIco,
+#${ID} .mapRoomWrap [data-el="discoverSecret"] svg.phIco,
+#${ID} .mapRoomWrap [data-el="favSecret"] svg.phIco,
+#${ID} .mapRoomWrap [data-el="rsGenerate"] svg.phIco,
+#${ID} .mapRoomWrap [data-el="rsClear"] svg.phIco,
+#${ID} .mapRoomWrap [data-el="panelClose"] svg.phIco,
+#${ID} .mapRoomWrap [data-act="shopBuy"] svg.phIco,
+#${ID} .mapRoomWrap [data-act="shopSell"] svg.phIco,
+#${ID} .mapRoomWrap [data-act="winStyle"] svg.phIco,
+#${ID} .mapRoomWrap [data-act="styleSwitch"] svg.phIco,
+#${ID} .mapRoomWrap [data-act="csClose"] svg.phIco,
+#${ID} .mapRoomWrap [data-act="shopClose"] svg.phIco,
+#${ID} .mapRoomWrap [data-act="roomShop"] svg.phIco{
+  fill:currentColor !important;
+}
+#${ID} .mapRoomWallet{ display:inline-flex; align-items:center; gap:4px; color:var(--ph-icon-inner-tint, var(--ph-text-sub)); font-size:10px; }
+#${ID} .mapRoomToolbar button,
+#${ID} .mapRoomWrap [data-el="discoverLog"],
+#${ID} .mapRoomWrap [data-el="discoverSecret"],
+#${ID} .mapRoomWrap [data-el="favSecret"],
+#${ID} .mapRoomWrap [data-el="rsGenerate"],
+#${ID} .mapRoomWrap [data-el="rsClear"],
+#${ID} .mapRoomWrap [data-act="mapManualGenLogs"],
+#${ID} .mapRoomWrap [data-act="mapClearLogs"],
+#${ID} .mapToolBtnAccent{
+  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .03)) !important;
+  border:1px solid rgba(255,255,255,.48) !important;
+  color:var(--ph-icon-inner-tint, var(--ph-text)) !important;
+  box-shadow:0 8px 18px rgba(80,100,140,.06), 0 1px 0 rgba(255,255,255,.72) inset !important;
+  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .54)) saturate(114%) !important;
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .54)) saturate(114%) !important;
+}
+#${ID} .mapRoomWrap [data-el="rsClear"],
+#${ID} .mapRoomWrap [data-act="mapClearLogs"]{
+  color:var(--ph-icon-inner-tint, var(--ph-text-sub)) !important;
+  opacity:.92;
+}
+#${ID} .mapRoomWrap [data-el="secretArea"]{
+  background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .02)) !important;
+  border:1px solid rgba(255,255,255,.42) !important;
+  backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .46)) saturate(112%) !important;
+  -webkit-backdrop-filter:blur(calc(var(--ph-glass-blur, 18px) * .46)) saturate(112%) !important;
+}
 #${ID} .mapActLabel{ display:flex; align-items:center; gap:7px; }
 #${ID} .mapDetailEdit{
   display:inline-flex; align-items:center; justify-content:center;
@@ -4928,7 +4977,8 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 }
 #${ID} .mapRoomLog::-webkit-scrollbar{ display:none; }
 #${ID} .mapRoomZoomBar{
-  position:absolute; right:6px; bottom:6px; z-index:5;
+  position:absolute; right:4px; bottom:6px; z-index:5;
+  width:74px;
   display:flex; flex-direction:column; gap:2px; align-items:center;
 }
 #${ID} .mapRoomZoomBar button{
@@ -4936,9 +4986,18 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   box-shadow:0 1px 4px rgba(0,0,0,0.12); font-size:13px; cursor:pointer; color:rgba(20,24,28,0.6);
   display:flex; align-items:center; justify-content:center; transition:all .12s;
 }
+#${ID} .mapRoomZoomBar > button{ margin:0 auto; }
 #${ID} .mapRoomZoomBar button:active{ transform:scale(0.9); }
-#${ID} .mapRoomZoomBar .zDirRow{ display:flex; gap:1px; }
-#${ID} .mapRoomZoomBar .zDirRow button{ width:22px; height:22px; font-size:10px; }
+#${ID} .mapRoomZoomBar .zDirRow{
+  width:72px;
+  display:grid;
+  grid-template-columns:repeat(3, 22px);
+  justify-content:center;
+  gap:3px;
+}
+#${ID} .mapRoomZoomBar .zDirRow button{ width:22px; height:22px; font-size:10px; margin:0 auto; }
+#${ID} .mapRoomZoomBar .zDirRow button:first-child{ grid-column:1; }
+#${ID} .mapRoomZoomBar .zDirRow button:last-child{ grid-column:3; }
 #${ID} .mapRoomTimeLabel{
   position:absolute; left:8px; top:8px; z-index:5;
   font-size:10px; color:rgba(20,24,28,0.4); background:rgba(255,255,255,0.6);
@@ -28614,10 +28673,10 @@ function _mapBuildSVG(mapData){
     // 标记：我的房子/角色房子
     var labelY = ht==='tower' ? (y-30) : ht==='apartment' ? (y-22) : (y-14);
     if(isMyHouse){
-      svg += '<g transform="translate('+(x-7)+','+(labelY-9)+')"><polygon points="7,1.5 1,7.5 13,7.5" fill="rgba(30,30,30,0.62)"/><rect x="2.5" y="7" width="9" height="5.5" fill="rgba(30,30,30,0.62)" opacity="0.82"/><rect x="5.5" y="9" width="3" height="3.5" fill="rgba(255,255,255,0.82)" opacity="0.95"/></g>';
-      svg += '<text x="'+(x+11)+'" y="'+(labelY+1)+'" text-anchor="start" font-size="6" fill="rgba(30,30,30,0.62)" font-weight="600">我</text>';
+      svg += '<g transform="translate('+(x-7)+','+(labelY-9)+')"><polygon points="7,1.5 1,7.5 13,7.5" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.96"/><rect x="2.5" y="7" width="9" height="5.5" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.82"/><rect x="5.5" y="9" width="3" height="3.5" fill="rgba(255,255,255,0.82)" opacity="0.95"/></g>';
+      svg += '<text x="'+(x+11)+'" y="'+(labelY+1)+'" text-anchor="start" font-size="6" fill="var(--ph-icon-inner-tint,#9E8875)" font-weight="600">我</text>';
     } else if(npcOwner){
-      svg += '<g transform="translate('+(x-7)+','+(labelY-9)+')"><polygon points="7,1.5 1,7.5 13,7.5" fill="rgba(30,30,30,0.48)"/><rect x="2.5" y="7" width="9" height="5.5" fill="rgba(30,30,30,0.48)" opacity="0.76"/><rect x="5.5" y="9" width="3" height="3.5" fill="rgba(255,255,255,0.72)" opacity="0.85"/></g>';
+      svg += '<g transform="translate('+(x-7)+','+(labelY-9)+')"><polygon points="7,1.5 1,7.5 13,7.5" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.78"/><rect x="2.5" y="7" width="9" height="5.5" fill="var(--ph-icon-inner-tint,#9E8875)" opacity="0.68"/><rect x="5.5" y="9" width="3" height="3.5" fill="rgba(255,255,255,0.72)" opacity="0.85"/></g>';
     }
 
     svg += '</g>';
@@ -30218,6 +30277,50 @@ _mapBuildSVG = function(mapData){
   }
   return svg;
 };
+function _roomUiIcon(key){
+  var k = String(key||'').replace(/\uFE0F/g,'');
+  var s = function(d, vb, size){
+    vb = vb || '0 0 24 24';
+    size = size || 18;
+    return '<span class="mapRoomUiIcon"><svg class="phIco" xmlns="http://www.w3.org/2000/svg" viewBox="'+vb+'" fill="currentColor" style="width:'+size+'px;height:'+size+'px;vertical-align:middle;flex-shrink:0;">'+d+'</svg></span>';
+  };
+  switch(k){
+    case 'bed': case '🛏': return s('<path d="M4 11V7h5a3 3 0 0 1 3 3v1h8v7h-2v-2H6v2H4v-7zm2 0h4V9a1 1 0 0 0-1-1H6v3zm6 0V9h4a2 2 0 0 1 2 2h-6z"/>');
+    case 'sofa': case '🛋': return s('<path d="M7 10V8a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v2h1a2 2 0 0 1 2 2v5h-2v-2H6v2H4v-5a2 2 0 0 1 2-2h1zm2 0h6V8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v2z"/>');
+    case 'stove': case '🍳': return s('<path d="M4 6h16v12H4z"/><circle cx="9" cy="12" r="2.2" fill="white" opacity=".72"/><circle cx="15" cy="12" r="2.2" fill="white" opacity=".72"/><path d="M8 4V2m4 2V2m4 2V2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>');
+    case 'lamp': case '💡': return s('<path d="M12 3a5 5 0 0 0-3 9v2h6v-2a5 5 0 0 0-3-9zm-2 13h4v2h-4zm.5 3h3v2h-3z"/>');
+    case 'tv': case '📺': return s('<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M9 19h6M12 17v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>');
+    case 'game': case '🎮': return '<span class="mapRoomUiIcon">'+_phFlatIcon('🎮')+'</span>';
+    case 'bath': case '🛁': return s('<path d="M5 12h14a2 2 0 0 1 2 2v1H3v-1a2 2 0 0 1 2-2zm2 3v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1M7 10V8a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>');
+    case 'piano': case '🎹': return s('<rect x="4" y="5" width="16" height="14" rx="2"/><rect x="6" y="7" width="2" height="10" fill="white" opacity=".92"/><rect x="9" y="7" width="2" height="10" fill="white" opacity=".92"/><rect x="12" y="7" width="2" height="10" fill="white" opacity=".92"/><rect x="15" y="7" width="2" height="10" fill="white" opacity=".92"/><rect x="7.5" y="7" width="1.2" height="6"/><rect x="10.5" y="7" width="1.2" height="6"/><rect x="13.5" y="7" width="1.2" height="6"/>');
+    case 'plant': case 'bigplant': case '🪴': return s('<path d="M8 20h8l-1-4H9l-1 4zm4-6c-3 0-5-2.2-5-5 3 0 5 2.2 5 5zm1 0c0-2.8 2-5 5-5 0 2.8-2 5-5 5z"/>');
+    case 'frame': case '🖼': return '<span class="mapRoomUiIcon">'+_phFlatIcon('🖼')+'</span>';
+    case 'shelf': case '📚': return '<span class="mapRoomUiIcon">'+_phFlatIcon('📚')+'</span>';
+    case 'rug': return s('<rect x="4" y="6" width="16" height="12" rx="3"/><path d="M7 6v12M17 6v12M4 9h16M4 15h16" stroke="white" opacity=".5" stroke-width="1" fill="none"/>');
+    case 'bar_counter': case 'coffee_table': return s('<rect x="5" y="10" width="14" height="4" rx="1.5"/><path d="M8 14v5M16 14v5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>');
+    case 'computer': return s('<rect x="4" y="5" width="16" height="11" rx="2"/><path d="M8 19h8M12 16v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none"/>');
+    case 'fridge': return s('<rect x="6" y="3" width="12" height="18" rx="2"/><path d="M6 11h12M15 7v2M15 14v2" stroke="white" opacity=".8" stroke-width="1.3" fill="none"/>');
+    case 'kitchen_cabinet': case 'wardrobe': return s('<rect x="5" y="4" width="14" height="16" rx="2"/><path d="M12 4v16M10 11h1M13 11h1" stroke="white" opacity=".85" stroke-width="1.3" fill="none"/>');
+    case 'shower': return s('<path d="M8 7a4 4 0 0 1 8 0v1h2v2h-7a4 4 0 0 0-3 1.35L6 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><path d="M14 11v3M16 11v2M12 11v2" stroke="currentColor" opacity=".55" stroke-width="1.3" stroke-linecap="round"/>');
+    case 'sink_mirror': return s('<rect x="6" y="3" width="12" height="8" rx="2"/><rect x="8" y="14" width="8" height="4" rx="1"/><path d="M10 18v2M14 18v2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/>');
+    case 'toilet': return s('<path d="M8 4h8v6a4 4 0 0 1-4 4H8V4zm2 12h5l1 4H9l1-4zm6-7h2a2 2 0 0 1 2 2v1h-4V9z"/>');
+    case 'window': case '🪟': return '<span class="mapRoomUiIcon">'+_phFlatIcon('🪟')+'</span>';
+    case 'house': case 'home': case '🏠': case '🏡': return s('<path d="M4 11.5 12 5l8 6.5v8.5H4z"/><path d="M8.5 20v-6h7v6" fill="white" opacity=".82"/>');
+    case 'door': return s('<path d="M6 4h10a2 2 0 0 1 2 2v14H4V6a2 2 0 0 1 2-2zm5 8.2a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>');
+    case 'money': case '💰': return '<span class="mapRoomUiIcon">'+_phFlatIcon('💰')+'</span>';
+    case 'calendar': case '🗓': return '<span class="mapRoomUiIcon">'+_phFlatIcon('🗓')+'</span>';
+    case 'search': case '🔍': return '<span class="mapRoomUiIcon">'+_phFlatIcon('🔍')+'</span>';
+    case 'bookmark': case '🔖': return s('<path d="M7 3h10a2 2 0 0 1 2 2v16l-7-4-7 4V5a2 2 0 0 1 2-2z"/>');
+    case 'trash': case '🗑': return '<span class="mapRoomUiIcon">'+_phFlatIcon('🗑')+'</span>';
+    case 'edit': case '✏': return '<span class="mapRoomUiIcon">'+_phFlatIcon('✏')+'</span>';
+    case 'user': case '👤': return '<span class="mapRoomUiIcon">'+_phFlatIcon('👤')+'</span>';
+    case 'settings': case '⚙': return '<span class="mapRoomUiIcon">'+_phFlatIcon('⚙️')+'</span>';
+    case 'plus': case '➕': return '<span class="mapRoomUiIcon">'+_phFlatIcon('➕')+'</span>';
+    default:
+      return '<span class="mapRoomUiIcon">'+(_phFlatIcon(key||'')||'')+'</span>';
+  }
+}
+
 // ---- 房间系统（2.5D手绘风格增强版） ----
 
 // 等轴测坐标转换：网格坐标 → SVG像素坐标
@@ -30662,13 +30765,13 @@ async function _openRoomSettings(container, mapData, houseId, npcId, npcName){
   var logCount = roomLogs.length;
 
   var inner =
-    '<div style="font-size:14px;font-weight:600;color:var(--ph-text);margin-bottom:4px;">🏠 '+esc(npcName)+'的房间日志</div>' +
+    '<div style="font-size:14px;font-weight:600;color:var(--ph-text);margin-bottom:4px;display:flex;align-items:center;gap:6px;">'+_roomUiIcon('house')+'<span>'+esc(npcName)+'的房间日志</span></div>' +
     '<div style="font-size:11px;color:var(--ph-text-sub);margin-bottom:12px;">当前已有 '+logCount+' 条房间动态</div>' +
     '<div style="font-size:11px;color:var(--ph-text-sub);margin-bottom:6px;">自定义生成提示词（可选）</div>' +
     '<textarea data-el="rsPrompt" rows="4" placeholder="留空使用默认，例如：重点描写角色的兴趣爱好和日常习惯，语气要细腻温柔…" style="width:100%;padding:8px 10px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.1));border-radius:10px;font-size:12px;font-family:inherit;outline:none;resize:vertical;box-sizing:border-box;background:var(--ph-glass);color:var(--ph-text);line-height:1.6;">'+esc(savedPrompt)+'</textarea>' +
     '<button data-el="rsGenerate" style="width:100%;margin-top:10px;padding:11px;border-radius:12px;border:0;background:var(--ph-accent-grad,linear-gradient(135deg,#07c160,#06a050));color:#fff;font-size:13px;font-weight:600;cursor:pointer;">✦ 生成角色房间日志</button>' +
     '<div style="font-size:11px;color:var(--ph-text-sub);text-align:center;margin-top:6px;opacity:.6;">生成后从房间内点击家具发现</div>' +
-    '<button data-el="rsClear" style="width:100%;margin-top:8px;padding:9px;border-radius:10px;border:1px solid rgba(231,76,60,.2);background:transparent;color:#e74c3c;font-size:12px;cursor:pointer;">🗑 清空房间日志</button>' +
+    '<button data-el="rsClear" style="width:100%;margin-top:8px;padding:9px;border-radius:10px;border:1px solid rgba(231,76,60,.2);background:transparent;color:#e74c3c;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">'+_roomUiIcon('trash')+'<span>清空房间日志</span></button>' +
     '<button data-el="rsClose" style="width:100%;margin-top:6px;padding:9px;border-radius:10px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.08));background:transparent;font-size:12px;cursor:pointer;color:var(--ph-text-sub);">关闭</button>';
 
   var ov = (typeof _cpShowOverlay === 'function') ? _cpShowOverlay(inner) : null;
@@ -30808,7 +30911,7 @@ async function _showNpcFurnPanel(container, mapData, houseId, npcId, npcName, fu
     '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">' +
       '<div style="width:44px;height:44px;border-radius:50%;overflow:hidden;background:rgba(0,0,0,.06);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">'+avH+'</div>' +
       '<div><div style="font-size:14px;font-weight:600;color:var(--ph-text);">'+esc(npcName)+'的'+esc(cat.label)+'</div>' +
-      '<div style="font-size:11px;color:var(--ph-text-sub);margin-top:2px;">'+cat.emoji+' '+(attrFx.join(' ')||cat.desc)+'</div></div>' +
+      '<div style="font-size:11px;color:var(--ph-text-sub);margin-top:2px;display:flex;align-items:center;gap:6px;">'+_roomUiIcon(furn.type||cat.emoji)+'<span>'+(attrFx.join(' ')||cat.desc)+'</span></div></div>' +
     '</div>' +
     // 场景感描述
     '<div style="font-size:12px;line-height:1.7;color:var(--ph-text);padding:10px 12px;background:rgba(0,0,0,.02);border-radius:10px;margin-bottom:12px;">'+
@@ -30816,18 +30919,18 @@ async function _showNpcFurnPanel(container, mapData, houseId, npcId, npcName, fu
     '</div>' +
     // 两个发现按钮
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">' +
-      '<button data-el="discoverLog" style="padding:11px 6px;border-radius:12px;border:0;background:var(--ph-glass,rgba(255,255,255,.85));border:1px solid var(--ph-glass-border,rgba(0,0,0,.08));font-size:12px;cursor:pointer;color:var(--ph-text);display:flex;align-items:center;justify-content:center;gap:5px;">🗓 查看动态<span style="font-size:10px;opacity:.5;"></span></button>' +
-      '<button data-el="discoverSecret" style="padding:11px 6px;border-radius:12px;border:0;background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.2);font-size:12px;cursor:pointer;color:#b7800a;display:flex;align-items:center;justify-content:center;gap:5px;">🔍 发现秘密</button>' +
+      '<button data-el="discoverLog" style="padding:11px 6px;border-radius:12px;border:0;background:var(--ph-glass,rgba(255,255,255,.85));border:1px solid var(--ph-glass-border,rgba(0,0,0,.08));font-size:12px;cursor:pointer;color:var(--ph-text);display:flex;align-items:center;justify-content:center;gap:5px;">'+_roomUiIcon('calendar')+'<span>查看动态</span></button>' +
+      '<button data-el="discoverSecret" style="padding:11px 6px;border-radius:12px;border:0;background:rgba(243,156,18,.08);border:1px solid rgba(243,156,18,.2);font-size:12px;cursor:pointer;color:#b7800a;display:flex;align-items:center;justify-content:center;gap:5px;">'+_roomUiIcon('search')+'<span>发现秘密</span></button>' +
     '</div>' +
     // 动态区（隐藏）
     '<div data-el="logArea" style="display:none;margin-bottom:8px;">' +
-      '<div style="font-size:10.5px;color:var(--ph-text-sub);margin-bottom:6px;opacity:.7;">📋 最近动态</div>' +
+      '<div style="font-size:10.5px;color:var(--ph-text-sub);margin-bottom:6px;opacity:.7;display:flex;align-items:center;gap:5px;">'+_roomUiIcon('calendar')+'<span>最近动态</span></div>' +
       '<div data-el="logList"></div>' +
       '<button data-el="genMore" style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:0;background:var(--ph-accent-grad,linear-gradient(135deg,#07c160,#06a050));color:#fff;font-size:12px;font-weight:600;cursor:pointer;">✦ AI 生成更多日志</button>' +
     '</div>' +
     // 秘密区（隐藏）
     '<div data-el="secretArea" style="display:none;margin-bottom:8px;padding:12px 14px;background:rgba(243,156,18,.05);border:1px solid rgba(243,156,18,.2);border-radius:12px;font-size:12px;color:var(--ph-text);line-height:1.7;"></div>' +
-    '<button data-el="favSecret" style="display:none;width:100%;padding:9px;border-radius:10px;border:1px solid rgba(243,156,18,.25);background:rgba(243,156,18,.06);font-size:12px;cursor:pointer;color:#b7800a;margin-bottom:6px;">🔖 收藏这个发现</button>' +
+    '<button data-el="favSecret" style="display:none;width:100%;padding:9px;border-radius:10px;border:1px solid rgba(243,156,18,.25);background:rgba(243,156,18,.06);font-size:12px;cursor:pointer;color:#b7800a;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:6px;">'+_roomUiIcon('bookmark')+'<span>收藏这个发现</span></button>' +
     '<button data-el="panelClose" style="width:100%;padding:9px;border-radius:10px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.08));background:transparent;font-size:12px;cursor:pointer;color:var(--ph-text-sub);">关闭</button>';
 
   var ov = _cpShowOverlay(inner);
@@ -30870,7 +30973,7 @@ async function _showNpcFurnPanel(container, mapData, houseId, npcId, npcName, fu
     return logs.map(function(l){
       var t=l.time?new Date(l.time):null, ts=t?(t.getHours()<10?'0':'')+t.getHours()+':'+(t.getMinutes()<10?'0':'')+t.getMinutes():'';
       return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(0,0,0,.04);">' +
-        '<span style="font-size:13px;">'+(l.emoji||cat.emoji||'📍')+'</span>' +
+        '<span style="color:var(--ph-icon-inner-tint,var(--ph-text-sub));">'+_roomUiIcon(cat.type||l.emoji||cat.emoji||'search')+'</span>' +
         '<span style="font-size:11px;color:rgba(20,24,28,.75);flex:1;">'+esc(l.action||'')+'</span>' +
         '<span style="font-size:9px;color:rgba(20,24,28,.3);">'+ts+'</span></div>';
     }).join('');
@@ -30958,7 +31061,7 @@ async function _showNpcFurnPanel(container, mapData, houseId, npcId, npcName, fu
       var txt=String(res4.data||'').trim().replace(/^["「『]|["」』]$/g,'');
       if(txt&&secretArea){
         secretArea.style.display='block';
-        secretArea.innerHTML='<div style="font-size:11px;color:rgba(243,156,18,.8);font-weight:600;margin-bottom:6px;">🔍 你发现了……</div><div style="font-size:12px;line-height:1.75;color:var(--ph-text);">'+esc(txt)+'</div>';
+        secretArea.innerHTML='<div style="font-size:11px;color:var(--ph-icon-inner-tint,var(--ph-text-sub));font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:6px;">'+_roomUiIcon('search')+'<span>你发现了……</span></div><div style="font-size:12px;line-height:1.75;color:var(--ph-text);">'+esc(txt)+'</div>';
         // ★ 显示收藏按钮
         var favBtn = ov.querySelector('[data-el="favSecret"]');
         if(favBtn){
@@ -31296,14 +31399,14 @@ function _mapOpenRoom(container, mapData, houseId){
     html += '<div class="mapRoomTitle">'+esc(house.name)+' <span style="font-size:10px;color:rgba(20,24,28,.4);font-weight:400;">'+ownerLabel+'</span></div>';
     html += '<div class="mapRoomToolbar">';
     if(isMyH || npcOwner){
-      html += '<button data-act="roomToggleEdit"'+(_editMode?' class="active"':'')+'>'+(_editMode?'✓ 完成':'🔧 装修')+'</button>';
+      html += '<button data-act="roomToggleEdit"'+(_editMode?' class="active"':'')+'>'+(_editMode?'✓ 完成':_roomUiIcon('edit')+'<span>装修</span>')+'</button>';
     }
     var _chibOwner = npcOwner || (isMyH ? 'me' : null);
     if(_chibOwner){
       var _chibCfg = (typeof _getChibiSettings==='function') ? _getChibiSettings(_chibOwner) : null;
-      html += '<button data-act="roomChibiEdit" style="'+(_chibCfg&&_chibCfg.enabled?'color:#07c160;':'')+'" title="角色设置">👤</button>';
+      html += '<button data-act="roomChibiEdit" style="'+(_chibCfg&&_chibCfg.enabled?'color:var(--ph-icon-inner-tint,var(--ph-text));':'')+'" title="角色设置">'+_roomUiIcon('user')+'</button>';
     }
-    html += '<span style="font-size:10px;color:rgba(20,24,28,.35);">💰$'+_roomGetBalance()+'</span>';
+    html += '<span class="mapRoomWallet">'+_roomUiIcon('money')+'<span>$'+_roomGetBalance()+'</span></span>';
     html += '</div>';
     html += '</div>';
 
@@ -31658,8 +31761,8 @@ function _mapOpenRoom(container, mapData, houseId){
           if(_csO) _curSL = ' · '+_csO.label;
         }
         html += '<div class="mapFurnSlot" style="position:relative;" data-furnid="'+f.id+'" data-furntype="'+f.type+'">';
-        html += '<span class="fe" data-act="'+(_editMode?'roomMove':'roomUse')+'" data-furnid="'+f.id+'" data-furntype="'+f.type+'">'+cat.emoji+'</span>';
-        html += '<span class="fn" data-act="'+(_editMode?'roomMove':'roomUse')+'" data-furnid="'+f.id+'" data-furntype="'+f.type+'">'+cat.label+_curSL+(_editMode?' 📍':'')+'</span>';
+        html += '<span class="fe" data-act="'+(_editMode?'roomMove':'roomUse')+'" data-furnid="'+f.id+'" data-furntype="'+f.type+'">'+_roomUiIcon(f.type||cat.emoji)+'</span>';
+        html += '<span class="fn" data-act="'+(_editMode?'roomMove':'roomUse')+'" data-furnid="'+f.id+'" data-furntype="'+f.type+'">'+cat.label+_curSL+(_editMode?' · 可拖动':'')+'</span>';
         html += '<span class="fd" data-act="'+(_editMode?'roomMove':'roomUse')+'" data-furnid="'+f.id+'" data-furntype="'+f.type+'">'+(_editMode?'点击后拖到新位置':fxDesc.join(' '))+'</span>';
         if(cat.styles && cat.styles.length > 1 && !_editMode){
           html += '<span data-act="changeStyle" data-furnid="'+f.id+'" data-furntype="'+f.type+'" style="position:absolute;right:3px;top:3px;font-size:9px;background:rgba(0,0,0,.06);border-radius:8px;padding:1px 6px;cursor:pointer;z-index:2;">🎨换款</span>';
@@ -31667,14 +31770,14 @@ function _mapOpenRoom(container, mapData, houseId){
         html += '</div>';
       } else {
         html += '<div class="mapFurnSlot locked" data-act="roomBuy" data-furntype="'+f.type+'" data-furnid="'+f.id+'">';
-        html += '<span class="fe">'+cat.emoji+'</span>';
-        html += '<span class="fn">'+cat.label+' 🔒</span>';
+        html += '<span class="fe">'+_roomUiIcon(f.type||cat.emoji)+'</span>';
+        html += '<span class="fn">'+cat.label+' · 已锁</span>';
         html += '<span class="fd">$'+cat.cost+'</span>';
         html += '</div>';
       }
     });
     if(isMyH){
-      html += '<div class="mapFurnSlot" data-act="roomShop" style="border-style:dashed;opacity:0.6;"><span class="fe">➕</span><span class="fn">购买家具</span></div>';
+      html += '<div class="mapFurnSlot" data-act="roomShop" style="border-style:dashed;opacity:0.6;"><span class="fe">'+_roomUiIcon('plus')+'</span><span class="fn">购买家具</span></div>';
     }
     html += '</div>';
 
@@ -32018,7 +32121,7 @@ function _mapOpenRoom(container, mapData, houseId){
         if(st.png && st.png.length > 10){
           csH += '<img src="'+st.png+'" style="width:36px;height:36px;object-fit:contain;margin-right:8px;border-radius:4px;background:rgba(0,0,0,.03);"/>';
         } else {
-          csH += '<span style="font-size:24px;margin-right:8px;">'+csCat.emoji+'</span>';
+          csH += '<span style="margin-right:8px;color:var(--ph-icon-inner-tint,var(--ph-text-sub));">'+_roomUiIcon(csF.type||csCat.emoji)+'</span>';
         }
         csH += '<div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+st.label+'</div></div>';
         if(isCur) csH += '<span style="font-size:10px;color:rgba(100,180,80,.8);font-weight:600;">当前</span>';
@@ -32044,19 +32147,19 @@ function _mapOpenRoom(container, mapData, houseId){
     }
 
     if(act==='roomShop'){
-      var shopH = '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">🛋️ 家具商店</div>';
-      shopH += '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:10px;">💰 余额: $'+_roomGetBalance()+'</div>';
+      var shopH = '<div style="font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:6px;">'+_roomUiIcon('sofa')+'<span>家具商店</span></div>';
+      shopH += '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:10px;display:flex;align-items:center;gap:6px;">'+_roomUiIcon('money')+'<span>余额: $'+_roomGetBalance()+'</span></div>';
 
       // ====== 窗户装修 ======
       var curWinStyle = house._windowStyle || 'default';
-      shopH += '<div style="font-size:11px;font-weight:600;color:rgba(20,24,28,.5);margin:4px 0 4px;">🪟 窗户款式（硬装）</div>';
+      shopH += '<div style="font-size:11px;font-weight:600;color:rgba(20,24,28,.5);margin:4px 0 4px;display:flex;align-items:center;gap:6px;">'+_roomUiIcon('window')+'<span>窗户款式（硬装）</span></div>';
       shopH += '<div class="mapActRow" data-act="winStyle" data-winstyle="default" style="min-height:36px;'+(curWinStyle==='default'?'border:1px solid rgba(255,255,255,.48);background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .03));':'')+'">';
-      shopH += '<span style="font-size:18px;margin-right:8px;">🪟</span>';
+      shopH += '<span style="margin-right:8px;color:var(--ph-icon-inner-tint,var(--ph-text-sub));">'+_roomUiIcon('window')+'</span>';
       shopH += '<div style="flex:1;"><div style="font-size:12px;font-weight:500;">经典格窗</div></div>';
       shopH += (curWinStyle==='default'?'<span style="font-size:10px;color:var(--ph-icon-inner-tint,var(--ph-text-sub));font-weight:600;opacity:.8;">当前</span>':'<span class="mapActCost">免费</span>');
       shopH += '</div>';
       shopH += '<div class="mapActRow" data-act="winStyle" data-winstyle="modern" style="min-height:36px;'+(curWinStyle==='modern'?'border:1px solid rgba(255,255,255,.48);background:rgba(255,255,255, calc(var(--ph-frost-panel-a, .45) + .03));':'')+'">';
-      shopH += '<span style="font-size:18px;margin-right:8px;">🏙️</span>';
+      shopH += '<span style="margin-right:8px;color:var(--ph-icon-inner-tint,var(--ph-text-sub));">'+_roomUiIcon('window')+'</span>';
       shopH += '<div style="flex:1;"><div style="font-size:12px;font-weight:500;">现代落地窗</div></div>';
       shopH += (curWinStyle==='modern'?'<span style="font-size:10px;color:var(--ph-icon-inner-tint,var(--ph-text-sub));font-weight:600;opacity:.8;">当前</span>':'<span class="mapActCost">$100</span>');
       shopH += '</div>';
@@ -32065,7 +32168,7 @@ function _mapOpenRoom(container, mapData, houseId){
       // ====== 出售区 ======
       var sellable = furniture.filter(function(f3){ return f3.owned && (FURNITURE_CATALOG[f3.type]||{}).cost > 0; });
       if(sellable.length){
-        shopH += '<div style="font-size:11px;font-weight:600;color:#e74c3c;margin:4px 0 4px;">💰 出售家具</div>';
+        shopH += '<div style="font-size:11px;font-weight:600;color:var(--ph-icon-inner-tint,var(--ph-text-sub));margin:4px 0 4px;display:flex;align-items:center;gap:6px;">'+_roomUiIcon('money')+'<span>出售家具</span></div>';
         shopH += '<div style="font-size:9px;color:rgba(20,24,28,.35);margin-bottom:6px;">⏰ 购买不超过1天原价退款，超过1天8折出售</div>';
         sellable.forEach(function(sf){
           var sc = FURNITURE_CATALOG[sf.type]||{};
@@ -32078,7 +32181,7 @@ function _mapOpenRoom(container, mapData, houseId){
             if(_ss) _slbl += ' · '+_ss.label;
           }
           shopH += '<div class="mapActRow" data-act="shopSell" data-furnid="'+sf.id+'" data-sellprice="'+sellPrice+'">';
-          shopH += '<span style="font-size:20px;margin-right:8px;">'+sc.emoji+'</span>';
+          shopH += '<span style="margin-right:8px;color:var(--ph-icon-inner-tint,var(--ph-text-sub));">'+_roomUiIcon(sf.type||sc.emoji)+'</span>';
           shopH += '<div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+_slbl+'</div><div style="font-size:10px;color:rgba(180,80,80,.6);">'+(isWithinDay?'原价退款':'8折出售')+'</div></div>';
           shopH += '<span class="mapActCost">+$'+sellPrice+'</span>';
           shopH += '</div>';
@@ -32087,14 +32190,14 @@ function _mapOpenRoom(container, mapData, houseId){
       }
 
       // ====== 购买区 ======
-      shopH += '<div style="font-size:11px;font-weight:600;color:rgba(20,24,28,.5);margin:4px 0 4px;">🛒 购买新家具</div>';
+      shopH += '<div style="font-size:11px;font-weight:600;color:rgba(20,24,28,.5);margin:4px 0 4px;display:flex;align-items:center;gap:6px;">'+_roomUiIcon('plus')+'<span>购买新家具</span></div>';
       var ownedTypes = furniture.filter(function(f3){return f3.owned;}).map(function(f3){return f3.type;});
       for(var ck in FURNITURE_CATALOG){
         var cc = FURNITURE_CATALOG[ck];
         if(cc.cost <= 0) continue;
         var alreadyOwned = ownedTypes.indexOf(ck) >= 0;
         shopH += '<div class="mapActRow" data-act="shopBuy" data-ftype="'+ck+'" style="'+(alreadyOwned?'opacity:0.4;pointer-events:none;':'')+'">';
-        shopH += '<span style="font-size:20px;margin-right:8px;">'+cc.emoji+'</span>';
+        shopH += '<span style="margin-right:8px;color:var(--ph-icon-inner-tint,var(--ph-text-sub));">'+_roomUiIcon(ck||cc.emoji)+'</span>';
         shopH += '<div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+cc.label+(cc.styles&&cc.styles.length>1?' <span style=\'font-size:9px;color:#888;\'>('+cc.styles.length+'款)</span>':'')+'</div><div style="font-size:10px;color:rgba(20,24,28,.4);">'+cc.desc+'</div></div>';
         shopH += '<span class="mapActCost">'+(alreadyOwned?'已拥有':'$'+cc.cost)+'</span>';
         shopH += '</div>';
@@ -32135,7 +32238,7 @@ function _mapOpenRoom(container, mapData, houseId){
           var sellCat = FURNITURE_CATALOG[furniture[sellIdx].type]||{};
           shopOv.remove();
           var cfmH = '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">确认出售</div>';
-          cfmH += '<div style="font-size:12px;color:rgba(20,24,28,.6);margin-bottom:12px;">确定出售 '+sellCat.emoji+' '+(sellCat.label||'')+' 获得 <b style="color:#e74c3c;">$'+sellP+'</b> ？</div>';
+          cfmH += '<div style="font-size:12px;color:rgba(20,24,28,.6);margin-bottom:12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'+_roomUiIcon((furniture[sellIdx]&&furniture[sellIdx].type)||sellCat.emoji)+'<span>确定出售 '+(sellCat.label||'')+' 获得 <b style="color:var(--ph-icon-inner-tint,var(--ph-text-sub));">$'+sellP+'</b> ？</span></div>';
           cfmH += '<div style="display:flex;gap:8px;">';
           cfmH += '<button data-act="cfmCancel" style="flex:1;padding:10px;border-radius:10px;border:1px solid rgba(0,0,0,.08);background:#fff;font-size:13px;cursor:pointer;">取消</button>';
           cfmH += '<button data-act="cfmOk" style="flex:1;padding:10px;border-radius:10px;border:none;background:#e74c3c;color:#fff;font-size:13px;cursor:pointer;font-weight:600;">确认出售</button>';
@@ -32180,7 +32283,7 @@ function _mapOpenRoom(container, mapData, houseId){
               if(st.png && st.png.length > 10){
                 stH += '<img src="'+st.png+'" style="width:36px;height:36px;object-fit:contain;margin-right:8px;border-radius:4px;background:rgba(0,0,0,.03);"/>';
               } else {
-                stH += '<span style="font-size:24px;margin-right:8px;">'+cc2.emoji+'</span>';
+                stH += '<span style="margin-right:8px;color:var(--ph-icon-inner-tint,var(--ph-text-sub));">'+_roomUiIcon(ft||cc2.emoji)+'</span>';
               }
               stH += '<div style="flex:1;"><div style="font-size:13px;font-weight:500;">'+st.label+'</div></div>';
               stH += '<span class="mapActCost">$'+cc2.cost+'</span>';
@@ -32233,7 +32336,7 @@ function _mapOpenRoom(container, mapData, houseId){
     var _spEl = root.querySelector('.phAppBarSpacer');
     if(_spEl){
       if(npcOwner){
-        _spEl.innerHTML = '<button class="phBarRBtn" data-act="roomSettings" title="房间设置" style="font-size:16px;">⚙️</button>';
+        _spEl.innerHTML = '<button class="phBarRBtn" data-act="roomSettings" title="房间设置" style="font-size:16px;display:flex;align-items:center;justify-content:center;">'+_roomUiIcon('settings')+'</button>';
       } else {
         _spEl.innerHTML = '';
       }
