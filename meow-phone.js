@@ -3480,6 +3480,65 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
   touch-action:manipulation; -webkit-touch-callout:default;
 }
 #${ID} .wxChatInputBar textarea::placeholder{ color:rgba(20,24,28,.3); }
+
+/* ★ 富文本输入框 */
+#${ID} .wxRichInput{
+  flex:1; resize:none;
+  background:var(--ph-glass); border:1px solid var(--ph-glass-border);
+  border-radius:6px; padding:7px 10px;
+  color:rgba(20,24,28,.88); font-size:16px;
+  outline:none; min-height:34px; max-height:120px; overflow-y:auto;
+  font-family:inherit; line-height:1.5; word-break:break-word;
+  user-select:text; -webkit-user-select:text;
+  touch-action:manipulation; -webkit-touch-callout:default;
+  white-space:pre-wrap;
+}
+#${ID} .wxRichInput:empty::before{
+  content:attr(data-placeholder); color:rgba(20,24,28,.3); pointer-events:none;
+}
+#${ID} .wxRichInput:focus{ border-color:rgba(7,193,96,.45); }
+#${ID} .wxRichImgThumb{
+  display:inline-block; vertical-align:bottom;
+  width:52px; height:52px; border-radius:6px; object-fit:cover;
+  margin:2px 3px; border:1px solid rgba(0,0,0,.08); cursor:pointer;
+}
+/* ★ AI 照片气泡卡 */
+#${ID} .wxPhotoCard{
+  border-radius:10px; overflow:hidden;
+  max-width:220px; cursor:pointer; position:relative;
+  box-shadow:0 2px 10px rgba(0,0,0,.12);
+}
+#${ID} .wxPhotoCard img{ display:block; width:220px; height:160px; object-fit:cover; }
+#${ID} .wxPhotoCard .wxPhotoCaption{
+  position:absolute; bottom:0; left:0; right:0;
+  padding:6px 10px; font-size:12px; color:#fff;
+  background:linear-gradient(transparent, rgba(0,0,0,.55));
+}
+#${ID} .wxPhotoCard .wxPhotoLoading{
+  width:220px; height:160px; background:linear-gradient(135deg,#e8ecf0,#d0d8e0);
+  display:flex; align-items:center; justify-content:center;
+  font-size:28px; color:rgba(255,255,255,.6);
+}
+/* ★ AI 分享卡 */
+#${ID} .wxShareCard{
+  background:#fff; border-radius:10px; overflow:hidden;
+  max-width:230px; cursor:pointer;
+  box-shadow:0 1px 6px rgba(0,0,0,.10); border:1px solid rgba(0,0,0,.06);
+}
+#${ID} .wxShareCard .wxSCThumb{
+  width:100%; height:90px; object-fit:cover; display:block;
+  background:linear-gradient(135deg,#e8ecf0,#c8d8e8);
+}
+#${ID} .wxShareCard .wxSCBody{ padding:8px 10px 10px; }
+#${ID} .wxShareCard .wxSCTitle{
+  font-size:13px; font-weight:600; color:rgba(20,24,28,.9);
+  line-height:1.4; margin-bottom:3px; overflow:hidden;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+}
+#${ID} .wxShareCard .wxSCDesc{
+  font-size:11px; color:rgba(20,24,28,.45); overflow:hidden;
+  white-space:nowrap; text-overflow:ellipsis;
+}
 #${ID} .wxChatSendBtn{
   appearance:none; border:0; cursor:pointer;
   padding:7px 16px; border-radius:18px; flex-shrink:0;
@@ -14074,7 +14133,7 @@ ${lines}
                 system: '只输出一条私聊消息，不加引号前缀。',
                 messages: [{role:'user', content:userContent}],
                 maxTokens: 60, temperature: 0.92,
-                channel: 'proactive', timeout: 20
+                channel: 'proactive', timeout: 50
               });
               if(res.ok && res.data){
                 var msgText = String(res.data).replace(/^["'「]|["'」]$/g,'').replace(/^\s*\S+[:：]\s*/,'').trim().slice(0,60);
@@ -14652,7 +14711,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             <div class="wxChatMsgs" data-ph="chatMsgs" style="${bgStyle}"></div>
             <div class="wxChatInputBar">
               <button class="wxChatExBtn" data-act="wxVoiceToggle" title="语音">${_phFlatIcon('🎙')}</button>
-              <textarea rows="1" placeholder="输入消息…" data-ph="chatInput" inputmode="text" enterkeyhint="send" autocomplete="off"></textarea>
+              <div class="wxRichInput" data-ph="chatInput" contenteditable="true" data-placeholder="输入消息…" inputmode="text" enterkeyhint="send" spellcheck="false"></div>
               <button class="wxChatExBtn" data-act="wxStickerToggle" title="表情">${_phFlatIcon('😊')}</button>
               <button class="wxChatExBtn" data-act="wxChatPlusToggle" title="更多">${_phFlatIcon('➕')}</button>
               <button class="wxChatSendBtn" data-act="wxSendChat" title="发送" style="flex-shrink:0;">发送</button>
@@ -14823,22 +14882,91 @@ const npc = _wxGetChatTargetMeta(npcId);
       function _chatDetail_bindInput(body, contactId){
         const input = body.querySelector('[data-ph="chatInput"]');
         if (!input) return;
-        input.addEventListener('keydown',(e)=>{
-          if (e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); _wxSendChat(contactId); }
-        });
-        input.addEventListener('click', ()=>{ try{input.focus();}catch(e){} });
-        input.addEventListener('touchend', (e)=>{ e.stopPropagation(); try{input.focus();}catch(e){} });
-        input.addEventListener('blur', ()=>{ input._lastVal = input.value; });
-        setTimeout(()=>{ try{input.focus();}catch(e){} }, 150);
-        // ✅ 镜像值方案：input事件实时同步，发送时读镜像
-        state._chatInputMirror = '';
-        input.addEventListener('input', ()=>{ state._chatInputMirror = input.value; });
-        input.addEventListener('change', ()=>{ state._chatInputMirror = input.value; });
-        // mousedown阶段保存（blur前最后时机）
-        input.addEventListener('blur', ()=>{ state._chatInputMirror = input.value || state._chatInputMirror; });
+
+        const isRich = input.getAttribute('contenteditable') === 'true';
+
+        if (isRich){
+          // ★ 富文本输入：Enter发送，Shift+Enter换行
+          input.addEventListener('keydown', (e)=>{
+            if (e.key === 'Enter' && !e.shiftKey){
+              e.preventDefault();
+              _wxSendChat(contactId);
+            }
+          });
+          // ★ 粘贴处理：文字正常粘贴（纯文本），图片/文件转 img 预览
+          input.addEventListener('paste', (e)=>{
+            e.preventDefault();
+            const items = e.clipboardData && e.clipboardData.items;
+            if (!items) return;
+            let hasImage = false;
+            for (var i = 0; i < items.length; i++){
+              const item = items[i];
+              if (item.type.startsWith('image/')){
+                hasImage = true;
+                const file = item.getAsFile();
+                if (!file) continue;
+                const reader = new FileReader();
+                reader.onload = function(ev){
+                  const img = doc.createElement('img');
+                  img.src = ev.target.result;
+                  img.className = 'wxRichImgThumb';
+                  img.setAttribute('data-richimg', '1');
+                  img.title = '点击移除';
+                  img.addEventListener('click', function(){ img.remove(); input.dispatchEvent(new Event('input')); });
+                  // 插到光标位置
+                  const sel = window.getSelection();
+                  if (sel && sel.rangeCount){
+                    const range = sel.getRangeAt(0);
+                    range.deleteContents();
+                    range.insertNode(img);
+                    range.setStartAfter(img);
+                    range.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                  } else {
+                    input.appendChild(img);
+                  }
+                  input.dispatchEvent(new Event('input'));
+                };
+                reader.readAsDataURL(file);
+              }
+            }
+            // 如果没有图片，粘贴纯文本
+            if (!hasImage){
+              let text = e.clipboardData.getData('text/plain') || '';
+              doc.execCommand('insertText', false, text);
+            }
+          });
+          // 同步镜像（用于 _wxSendChat 读取）
+          state._chatInputMirror = '';
+          state._chatInputImages = [];
+          input.addEventListener('input', ()=>{
+            state._chatInputMirror = _readRichInputText(input);
+            state._chatInputImages = _readRichInputImages(input);
+          });
+          input.addEventListener('blur', ()=>{
+            state._chatInputMirror = _readRichInputText(input);
+            state._chatInputImages = _readRichInputImages(input);
+          });
+          setTimeout(()=>{ try{ input.focus(); }catch(e){} }, 150);
+        } else {
+          // 旧 textarea 路径（线下模式保留）
+          input.addEventListener('keydown',(e)=>{
+            if (e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); _wxSendChat(contactId); }
+          });
+          input.addEventListener('click', ()=>{ try{input.focus();}catch(e){} });
+          input.addEventListener('touchend', (e)=>{ e.stopPropagation(); try{input.focus();}catch(e){} });
+          input.addEventListener('blur', ()=>{ input._lastVal = input.value; });
+          setTimeout(()=>{ try{input.focus();}catch(e){} }, 150);
+          state._chatInputMirror = '';
+          input.addEventListener('input', ()=>{ state._chatInputMirror = input.value; });
+          input.addEventListener('change', ()=>{ state._chatInputMirror = input.value; });
+          input.addEventListener('blur', ()=>{ state._chatInputMirror = input.value || state._chatInputMirror; });
+        }
+
         const sendBtn = body.querySelector('.wxChatSendBtn');
         if (sendBtn){
-          sendBtn.addEventListener('mousedown', (e)=>{ e.preventDefault(); }); // 阻止textarea失焦
+          sendBtn.addEventListener('mousedown', (e)=>{ e.preventDefault(); });
           sendBtn.addEventListener('click', (e)=>{
             e.preventDefault(); e.stopPropagation();
             _wxSendChat(contactId);
@@ -14848,6 +14976,45 @@ const npc = _wxGetChatTargetMeta(npcId);
             _wxSendChat(contactId);
           });
         }
+      }
+
+      // ★ 读取 contenteditable 纯文字（保留换行）
+      function _readRichInputText(el){
+        var lines = [];
+        el.childNodes.forEach(function(node){
+          if (node.nodeType === Node.TEXT_NODE){
+            lines.push(node.textContent);
+          } else if (node.nodeName === 'BR'){
+            lines.push('\n');
+          } else if (node.getAttribute && node.getAttribute('data-richimg')){
+            // 图片占位（AI 会收到图片内容，文字里不重复）
+          } else if (node.nodeType === Node.ELEMENT_NODE){
+            lines.push(node.innerText || node.textContent || '');
+          }
+        });
+        return lines.join('').trim();
+      }
+
+      // ★ 读取 contenteditable 里的图片（base64 data URL 数组）
+      function _readRichInputImages(el){
+        var imgs = [];
+        el.querySelectorAll('img[data-richimg]').forEach(function(img){
+          if (img.src && img.src.startsWith('data:')) imgs.push(img.src);
+        });
+        return imgs;
+      }
+
+      // ★ 清空富文本输入框
+      function _clearRichInput(el){
+        if (!el) return;
+        if (el.getAttribute && el.getAttribute('contenteditable') === 'true'){
+          el.innerHTML = '';
+        } else {
+          el.value = '';
+          el._lastVal = '';
+        }
+        state._chatInputMirror = '';
+        state._chatInputImages = [];
       }
 
       /* --- 子渲染：语音面板（模拟按住录音） --- */
@@ -16290,6 +16457,32 @@ const npc = _wxGetChatTargetMeta(npcId);
             </div>
             <div style="padding:6px 14px;font-size:11px;color:rgba(20,24,28,.35);background:rgba(255,255,255,.9);">${esc(meta.note||'转账')}</div>
           </div>`;
+        } else if (mt === 'photo'){
+          // ★ AI 发照片卡（Unsplash 随机图 + 描述文字）
+          var _photoDesc = esc(meta.caption || text || '');
+          var _photoSeed = Math.floor(Math.random() * 900) + 100;
+          var _photoQuery = encodeURIComponent(meta.query || 'life moment');
+          var _photoSrc = 'https://source.unsplash.com/440x320/?' + _photoQuery + '&sig=' + _photoSeed;
+          contentHtml = '<div class="wxCBContent wxCBSpecial" style="padding:0;">'
+            + '<div class="wxPhotoCard">'
+            + '<img src="' + _photoSrc + '" onerror="this.parentNode.innerHTML=\'<div class=wxPhotoLoading>🖼</div>\'" />'
+            + (_photoDesc ? '<div class="wxPhotoCaption">' + _photoDesc + '</div>' : '')
+            + '</div>'
+            + editedTag + '</div>';
+        } else if (mt === 'share'){
+          // ★ AI 发分享卡（链接卡样式：标题 + 描述 + 缩略图）
+          var _shareTitle = esc(meta.title || text || '分享');
+          var _shareDesc = esc(meta.desc || '');
+          var _shareSeed2 = Math.floor(Math.random() * 900) + 100;
+          var _shareQuery2 = encodeURIComponent(meta.query || 'news');
+          var _shareThumb = 'https://source.unsplash.com/200x90/?' + _shareQuery2 + '&sig=' + _shareSeed2;
+          contentHtml = '<div class="wxCBContent wxCBSpecial" style="padding:0;">'
+            + '<div class="wxShareCard">'
+            + '<img class="wxSCThumb" src="' + _shareThumb + '" onerror="this.style.display=\'none\'" />'
+            + '<div class="wxSCBody"><div class="wxSCTitle">' + _shareTitle + '</div>'
+            + (_shareDesc ? '<div class="wxSCDesc">' + _shareDesc + '</div>' : '')
+            + '</div></div>'
+            + editedTag + '</div>';
         } else if (mt === 'music'){
           contentHtml = `<div class="wxCBContent wxCBSpecial" style="padding:10px 14px;min-width:180px;">
             <div style="display:flex;align-items:center;gap:8px;">
@@ -16579,10 +16772,42 @@ const npc = _wxGetChatTargetMeta(npcId);
             bumpThread(npcId, { lastMsg:'📍 '+parsed.sendLocation, lastTime:ts, unread:0 });
             if(_msgsLoc){ _wxAppendBubble(_msgsLoc, npc, 'them', '[地标] '+parsed.sendLocation, ts, _lmMetaL); requestAnimationFrame(function(){ _msgsLoc.scrollTop = _msgsLoc.scrollHeight; }); }
           }catch(e){}
-          // 如果没有附加文字就直接结束
           if (!cleanText || cleanText === '…') return;
-          // 稍微延迟再发文字（让地标卡和文字分两条）
           await new Promise(function(r){ setTimeout(r, 400); });
+        }
+
+        // ★ NPC 主动发照片卡
+        if (parsed.sendPhoto){
+          try{
+            var _photoMeta = { type:'photo', caption: parsed.sendPhoto.caption, query: parsed.sendPhoto.query };
+            var _msgsPhoto = root.querySelector('[data-ph="chatMsgs"]');
+            var _photoLogText = '📷 ' + (parsed.sendPhoto.caption || '照片');
+            pushLog(npcId, 'them', _photoLogText);
+            bumpThread(npcId, { lastMsg: _photoLogText, lastTime: ts, unread: 0 });
+            if (_msgsPhoto){
+              _wxAppendBubble(_msgsPhoto, npc, 'them', _photoLogText, ts, _photoMeta);
+              requestAnimationFrame(function(){ _msgsPhoto.scrollTop = _msgsPhoto.scrollHeight; });
+            }
+          }catch(e){}
+          if (!cleanText || cleanText === '…') return;
+          await new Promise(function(r){ setTimeout(r, 600); });
+        }
+
+        // ★ NPC 主动发分享卡
+        if (parsed.sendShare){
+          try{
+            var _shareMeta = { type:'share', title: parsed.sendShare.title, desc: parsed.sendShare.desc, query: parsed.sendShare.query };
+            var _msgsShare = root.querySelector('[data-ph="chatMsgs"]');
+            var _shareLogText = '🔗 ' + (parsed.sendShare.title || '分享');
+            pushLog(npcId, 'them', _shareLogText);
+            bumpThread(npcId, { lastMsg: _shareLogText, lastTime: ts, unread: 0 });
+            if (_msgsShare){
+              _wxAppendBubble(_msgsShare, npc, 'them', _shareLogText, ts, _shareMeta);
+              requestAnimationFrame(function(){ _msgsShare.scrollTop = _msgsShare.scrollHeight; });
+            }
+          }catch(e){}
+          if (!cleanText || cleanText === '…') return;
+          await new Promise(function(r){ setTimeout(r, 500); });
         }
 
         // 写消息日志
@@ -16831,6 +17056,16 @@ const npc = _wxGetChatTargetMeta(npcId);
               temperature: (opts && opts.temperature) || 0.85,
               max_tokens: (opts && opts.maxTokens) || cfg.maxTokens || 1024
             };
+            // ★ 透传预设 extra 字段（支持 Gemini thinking_config 等模型特有参数）
+            if (cfg.extra && typeof cfg.extra === 'object'){
+              Object.assign(body, cfg.extra);
+            }
+            // ★ 自动检测 Gemini 模型：非 maxthinking 系列才禁用 thinking 避免超时
+            var isGemini = /gemini/i.test(cfg.model || '');
+            var isMaxThinking = /maxthinking/i.test(cfg.model || '');
+            if (isGemini && !isMaxThinking && !body.thinking_config && !body.generationConfig){
+              body.thinking_config = { thinking_budget: 0 };
+            }
             if (opts && opts.system){
               body.messages.push({ role:'system', content:opts.system });
             }
@@ -16891,12 +17126,20 @@ const npc = _wxGetChatTargetMeta(npcId);
                   // 兼容其他响应格式
                   try{ text = json.output_text || json.result || json.response || ''; }catch(e2){}
                 }
-                if (!text && json){
-                  try{ text = JSON.stringify(json).slice(0, 500); }catch(e){}
+                // ★ 修复：空内容时返回 error 而不是原始 JSON（避免把 JSON 显示成气泡消息）
+                if (!text){
+                  var finishReason = '';
+                  try{ finishReason = json.choices[0].finish_reason || ''; }catch(e){}
+                  if (finishReason === 'stop' || finishReason === 'length'){
+                    return { ok:false, data:null, error:'模型返回了空内容，请重试（finish_reason:'+finishReason+'）' };
+                  }
+                  return { ok:false, data:null, error:'模型返回了空内容，请重试' };
                 }
-                // 阶段B修复：清除模型可能泄露的 thinking/think 标签
+                // 阶段B修复：清除模型可能泄露的 thinking/think 标签（兼容 Gemini / Claude 思考格式）
                 text = String(text||'').replace(/<thinking>[\s\S]*?<\/thinking>/gi, '').replace(/<think>[\s\S]*?<\/think>/gi, '');
                 text = text.replace(/<\/?thinking>/gi, '').replace(/<\/?think>/gi, '').trim();
+                // ★ 额外清除 Gemini 2.5 可能残留的孤立标签和首行空行
+                text = text.replace(/^\s*[\r\n]+/, '').trim();
                 return { ok:true, data:text, error:null };
 
               }catch(e){
@@ -17219,10 +17462,33 @@ const npc = _wxGetChatTargetMeta(npcId);
           sendLocation = locTagMatch[1].trim();
           s = s.replace(locTagMatch[0], '').trim();
         }
-        // 兜底清理（防残留）
         s = s.replace(/\[发位置[:：][^\]]*\]?/gi, '').trim();
 
-        return { cleanText: s, sendVoice: sendVoice, stickerGroup: stickerGroup, stickerIdx: stickerIdx, stateUpdate: stateUpdate, attrChanges: attrChanges, sendLocation: sendLocation };
+        // ★ 检测 [发照片:描述|关键词] — AI 主动分享生活照
+        var sendPhoto = null;
+        var photoTagMatch = s.match(/\[发照片[:：]([^\]]+)\]/i);
+        if (photoTagMatch){
+          var _photoParts = photoTagMatch[1].split(/[|｜]/);
+          sendPhoto = { caption: (_photoParts[0]||'').trim(), query: (_photoParts[1]||_photoParts[0]||'life').trim() };
+          s = s.replace(photoTagMatch[0], '').trim();
+        }
+        s = s.replace(/\[发照片[:：][^\]]*\]?/gi, '').trim();
+
+        // ★ 检测 [分享:标题|描述|关键词] — AI 分享资讯/影视/趣事卡片
+        var sendShare = null;
+        var shareTagMatch = s.match(/\[分享[:：]([^\]]+)\]/i);
+        if (shareTagMatch){
+          var _shareParts = shareTagMatch[1].split(/[|｜]/);
+          sendShare = {
+            title: (_shareParts[0]||'').trim(),
+            desc:  (_shareParts[1]||'').trim(),
+            query: (_shareParts[2]||_shareParts[0]||'news').trim()
+          };
+          s = s.replace(shareTagMatch[0], '').trim();
+        }
+        s = s.replace(/\[分享[:：][^\]]*\]?/gi, '').trim();
+
+        return { cleanText: s, sendVoice: sendVoice, stickerGroup: stickerGroup, stickerIdx: stickerIdx, stateUpdate: stateUpdate, attrChanges: attrChanges, sendLocation: sendLocation, sendPhoto: sendPhoto, sendShare: sendShare };
       }
 
       function _convertSpecialTags(text){
@@ -17247,8 +17513,6 @@ const npc = _wxGetChatTargetMeta(npcId);
         var totalN = Math.max(1, n || 10);
 
         if(mode === 'offline'){
-          // ★ 线下模式：messages 数组只放线下消息，用线下专属N（长文少取）
-          // 在线上下文已在 buildSystemPrompt 的最高优先级块里以文本形式注入
           var offlineLog = _getLogForModeBranch(npcId, 'offline');
           var offlineN = (typeof _getOfflineChatContextN==='function') ? _getOfflineChatContextN() : 5;
           var offlineTail = offlineLog.slice(-offlineN);
@@ -17260,7 +17524,6 @@ const npc = _wxGetChatTargetMeta(npcId);
             out.push({role:role, content:content});
           }
         } else {
-          // 在线模式：正常读在线日志
           var log = _getLogForModeBranch(npcId, mode);
           log = log.slice(Math.max(0, log.length - totalN));
           for(var j=0; j<log.length; j++){
@@ -17270,9 +17533,32 @@ const npc = _wxGetChatTargetMeta(npcId);
             var content2 = (role2==='user') ? _convertSpecialTags(y.text) : String(y.text||'');
             out.push({role:role2, content:content2});
           }
-          // 注意：线下经历不混入 messages 数组（避免 role 混淆）
-          // 线下经历通过 buildSystemPrompt 的 system prompt 注入（有明确说话人标注）
         }
+
+        // ★ 注入图片 vision content：找 visionQueue 里最新一批，拼入最后一条 user 消息
+        try{
+          var vq = state._visionQueue;
+          if (vq && vq.length){
+            var batch = vq.pop(); // 消耗最新一批
+            state._visionQueue = vq;
+            // 找最后一条 user 消息，替换为 vision 格式
+            for (var vi = out.length - 1; vi >= 0; vi--){
+              if (out[vi].role === 'user'){
+                var vContent = [];
+                if (batch.text) vContent.push({ type:'text', text: batch.text });
+                (batch.images || []).forEach(function(src){
+                  vContent.push({ type:'image_url', image_url:{ url: src } });
+                });
+                if (!batch.text && vContent.length === 0) break;
+                // 如果没有文字，加提示
+                if (!batch.text) vContent.unshift({ type:'text', text:'（用户发了一张图片）' });
+                out[vi].content = vContent;
+                break;
+              }
+            }
+          }
+        }catch(e){}
+
         return out;
       }
 
@@ -17654,13 +17940,27 @@ const npc = _wxGetChatTargetMeta(npcId);
           charStks.forEach(function(s,i){ if(s && s.name) stkLines.push('[角色表情:'+i+'] '+s.name); else stkLines.push('[角色表情:'+i+']'); });
           commonStks.forEach(function(s,i){ if(s && s.name) stkLines.push('[通用表情:'+i+'] '+s.name); else stkLines.push('[通用表情:'+i+']'); });
           if (stkLines.length){
-            stkForAI = '\n\n【表情包系统（重要）】\n' +
-              '你可以在合适时机主动发表情包，方法是在消息里写标记 [发表情:角色表情:0] 或 [发表情:通用表情:0]（数字为编号）。\n' +
-              '可用表情包列表：\n' + stkLines.slice(0,20).join('\n') + '\n' +
-              '使用原则：克制，一次最多一个；开心/逗趣/安慰/撒娇时使用，不要无缘无故乱发。\n' +
-              '发表情时也可以附文字，例如："哈哈 [发表情:通用表情:0]"';
+            stkForAI = '\n\n【表情包系统】\n' +
+              '发表情包方法：在消息末尾写 [发表情:角色表情:0]（编号）。\n' +
+              '★ 必须发表情包的场景（遇到就发，不要忽略）：\n' +
+              '- 收到好消息、对方说了什么让你开心的\n- 故意撒娇卖萌\n- 被逗笑了\n- 安慰对方\n- 表达"嗯嗯""好呀"之类的轻快回应\n' +
+              '可用列表：\n' + stkLines.slice(0,20).join('\n') + '\n' +
+              '每次最多发一个，可附文字："哈哈哈 [发表情:通用表情:0]"';
           }
         }catch(e){}
+
+        // ★ 照片 & 分享卡指令（让 AI 主动分享生活内容）
+        var mediaForAI = '\n\n【主动分享媒体（让聊天更生动）】\n' +
+          '你可以主动分享照片或资讯卡片，让对话更真实自然。\n' +
+          '① 发照片：[发照片:描述文字|搜索关键词英文]\n' +
+          '  例："刚拍的 [发照片:今天下午的咖啡|coffee latte]"\n' +
+          '  适合场景：描述自己在做什么、分享今天遇到的事、晒心情\n' +
+          '② 发分享卡：[分享:标题|一句话描述|搜索关键词英文]\n' +
+          '  例："你看这个 [分享:《三体》第四部要来了|刘慈欣最新消息|science fiction book]"\n' +
+          '  适合场景：聊到某个话题时顺手分享相关内容、电影/歌曲/新闻推荐\n' +
+          '频率：每3~8条消息主动发一次媒体内容，不要每条都发。\n' +
+          '搜索关键词必须是英文（用于找图片），描述文字用中文。';
+
 
         // ★ 构建自定义条目提示（如果用户添加了自定义条目，告诉 AI 有哪些可以更新）
         var _bxForStatus = _loadCharBehavior(npcId);
@@ -17773,7 +18073,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         if (_isOfflineMode){
           parts.push('---\n【回复格式（线下模式）】\n直接写小说段落，无需任何特殊标记。\n- 旁白/动作/环境：用 *星号包裹*\n- 台词：用"引号"\n- 不要输出任何代码、标签或符号，只有纯文字\n- 2~4段，段间空行\n\n【状态同步（末尾必加）】\n[状态:穿着=...,正在=...,心声=...]\n[属性:心情+5]（只写变化的）' + _attrHint + _customEntryHint);
         } else {
-          parts.push('---\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息的长度一定要随机变化，长短结合，要根据人设性格、情景而变化：有的很短（1-5字，如"嗯""好的""？"），有的中等（一两句话），偶尔有一条较长的。\n模拟真实手机聊天的节奏感——不要把所有内容压缩成一段话，不要连续长句，不要习惯性解释。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长的\n\n示例格式：\n嗯|||怎么了？|||你今天怎么这么安静\n\n【通话触发指令】\n当你想主动发起语音通话时（如想听对方声音、深夜想连麦、情绪激动想打电话），在消息里自然说出意图，必须使用以下词语之一才能触发来电：\n"打电话" / "语音吧" / "连麦" / "给你打" / "打给你" / "接一下" / "接电话" / "通个话" / "要不打个电话"\n例如："睡不着……要不打给你？" 或 "我想听你声音，语音吧"\n想发起视频通话时，说"视频通话" 或 "视频吧"。\n⚠ 不要无故触发，只在情绪/场景自然需要时才用。\n\n【状态同步（必须执行）】\n每次回复时，你必须在最后一条消息的末尾附加两个标记（标记不会显示给用户）。\n\n标记1 - 状态描述：根据当前对话内容和场景，更新你的穿着、正在做什么、以及内心独白：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。\n\n标记2 - 属性变化：根据对话中发生的事情，输出属性的变化量（正数为增加，负数为减少）：\n[属性:属性名+数值,属性名-数值]\n可用属性：精力、心情、健康、饱腹、如厕、娱乐（值域0-100，只写有变化的）\n变化量要合理：吃饭→饱腹+30~50，聊天开心→心情+5~15，运动→精力-10~20、健康+5\n如果对话没有涉及属性变化（纯闲聊），可以只写 [属性:心情+3] 之类的微调。' + _attrHint + '\n\n完整示例：\n吃饱了，舒服～ [状态:穿着=家居服,正在=收拾碗筷,心声=泡面也还行] [属性:饱腹+40,心情+5,娱乐-3]' + _customEntryHint + voiceInstructions + stkForAI);
+          parts.push('---\n【★★★绝对禁止（最高优先级，任何情况不得违反）★★★】\n- 禁止用"其实""说真的""说实话""因为我""我之所以""我这样说是因为"开头解释自己\n- 禁止在回复里解释自己的行为、动机或为什么这么说\n- 禁止一条消息超过30个字（如需表达更多，拆成多条用|||分隔）\n- 禁止用书面语、长定语从句、排比句\n- 禁止输出任何XML/HTML标签（包括<think>、<thinking>等）\n\n【回复格式要求】\n你每次回复应包含 1~5 条独立的聊天消息，用 "|||" 分隔。\n每条消息要短——1~15字是常态，最长不超过30字，超过必须拆条。\n长短混搭，节奏感比内容完整更重要。真人发微信从来不写完整长句。\n根据对话情绪和场景决定消息条数：\n- 普通闲聊：2-3条\n- 开心/激动：3-5条，短消息多\n- 生气/哄人：3-5条，可能连发\n- 冷淡/不想聊：1-2条，很短\n- 解释/讲述：2-3条，可能有一条较长的\n\n好的示例（像真人）：\n嗯|||怎么了？|||你今天怎么这么安静\n哈|||什么鬼|||我没听懂\n\n坏的示例（禁止这样）：\n我刚才看到你发的消息，其实我觉得你说的也有道理，不过我想解释一下我的意思。\n\n【通话触发指令】\n当你想主动发起语音通话时（如想听对方声音、深夜想连麦、情绪激动想打电话），在消息里自然说出意图，必须使用以下词语之一才能触发来电：\n"打电话" / "语音吧" / "连麦" / "给你打" / "打给你" / "接一下" / "接电话" / "通个话" / "要不打个电话"\n例如："睡不着……要不打给你？" 或 "我想听你声音，语音吧"\n想发起视频通话时，说"视频通话" 或 "视频吧"。\n⚠ 不要无故触发，只在情绪/场景自然需要时才用。\n\n【状态同步（必须执行）】\n每次回复时，你必须在最后一条消息的末尾附加两个标记（标记不会显示给用户）。\n\n标记1 - 状态描述：根据当前对话内容和场景，更新你的穿着、正在做什么、以及内心独白：\n[状态:穿着=当前穿着,正在=当前在做的事,心声=此刻内心独白]\n三个字段都必须填写，每个10字以内。\n\n标记2 - 属性变化：根据对话中发生的事情，输出属性的变化量（正数为增加，负数为减少）：\n[属性:属性名+数值,属性名-数值]\n可用属性：精力、心情、健康、饱腹、如厕、娱乐（值域0-100，只写有变化的）\n变化量要合理：吃饭→饱腹+30~50，聊天开心→心情+5~15，运动→精力-10~20、健康+5\n如果对话没有涉及属性变化（纯闲聊），可以只写 [属性:心情+3] 之类的微调。' + _attrHint + '\n\n完整示例：\n吃饱了，舒服～ [状态:穿着=家居服,正在=收拾碗筷,心声=泡面也还行] [属性:饱腹+40,心情+5,娱乐-3]' + _customEntryHint + voiceInstructions + stkForAI + mediaForAI);
         }
 
         return parts.join('\n\n');
@@ -18119,6 +18419,42 @@ const npc = _wxGetChatTargetMeta(npcId);
         el.style.cssText = 'visibility:hidden;height:0;min-height:0;padding:0;margin:0;overflow:hidden;pointer-events:none;';
         msgs.appendChild(el);
         requestAnimationFrame(function(){ msgs.scrollTop = msgs.scrollHeight; });
+      }
+
+      // ★ 真人感打字节奏：等待期间随机出现"停顿再继续"效果
+      // totalMs = AI 实际要等待的总时长；npcName 用于恢复 appbar 显示
+      // 返回一个 cancel 函数，可提前中止
+      function _realisticTypingRhythm(npcName, totalMs){
+        var cancelled = false;
+        var cancel = function(){ cancelled = true; };
+        (async function(){
+          try{
+            var elapsed = 0;
+            // 决定是否中途出现一次"停顿"（概率 40%，且总时长 > 1200ms 才做）
+            var doPause = totalMs > 1200 && Math.random() < 0.4;
+            if (doPause){
+              // 前半段打字时长（总时长的 30%~60%）
+              var firstPart = Math.floor(totalMs * (0.3 + Math.random() * 0.3));
+              await new Promise(function(r){ setTimeout(r, firstPart); });
+              if (cancelled) return;
+              elapsed += firstPart;
+              // 短暂消失 0.6~1.5 秒（像在想措辞）
+              _hideTypingInAppBar();
+              var pauseMs = _randomBetween(600, 1500);
+              await new Promise(function(r){ setTimeout(r, pauseMs); });
+              if (cancelled) return;
+              elapsed += pauseMs;
+              // 重新出现"正在输入"
+              _showTypingInAppBar(npcName);
+            }
+            // 等剩余时间
+            var remaining = totalMs - elapsed;
+            if (remaining > 0){
+              await new Promise(function(r){ setTimeout(r, remaining); });
+            }
+          }catch(e){}
+        })();
+        return cancel;
       }
 
       function _hideTypingIndicator(){
@@ -19447,7 +19783,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           shortSentenceRatio: 0.5,
           burstProbability:   0.35,
           emotionExpressive:  0.5,
-          defenseStyle:      '解释',
+          defenseStyle:      '转移话题',
           comfortStyle:      '共情抱抱',
           proactiveShare:    'weekly',
           emojiUsage:        'normal',
@@ -20151,18 +20487,22 @@ const npc = _wxGetChatTargetMeta(npcId);
           var delayMs;
           if (ri === 0){
             var firstLen0 = String(replies[0] || '').replace(/\s/g,'').length;
-            delayMs = Math.max(400, Math.min(900, firstLen0 * 32));
+            delayMs = Math.max(400, Math.min(1800, firstLen0 * 35));
           } else {
             _showTypingIndicator(npc.name);
             var thisLen0 = String(replies[ri] || '').replace(/\s/g,'').length;
-            delayMs = Math.max(600, Math.min(1500, thisLen0 * 28));
+            delayMs = Math.max(600, Math.min(2200, thisLen0 * 30));
             try{
               var tEff = cfg.typingEffect || 'none';
-              if (tEff === 'typewriter') delayMs = Math.min(delayMs + 300, 1800);
+              if (tEff === 'typewriter') delayMs = Math.min(delayMs + 300, 2500);
               else if (tEff === 'fadein') delayMs = Math.max(delayMs - 100, 500);
             }catch(e){}
           }
+          // ★ 启动真人感打字节奏（中途随机停顿再继续）
+          var _rhythmCancel = null;
+          try{ _rhythmCancel = _realisticTypingRhythm(npc.name, delayMs); }catch(e){}
           await sleep(delayMs);
+          if (_rhythmCancel) try{ _rhythmCancel(); }catch(e){}
           if (mySeqId !== PhoneAI._replySeqId || state.chatTarget !== myChatId){
             _hideTypingIndicator(); return;
           }
@@ -21159,12 +21499,21 @@ const npc = _wxGetChatTargetMeta(npcId);
       async function _wxSendChat(npcId){
         const input = root.querySelector('[data-ph="chatInput"]');
         if (!input && !state._chatInputMirror) return;
+
+        // ★ 读取富文本输入（文字 + 图片）
+        const isRich = input && input.getAttribute('contenteditable') === 'true';
         const text = String(
-          (input && input.value) || state._chatInputMirror || (input && input._lastVal) || ''
+          isRich ? (state._chatInputMirror || _readRichInputText(input)) :
+          ((input && input.value) || state._chatInputMirror || (input && input._lastVal) || '')
         ).trim();
-        if (!text) return;
+        const pendingImages = isRich
+          ? (state._chatInputImages && state._chatInputImages.length ? state._chatInputImages.slice() : _readRichInputImages(input))
+          : [];
+
+        if (!text && !pendingImages.length) return;
         state._chatInputMirror = '';
-        if (input){ input.value = ''; input._lastVal = ''; }
+        state._chatInputImages = [];
+        _clearRichInput(input);
 
         const db = loadContactsDB();
         const npc = findContactById(db, npcId) || { id:npcId, name:String(npcId), avatar:(String(npcId).charAt(0)), profile:'' };
@@ -21183,8 +21532,17 @@ const npc = _wxGetChatTargetMeta(npcId);
 
         // 写入用户消息（显示引用格式）
         const userMsgTs = _now();
-        pushLog(npcId, 'me', hasQuote ? quoteDisplay : text);
-        bumpThread(npcId, { lastMsg:text, lastTime:userMsgTs, unread:0 });
+        // ★ 存储图片引用到 log（images 数组只存索引占位，实际 base64 在 state._pendingVisionImgs 里到下次 API 调用前消耗）
+        var logTextToStore = hasQuote ? quoteDisplay : (text || '[图片]');
+        if (pendingImages.length && !text) logTextToStore = '[图片×' + pendingImages.length + ']';
+        else if (pendingImages.length) logTextToStore = (hasQuote ? quoteDisplay : text) + ' [图片×' + pendingImages.length + ']';
+        pushLog(npcId, 'me', logTextToStore);
+        // ★ 暂存图片 base64，供下次 _getRecentMessagesForAPI 注入 vision content
+        if (pendingImages.length){
+          state._visionQueue = state._visionQueue || [];
+          state._visionQueue.push({ ts: userMsgTs, images: pendingImages, text: hasQuote ? quoteDisplay : text });
+        }
+        bumpThread(npcId, { lastMsg: text || '[图片]', lastTime:userMsgTs, unread:0 });
 
         const msgs = root.querySelector('[data-ph="chatMsgs"]');
         if (msgs){
@@ -21206,7 +21564,14 @@ const npc = _wxGetChatTargetMeta(npcId);
               _wxAppendBubble(msgs, npc, 'me', hasQuote ? quoteDisplay : text, userMsgTs);
             }
           } else {
-            _wxAppendBubble(msgs, npc, 'me', hasQuote ? quoteDisplay : text, userMsgTs);
+            // ★ 显示文字气泡
+            if (text) _wxAppendBubble(msgs, npc, 'me', hasQuote ? quoteDisplay : text, userMsgTs);
+            // ★ 显示图片缩略图气泡
+            if (pendingImages.length){
+              pendingImages.forEach(function(src){
+                _wxAppendBubble(msgs, npc, 'me', '[图片]', userMsgTs + 1, { type:'image', src:src, _logText:'[图片]' });
+              });
+            }
           }
           requestAnimationFrame(()=>{ msgs.scrollTop = msgs.scrollHeight; });
         }
@@ -21321,23 +21686,26 @@ const npc = _wxGetChatTargetMeta(npcId);
               return;
             }
 
-            // 首条消息也要有停顿：按文字长度计算（400–900ms），其余条 600–1500ms
+            // 首条消息也要有停顿：按文字长度计算（400–1800ms），其余条 600–2200ms
             var delayMs;
             if (ri === 0){
               var firstLen = String(replies[0] || '').replace(/\s/g,'').length;
-              delayMs = Math.max(400, Math.min(900, firstLen * 32));
+              delayMs = Math.max(400, Math.min(1800, firstLen * 35));
             } else {
               _showTypingIndicator(npc.name);
               var thisLen = String(replies[ri] || '').replace(/\s/g,'').length;
-              delayMs = Math.max(600, Math.min(1500, thisLen * 28));
-              // 根据打字效果设置调整延迟
+              delayMs = Math.max(600, Math.min(2200, thisLen * 30));
               try{
                 var tEff = cfg.typingEffect || 'none';
-                if (tEff === 'typewriter') delayMs = Math.min(delayMs + 300, 1800);
+                if (tEff === 'typewriter') delayMs = Math.min(delayMs + 300, 2500);
                 else if (tEff === 'fadein') delayMs = Math.max(delayMs - 100, 500);
               }catch(e){}
             }
+            // ★ 真人感打字节奏
+            var _rc = null;
+            try{ _rc = _realisticTypingRhythm(npc.name, delayMs); }catch(e){}
             await sleep(delayMs);
+            if (_rc) try{ _rc(); }catch(e){}
 
             // 再次检查
             if (mySeqId !== PhoneAI._replySeqId || state.chatTarget !== myChatId){
@@ -21935,7 +22303,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             var result = await PhoneAI.chat({
               system: sysP,
               messages: recentMsgs.slice(-12),
-              temperature: 0.88, maxTokens: 300, timeout: 20
+              temperature: 0.88, maxTokens: 300, timeout: 50
             });
 
             if(ended) return;
