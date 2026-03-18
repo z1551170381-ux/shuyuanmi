@@ -3580,61 +3580,61 @@ case '🍪': return s('<circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="
 #${ID} .wxChatBubble.me .wxCBContent.wxCBSpecial{
   background:rgba(149,236,105,.25)!important;
 }
-/* === Typing 指示器（消息列表里的气泡 + 三跳动点） === */
-#${ID} .wxTypingIndicator{ pointer-events:none; }
-#${ID} .wxTypingBubble{
-  /* 可见的气泡，左对齐，和对方气泡一致 */
-  display:flex; align-items:flex-end; gap:8px;
-  padding:4px 0 4px 12px; animation:wxTypBubbleFadeIn .18s ease;
+/* === 顶栏"正在输入"省略号（在线模式专用，三小点改为流畅省略号动效） === */
+#${ID} .phAppSubTitle{
+  display:none; align-items:center; gap:2px;
+  font-size:11px; color:var(--ph-text); opacity:.55; font-weight:400;
+  white-space:nowrap; letter-spacing:.2px; margin-top:1px;
 }
-@keyframes wxTypBubbleFadeIn{
-  from{ opacity:0; transform:translateY(6px); }
+#${ID} .phAppSubTitle.show{ display:flex; }
+#${ID} .phAppTitle.hasSubTitle .phAppTitleMain{ font-size:13px; }
+/* 三个点缩小成省略号风格的极小圆点 */
+#${ID} .phSTDot{
+  display:inline-block; width:3px; height:3px; border-radius:50%;
+  background:currentColor; flex-shrink:0; margin:0 .5px;
+  animation:phSTFade 1.4s ease-in-out infinite;
+}
+#${ID} .phSTDot:nth-child(1){ animation-delay:0s; }
+#${ID} .phSTDot:nth-child(2){ animation-delay:.22s; }
+#${ID} .phSTDot:nth-child(3){ animation-delay:.44s; }
+@keyframes phSTFade{
+  0%,60%,100%{ opacity:.2; transform:translateY(0); }
+  30%{ opacity:.9; transform:translateY(-2px); }
+}
+
+/* === 在线模式 Typing 占位（不可见，仅撑高度供 scrollToBottom）=== */
+#${ID} .wxTypingIndicator{ pointer-events:none; }
+#${ID} .wxTypingOnlinePlaceholder{
+  height:0; overflow:hidden; margin:0; padding:0;
+}
+
+/* === 线下模式 Typing 条（底部居中玻璃风省略号）=== */
+#${ID} .wxOfflineTypingBar{
+  display:flex; align-items:center; justify-content:center; gap:5px;
+  padding:10px 0 6px;
+  animation:wxOTBFadeIn .25s ease;
+}
+@keyframes wxOTBFadeIn{
+  from{ opacity:0; transform:translateY(4px); }
   to{   opacity:1; transform:translateY(0); }
 }
-#${ID} .wxTypingBubble .wxTypBubbleAvatar{
-  width:36px; height:36px; border-radius:50%; overflow:hidden; flex-shrink:0;
-  display:flex; align-items:center; justify-content:center;
-  font-size:15px; font-weight:600;
-  background:rgba(180,180,180,.22); color:rgba(20,24,28,.6);
+#${ID} .wxOfflineTypingDot{
+  width:5px; height:5px; border-radius:50%; flex-shrink:0;
+  background:rgba(255,255,255,.55);
+  box-shadow:0 0 4px rgba(255,255,255,.25);
+  animation:wxOTDPulse 1.5s ease-in-out infinite;
 }
-#${ID} .wxTypingBubble .wxTypBubbleAvatar img{ width:100%; height:100%; object-fit:cover; }
-#${ID} .wxTypingContent{
-  display:flex!important; align-items:center; gap:5px;
-  padding:11px 15px!important; min-height:auto!important;
-  background:rgba(255,255,255,.9)!important;
-  border-radius:18px 18px 18px 4px!important;
-  box-shadow:0 1px 4px rgba(0,0,0,.08);
+/* 无背景图时用深色点 */
+#${ID} .wxOfflineWrap:not([style*="background-image"]) .wxOfflineTypingDot{
+  background:rgba(80,60,40,.35);
+  box-shadow:none;
 }
-#${ID} .wxTypDot{
-  display:inline-block; width:7px; height:7px; border-radius:50%;
-  background:rgba(20,24,28,.3); flex-shrink:0;
-}
-#${ID} .wxTypDot:nth-child(1){
-  animation: wxTypD1 1.3s cubic-bezier(.36,.07,.19,.97) infinite;
-}
-#${ID} .wxTypDot:nth-child(2){
-  animation: wxTypD2 1.6s cubic-bezier(.36,.07,.19,.97) infinite;
-  animation-delay: .15s;
-}
-#${ID} .wxTypDot:nth-child(3){
-  animation: wxTypD3 1.1s cubic-bezier(.36,.07,.19,.97) infinite;
-  animation-delay: .35s;
-}
-@keyframes wxTypD1{
-  0%,100%{ transform:translateY(0) scale(1); opacity:.25; }
-  30%{ transform:translateY(-6px) scale(1.2); opacity:.9; background:rgba(20,24,28,.5); }
-  55%{ transform:translateY(1px) scale(.85); opacity:.3; }
-}
-@keyframes wxTypD2{
-  0%,100%{ transform:translateY(0) scale(1); opacity:.2; }
-  38%{ transform:translateY(-5px) scale(1.1); opacity:.85; }
-  62%{ transform:translateY(0) scale(.9); opacity:.28; }
-}
-@keyframes wxTypD3{
-  0%,100%{ transform:translateY(0) scale(1); opacity:.3; }
-  20%{ transform:translateY(-3px) scale(1.05); opacity:.6; }
-  42%{ transform:translateY(-6px) scale(1.18); opacity:.95; background:rgba(20,24,28,.55); }
-  68%{ transform:translateY(1px) scale(.88); opacity:.25; }
+#${ID} .wxOfflineTypingDot:nth-child(1){ animation-delay:0s; }
+#${ID} .wxOfflineTypingDot:nth-child(2){ animation-delay:.28s; }
+#${ID} .wxOfflineTypingDot:nth-child(3){ animation-delay:.56s; }
+@keyframes wxOTDPulse{
+  0%,100%{ opacity:.25; transform:scale(.8); }
+  45%{ opacity:1; transform:scale(1.2); }
 }
 /* === 状态面板卡片（点头像弹出·速览版） === */
 #${ID} .wxStatePanelCard{
@@ -6236,8 +6236,7 @@ function buildHTML(){
         <div class="phAppTitle" data-ph="appTitleWrap">
           <span class="phAppTitleMain" data-ph="appTitle">App</span>
           <span class="phAppSubTitle" data-ph="appSubTitle">
-            <span class="phSTDot"></span><span class="phSTDot"></span><span class="phSTDot"></span>
-            <span data-ph="appSubTitleText">正在输入…</span>
+            <span data-ph="appSubTitleText">正在输入</span><span class="phSTDot"></span><span class="phSTDot"></span><span class="phSTDot"></span>
           </span>
         </div>
         <div class="phAppBarSpacer" data-ph="appBarRight"></div>
@@ -18460,7 +18459,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           var sub  = root.querySelector('[data-ph="appSubTitle"]');
           var txt  = root.querySelector('[data-ph="appSubTitleText"]');
           if (!sub) return;
-          if (txt) txt.textContent = '正在输入…';
+          if (txt) txt.textContent = '正在输入';
           sub.classList.add('show');
           if (wrap) wrap.classList.add('hasSubTitle');
         }catch(e){}
@@ -18476,34 +18475,29 @@ const npc = _wxGetChatTargetMeta(npcId);
 
       function _showTypingIndicator(npcName, npc){
         _hideTypingIndicator();
-        // 1. AppBar 显示"正在输入…"
+        // 1. AppBar 始终显示"正在输入…"（在线和线下都有）
         _showTypingInAppBar(npcName);
-        // 2. 消息列表里显示真实可见的气泡（头像 + 三跳动点）
+
         var msgs = root.querySelector('[data-ph="chatMsgs"]');
         if (!msgs) return;
+
+        var isOffline = false;
+        try{ isOffline = (typeof _getChatMode === 'function') && state.chatTarget && _getChatMode(state.chatTarget) === 'offline'; }catch(e){}
+
         var el = doc.createElement('div');
-        el.className = 'wxTypingBubble wxTypingIndicator';
-        // 头像
-        var avatarHtml = '';
-        try{
-          var _av = npc && (npc.avatar || (npc.name||'?').charAt(0));
-          var _avImg = (typeof phoneGetAvatar === 'function') ? phoneGetAvatar(npc && npc.id) : null;
-          if (_avImg){
-            avatarHtml = '<img src="' + _avImg + '" />';
-          } else if (_av && _av.length <= 2){
-            avatarHtml = _av;
-          } else if (_av && _av.startsWith('http')){
-            avatarHtml = '<img src="' + _av + '" />';
-          } else {
-            avatarHtml = (npcName || '?').charAt(0);
-          }
-        }catch(e){ avatarHtml = (npcName||'?').charAt(0); }
-        el.innerHTML = '<div class="wxTypBubbleAvatar">' + avatarHtml + '</div>'
-          + '<div class="wxCBContent wxTypingContent">'
-          + '<span class="wxTypDot"></span>'
-          + '<span class="wxTypDot"></span>'
-          + '<span class="wxTypDot"></span>'
-          + '</div>';
+        el.className = 'wxTypingIndicator';
+
+        if (isOffline){
+          // 线下：底部居中玻璃风三小点条，无头像无文字
+          el.className += ' wxOfflineTypingBar';
+          el.innerHTML = '<span class="wxOfflineTypingDot"></span>'
+            + '<span class="wxOfflineTypingDot"></span>'
+            + '<span class="wxOfflineTypingDot"></span>';
+        } else {
+          // 在线：不可见占位，仅供 scrollToBottom 用
+          el.className += ' wxTypingOnlinePlaceholder';
+        }
+
         msgs.appendChild(el);
         requestAnimationFrame(function(){ msgs.scrollTop = msgs.scrollHeight; });
       }
@@ -18516,7 +18510,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         (async function(){
           try{
             var elapsed = 0;
-            // 概率 35%、且消息够长时：中途消失一下再回来（像在想怎么说）
+            // 概率 35%、消息够长时：顶栏"正在输入"中途消失再回来（像在想措辞）
             var doPause = totalMs > 1400 && Math.random() < 0.35;
             if (doPause){
               var firstPart = Math.floor(totalMs * (0.35 + Math.random() * 0.25));
@@ -18524,20 +18518,11 @@ const npc = _wxGetChatTargetMeta(npcId);
               if (cancelled) return;
               elapsed += firstPart;
               _hideTypingInAppBar();
-              // 消息列表里的 bubble 也暂时变透明（不移除，避免布局跳动）
-              try{
-                var tb = root.querySelector('.wxTypingBubble.wxTypingIndicator');
-                if (tb) tb.style.opacity = '0';
-              }catch(e){}
               var pauseMs = _randomBetween(500, 1200);
               await new Promise(function(r){ setTimeout(r, pauseMs); });
               if (cancelled) return;
               elapsed += pauseMs;
               _showTypingInAppBar(npcName);
-              try{
-                var tb2 = root.querySelector('.wxTypingBubble.wxTypingIndicator');
-                if (tb2) tb2.style.opacity = '1';
-              }catch(e){}
             }
             var remaining = totalMs - elapsed;
             if (remaining > 0) await new Promise(function(r){ setTimeout(r, remaining); });
