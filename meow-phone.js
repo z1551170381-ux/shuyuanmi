@@ -11970,8 +11970,7 @@ ${lines}
             const _ncCList = _safeArr(loadContactsDB().list);
             if (!_ncCList.length){ try{toast('通讯录没有联系人');}catch(e){} return; }
             const _ncNames = _ncCList.map(function(c){ return c.name||c.id; }).join('、');
-            const _ncSel = prompt('输入要建立专属表情的角色名：
-可选：' + _ncNames);
+            const _ncSel = prompt('输入要建立专属表情的角色名：\n可选：' + _ncNames);
             if (!_ncSel || !_ncSel.trim()) return;
             const _ncFound = _ncCList.find(function(c){ return (c.name||'')=== _ncSel.trim()||(c.id||'')===_ncSel.trim(); });
             const _ncId = _ncFound ? (_ncFound.id||_ncFound.name||_ncSel.trim()) : _ncSel.trim();
