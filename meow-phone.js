@@ -6619,6 +6619,9 @@ function buildHTML(){
               if (!scene.name && !scene.location){
                 _openSceneEditor(offNid);
               }
+            } else {
+              // ★ 退出线下时：后台静默总结剩余未总结消息
+              _tlSilentSummaryIfNeeded(offNid, 'offline');
             }
             renderChatDetail(offNid);
             try{ toast(newMode === 'offline' ? '☕ 已切换到线下模式' : '💬 已切换到在线模式'); }catch(e){}
@@ -7542,25 +7545,6 @@ if (act === 'exportChat'){ exportChatToMainDraft(); return; }
             return;
           }
           if (act === 'wxCPAction'){
-            var _cpa = t.getAttribute('data-cpact');
-            if (_cpa === 'manualSummary'){
-              var _msnpc = state.chatTarget;
-              if (!_msnpc) return;
-              (async function(){
-                try{
-                  var _cfg = PhoneAI._getConfig('background');
-                  if (!_cfg.endpoint || !_cfg.key){ try{toast('请先配置 API');}catch(e){} return; }
-                  var _p = _getPendingForNpc(_msnpc, 'offline');
-                  if (!_p){ try{toast('没有新消息需要总结');}catch(e){} return; }
-                  var _cnt = _p.toIdx - _p.fromIdx + 1;
-                  try{toast('📋 正在记录当前场景 ('+_cnt+' 条)…');}catch(e){}
-                  var _e = await _generateTimelineEntry(_msnpc, _p.fromIdx, _p.toIdx, 'offline');
-                  if (_e) try{toast('✅ 已记录到时间线');}catch(e){}
-                  else try{toast('记录失败，请检查 API');}catch(e){}
-                }catch(e2){ try{toast('出错: '+String(e2.message||e2));}catch(e3){} }
-              })();
-              return;
-            }
             const cpact = t.getAttribute('data-cpact') || '';
             const npcId = state.chatTarget;
             if (!npcId){ try{toast('请先打开一个聊天');}catch(e){} return; }
@@ -14884,7 +14868,6 @@ const npc = _wxGetChatTargetMeta(npcId);
                 <button class="wxChatSendBtn" data-act="wxSendChat" title="发送" style="flex-shrink:0;">发送</button>
               </div>
               <div class="wxChatPlusGrid" style="display:none;" data-ph="chatPlusGrid">
-                <div class="wxCPItem" data-act="wxCPAction" data-cpact="manualSummary"><div class="wxCPIco"><svg class="phIco" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm-2 8H7v-2h4v2zm4-4H7v-2h8v2zm0-4H7V7h8v2z"/></svg></div><div class="wxCPLabel">记录剧情</div></div>
                 <div class="wxCPItem" data-act="wxCPAction" data-cpact="location"><div class="wxCPIco"><svg class="phIco" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/></svg></div><div class="wxCPLabel">位置</div></div>
                 <div class="wxCPItem" data-act="wxCPAction" data-cpact="photo"><div class="wxCPIco">${_phFlatIcon('🖼')}</div><div class="wxCPLabel">照片</div></div>
                 <div class="wxCPItem" data-act="wxCPAction" data-cpact="gift"><div class="wxCPIco"><svg class="phIco" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 12 7.4l3.38 4.6L17 10.83 14.92 8H20v6z"/></svg></div><div class="wxCPLabel">礼物</div></div>
@@ -28437,15 +28420,7 @@ function _openTimelineViewer(npcId){
       + '<div style="font-size:11px;color:rgba(20,24,28,.4);margin-bottom:4px;">当前查看：'+ _modeLabel(viewMode) +' · 共 '+entries.length+' 个摘要块</div>'
       + '<div style="font-size:10px;color:rgba(20,24,28,.35);margin:2px 0;">'+statusText+'</div>'
       + '<div style="display:flex;align-items:center;gap:6px;margin:6px 0 4px;">'
-      + (_isTimeMode()
-        ? ('<span style="font-size:10px;color:rgba(20,24,28,.4);">⏱场景间隔≥</span>'
-          + '<input data-el="gapInput" type="number" min="10" max="720" value="'+_getGapMinutes()+'" style="width:52px;padding:2px 4px;border-radius:4px;border:1px solid rgba(0,0,0,.1);font-size:11px;text-align:center;" />'
-          + '<span style="font-size:10px;color:rgba(20,24,28,.4);">分钟</span>')
-        : ('<span style="font-size:10px;color:rgba(20,24,28,.4);">每次总结</span>'
-          + '<input data-el="chunkInput" type="number" min="5" max="99999" value="'+_getChunkSize()+'" style="width:52px;padding:2px 4px;border-radius:4px;border:1px solid rgba(0,0,0,.1);font-size:11px;text-align:center;" />'
-          + '<span style="font-size:10px;color:rgba(20,24,28,.4);">条</span>'))
-      + (viewMode==='offline' ? ('<button data-act="tlToggleTimeMode" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.08);background:'+(_isTimeMode()?'rgba(7,193,96,.12)':'rgba(255,255,255,.9)')+';color:'+(_isTimeMode()?'rgba(7,193,96,.85)':'rgba(20,24,28,.45)')+';cursor:pointer;">'+(_isTimeMode()?'⏱ 按时间':'🔢 按条数')+'</button>') : '')
-      + '<button data-act="chunkSave" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.9);cursor:pointer;">保存</button>'
+      + '<span style="font-size:10px;color:rgba(20,24,28,.4);">切场景/退出线下自动总结，或点下方手动生成</span>'
       + (entries.length > 0 ? '<button data-act="tlClearAll" style="font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.9);color:rgba(20,24,28,.4);cursor:pointer;margin-left:auto;">清除全部</button>' : '')
       + '</div>'
       + renderTodos(entries);
@@ -28692,34 +28667,8 @@ function _openTimelineViewer(npcId){
       });
       return;
     }
-    // ---- 分批大小 ----
-    if (act === 'chunkSave'){
-      var ce = _loadCharExtra(npcId);
-      if (_isTimeMode()){
-        var gInp = modal.querySelector('[data-el="gapInput"]');
-        var gv = Math.max(10, Math.min(720, parseInt(gInp && gInp.value) || 60));
-        ce.tlGapMinutes = gv;
-        _saveCharExtra(npcId, ce);
-        try{ toast('已保存：间隔 '+gv+' 分钟算新场景 ✓'); }catch(e){}
-      } else {
-        var cInp = modal.querySelector('[data-el="chunkInput"]');
-        if (!cInp) return;
-        var cv = Math.max(5, Math.min(99999, parseInt(cInp.value) || (viewMode === 'offline' ? 30 : 20)));
-        if(viewMode === 'offline'){ ce.autoSumEveryOffline = cv; } else { ce.autoSumEvery = cv; }
-        _saveCharExtra(npcId, ce);
-        try{ toast('已保存：每次 '+cv+' 条'); }catch(e){}
-      }
-      refresh();
-      return;
-    }
-    if (act === 'tlToggleTimeMode'){
-      var ce2 = _loadCharExtra(npcId);
-      ce2.tlTimeMode = !_isTimeMode();
-      _saveCharExtra(npcId, ce2);
-      try{ toast(ce2.tlTimeMode ? '⏱ 已切换为按时间间隔分段' : '🔢 已切换为按条数分段'); }catch(e){}
-      refresh();
-      return;
-    }
+    // chunkSave/tlToggleTimeMode 已移除，兼容保留空处理
+    if (act === 'chunkSave' || act === 'tlToggleTimeMode'){ return; }
     // ---- 清除全部 ----
     if (act === 'tlClearAll'){
       // 用二次点击：第一次变红，第二次真删
