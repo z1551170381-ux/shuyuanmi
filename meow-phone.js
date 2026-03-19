@@ -11906,11 +11906,11 @@ ${lines}
           return { key:'cg_'+cid, label:(_nc.name||cid).slice(0,5)+'专属', icon:'⭐', _cgId: cid };
         });
         const groups = [
-          { key:'user', label:'我的表情', icon:'👤' },
+          { key:'user', label:'我的', icon:'👤' },
           ..._cgGroups,
-          { key:'__newcg__', label:'+ 新建专属', icon:'➕' },
-          { key:'char', label:'角色通用', icon:'🤖' },
-          { key:'common', label:'通用表情', icon:'🌐' },
+          { key:'__newcg__', label:'新建', icon:'➕' },
+          { key:'char', label:'角色', icon:'🤖' },
+          { key:'common', label:'通用', icon:'🌐' },
         ];
         let curGroup = container.__stickerGroup || 'user';
         const _curEntry = groups.find(function(g){ return g.key===curGroup; });
