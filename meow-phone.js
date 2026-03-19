@@ -10691,67 +10691,278 @@ ${lines}
         return null;
       }
 
-      async function _generateAIFriendCandidate(parentContainer){
-        if (typeof PhoneAI === 'undefined' || !PhoneAI || typeof PhoneAI.chat !== 'function'){
-          try{ toast('AI 模块未就绪'); }catch(e){}
-          return false;
-        }
-        const db = loadContactsDB();
-        const stored = loadCandidates();
-        const existedNames = _uniq([].concat(
-          _safeArr(db.list).map(function(c){ return c && c.name; }),
-          _safeArr(stored.list).map(function(c){ return c && c.name; })
-        )).slice(0, 80);
+            function _ensureAIFriendCandidateProfile(cand){
+        try{
+          if (!cand || typeof cand !== 'object') return cand;
+          const out = Object.assign({}, cand);
+          const labeled = [];
+          if (out.identity) labeled.push('身份：' + String(out.identity).trim());
+          if (out.occupation) labeled.push('职业：' + String(out.occupation).trim());
+          if (out.address) labeled.push('住址：' + String(out.address).trim());
+          if (out.personality) labeled.push('性格：' + String(out.personality).trim());
+          if (out.hobby) labeled.push('爱好：' + String(out.hobby).trim());
+          if (out.relations) labeled.push('关系：' + String(out.relations).trim());
+          if (out.appearance) labeled.push('外貌：' + String(out.appearance).trim());
+          if (out.status) labeled.push('状态：' + String(out.status).trim());
 
+          let profile = String(out.profile || '').trim();
+          if (!profile){
+            profile = labeled.join('\n');
+          } else {
+            const has = function(label){ return profile.indexOf(label + '：') >= 0; };
+            if (out.identity && !has('身份')) profile += '\n身份：' + String(out.identity).trim();
+            if (out.occupation && !has('职业')) profile += '\n职业：' + String(out.occupation).trim();
+            if (out.address && !has('住址')) profile += '\n住址：' + String(out.address).trim();
+            if (out.personality && !has('性格')) profile += '\n性格：' + String(out.personality).trim();
+            if (out.hobby && !has('爱好')) profile += '\n爱好：' + String(out.hobby).trim();
+            if (out.relations && !has('关系')) profile += '\n关系：' + String(out.relations).trim();
+            if (out.appearance && !has('外貌')) profile += '\n外貌：' + String(out.appearance).trim();
+            if (out.status && !has('状态')) profile += '\n状态：' + String(out.status).trim();
+            profile = profile.trim();
+          }
+          out.profile = profile;
+          if (!out.identity){
+            const idParts = [];
+            if (out.relations) idParts.push(String(out.relations).trim());
+            if (out.occupation) idParts.push(String(out.occupation).trim());
+            if (out.address) idParts.push(String(out.address).trim());
+            out.identity = idParts.join('｜');
+          }
+          return out;
+        }catch(e){
+          return cand;
+        }
+      }
+
+      function _buildFallbackAIFriendCandidate(){
         let userName = '用户';
+        let userText = '';
         try{
           const persona = _readSTPersona();
           if (persona && persona.name) userName = String(persona.name).trim() || userName;
-          else {
-            const settings = phoneLoadSettings();
-            if (settings && settings.phoneName) userName = String(settings.phoneName).trim() || userName;
+          if (persona && persona.description) userText += String(persona.description).trim() + '\n';
+        }catch(e){}
+        try{
+          const ctx = meowGetSTCtx();
+          if (ctx && Array.isArray(ctx.chat)){
+            const recent = ctx.chat.filter(function(m){ return m && m.is_user && m.mes; }).slice(-4).map(function(m){ return String(m.mes || '').replace(/\s+/g,' ').trim(); }).filter(Boolean);
+            if (recent.length) userText += recent.join('\n');
           }
         }catch(e){}
 
-        const systemPrompt = [
-          '你是 MEOW Phone 的“新的朋友生成器”。',
-          '请根据用户信息和当前世界观，生成 1 个与用户强相关、可以自然出现在通讯录里的新好友候选。',
-          '这个人必须和用户有现实或剧情上的连接，例如：同事、邻居、同学、店主、房东、朋友的朋友、旧识、合作对象。',
-          '名字要自然，不要像系统名、网名、模板名。',
-          '不要与已有联系人重名。',
-          '不要写解释，不要写代码块，只返回一个 JSON 对象。',
-          'JSON 字段：name, identity, occupation, address, personality, hobby, relations, appearance, status, profile'
-        ].join('\n');
+        const txt = String(userText || '').toLowerCase();
+        const names = ['林栖','周槐','沈枝','许砚','宋遥','顾青槐','宁和','余晚舟','程岚','闻野','苏澈','唐予'];
+        const templates = [
+          {
+            relations: '和' + userName + '住得很近，偶尔会在楼下便利店和电梯口碰见',
+            occupation: '附近花店店员',
+            address: '你住处附近的旧街口',
+            personality: '安静、细心、说话轻，但记性很好',
+            hobby: '养花、做手账、拍黄昏的街景',
+            appearance: '总穿浅色上衣，指尖常沾一点花叶气味，眼神温和',
+            status: '最近常在傍晚匆匆下班，看起来像有一件放不下的心事'
+          },
+          {
+            relations: '是' + userName + '朋友转介绍认识的人，最近可能会频繁联系',
+            occupation: '自由摄影师',
+            address: '城南老街附近的公寓',
+            personality: '慢热、观察力强、有边界感，但熟了以后会很可靠',
+            hobby: '拍照、逛旧书店、收集胶片和明信片',
+            appearance: '背相机包，衣着干净利落，说话时会先想一下再开口',
+            status: '最近在赶一个长期项目，作息有点乱，但回复消息还算及时'
+          },
+          {
+            relations: '和' + userName + '在同一片生活圈活动，属于慢慢会熟起来的类型',
+            occupation: '咖啡店店主',
+            address: '离你常去路线不远的一家临街小店',
+            personality: '温和、稳重、会照顾人，也很会察言观色',
+            hobby: '做甜点、收集杯子、听老歌',
+            appearance: '身上常带淡淡咖啡香，笑起来很轻，给人很安心的感觉',
+            status: '最近店里在调整营业时间，所以白天会比平时更忙'
+          },
+          {
+            relations: '曾和' + userName + '在某件事上有过交集，只是之前没有正式加上联系方式',
+            occupation: '设计相关从业者',
+            address: '市区靠河的一栋旧楼里',
+            personality: '有审美、慢性子、表达直接但不刻薄',
+            hobby: '看展、收集纸品、画速写',
+            appearance: '气质清爽，常带着笔记本和耳机，安静时很有存在感',
+            status: '最近刚结束一段忙碌周期，整个人稍微松下来一些'
+          }
+        ];
 
-        const userPrompt = [
-          '当前用户：' + userName,
-          '',
-          '【用户相关信息】',
-          _buildAIFriendUserContext(),
-          '',
-          '【已有联系人或候选，禁止重名】',
-          existedNames.length ? existedNames.join('、') : '无',
-          '',
-          '请生成 1 个最适合现在加入“新的朋友”的候选。只返回 JSON。'
-        ].join('\n');
-
-        const ret = await PhoneAI.chat({
-          system: systemPrompt,
-          messages: [{ role:'user', content:userPrompt }],
-          temperature: 0.95,
-          maxTokens: 520,
-          timeout: 45,
-          channel: 'background'
-        });
-
-        if (!ret || !ret.ok || !ret.data){
-          try{ toast(ret && ret.error ? ('生成失败：' + ret.error) : '生成失败'); }catch(e){}
-          return false;
+        let template = templates[Math.floor(Math.random() * templates.length)];
+        if (txt.indexOf('画') >= 0 || txt.indexOf('设计') >= 0 || txt.indexOf('艺术') >= 0 || txt.indexOf('展') >= 0){
+          template = templates[3];
+        } else if (txt.indexOf('咖啡') >= 0 || txt.indexOf('甜') >= 0 || txt.indexOf('店') >= 0){
+          template = templates[2];
+        } else if (txt.indexOf('拍') >= 0 || txt.indexOf('照片') >= 0 || txt.indexOf('相机') >= 0){
+          template = templates[1];
         }
 
-        const cand = _parseAIFriendCandidate(ret.data);
+        const name = names[Math.floor(Math.random() * names.length)];
+        return _ensureAIFriendCandidateProfile({
+          name: name,
+          identity: template.relations + '；' + template.occupation,
+          occupation: template.occupation,
+          address: template.address,
+          personality: template.personality,
+          hobby: template.hobby,
+          relations: template.relations,
+          appearance: template.appearance,
+          status: template.status,
+          profile: ''
+        });
+      }
+
+      function _acceptCandidateIntoContacts(name, parentContainer){
+        const n = String(name || '').trim();
+        if (!n) return null;
+        const cand = _safeArr(loadCandidates().list).find(function(x){ return x && x.name === n; });
+        if (!cand) return null;
+        const fullCand = _ensureAIFriendCandidateProfile(cand);
+        const npc = addOrUpdateNPC({
+          name: n,
+          alias: [],
+          profile: _buildCandidateProfileText(fullCand),
+          source: fullCand.source || '',
+          identity: fullCand.identity || '',
+          appearance: fullCand.appearance || '',
+          status: fullCand.status || '',
+          relations: fullCand.relations || ''
+        });
+        try{
+          if (npc && npc.id){
+            const ce = _loadCharExtra(npc.id);
+            ce.profile = _buildCandidateProfileText(fullCand);
+            _saveCharExtra(npc.id, ce);
+          }
+        }catch(e){}
+        removeCandidateByName(n);
+        if (parentContainer) _renderNewFriendsPage(parentContainer);
+        return npc;
+      }
+
+      function _showAIFriendPreview(cand, parentContainer){
+        try{
+          const _doc = (typeof D !== 'undefined' && D) ? D : document;
+          if (!_doc || !cand || !cand.name) return;
+          const safe = _ensureAIFriendCandidateProfile(cand);
+          const old = _doc.querySelector('.phAIFriendPreviewMask');
+          if (old) old.remove();
+
+          const mask = _doc.createElement('div');
+          mask.className = 'phAIFriendPreviewMask';
+          mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.22);backdrop-filter:blur(8px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
+          const card = _doc.createElement('div');
+          card.style.cssText = 'width:min(92vw,420px);max-height:min(82vh,720px);overflow:auto;border-radius:24px;background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.58);box-shadow:0 20px 60px rgba(0,0,0,.18);padding:18px 16px 16px;box-sizing:border-box;color:rgba(20,24,28,.88);';
+          const meta = [safe.occupation, safe.address].filter(Boolean).join('｜');
+          card.innerHTML =
+            '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">'
+            + '<div style="min-width:0;">'
+            + '<div style="font-size:11px;color:rgba(20,24,28,.42);margin-bottom:6px;">AI 相关好友候选</div>'
+            + '<div style="font-size:22px;line-height:1.2;font-weight:700;word-break:break-word;">' + esc(safe.name) + '</div>'
+            + (meta ? '<div style="margin-top:6px;font-size:12px;color:rgba(20,24,28,.48);word-break:break-word;">' + esc(meta) + '</div>' : '')
+            + '</div>'
+            + '<button data-act="close" style="appearance:none;border:0;background:rgba(0,0,0,.05);width:32px;height:32px;border-radius:999px;cursor:pointer;font-size:18px;line-height:1;color:rgba(20,24,28,.55);flex-shrink:0;">×</button>'
+            + '</div>'
+            + '<div style="margin-top:14px;padding:14px;border-radius:18px;background:rgba(255,255,255,.72);border:1px solid rgba(0,0,0,.06);white-space:pre-wrap;font-size:13px;line-height:1.72;word-break:break-word;">' + esc(_buildCandidateProfileText(safe) || '暂无设定') + '</div>'
+            + '<div style="display:flex;gap:10px;margin-top:14px;">'
+            + '<button data-act="saveOnly" style="flex:1;appearance:none;border:1px solid rgba(0,0,0,.08);background:#fff;border-radius:14px;padding:12px 10px;cursor:pointer;font-size:14px;color:rgba(20,24,28,.72);">先放入候选</button>'
+            + '<button data-act="acceptNow" style="flex:1;appearance:none;border:0;background:var(--ph-accent,#07c160);color:#fff;border-radius:14px;padding:12px 10px;cursor:pointer;font-size:14px;font-weight:700;">直接加入通讯录</button>'
+            + '</div>';
+          mask.appendChild(card);
+          _doc.body.appendChild(mask);
+
+          const close = function(){ try{ mask.remove(); }catch(e){} };
+          mask.addEventListener('click', function(e){ if (e.target === mask) close(); });
+          card.querySelector('[data-act="close"]')?.addEventListener('click', close);
+          card.querySelector('[data-act="saveOnly"]')?.addEventListener('click', function(){
+            close();
+            try{ toast('已加入新的朋友候选'); }catch(e){}
+          });
+          card.querySelector('[data-act="acceptNow"]')?.addEventListener('click', function(){
+            const npc = _acceptCandidateIntoContacts(safe.name, parentContainer);
+            close();
+            try{ toast(npc ? ('已加入通讯录：' + safe.name) : '加入失败'); }catch(e){}
+          });
+        }catch(e){}
+      }
+
+      async function _generateAIFriendCandidate(parentContainer){
+        let usedFallback = false;
+        let cand = null;
+
+        try{
+          if (typeof PhoneAI !== 'undefined' && PhoneAI && typeof PhoneAI.chat === 'function'){
+            const db = loadContactsDB();
+            const stored = loadCandidates();
+            const existedNames = _uniq([].concat(
+              _safeArr(db.list).map(function(c){ return c && c.name; }),
+              _safeArr(stored.list).map(function(c){ return c && c.name; })
+            )).slice(0, 80);
+
+            let userName = '用户';
+            try{
+              const persona = _readSTPersona();
+              if (persona && persona.name) userName = String(persona.name).trim() || userName;
+              else {
+                const settings = phoneLoadSettings();
+                if (settings && settings.phoneName) userName = String(settings.phoneName).trim() || userName;
+              }
+            }catch(e){}
+
+            const systemPrompt = [
+              '你是 MEOW Phone 的“新的朋友生成器”。',
+              '请根据用户信息和当前世界观，生成 1 个与用户强相关、可以自然出现在通讯录里的新好友候选。',
+              '这个人必须和用户有现实或剧情上的连接，例如：同事、邻居、同学、店主、房东、朋友的朋友、旧识、合作对象。',
+              '名字要自然，不要像系统名、网名、模板名。',
+              '不要与已有联系人重名。',
+              '只返回一个 JSON 对象，不要解释，不要 markdown。',
+              '字段必须尽量写完整：name, identity, occupation, address, personality, hobby, relations, appearance, status, profile。',
+              '其中 profile 必须是可直接写入“角色设定”的完整文本，至少包含：身份、职业、住址、性格、爱好、关系、外貌、状态。'
+            ].join('\n');
+
+            const userPrompt = [
+              '当前用户：' + userName,
+              '',
+              '【用户相关信息】',
+              _buildAIFriendUserContext(),
+              '',
+              '【已有联系人或候选，禁止重名】',
+              existedNames.length ? existedNames.join('、') : '无',
+              '',
+              '请生成 1 个最适合现在加入“新的朋友”的候选。',
+              '只返回 JSON。'
+            ].join('\n');
+
+            const ret = await PhoneAI.chat({
+              system: systemPrompt,
+              messages: [{ role:'user', content:userPrompt }],
+              temperature: 0.88,
+              maxTokens: 420,
+              timeout: 70,
+              channel: 'background'
+            });
+
+            if (ret && ret.ok && ret.data){
+              cand = _parseAIFriendCandidate(ret.data);
+            } else if (ret && ret.error){
+              console.warn('[MEOW][AI Friend] generate failed:', ret.error);
+            }
+          }
+        }catch(e){
+          console.warn('[MEOW][AI Friend] generate exception:', e);
+        }
+
         if (!cand || !cand.name){
-          try{ toast('AI 返回格式无法解析'); }catch(e){}
+          cand = _buildFallbackAIFriendCandidate();
+          usedFallback = true;
+        }
+
+        cand = _ensureAIFriendCandidateProfile(cand);
+        if (!cand || !cand.name){
+          try{ toast('生成失败'); }catch(e){}
           return false;
         }
 
@@ -10768,7 +10979,8 @@ ${lines}
         });
 
         if (parentContainer) _renderNewFriendsPage(parentContainer);
-        try{ toast('已生成新好友：' + cand.name); }catch(e){}
+        _showAIFriendPreview(cand, parentContainer);
+        try{ toast(usedFallback ? ('AI 超时，已生成备用好友：' + cand.name) : ('已生成新好友：' + cand.name)); }catch(e){}
         return true;
       }
 
@@ -10902,19 +11114,8 @@ ${lines}
           btn.addEventListener('click', ()=>{
             const n = btn.getAttribute('data-name') || '';
             if (!n.trim()) return;
-            const cand = _safeArr(loadCandidates().list).find(x => x.name === n.trim());
-            addOrUpdateNPC({
-              name: n.trim(), alias: [],
-              profile: _buildCandidateProfileText(cand),
-              source: (cand && cand.source) || '',
-              identity: (cand && cand.identity) || '',
-              appearance: (cand && cand.appearance) || '',
-              status: (cand && cand.status) || '',
-              relations: (cand && cand.relations) || ''
-            });
-            removeCandidateByName(n.trim());
-            _renderNewFriendsPage(parentContainer);
-            try{ toast('已加入通讯录'); }catch(e){}
+            const npc = _acceptCandidateIntoContacts(n.trim(), parentContainer);
+            try{ toast(npc ? '已加入通讯录' : '加入失败'); }catch(e){}
           });
         });
       }
