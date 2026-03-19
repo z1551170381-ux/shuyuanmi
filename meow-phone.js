@@ -11890,26 +11890,44 @@ ${lines}
       const STICKER_MAX_SIZE_KB = 200;
 
       function _loadStickerPacks(){
-        return phoneGetG('sticker_packs_v1', { v:1, user:[], char:[], common:[] }) || { v:1, user:[], char:[], common:[] };
+        const _spd = phoneGetG('sticker_packs_v1', { v:1, user:[], char:[], common:[] }) || { v:1, user:[], char:[], common:[] };
+        if (!_spd.charGroups) _spd.charGroups = {}; // {[contactId]:[{data,name,time}]} 角色专属
+        return _spd;
       }
       function _saveStickerPacks(d){ phoneSetG('sticker_packs_v1', d); }
 
       function _renderStickersPage(container){
         const packs = _loadStickerPacks();
+        // 已有专属分组
+        const _cgKeys = Object.keys(packs.charGroups||{}).filter(function(k){ return _safeArr((packs.charGroups||{})[k]).length > 0; });
+        const _cgContacts = _safeArr(loadContactsDB().list);
+        const _cgGroups = _cgKeys.map(function(cid){
+          const _nc = _cgContacts.find(function(c){ return c.id===cid||c.name===cid; }) || { name: cid };
+          return { key:'cg_'+cid, label:(_nc.name||cid).slice(0,5)+'专属', icon:'⭐', _cgId: cid };
+        });
         const groups = [
           { key:'user', label:'我的表情', icon:'👤' },
-          { key:'char', label:'角色表情', icon:'🤖' },
+          ..._cgGroups,
+          { key:'__newcg__', label:'+ 新建专属', icon:'➕' },
+          { key:'char', label:'角色通用', icon:'🤖' },
           { key:'common', label:'通用表情', icon:'🌐' },
         ];
         let curGroup = container.__stickerGroup || 'user';
-        const curList = _safeArr(packs[curGroup]);
+        const _curEntry = groups.find(function(g){ return g.key===curGroup; });
+        const _curCGId  = _curEntry && _curEntry._cgId ? _curEntry._cgId : null;
+        const curList = _curCGId
+          ? _safeArr((packs.charGroups||{})[_curCGId])
+          : (curGroup === '__newcg__' ? [] : _safeArr(packs[curGroup]));
 
         let html = '';
         // 分组切换
         html += `<div style="display:flex;border-bottom:1px solid rgba(0,0,0,.06);margin:0 14px;">`;
         for (const g of groups){
           const isOn = g.key === curGroup;
-          html += `<button data-act="stkGroup" data-gkey="${g.key}" style="flex:1;padding:10px;border:0;border-bottom:2px solid ${isOn?'var(--ph-accent, #07c160)':'transparent'};background:transparent;color:${isOn?'var(--ph-accent, #07c160)':'rgba(20,24,28,.5)'};font-size:13px;cursor:pointer;font-weight:${isOn?'600':'400'};">${g.icon} ${g.label} (${_safeArr(packs[g.key]).length})</button>`;
+          const _cnt = g._cgId ? _safeArr((packs.charGroups||{})[g._cgId]).length
+                     : (g.key==='__newcg__' ? null : _safeArr(packs[g.key]).length);
+          const _cntStr = (_cnt !== null && _cnt !== undefined) ? ' ('+_cnt+')' : '';
+          html += `<button data-act="stkGroup" data-gkey="${g.key}" style="flex:0 0 auto;padding:8px 10px;border:0;border-bottom:2px solid ${isOn?'var(--ph-accent, #07c160)':'transparent'};background:transparent;color:${isOn?'var(--ph-accent, #07c160)':'rgba(20,24,28,.5)'};font-size:12px;cursor:pointer;font-weight:${isOn?'600':'400'};white-space:nowrap;">${g.icon} ${g.label}${_cntStr}</button>`;
         }
         html += `</div>`;
 
@@ -11946,12 +11964,35 @@ ${lines}
 
         // 事件
         container.querySelectorAll('[data-act="stkGroup"]').forEach(b => b.addEventListener('click',()=>{
-          container.__stickerGroup = b.getAttribute('data-gkey');
+          const _gk = b.getAttribute('data-gkey');
+          if (_gk === '__newcg__'){
+            // 新建角色专属分组
+            const _ncCList = _safeArr(loadContactsDB().list);
+            if (!_ncCList.length){ try{toast('通讯录没有联系人');}catch(e){} return; }
+            const _ncNames = _ncCList.map(function(c){ return c.name||c.id; }).join('、');
+            const _ncSel = prompt('输入要建立专属表情的角色名：
+可选：' + _ncNames);
+            if (!_ncSel || !_ncSel.trim()) return;
+            const _ncFound = _ncCList.find(function(c){ return (c.name||'')=== _ncSel.trim()||(c.id||'')===_ncSel.trim(); });
+            const _ncId = _ncFound ? (_ncFound.id||_ncFound.name||_ncSel.trim()) : _ncSel.trim();
+            const _ncPacks = _loadStickerPacks();
+            if (!_ncPacks.charGroups) _ncPacks.charGroups = {};
+            if (!_ncPacks.charGroups[_ncId]) _ncPacks.charGroups[_ncId] = [];
+            _saveStickerPacks(_ncPacks);
+            container.__stickerGroup = 'cg_' + _ncId;
+            try{toast('已创建「'+_ncSel.trim()+'」专属分组，上传表情后即可在聊天中使用');}catch(e){}
+            _renderStickersPage(container);
+            return;
+          }
+          container.__stickerGroup = _gk;
           _renderStickersPage(container);
         }));
         container.querySelectorAll('[data-act="stkUpload"]').forEach(b => b.addEventListener('click',()=>{
+          if (curGroup === '__newcg__') return;
           const packs2 = _loadStickerPacks();
-          const arr = _safeArr(packs2[curGroup]);
+          const arr = _curCGId
+            ? _safeArr((packs2.charGroups||{})[_curCGId])
+            : _safeArr(packs2[curGroup]);
           if (arr.length >= STICKER_MAX_PER_GROUP){
             try{toast(`此分组已满（最多${STICKER_MAX_PER_GROUP}张）`);}catch(e){} return;
           }
@@ -11963,10 +12004,17 @@ ${lines}
               if (!files.length) return;
               let added = 0;
               const packs3 = _loadStickerPacks();
-              const gArr = _safeArr(packs3[curGroup]);
+              const gArr = _curCGId
+                ? _safeArr((packs3.charGroups||{})[_curCGId])
+                : _safeArr(packs3[curGroup]);
               const processNext = (idx)=>{
                 if (idx >= files.length || gArr.length >= STICKER_MAX_PER_GROUP){
-                  packs3[curGroup] = gArr;
+                  if (_curCGId){
+                    if (!packs3.charGroups) packs3.charGroups = {};
+                    packs3.charGroups[_curCGId] = gArr;
+                  } else {
+                    packs3[curGroup] = gArr;
+                  }
                   _saveStickerPacks(packs3);
                   try{toast(`已添加 ${added} 张表情`);}catch(e){}
                   _renderStickersPage(container);
@@ -12000,21 +12048,32 @@ ${lines}
           if (isNaN(idx)) return;
           if (W.confirm && !W.confirm('删除此表情？')) return;
           const packs4 = _loadStickerPacks();
-          _safeArr(packs4[curGroup]).splice(idx, 1);
+          if (_curCGId){
+            if (!packs4.charGroups) packs4.charGroups={};
+            const _da = _safeArr(packs4.charGroups[_curCGId]);
+            _da.splice(idx, 1);
+            packs4.charGroups[_curCGId] = _da;
+          } else {
+            _safeArr(packs4[curGroup]).splice(idx, 1);
+          }
           _saveStickerPacks(packs4);
           try{toast('已删除');}catch(e){}
           _renderStickersPage(container);
         }));
         // URL 添加表情
         container.querySelectorAll('[data-act="stkUrlAdd"]').forEach(b => b.addEventListener('click',()=>{
+          if (curGroup === '__newcg__') return;
           var urlInp = container.querySelector('[data-el="stkUrlInput"]');
           var url = (urlInp && urlInp.value || '').trim();
           if (!url){ try{toast('请输入图片链接');}catch(e){} return; }
           var packs5 = _loadStickerPacks();
-          var gArr5 = _safeArr(packs5[curGroup]);
+          var gArr5 = _curCGId
+            ? _safeArr((packs5.charGroups||{})[_curCGId])
+            : _safeArr(packs5[curGroup]);
           if (gArr5.length >= STICKER_MAX_PER_GROUP){ try{toast('此分组已满');}catch(e){} return; }
           gArr5.push({ data: url, name: 'url_sticker', time: Date.now() });
-          packs5[curGroup] = gArr5;
+          if (_curCGId){ if(!packs5.charGroups) packs5.charGroups={}; packs5.charGroups[_curCGId]=gArr5; }
+          else { packs5[curGroup] = gArr5; }
           _saveStickerPacks(packs5);
           try{toast('已添加');}catch(e){}
           _renderStickersPage(container);
@@ -13845,11 +13904,19 @@ ${lines}
           let cmtsHtml = '';
           if(cmtArr.length){
             cmtsHtml = '<div class="momentComments">';
+            const _myN4Cmt = (phoneLoadSettings()&&phoneLoadSettings().phoneName)||'我';
             cmtArr.forEach((c,ci)=>{
               const replyTo = c.replyTo ? `<span style="color:var(--ph-accent,#07c160);">回复 ${esc(c.replyTo)}</span>：` : '';
+              const _isMyCmt = (c.name === _myN4Cmt || c.name === '我');
+              const _cmtBtns = _isMyCmt
+                ? `<span style="float:right;display:inline-flex;gap:4px;align-items:center;margin-left:4px;">
+                    <span class="momentCmtEditBtn" data-ci="${ci}" data-mid="${esc(m.id)}" style="font-size:10px;color:var(--ph-accent,#07c160);cursor:pointer;">编辑</span>
+                    <span class="momentCmtDelBtn"  data-ci="${ci}" data-mid="${esc(m.id)}" style="font-size:10px;color:rgba(200,50,50,.7);cursor:pointer;">删除</span>
+                  </span>`
+                : `<span class="momentCmtReplyBtn" data-replyto="${esc(c.name)}" data-mid="${esc(m.id)}" style="float:right;font-size:10px;color:var(--ph-accent,#07c160);cursor:pointer;padding:0 4px;">回复</span>`;
               cmtsHtml += `<div class="momentCmt" data-ci="${ci}" data-mid="${esc(m.id)}">
-                <span class="momentCmtName">${esc(c.name)}</span>：${replyTo}${esc(c.text)}
-                <span class="momentCmtReplyBtn" data-replyto="${esc(c.name)}" data-mid="${esc(m.id)}" style="float:right;font-size:10px;color:var(--ph-accent,#07c160);cursor:pointer;padding:0 4px;">回复</span>
+                <span class="momentCmtName">${esc(c.name)}</span>：${replyTo}<span class="momentCmtText" data-ci="${ci}" data-mid="${esc(m.id)}">${esc(c.text)}</span>
+                ${_cmtBtns}
               </div>`;
             });
             cmtsHtml += '</div>';
@@ -14030,6 +14097,66 @@ ${lines}
           });
         });
         // 发送评论
+        // 删除自己的评论
+        container.querySelectorAll('.momentCmtDelBtn').forEach(function(btn){
+          btn.addEventListener('click', function(e){
+            e.stopPropagation();
+            const _mid = btn.getAttribute('data-mid');
+            const _ci  = parseInt(btn.getAttribute('data-ci'), 10);
+            const _d   = _ensureMoments();
+            const _p   = _d.posts.find(function(p){ return p.id===_mid; });
+            if (!_p || !Array.isArray(_p.comments)) return;
+            _p.comments.splice(_ci, 1);
+            saveMoments(_d);
+            renderMoments(container);
+          });
+        });
+        // 编辑自己的评论（行内编辑）
+        container.querySelectorAll('.momentCmtEditBtn').forEach(function(btn){
+          btn.addEventListener('click', function(e){
+            e.stopPropagation();
+            const _mid  = btn.getAttribute('data-mid');
+            const _ci   = parseInt(btn.getAttribute('data-ci'), 10);
+            const _wrap = btn.closest('.momentCmt');
+            if (!_wrap) return;
+            const _textEl = _wrap.querySelector('.momentCmtText');
+            const _oldTxt = _textEl ? _textEl.textContent : '';
+            const _origHTML = _wrap.innerHTML;
+            // 行内替换为 input
+            _wrap.innerHTML = '';
+            _wrap.style.display = 'flex';
+            _wrap.style.alignItems = 'center';
+            _wrap.style.flexWrap = 'wrap';
+            const _eInp = doc.createElement('input');
+            _eInp.value = _oldTxt;
+            _eInp.style.cssText = 'flex:1;font-size:13px;border:1px solid rgba(0,0,0,.15);border-radius:6px;padding:3px 8px;outline:none;min-width:0;box-sizing:border-box;margin:0 4px;';
+            const _eSave = doc.createElement('span');
+            _eSave.textContent = '确定';
+            _eSave.style.cssText = 'font-size:10px;color:var(--ph-accent,#07c160);cursor:pointer;white-space:nowrap;padding:0 4px;flex-shrink:0;';
+            const _eCancel = doc.createElement('span');
+            _eCancel.textContent = '取消';
+            _eCancel.style.cssText = 'font-size:10px;color:rgba(20,24,28,.4);cursor:pointer;white-space:nowrap;flex-shrink:0;';
+            _wrap.appendChild(_eInp);
+            _wrap.appendChild(_eSave);
+            _wrap.appendChild(_eCancel);
+            setTimeout(function(){ _eInp.focus(); try{_eInp.select();}catch(e2){} }, 60);
+            const _doSave = function(){
+              const _newTxt = _eInp.value.trim();
+              if (!_newTxt){ try{toast('评论不能为空');}catch(e3){} return; }
+              const _d2 = _ensureMoments();
+              const _p2 = _d2.posts.find(function(p){ return p.id===_mid; });
+              if (_p2 && Array.isArray(_p2.comments) && _p2.comments[_ci]){
+                _p2.comments[_ci].text = _newTxt;
+                saveMoments(_d2);
+              }
+              renderMoments(container);
+            };
+            const _doCancel = function(){ _wrap.innerHTML = _origHTML; _wrap.style.display=''; _wrap.style.alignItems=''; _wrap.style.flexWrap=''; };
+            _eSave.addEventListener('click', _doSave);
+            _eCancel.addEventListener('click', _doCancel);
+            _eInp.addEventListener('keydown', function(ev){ if(ev.key==='Enter'){ev.preventDefault();_doSave();} if(ev.key==='Escape'){ev.preventDefault();_doCancel();} });
+          });
+        });
         // 回复按钮：填入 @对方 到输入框
         container.querySelectorAll('.momentCmtReplyBtn').forEach(btn=>{
           btn.addEventListener('click',e=>{
@@ -15131,15 +15258,21 @@ const npc = _wxGetChatTargetMeta(npcId);
         const userStickers   = _safeArr(packs.user);
         const charStickers   = _safeArr(packs.char);
         const commonStickers = _safeArr(packs.common);
+        // 专属：当前聊天角色的个人表情组
+        const charGroupStickers = npcId ? _safeArr((packs.charGroups||{})[npcId]) : [];
+        const hasCharGroup = charGroupStickers.length > 0;
+        const _cgNpcDb = loadContactsDB();
+        const _cgNpc   = (npcId && findContactById(_cgNpcDb, npcId)) || { name: npcId || '角色' };
+        const _cgLabel = esc((_cgNpc.name||'').slice(0,4)) + '专属';
 
         const defaultEmojis = ['😊','😂','🥺','😭','😍','🥰','😘','😜','🤔','😅',
           '😎','🤩','😇','🙃','😋','😤','😱','🤗','💕','❤️',
           '👍','👏','✌️','🎉','🔥','✨','💪','🙈','🐱','🌸'];
 
-        // 4 tabs：emoji / 我的 / 角色 / 通用（留位：后续可插入 AI生成 等）
         let html = `<div class="wxStickerTabs" style="display:flex;border-bottom:1px solid rgba(0,0,0,.06);overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:0;">
           <button class="wxStkTab on" data-act="wxStkTab" data-stktab="emoji" style="white-space:nowrap;">Emoji</button>
           <button class="wxStkTab" data-act="wxStkTab" data-stktab="user" style="white-space:nowrap;">我的${userStickers.length?'('+userStickers.length+')':''}</button>
+          ${hasCharGroup ? `<button class="wxStkTab" data-act="wxStkTab" data-stktab="chargroup" style="white-space:nowrap;color:var(--ph-accent,#07c160);">⭐${_cgLabel}(${charGroupStickers.length})</button>` : ''}
           <button class="wxStkTab" data-act="wxStkTab" data-stktab="char" style="white-space:nowrap;">角色${charStickers.length?'('+charStickers.length+')':''}</button>
           <button class="wxStkTab" data-act="wxStkTab" data-stktab="common" style="white-space:nowrap;">通用${commonStickers.length?'('+commonStickers.length+')':''}</button>
         </div>`;
@@ -15170,7 +15303,20 @@ const npc = _wxGetChatTargetMeta(npcId);
           content += `</div>`;
           return content;
         }
-        html += renderStkGroup('user',   userStickers,   '暂无「我的表情」<br><span style="font-size:11px;">去「我 → 表情」上传</span>');
+        html += renderStkGroup('user', userStickers, '暂无「我的表情」<br><span style="font-size:11px;">去「我 → 表情」上传</span>');
+        // 专属表情 tab
+        if (hasCharGroup){
+          var _cgHtml = `<div class="wxStkTabContent" data-ph="stkTab_chargroup" style="display:none;"><div class="wxStickerGrid">`;
+          charGroupStickers.forEach(function(stk, i){
+            var imgSrc = stk.data || '';
+            if (imgSrc.indexOf('idb:') === 0) imgSrc = '';
+            if (imgSrc){
+              _cgHtml += `<div class="wxStkItem" data-act="wxStickerSend" data-stktype="chargroup" data-cgid="${esc(npcId)}" data-stkidx="${i}"><img src="${esc(imgSrc)}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;" onerror="this.style.display='none'"/></div>`;
+            }
+          });
+          _cgHtml += `</div></div>`;
+          html += _cgHtml;
+        }
         html += renderStkGroup('char',   charStickers,   '暂无「角色表情」<br><span style="font-size:11px;">去「我 → 表情 → 角色表情」上传</span>');
         html += renderStkGroup('common', commonStickers, '暂无「通用表情」<br><span style="font-size:11px;">去「我 → 表情 → 通用表情」上传</span>');
 
@@ -15179,11 +15325,9 @@ const npc = _wxGetChatTargetMeta(npcId);
 
       function _chatDetail_switchStkTab(tab){
         root.querySelectorAll('.wxStkTab').forEach(t => t.classList.toggle('on', t.getAttribute('data-stktab')===tab));
-        // emoji tab
         var emojiC = root.querySelector('[data-ph="stkTabEmoji"]');
         if (emojiC) emojiC.style.display = tab==='emoji' ? '' : 'none';
-        // group tabs
-        ['user','char','common'].forEach(function(k){
+        ['user','char','common','chargroup'].forEach(function(k){
           var el = root.querySelector('[data-ph="stkTab_'+k+'"]');
           if (el) el.style.display = (tab===k) ? '' : 'none';
         });
@@ -15196,7 +15340,57 @@ const npc = _wxGetChatTargetMeta(npcId);
         if (stkType === 'emoji'){
           const emoji = el.getAttribute('data-stkval') || '😊';
           const input = root.querySelector('[data-ph="chatInput"]');
-          if (input){ input.value += emoji; input.focus(); }
+          if (input){
+            const _isRichInp = input.getAttribute && input.getAttribute('contenteditable') === 'true';
+            if (_isRichInp){
+              input.focus();
+              try{
+                const _sel = window.getSelection();
+                if (_sel && _sel.rangeCount > 0){
+                  const _r = _sel.getRangeAt(0);
+                  if (!input.contains(_r.commonAncestorContainer)){
+                    const _er = doc.createRange();
+                    _er.selectNodeContents(input);
+                    _er.collapse(false);
+                    _sel.removeAllRanges();
+                    _sel.addRange(_er);
+                  }
+                  const _tn = doc.createTextNode(emoji);
+                  const _r2 = _sel.getRangeAt(0);
+                  _r2.deleteContents();
+                  _r2.insertNode(_tn);
+                  _r2.setStartAfter(_tn);
+                  _r2.setEndAfter(_tn);
+                  _sel.removeAllRanges();
+                  _sel.addRange(_r2);
+                } else {
+                  input.appendChild(doc.createTextNode(emoji));
+                }
+                input.dispatchEvent(new Event('input', {bubbles:true}));
+              }catch(e2){
+                input.textContent += emoji;
+                input.dispatchEvent(new Event('input', {bubbles:true}));
+              }
+            } else {
+              const _ss = input.selectionStart != null ? input.selectionStart : input.value.length;
+              const _se = input.selectionEnd   != null ? input.selectionEnd   : input.value.length;
+              input.value = input.value.slice(0, _ss) + emoji + input.value.slice(_se);
+              try{ input.setSelectionRange(_ss + emoji.length, _ss + emoji.length); }catch(e3){}
+              input.dispatchEvent(new Event('input', {bubbles:true}));
+              input.focus();
+            }
+          }
+        } else if (stkType === 'chargroup'){
+          // 角色专属表情包
+          var _cgId2  = el.getAttribute('data-cgid') || npcId;
+          var _cgIdx2 = parseInt(el.getAttribute('data-stkidx'));
+          var _cgPks  = _loadStickerPacks();
+          var _cgSrc  = (_safeArr((_cgPks.charGroups||{})[_cgId2])[_cgIdx2]||{}).data || '';
+          if (!_cgSrc || _cgSrc.indexOf('idb:') === 0) return;
+          _cpSendSpecial(npcId, '[表情包]', { type:'image', src:_cgSrc, _logText:'[表情包]', stkGroup:'chargroup' });
+          const _cgSpEl = root.querySelector('[data-ph="stickerPanel"]');
+          if (_cgSpEl) _cgSpEl.classList.remove('show');
+          setTimeout(function(){ _aiReplyForSpecial(npcId, ['哈哈哈这个表情好可爱！😆','笑死我了 🤣','这个表情包太绝了','收藏了！']); }, 600 + Math.random()*500);
         } else if (stkType === 'sticker'){
           var group = el.getAttribute('data-stkgroup') || 'user';
           var idx   = parseInt(el.getAttribute('data-stkidx'));
@@ -15745,6 +15939,7 @@ const npc = _wxGetChatTargetMeta(npcId);
             ${selectRow('安慰方式', 'comfortStyle', COMFORT_STYLES, COMFORT_STYLES, b.comfortStyle||'共情抱抱')}
             ${selectRow('主动分享', 'proactiveShare', PROACTIVE_OPTS, PROACTIVE_LABELS, b.proactiveShare||'weekly')}
             ${selectRow('Emoji 用量', 'emojiUsage', EMOJI_OPTS, EMOJI_LABELS, b.emojiUsage||'normal')}
+            ${selectRow('表情包', 'stickerUsage', STICKER_USAGE_OPTS, STICKER_USAGE_LABELS, b.stickerUsage||'normal')}
             ${selectRow('引用习惯', 'quoteHabit', QUOTE_OPTS, QUOTE_LABELS, b.quoteHabit||'sometimes')}
           </div>
 
@@ -19851,6 +20046,8 @@ const npc = _wxGetChatTargetMeta(npcId);
       var EMOJI_LABELS    = ['很少用','正常','频繁用'];
       var QUOTE_OPTS      = ['never','sometimes','often'];
       var QUOTE_LABELS    = ['从不引用','偶尔引用','经常引用'];
+      var STICKER_USAGE_OPTS   = ['never','rare','normal','often'];
+      var STICKER_USAGE_LABELS = ['不发','偶尔发','正常','经常发'];
 
       function _loadCharBehavior(npcId){
         return _phLoad('charbehavior_'+String(npcId), {
@@ -19861,6 +20058,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           comfortStyle:      '共情抱抱',
           proactiveShare:    'weekly',
           emojiUsage:        'normal',
+          stickerUsage:      'normal',
           quoteHabit:        'sometimes',
           wearing:   '',
           doing:     '',
@@ -19887,6 +20085,11 @@ const npc = _wxGetChatTargetMeta(npcId);
           lines.push('安慰用户时：' + b.comfortStyle);
           var emojiLabel = EMOJI_LABELS[EMOJI_OPTS.indexOf(b.emojiUsage)] || '正常';
           lines.push('Emoji 使用频率：' + emojiLabel);
+          var _stkU = b.stickerUsage || 'normal';
+          if (_stkU === 'never') lines.push('表情包使用：从不发表情包，只用文字和Emoji');
+          else if (_stkU === 'rare') lines.push('表情包使用：很少发，只在特别合适时发一张');
+          else if (_stkU === 'often') lines.push('表情包使用：喜欢发表情包，经常用表情包表达情绪');
+          // normal：不额外提示，保持默认行为
           var quoteLabel = QUOTE_LABELS[QUOTE_OPTS.indexOf(b.quoteHabit)] || '偶尔引用';
           lines.push('引用回复习惯：' + quoteLabel);
           return '【角色行为风格（请严格遵守）】\n' + lines.join('\n');
