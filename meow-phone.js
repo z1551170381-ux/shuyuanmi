@@ -8961,6 +8961,7 @@ function walletEarn(amount, reason){
         const c = _phLoad(PHONE_IM_KEYS.candidates, null);
 
         // ✅ 兼容旧版本：如果曾经有“auto 自动候选”，这里直接清掉（避免你看到莫名其妙的12个）
+        // ✅ 同时保留候选的结构化资料，避免 AI 好友加入通讯录后角色设定丢失
         if (c && typeof c === 'object' && Array.isArray(c.list)){
           const clean = { v:1, list:[] };
           for (const it of c.list){
@@ -8968,11 +8969,21 @@ function walletEarn(amount, reason){
             const src = String(it.source || '');
             // 旧逻辑的 auto 候选一律丢弃；只保留你手动产生的 import/scan/custom
             if (src === 'auto') continue;
-            clean.list.push({
+            const row = {
               name: String(it.name).trim(),
               source: src || 'custom',
               addedAt: Number(it.addedAt || Date.now())
-            });
+            };
+            if (it.identity) row.identity = String(it.identity);
+            if (it.appearance) row.appearance = String(it.appearance);
+            if (it.status) row.status = String(it.status);
+            if (it.relations) row.relations = String(it.relations);
+            if (it.profile) row.profile = String(it.profile);
+            if (it.personality) row.personality = String(it.personality);
+            if (it.hobby) row.hobby = String(it.hobby);
+            if (it.address) row.address = String(it.address);
+            if (it.occupation) row.occupation = String(it.occupation);
+            clean.list.push(row);
           }
           // 控制最大长度，防止长期使用越来越卡
           if (clean.list.length > 50) clean.list = clean.list.slice(-50);
@@ -10821,10 +10832,11 @@ ${lines}
         const cand = _safeArr(loadCandidates().list).find(function(x){ return x && x.name === n; });
         if (!cand) return null;
         const fullCand = _ensureAIFriendCandidateProfile(cand);
+        const profileText = _buildCandidateProfileText(fullCand);
         const npc = addOrUpdateNPC({
           name: n,
           alias: [],
-          profile: _buildCandidateProfileText(fullCand),
+          profile: profileText,
           source: fullCand.source || '',
           identity: fullCand.identity || '',
           appearance: fullCand.appearance || '',
@@ -10833,8 +10845,16 @@ ${lines}
         });
         try{
           if (npc && npc.id){
+            const db = loadContactsDB();
+            const target = findContactById(db, npc.id);
+            if (target){
+              target.profile = profileText;
+              target.source = fullCand.source || target.source || '';
+              saveContactsDB(db);
+            }
             const ce = _loadCharExtra(npc.id);
-            ce.profile = _buildCandidateProfileText(fullCand);
+            ce.profile = profileText;
+            ce.aiFriendProfile = profileText;
             _saveCharExtra(npc.id, ce);
           }
         }catch(e){}
@@ -10845,43 +10865,46 @@ ${lines}
 
       function _showAIFriendPreview(cand, parentContainer){
         try{
-          const _doc = (typeof D !== 'undefined' && D) ? D : document;
-          if (!_doc || !cand || !cand.name) return;
+          if (!cand || !cand.name) return;
           const safe = _ensureAIFriendCandidateProfile(cand);
-          const old = _doc.querySelector('.phAIFriendPreviewMask');
-          if (old) old.remove();
+          root.querySelectorAll('.wxCPOverlay').forEach(function(o){ try{ o.remove(); }catch(e){} });
 
-          const mask = _doc.createElement('div');
-          mask.className = 'phAIFriendPreviewMask';
-          mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.22);backdrop-filter:blur(8px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;';
-          const card = _doc.createElement('div');
-          card.style.cssText = 'width:min(92vw,420px);max-height:min(82vh,720px);overflow:auto;border-radius:24px;background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.58);box-shadow:0 20px 60px rgba(0,0,0,.18);padding:18px 16px 16px;box-sizing:border-box;color:rgba(20,24,28,.88);';
           const meta = [safe.occupation, safe.address].filter(Boolean).join('｜');
-          card.innerHTML =
-            '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">'
-            + '<div style="min-width:0;">'
-            + '<div style="font-size:11px;color:rgba(20,24,28,.42);margin-bottom:6px;">AI 相关好友候选</div>'
-            + '<div style="font-size:22px;line-height:1.2;font-weight:700;word-break:break-word;">' + esc(safe.name) + '</div>'
-            + (meta ? '<div style="margin-top:6px;font-size:12px;color:rgba(20,24,28,.48);word-break:break-word;">' + esc(meta) + '</div>' : '')
+          const profileText = _buildCandidateProfileText(safe) || '暂无设定';
+          const inner =
+            '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">'
+            + '<div style="min-width:0;flex:1;">'
+            + '<div style="font-size:11px;color:rgba(20,24,28,.38);margin-bottom:6px;">AI 相关好友候选</div>'
+            + '<div style="font-size:20px;line-height:1.2;font-weight:700;color:rgba(20,24,28,.9);word-break:break-word;">' + esc(safe.name) + '</div>'
+            + (meta ? '<div style="margin-top:6px;font-size:11px;line-height:1.5;color:rgba(20,24,28,.46);word-break:break-word;">' + esc(meta) + '</div>' : '')
             + '</div>'
-            + '<button data-act="close" style="appearance:none;border:0;background:rgba(0,0,0,.05);width:32px;height:32px;border-radius:999px;cursor:pointer;font-size:18px;line-height:1;color:rgba(20,24,28,.55);flex-shrink:0;">×</button>'
+            + '<button data-act="close" style="appearance:none;border:0;background:rgba(255,255,255,.72);width:30px;height:30px;border-radius:999px;cursor:pointer;font-size:16px;line-height:1;color:rgba(20,24,28,.45);flex-shrink:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.9);">×</button>'
             + '</div>'
-            + '<div style="margin-top:14px;padding:14px;border-radius:18px;background:rgba(255,255,255,.72);border:1px solid rgba(0,0,0,.06);white-space:pre-wrap;font-size:13px;line-height:1.72;word-break:break-word;">' + esc(_buildCandidateProfileText(safe) || '暂无设定') + '</div>'
-            + '<div style="display:flex;gap:10px;margin-top:14px;">'
-            + '<button data-act="saveOnly" style="flex:1;appearance:none;border:1px solid rgba(0,0,0,.08);background:#fff;border-radius:14px;padding:12px 10px;cursor:pointer;font-size:14px;color:rgba(20,24,28,.72);">先放入候选</button>'
-            + '<button data-act="acceptNow" style="flex:1;appearance:none;border:0;background:var(--ph-accent,#07c160);color:#fff;border-radius:14px;padding:12px 10px;cursor:pointer;font-size:14px;font-weight:700;">直接加入通讯录</button>'
+            + '<div style="margin-top:12px;padding:12px 13px;border-radius:16px;background:rgba(255,255,255,.58);border:1px solid rgba(255,255,255,.5);white-space:pre-wrap;font-size:12.5px;line-height:1.72;word-break:break-word;color:rgba(20,24,28,.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.78);">' + esc(profileText) + '</div>'
+            + '<div style="display:flex;gap:8px;margin-top:14px;">'
+            + '<button data-act="saveOnly" style="flex:1;appearance:none;border:1px solid rgba(0,0,0,.06);background:rgba(255,255,255,.72);border-radius:14px;padding:11px 10px;cursor:pointer;font-size:13px;color:rgba(20,24,28,.72);box-shadow:inset 0 1px 0 rgba(255,255,255,.82);">先放入候选</button>'
+            + '<button data-act="acceptNow" style="flex:1;appearance:none;border:0;background:var(--ph-accent,#07c160);color:#fff;border-radius:14px;padding:11px 10px;cursor:pointer;font-size:13px;font-weight:700;box-shadow:0 8px 18px rgba(7,193,96,.2);">直接加入通讯录</button>'
             + '</div>';
-          mask.appendChild(card);
-          _doc.body.appendChild(mask);
 
-          const close = function(){ try{ mask.remove(); }catch(e){} };
-          mask.addEventListener('click', function(e){ if (e.target === mask) close(); });
-          card.querySelector('[data-act="close"]')?.addEventListener('click', close);
-          card.querySelector('[data-act="saveOnly"]')?.addEventListener('click', function(){
+          const ov = (typeof _cpShowOverlay === 'function') ? _cpShowOverlay(inner) : null;
+          if (!ov) return;
+          const modal = ov.querySelector('.wxCPModal');
+          if (modal){
+            modal.style.maxWidth = '314px';
+            modal.style.width = 'calc(100% - 8px)';
+            modal.style.padding = '16px 14px 14px';
+            modal.style.borderRadius = '24px';
+            modal.style.background = 'var(--ph-glass-strong)';
+            modal.style.border = '1px solid var(--ph-glass-border)';
+          }
+
+          const close = function(){ try{ ov.remove(); }catch(e){} };
+          ov.querySelector('[data-act="close"]')?.addEventListener('click', close);
+          ov.querySelector('[data-act="saveOnly"]')?.addEventListener('click', function(){
             close();
             try{ toast('已加入新的朋友候选'); }catch(e){}
           });
-          card.querySelector('[data-act="acceptNow"]')?.addEventListener('click', function(){
+          ov.querySelector('[data-act="acceptNow"]')?.addEventListener('click', function(){
             const npc = _acceptCandidateIntoContacts(safe.name, parentContainer);
             close();
             try{ toast(npc ? ('已加入通讯录：' + safe.name) : '加入失败'); }catch(e){}
@@ -16814,7 +16837,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         const db = loadContactsDB();
         const npc = findContactById(db, contactId) || { id:contactId, name:String(contactId), avatar:String(contactId).charAt(0), profile:'' };
         const charEx = _loadCharExtra(contactId);
-        const mergedProfile = npc.profile || charEx.profile || '';
+        const mergedProfile = npc.profile || charEx.profile || charEx.aiFriendProfile || '';
 
         try{ const t = root.querySelector('[data-ph="appTitle"]'); if(t) t.textContent='角色设定'; }catch(e){}
         try{ const sp = root.querySelector('.phAppBarSpacer'); if(sp) sp.innerHTML=''; }catch(e){}
