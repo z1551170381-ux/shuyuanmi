@@ -8983,6 +8983,9 @@ function walletEarn(amount, reason){
             if (it.hobby) row.hobby = String(it.hobby);
             if (it.address) row.address = String(it.address);
             if (it.occupation) row.occupation = String(it.occupation);
+            if (it.gender) row.gender = String(it.gender);
+            if (it.height) row.height = String(it.height);
+            if (it.bio) row.bio = String(it.bio);
             clean.list.push(row);
           }
           // 控制最大长度，防止长期使用越来越卡
@@ -9012,6 +9015,9 @@ function walletEarn(amount, reason){
           if (extraData.hobby) entry.hobby = String(extraData.hobby);
           if (extraData.address) entry.address = String(extraData.address);
           if (extraData.occupation) entry.occupation = String(extraData.occupation);
+          if (extraData.gender) entry.gender = String(extraData.gender);
+          if (extraData.height) entry.height = String(extraData.height);
+          if (extraData.bio) entry.bio = String(extraData.bio);
         }
         c.list.push(entry);
         saveCandidates(c);
@@ -9019,18 +9025,23 @@ function walletEarn(amount, reason){
 
       function _buildCandidateProfileText(cand){
         if (!cand || typeof cand !== 'object') return '';
+        const safe = _ensureAIFriendCandidateProfile(cand);
         const lines = [];
-        const profile = String(cand.profile || '').trim();
-        if (profile) return profile;
-        if (cand.identity) lines.push('身份：' + String(cand.identity).trim());
-        if (cand.occupation) lines.push('职业：' + String(cand.occupation).trim());
-        if (cand.address) lines.push('住址：' + String(cand.address).trim());
-        if (cand.personality) lines.push('性格：' + String(cand.personality).trim());
-        if (cand.hobby) lines.push('爱好：' + String(cand.hobby).trim());
-        if (cand.relations) lines.push('关系：' + String(cand.relations).trim());
-        if (cand.appearance) lines.push('外貌：' + String(cand.appearance).trim());
-        if (cand.status) lines.push('状态：' + String(cand.status).trim());
-        return lines.join('\n');
+        if (safe.name) lines.push('姓名：' + String(safe.name).trim());
+        if (safe.gender) lines.push('性别：' + String(safe.gender).trim());
+        if (safe.personality) lines.push('性格：' + String(safe.personality).trim());
+        if (safe.height) lines.push('身高：' + String(safe.height).trim());
+        if (safe.appearance) lines.push('外貌：' + String(safe.appearance).trim());
+        if (safe.hobby) lines.push('爱好：' + String(safe.hobby).trim());
+        if (safe.address) lines.push('住址：' + String(safe.address).trim());
+        if (safe.occupation || safe.identity){
+          lines.push('职业（身份）：' + [safe.occupation, safe.identity].filter(Boolean).map(function(x){ return String(x).trim(); }).join('｜'));
+        }
+        if (safe.relations) lines.push('关系：' + String(safe.relations).trim());
+        if (safe.bio) lines.push('生平简介：' + String(safe.bio).trim());
+        if (safe.status) lines.push('状态：' + String(safe.status).trim());
+        const profile = String(safe.profile || '').trim();
+        return profile || lines.join('\n');
       }
       function removeCandidateByName(name){
         const c = loadCandidates();
@@ -10624,128 +10635,190 @@ ${lines}
         }catch(e){}
       }
 
-      function _buildAIFriendUserContext(){
-        const parts = [];
+      function _pickAIFriendAddressFromMap(){
         try{
-          const persona = _readSTPersona();
-          if (persona){
-            if (persona.name) parts.push('用户名称：' + String(persona.name).trim());
-            if (persona.description) parts.push('用户人设：' + String(persona.description).trim().slice(0, 600));
-          }
-        }catch(e){}
-        try{
-          const settings = phoneLoadSettings();
-          if (settings && settings.phoneName) parts.push('小手机昵称：' + String(settings.phoneName).trim());
-        }catch(e){}
-        try{
-          const ctx = meowGetSTCtx();
-          if (ctx && Array.isArray(ctx.chat)){
-            const recent = ctx.chat.filter(function(m){ return m && m.is_user && m.mes; }).slice(-6).map(function(m){ return String(m.mes || '').replace(/\s+/g, ' ').trim().slice(0, 120); }).filter(Boolean);
-            if (recent.length) parts.push('用户最近说过的话：\n- ' + recent.join('\n- '));
-          }
-        }catch(e){}
-        return parts.join('\n\n') || '暂无更多用户资料，请根据当前世界观生成一个自然的新朋友。';
+          if (typeof _mapLoad !== 'function') return '';
+          const md = _mapLoad();
+          const candidates = [];
+          _safeArr(md && md.landmarks).forEach(function(lm){
+            const dn = String((lm && (lm.customName || lm.name)) || '').trim();
+            if (!dn) return;
+            const tags = _safeArr(lm && lm.tags).slice(0, 2).join('·');
+            candidates.push(tags ? (dn + '一带（' + tags + '）') : (dn + '一带'));
+          });
+          _safeArr(md && md.houses).forEach(function(h){
+            const dn = String((h && (h.customName || h.name)) || '').trim();
+            if (!dn) return;
+            candidates.push(dn + '附近');
+          });
+          if (!candidates.length) return '';
+          return candidates[Math.floor(Math.random() * Math.min(candidates.length, 8))] || '';
+        }catch(e){ return ''; }
       }
 
-      function _parseAIFriendCandidate(raw){
-        try{
-          let txt = String(raw || '').trim();
-          if (!txt) return null;
-          txt = txt.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
-          const tries = [txt];
-          const m = txt.match(/\{[\s\S]*\}/);
-          if (m && m[0]) tries.push(m[0]);
-          for (let i = 0; i < tries.length; i++){
-            try{
-              let obj = JSON.parse(tries[i]);
-              if (obj && typeof obj === 'object' && !Array.isArray(obj)){
-                if (obj.friend && typeof obj.friend === 'object') obj = obj.friend;
-                else if (obj.candidate && typeof obj.candidate === 'object') obj = obj.candidate;
-              }
-              if (Array.isArray(obj)) obj = obj[0];
-              if (!obj || typeof obj !== 'object') continue;
-              const out = {
-                name: String(obj.name || obj.nickname || '').trim(),
-                identity: String(obj.identity || '').trim(),
-                occupation: String(obj.occupation || obj.job || obj.profession || '').trim(),
-                address: String(obj.address || obj.location || obj.residence || '').trim(),
-                personality: String(obj.personality || obj.character || '').trim(),
-                hobby: String(obj.hobby || obj.hobbies || obj.interests || '').trim(),
-                relations: String(obj.relations || obj.relationship || obj.relation || '').trim(),
-                appearance: String(obj.appearance || '').trim(),
-                status: String(obj.status || '').trim(),
-                profile: String(obj.profile || '').trim()
-              };
-              if (!out.name) continue;
-              if (!out.profile){
-                const lines = [];
-                if (out.identity) lines.push('身份：' + out.identity);
-                if (out.occupation) lines.push('职业：' + out.occupation);
-                if (out.address) lines.push('住址：' + out.address);
-                if (out.personality) lines.push('性格：' + out.personality);
-                if (out.hobby) lines.push('爱好：' + out.hobby);
-                if (out.relations) lines.push('关系：' + out.relations);
-                if (out.appearance) lines.push('外貌：' + out.appearance);
-                if (out.status) lines.push('状态：' + out.status);
-                out.profile = lines.join('\n');
-              }
-              if (!out.identity){
-                const idParts = [];
-                if (out.occupation) idParts.push('职业：' + out.occupation);
-                if (out.address) idParts.push('住址：' + out.address);
-                out.identity = idParts.join('；');
-              }
-              return out;
-            }catch(e){}
-          }
-        }catch(e){}
-        return null;
-      }
+      function _buildAIFriendMapContext(){
+  try{
+    if (typeof _mapLoad !== 'function') return '';
+    const md = _mapLoad();
+    const names = [];
+    _safeArr(md && md.landmarks).slice(0, 12).forEach(function(lm){
+      const dn = String((lm && (lm.customName || lm.name)) || '').trim();
+      if (!dn) return;
+      names.push(dn);
+    });
+    _safeArr(md && md.houses).slice(0, 8).forEach(function(h){
+      const dn = String((h && (h.customName || h.name)) || '').trim();
+      if (!dn) return;
+      names.push(dn);
+    });
+    names.splice(12);
+    return names.length ? ('【地图 App 可参考地点】\n' + names.join('、')) : '';
+  }catch(e){ return ''; }
+}
 
-            function _ensureAIFriendCandidateProfile(cand){
-        try{
-          if (!cand || typeof cand !== 'object') return cand;
-          const out = Object.assign({}, cand);
-          const labeled = [];
-          if (out.identity) labeled.push('身份：' + String(out.identity).trim());
-          if (out.occupation) labeled.push('职业：' + String(out.occupation).trim());
-          if (out.address) labeled.push('住址：' + String(out.address).trim());
-          if (out.personality) labeled.push('性格：' + String(out.personality).trim());
-          if (out.hobby) labeled.push('爱好：' + String(out.hobby).trim());
-          if (out.relations) labeled.push('关系：' + String(out.relations).trim());
-          if (out.appearance) labeled.push('外貌：' + String(out.appearance).trim());
-          if (out.status) labeled.push('状态：' + String(out.status).trim());
+function _buildAIFriendUserContext(){
+  const parts = [];
+  try{
+    const persona = _readSTPersona();
+    if (persona){
+      if (persona.name) parts.push('用户名称：' + String(persona.name).trim());
+      if (persona.description) parts.push('用户人设：' + String(persona.description).trim().slice(0, 600));
+    }
+  }catch(e){}
+  try{
+    const settings = phoneLoadSettings();
+    if (settings && settings.phoneName) parts.push('小手机昵称：' + String(settings.phoneName).trim());
+  }catch(e){}
+  try{
+    const ctx = meowGetSTCtx();
+    if (ctx && Array.isArray(ctx.chat)){
+      const recent = ctx.chat
+        .filter(function(m){ return m && m.is_user && m.mes; })
+        .slice(-6)
+        .map(function(m){ return String(m.mes || '').replace(/\s+/g, ' ').trim().slice(0, 120); })
+        .filter(Boolean);
+      if (recent.length) parts.push('用户最近说过的话：\n- ' + recent.join('\n- '));
+    }
+  }catch(e){}
+  const mapCtx = _buildAIFriendMapContext();
+  if (mapCtx) parts.push(mapCtx);
+  return parts.join('\n\n') || '暂无更多用户资料，请根据当前世界观生成一个自然的新朋友。';
+}
 
-          let profile = String(out.profile || '').trim();
-          if (!profile){
-            profile = labeled.join('\n');
-          } else {
-            const has = function(label){ return profile.indexOf(label + '：') >= 0; };
-            if (out.identity && !has('身份')) profile += '\n身份：' + String(out.identity).trim();
-            if (out.occupation && !has('职业')) profile += '\n职业：' + String(out.occupation).trim();
-            if (out.address && !has('住址')) profile += '\n住址：' + String(out.address).trim();
-            if (out.personality && !has('性格')) profile += '\n性格：' + String(out.personality).trim();
-            if (out.hobby && !has('爱好')) profile += '\n爱好：' + String(out.hobby).trim();
-            if (out.relations && !has('关系')) profile += '\n关系：' + String(out.relations).trim();
-            if (out.appearance && !has('外貌')) profile += '\n外貌：' + String(out.appearance).trim();
-            if (out.status && !has('状态')) profile += '\n状态：' + String(out.status).trim();
-            profile = profile.trim();
-          }
-          out.profile = profile;
-          if (!out.identity){
-            const idParts = [];
-            if (out.relations) idParts.push(String(out.relations).trim());
-            if (out.occupation) idParts.push(String(out.occupation).trim());
-            if (out.address) idParts.push(String(out.address).trim());
-            out.identity = idParts.join('｜');
-          }
-          return out;
-        }catch(e){
-          return cand;
+function _parseAIFriendCandidate(raw){
+  try{
+    let txt = String(raw || '').trim();
+    if (!txt) return null;
+    txt = txt.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
+    const tries = [txt];
+    const m = txt.match(/\{[\s\S]*\}/);
+    if (m && m[0]) tries.push(m[0]);
+    for (let i = 0; i < tries.length; i++){
+      try{
+        let obj = JSON.parse(tries[i]);
+        if (obj && typeof obj === 'object' && !Array.isArray(obj)){
+          if (obj.friend && typeof obj.friend === 'object') obj = obj.friend;
+          else if (obj.candidate && typeof obj.candidate === 'object') obj = obj.candidate;
         }
-      }
+        if (Array.isArray(obj)) obj = obj[0];
+        if (!obj || typeof obj !== 'object') continue;
+        const out = {
+          name: String(obj.name || obj.nickname || '').trim(),
+          identity: String(obj.identity || obj.role_identity || '').trim(),
+          occupation: String(obj.occupation || obj.job || obj.profession || '').trim(),
+          address: String(obj.address || obj.location || obj.residence || '').trim(),
+          personality: String(obj.personality || obj.character || '').trim(),
+          hobby: String(obj.hobby || obj.hobbies || obj.interests || '').trim(),
+          relations: String(obj.relations || obj.relationship || obj.relation || '').trim(),
+          appearance: String(obj.appearance || '').trim(),
+          gender: String(obj.gender || obj.sex || '').trim(),
+          height: String(obj.height || '').trim(),
+          bio: String(obj.bio || obj.biography || obj.background || obj.life_story || '').trim(),
+          status: String(obj.status || '').trim(),
+          profile: String(obj.profile || '').trim()
+        };
+        if (!out.name) continue;
+        if (!out.profile){
+          const lines = [];
+          if (out.name) lines.push('姓名：' + out.name);
+          if (out.gender) lines.push('性别：' + out.gender);
+          if (out.personality) lines.push('性格：' + out.personality);
+          if (out.height) lines.push('身高：' + out.height);
+          if (out.appearance) lines.push('外貌：' + out.appearance);
+          if (out.hobby) lines.push('爱好：' + out.hobby);
+          if (out.address) lines.push('住址：' + out.address);
+          if (out.occupation || out.identity) lines.push('职业（身份）：' + [out.occupation, out.identity].filter(Boolean).join('｜'));
+          if (out.relations) lines.push('关系：' + out.relations);
+          if (out.bio) lines.push('生平简介：' + out.bio);
+          if (out.status) lines.push('状态：' + out.status);
+          out.profile = lines.join('\n');
+        }
+        if (!out.identity){
+          const idParts = [];
+          if (out.occupation) idParts.push('职业：' + out.occupation);
+          if (out.address) idParts.push('住址：' + out.address);
+          if (out.relations) idParts.push('关系：' + out.relations);
+          out.identity = idParts.join('；');
+        }
+        return _ensureAIFriendCandidateProfile(out);
+      }catch(e){}
+    }
+  }catch(e){}
+  return null;
+}
 
-      function _buildFallbackAIFriendCandidate(){
+function _ensureAIFriendCandidateProfile(cand){
+  try{
+    if (!cand || typeof cand !== 'object') return cand;
+    const out = Object.assign({}, cand);
+    const labels = [
+      ['姓名', out.name],
+      ['性别', out.gender],
+      ['性格', out.personality],
+      ['身高', out.height],
+      ['外貌', out.appearance],
+      ['爱好', out.hobby],
+      ['住址', out.address],
+      ['职业（身份）', [out.occupation, out.identity].filter(Boolean).map(function(x){ return String(x).trim(); }).join('｜')],
+      ['关系', out.relations],
+      ['生平简介', out.bio],
+      ['状态', out.status]
+    ].filter(function(row){ return String(row[1] || '').trim(); });
+
+    let profile = String(out.profile || '').trim();
+    const hasLabel = function(label){
+      if (!profile) return false;
+      if (label === '职业（身份）') return /职业（身份）：|职业：|身份：/.test(profile);
+      return new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '：').test(profile);
+    };
+
+    if (!profile){
+      profile = labels.map(function(row){ return row[0] + '：' + String(row[1]).trim(); }).join('\n');
+    } else {
+      labels.forEach(function(row){
+        if (!hasLabel(row[0])) profile += '\n' + row[0] + '：' + String(row[1]).trim();
+      });
+      profile = profile.trim();
+    }
+    out.profile = profile;
+    if (!out.identity){
+      const idParts = [];
+      if (out.occupation) idParts.push(String(out.occupation).trim());
+      if (out.relations) idParts.push(String(out.relations).trim());
+      if (out.address) idParts.push(String(out.address).trim());
+      out.identity = idParts.join('｜');
+    }
+    if (!out.bio){
+      const m = profile.match(/(?:生平简介|简介|背景)：([^\n]+)/);
+      if (m && m[1]) out.bio = String(m[1]).trim();
+    }
+    return out;
+  }catch(e){
+    return cand;
+  }
+}
+
+function _buildFallbackAIFriendCandidate(){
         let userName = '用户';
         let userText = '';
         try{
@@ -10762,42 +10835,55 @@ ${lines}
         }catch(e){}
 
         const txt = String(userText || '').toLowerCase();
+        const mapAddrHint = _pickAIFriendAddressFromMap();
         const names = ['林栖','周槐','沈枝','许砚','宋遥','顾青槐','宁和','余晚舟','程岚','闻野','苏澈','唐予'];
         const templates = [
           {
             relations: '和' + userName + '住得很近，偶尔会在楼下便利店和电梯口碰见',
             occupation: '附近花店店员',
-            address: '你住处附近的旧街口',
+            address: mapAddrHint || '你住处附近的旧街口',
+            gender: '女',
+            height: '165cm',
             personality: '安静、细心、说话轻，但记性很好',
             hobby: '养花、做手账、拍黄昏的街景',
             appearance: '总穿浅色上衣，指尖常沾一点花叶气味，眼神温和',
+            bio: '原本学过园艺，后来留在街口花店工作，对旧城区的人和事都很熟。',
             status: '最近常在傍晚匆匆下班，看起来像有一件放不下的心事'
           },
           {
             relations: '是' + userName + '朋友转介绍认识的人，最近可能会频繁联系',
             occupation: '自由摄影师',
-            address: '城南老街附近的公寓',
+            address: mapAddrHint || '城南老街附近的公寓',
+            gender: '男',
+            height: '181cm',
             personality: '慢热、观察力强、有边界感，但熟了以后会很可靠',
             hobby: '拍照、逛旧书店、收集胶片和明信片',
             appearance: '背相机包，衣着干净利落，说话时会先想一下再开口',
+            bio: '大学时学的是视觉相关，后来转成自由接单，跑过不少城市项目。',
             status: '最近在赶一个长期项目，作息有点乱，但回复消息还算及时'
           },
           {
             relations: '和' + userName + '在同一片生活圈活动，属于慢慢会熟起来的类型',
             occupation: '咖啡店店主',
-            address: '离你常去路线不远的一家临街小店',
+            address: mapAddrHint || '离你常去路线不远的一家临街小店',
+            gender: '女',
+            height: '168cm',
             personality: '温和、稳重、会照顾人，也很会察言观色',
             hobby: '做甜点、收集杯子、听老歌',
             appearance: '身上常带淡淡咖啡香，笑起来很轻，给人很安心的感觉',
+            bio: '以前在连锁店做过几年，后来自己开了小店，慢慢把周围的人都记熟了。',
             status: '最近店里在调整营业时间，所以白天会比平时更忙'
           },
           {
             relations: '曾和' + userName + '在某件事上有过交集，只是之前没有正式加上联系方式',
             occupation: '设计相关从业者',
-            address: '市区靠河的一栋旧楼里',
+            address: mapAddrHint || '市区靠河的一栋旧楼里',
+            gender: '男',
+            height: '178cm',
             personality: '有审美、慢性子、表达直接但不刻薄',
             hobby: '看展、收集纸品、画速写',
             appearance: '气质清爽，常带着笔记本和耳机，安静时很有存在感',
+            bio: '做过品牌和展陈项目，工作之外喜欢慢慢观察人和空间的细节。',
             status: '最近刚结束一段忙碌周期，整个人稍微松下来一些'
           }
         ];
@@ -10821,6 +10907,9 @@ ${lines}
           hobby: template.hobby,
           relations: template.relations,
           appearance: template.appearance,
+          gender: template.gender,
+          height: template.height,
+          bio: template.bio,
           status: template.status,
           profile: ''
         });
@@ -10937,13 +11026,14 @@ ${lines}
 
             const systemPrompt = [
               '你是 MEOW Phone 的“新的朋友生成器”。',
-              '请根据用户信息和当前世界观，生成 1 个与用户强相关、可以自然出现在通讯录里的新好友候选。',
+              '请根据用户信息、世界观和地图环境，生成 1 个与用户强相关、可以自然出现在通讯录里的新好友候选。',
               '这个人必须和用户有现实或剧情上的连接，例如：同事、邻居、同学、店主、房东、朋友的朋友、旧识、合作对象。',
               '名字要自然，不要像系统名、网名、模板名。',
               '不要与已有联系人重名。',
+              '如果提供了地图 App 地点，住址请优先参考这些地点自然延展。',
               '只返回一个 JSON 对象，不要解释，不要 markdown。',
-              '字段必须尽量写完整：name, identity, occupation, address, personality, hobby, relations, appearance, status, profile。',
-              '其中 profile 必须是可直接写入“角色设定”的完整文本，至少包含：身份、职业、住址、性格、爱好、关系、外貌、状态。'
+              '字段必须尽量写完整：name, gender, personality, height, appearance, hobby, address, occupation, identity, relations, bio, status, profile。',
+              '其中 profile 必须是可直接写入“角色设定”的完整文本，至少包含：姓名、性别、性格、身高、外貌、爱好、住址、职业（身份）、关系、生平简介、状态。'
             ].join('\n');
 
             const userPrompt = [
@@ -10998,7 +11088,10 @@ ${lines}
           personality: cand.personality,
           hobby: cand.hobby,
           address: cand.address,
-          occupation: cand.occupation
+          occupation: cand.occupation,
+          gender: cand.gender,
+          height: cand.height,
+          bio: cand.bio
         });
 
         if (parentContainer) _renderNewFriendsPage(parentContainer);
@@ -20111,72 +20204,118 @@ const npc = _wxGetChatTargetMeta(npcId);
         // ---- 主动消息队列（延迟发送，行为做完才告诉你） ----
         // ---- AI 生成主动消息内容 ----
         async function _generateAIMsg(npcId, behaviorKey, behaviorLabel, s, opts){
-          try{
-            var db = loadContactsDB();
-            var npc = findContactById(db, npcId) || { name: String(npcId) };
-            var charEx = _loadCharExtra(npcId);
-            var targetMode = (opts && opts.mode) ? String(opts.mode) : 'online';
-            var promptTs = (opts && opts.atTs) ? Number(opts.atTs) : Date.now();
+  try{
+    var db = loadContactsDB();
+    var npc = findContactById(db, npcId) || { name: String(npcId) };
+    var charEx = _loadCharExtra(npcId);
+    var targetMode = (opts && opts.mode) ? String(opts.mode) : 'online';
+    var promptTs = (opts && opts.atTs) ? Number(opts.atTs) : Date.now();
 
-            // 读最近10条聊天记录作为上下文
-            var recentLogs = [];
-            try{
-              var raw = targetMode === 'online' && typeof _getLogForModeBranch === 'function'
-                ? _getLogForModeBranch(npcId, 'online')
-                : ((loadLogs().map || {})[String(npcId)] || []);
-              recentLogs = _safeArr(raw).slice(-10).map(function(m){
-                return (m.role==='me'?'用户':'角色') + '：' + String(m.text||'').slice(0,80);
-              });
-            }catch(e){}
+    var recentLogs = [];
+    try{
+      var raw = targetMode === 'online' && typeof _getLogForModeBranch === 'function'
+        ? _getLogForModeBranch(npcId, 'online')
+        : ((loadLogs().map || {})[String(npcId)] || []);
+      recentLogs = _safeArr(raw).slice(-10).map(function(m){
+        return (m.role === 'me' ? '用户' : '角色') + '：' + String(m.text || '').slice(0, 80);
+      });
+    }catch(e){}
 
-            var p = s.personality || {};
-            var socialDrive = p.socialDrive != null ? p.socialDrive : 50;
-            var emotionDisplay = p.emotionDisplay != null ? p.emotionDisplay : 50;
-            var personalityBlock = _buildPersonalityPromptBlock(npcId, { concise:true });
+    var p = s.personality || {};
+    var socialDrive = p.socialDrive != null ? p.socialDrive : 50;
+    var emotionDisplay = p.emotionDisplay != null ? p.emotionDisplay : 50;
+    var personalityBlock = _buildPersonalityPromptBlock(npcId, { concise:true });
+    var relationStage = s.bond || '普通';
+    var emotionCtx = _getRecentUserEmotionContext(npcId, targetMode);
 
-            var stateDesc = '';
-            if (s.attrs.energy < 30) stateDesc += '有点累，';
-            if (s.attrs.hunger < 30) stateDesc += '有点饿，';
-            if ((s.attrs.loneliness||0) > 65) stateDesc += '有点想你，';
-            stateDesc += '心情' + (s.moodText||'平静');
+    var stateDesc = '';
+    if (s.attrs.energy < 30) stateDesc += '有点累，';
+    if (s.attrs.hunger < 30) stateDesc += '有点饿，';
+    if ((s.attrs.loneliness || 0) > 65) stateDesc += '有点想你，';
+    stateDesc += '心情' + (s.moodText || '平静');
 
-            var temporalBlock = _buildTemporalPromptBlock(npcId, targetMode, promptTs);
-            var sysPrompt = '你正在扮演「' + (npc.name||npcId) + '」。\n' +
-              (npc.profile || npc.description || charEx.profile || '').slice(0,300) + '\n\n' +
-              (temporalBlock ? temporalBlock + '\n\n' : '') +
-              (personalityBlock ? personalityBlock + '\n\n' : '') +
-              '【行为背景】你刚刚' + behaviorLabel + '，' + stateDesc + '，想主动联系用户。\n' +
-              '【性格】' +
-              (socialDrive > 65 ? '比较主动爱聊天。' : socialDrive < 35 ? '平时话不多，这次难得主动。' : '') +
-              (emotionDisplay > 65 ? '情绪外放。' : emotionDisplay < 35 ? '情绪内敛。' : '') + '\n' +
-              (targetMode === 'online' && charEx.onlineChatPrompt ? '【线上聊天附加要求】\n' + String(charEx.onlineChatPrompt).trim() + '\n' : '') +
-              '【要求】发一条简短自然的消息，2-3句，像真实聊天，不要正式，不要引号，直接输出内容。若当前时段在工作/休息中，要让消息带一点忙里偷闲、稍后看到或刚空下来的感觉。不直接说想你之类的话，而是找话题' +
-              (recentLogs.length ? '\n【最近对话】\n' + recentLogs.join('\n') : '');
+    var temporalBlock = _buildTemporalPromptBlock(npcId, targetMode, promptTs);
+    var summaryBlocks = [];
+    try{
+      var sumOnline = getChatSummary(npcId, 'online');
+      if (sumOnline && sumOnline.summaryText) summaryBlocks.push('【线上关系摘要】\n' + String(sumOnline.summaryText).trim().slice(0, 700));
+    }catch(e){}
+    try{
+      var sumOffline = getChatSummary(npcId, 'offline');
+      if (sumOffline && sumOffline.summaryText) summaryBlocks.push('【线下经历摘要】\n' + String(sumOffline.summaryText).trim().slice(0, 500));
+    }catch(e){}
 
-            var result = await PhoneAI.chat({
-              system: sysPrompt,
-              messages: [{ role:'user', content:'（请直接输出那条消息）' }],
-              temperature: 0.9,
-              maxTokens: 80,
-              timeout: 45,
-              channel: 'proactive'
-            });
-            var proactiveKind = (opts && opts.kind) ? String(opts.kind) : (String(behaviorKey||'').indexOf('daily') >= 0 ? 'daily' : 'random');
-            if (result && result.ok && result.data){
-              var cleanText = String(result.data).trim().replace(/^["「『【]|["」』】]$/g, '').slice(0, 120);
-              if (cleanText){
-                try{ _pushProactiveDebug(npcId, proactiveKind, 'ai_ok', cleanText.slice(0, 80)); }catch(e){}
-                return cleanText;
-              }
-              try{ _setProactiveAttemptState(npcId, proactiveKind, { status:'fail', failReason:'AI 返回空文本' }); _pushProactiveDebug(npcId, proactiveKind, 'ai_empty', 'AI 返回空文本'); }catch(e){}
-              return null;
-            }
-            try{ _setProactiveAttemptState(npcId, proactiveKind, { status:'fail', failReason:(result && result.error) ? String(result.error) : 'AI 请求失败' }); _pushProactiveDebug(npcId, proactiveKind, 'ai_fail', (result && result.error) ? String(result.error) : 'AI 请求失败'); }catch(e){}
-            return null;
-          }catch(e){ console.warn('[LifeEngine] _generateAIMsg error:', e); try{ var proactiveKind2 = (opts && opts.kind) ? String(opts.kind) : (String(behaviorKey||'').indexOf('daily') >= 0 ? 'daily' : 'random'); _setProactiveAttemptState(npcId, proactiveKind2, { status:'fail', failReason:String((e&&e.message)||e||'未知异常') }); _pushProactiveDebug(npcId, proactiveKind2, 'ai_error', String((e&&e.message)||e||'未知异常')); }catch(_e){} return null; }
-        }
+    var smartRule = [
+      '【主动消息生成规则】',
+      '- 先根据关系阶段、最近对话、聊天总结、当前时间，再决定发什么。',
+      '- 不要写成固定模板式的生活播报，不要像系统通知。',
+      '- 如果最近用户在生气、受伤、冷淡，优先修复关系、回应情绪，不要突然转去聊无关日常。',
+      '- 如果关系较近（亲近/暧昧），可以更柔和、更贴近生活；如果关系普通或疏远，要克制有分寸。',
+      '- 内容要像这个角色自己会发的话，而不是万能模板。'
+    ].join('\n');
+    var relationRule = '【关系阶段】当前你和用户的关系：' + relationStage + '。' +
+      (relationStage === '暧昧' ? '可以带一点试探和在意。' :
+      relationStage === '亲近' ? '可以更自然地关心和分享。' :
+      relationStage === '疏远' ? '语气要克制一点，不要太亲密。' : '保持自然、有分寸。');
+    var emotionRule = emotionCtx && emotionCtx.kind && emotionCtx.kind !== 'normal'
+      ? ('【最近用户情绪】' + (emotionCtx.label || '用户情绪有波动') + '。最近用户原话参考：\n' + String(emotionCtx.recentText || '').slice(0, 240))
+      : '';
 
-        // ---- 主动消息队列（存元信息，flush 时再调 AI） ----
+    var sysPrompt = [
+      '你正在扮演「' + (npc.name || npcId) + '」。',
+      String(npc.profile || npc.description || charEx.profile || '').slice(0, 300),
+      temporalBlock || '',
+      personalityBlock || '',
+      relationRule,
+      smartRule,
+      emotionRule || '',
+      '【行为背景】你刚刚' + behaviorLabel + '，' + stateDesc + '，想主动联系用户。',
+      '【性格】' +
+        (socialDrive > 65 ? '比较主动爱聊天。' : socialDrive < 35 ? '平时话不多，这次难得主动。' : '') +
+        (emotionDisplay > 65 ? '情绪外放。' : emotionDisplay < 35 ? '情绪内敛。' : ''),
+      summaryBlocks.join('\n\n'),
+      (targetMode === 'online' && charEx.onlineChatPrompt ? ('【线上聊天附加要求】\n' + String(charEx.onlineChatPrompt).trim()) : ''),
+      '【输出要求】只发 1 条主动消息，像真实聊天软件里会发出的那种。可以是 1-3 句，但总长度尽量控制在 60 字内。若当前时段在工作/休息中，要让消息带一点忙里偷闲、稍后看到或刚空下来的感觉。不要用引号，不要解释自己在执行规则。' + (recentLogs.length ? ('\n【最近对话】\n' + recentLogs.join('\n')) : '')
+    ].filter(Boolean).join('\n\n');
+
+    var result = await PhoneAI.chat({
+      system: sysPrompt,
+      messages: [{ role:'user', content:'（请直接输出那条消息）' }],
+      temperature: 0.9,
+      maxTokens: 80,
+      timeout: 45,
+      channel: 'proactive'
+    });
+    var proactiveKind = (opts && opts.kind) ? String(opts.kind) : (String(behaviorKey || '').indexOf('daily') >= 0 ? 'daily' : 'random');
+    if (result && result.ok && result.data){
+      var cleanText = String(result.data).trim().replace(/^[\"「『【]|[\"」』】]$/g, '').slice(0, 120);
+      if (cleanText){
+        try{ _pushProactiveDebug(npcId, proactiveKind, 'ai_ok', cleanText.slice(0, 80)); }catch(e){}
+        return cleanText;
+      }
+      try{
+        _setProactiveAttemptState(npcId, proactiveKind, { status:'fail', failReason:'AI 返回空文本' });
+        _pushProactiveDebug(npcId, proactiveKind, 'ai_empty', 'AI 返回空文本');
+      }catch(e){}
+      return null;
+    }
+    try{
+      _setProactiveAttemptState(npcId, proactiveKind, { status:'fail', failReason:(result && result.error) ? String(result.error) : 'AI 请求失败' });
+      _pushProactiveDebug(npcId, proactiveKind, 'ai_fail', (result && result.error) ? String(result.error) : 'AI 请求失败');
+    }catch(e){}
+    return null;
+  }catch(e){
+    console.warn('[LifeEngine] _generateAIMsg error:', e);
+    try{
+      var proactiveKind2 = (opts && opts.kind) ? String(opts.kind) : (String(behaviorKey || '').indexOf('daily') >= 0 ? 'daily' : 'random');
+      _setProactiveAttemptState(npcId, proactiveKind2, { status:'fail', failReason:String((e && e.message) || e || '未知异常') });
+      _pushProactiveDebug(npcId, proactiveKind2, 'ai_error', String((e && e.message) || e || '未知异常'));
+    }catch(_e){}
+    return null;
+  }
+}
+
+// ---- 主动消息队列（存元信息，flush 时再调 AI） ----
         function _queueProactiveMsg(npcId, fallbackText, delayMin, behaviorKey, behaviorLabel){
           var delay = Math.max(0, delayMin || 0) * 60000 + _randomBetween(30, 180) * 1000;
           var key = 'msgqueue_' + String(npcId);
@@ -20424,6 +20563,55 @@ const npc = _wxGetChatTargetMeta(npcId);
         // 烦躁
         if (m >= 15) return '烦躁';
         return '生气';
+      }
+
+      function _analyzeUserEmotionSignal(text){
+        var t = String(text || '').trim();
+        var low = t.toLowerCase();
+        if (!t) return { kind:'normal', label:'', bypassSilent:false, bland:true };
+        var bland = /^(嗯+|哦+|喔+|好+|行+|知道了|随便|算了|…|\.\.\.|ok|okay)$/i.test(low);
+        if (/不想理|别烦|滚开|滚|讨厌|烦死|气死|你走|拉黑|别联系|冷静一下|别碰我|闭嘴|别回我/.test(t)) return { kind:'angry', label:'用户在生气或受伤', bypassSilent:true, bland:false };
+        if (/委屈|难过|想哭|崩溃|心情不好|好累|压力好大|睡不着|好烦|烦死了|受不了/.test(t)) return { kind:'sad', label:'用户情绪低落', bypassSilent:true, bland:false };
+        if (/对不起|抱歉|刚才语气不好|是我不好|我错了/.test(t)) return { kind:'apology', label:'用户在道歉或放软', bypassSilent:true, bland:false };
+        if (/在吗|陪我|别走|别不理我|你理理我|想你|抱抱|哄我/.test(t)) return { kind:'need', label:'用户在寻求陪伴或回应', bypassSilent:true, bland:false };
+        return { kind:'normal', label:'', bypassSilent:!bland && t.length >= 2, bland:bland };
+      }
+
+      function _buildUserTurnDirective(npcId, userText, stateObj){
+        try{
+          var emo = _analyzeUserEmotionSignal(userText);
+          var bond = (stateObj && stateObj.bond) || '普通';
+          var notes = [];
+          if (stateObj && stateObj.silentUntil > Date.now() && emo.bypassSilent){
+            notes.push('虽然你刚才想冷静一下或有些累，但用户已经主动来找你了，这一轮必须先接住对方，不要无视。');
+          }
+          if (emo.kind === 'angry'){
+            notes.push('用户这条消息明显在生气、受伤或想推开你。先回应情绪、解释或安抚，再决定要不要提别的话题。');
+            notes.push(bond === '亲近' || bond === '暧昧' ? '关系较近，可以放软、哄人、示弱一点，但仍保持角色性格。' : '关系还没那么近，安抚要克制、有分寸，不要油腻。');
+            notes.push('禁止把回复写成机械的日常播报，禁止突然聊无关小事。');
+          } else if (emo.kind === 'sad'){
+            notes.push('用户情绪低落，先安抚、陪伴、接情绪，不要先讲道理。');
+          } else if (emo.kind === 'apology'){
+            notes.push('用户在道歉或放软，顺着情绪接住对方，给回应，不要故意装作没看见。');
+          } else if (emo.kind === 'need'){
+            notes.push('用户现在想要你的回应或陪伴，回复要更及时、更有人味。');
+          } else if (stateObj && stateObj.silentUntil > Date.now() && emo.bypassSilent){
+            notes.push('不要因为沉默设定而跳过这轮回复，先自然回一句。');
+          }
+          return { bypassSilent: !!emo.bypassSilent, prompt: notes.join('\n') };
+        }catch(e){ return { bypassSilent:false, prompt:'' }; }
+      }
+
+      function _getRecentUserEmotionContext(npcId, targetMode){
+        try{
+          var raw = targetMode === 'online' && typeof _getLogForModeBranch === 'function'
+            ? _getLogForModeBranch(npcId, 'online')
+            : ((loadLogs().map || {})[String(npcId)] || []);
+          var userTexts = _safeArr(raw).filter(function(m){ return m && m.role === 'me' && m.text; }).slice(-4).map(function(m){ return String(m.text || '').slice(0, 120); });
+          var joined = userTexts.join('\n');
+          var emo = _analyzeUserEmotionSignal(joined);
+          return { kind: emo.kind, label: emo.label, recentText: joined };
+        }catch(e){ return { kind:'normal', label:'', recentText:'' }; }
       }
 
       function _updateCharStateFromMsg(npcId, userText){
@@ -22342,6 +22530,8 @@ const npc = _wxGetChatTargetMeta(npcId);
         // ===【B3】更新角色状态（纯规则，不调 API）===
         var charStateNow = null;
         try{ charStateNow = _updateCharStateFromMsg(npcId, text); }catch(e){}
+        var userTurnDirective = { bypassSilent:false, prompt:'' };
+        try{ userTurnDirective = _buildUserTurnDirective(npcId, text, charStateNow); }catch(e){}
 
         // === AI 自动回复 ===
         try{
@@ -22357,7 +22547,7 @@ const npc = _wxGetChatTargetMeta(npcId);
           if (isBlacklisted(npc.name) || isBlacklisted(npc.id)) return;
 
           // ===【B3】沉默期检测：处于沉默期则延迟回复 ===
-          if (charStateNow && charStateNow.silentUntil > Date.now()){
+          if (charStateNow && charStateNow.silentUntil > Date.now() && !(userTurnDirective && userTurnDirective.bypassSilent)){
             var leftMs = charStateNow.silentUntil - Date.now();
             var seqBeforeSilent = PhoneAI._replySeqId;
             setTimeout(function(){
@@ -22410,7 +22600,10 @@ const npc = _wxGetChatTargetMeta(npcId);
           // 2. 构建上下文
           const contextN = _getChatContextN();
           const contextMessages = _getRecentMessagesForAPI(npcId, contextN);
-          const systemPrompt = buildSystemPrompt(npcId);
+          let systemPrompt = buildSystemPrompt(npcId);
+          if (userTurnDirective && userTurnDirective.prompt){
+            systemPrompt += '\n\n【当前这一轮回复要求】\n' + String(userTurnDirective.prompt).trim();
+          }
 
           // 3. 调用 API（线下模式回复像小说，字数多，超时时间加长）
           var _isOffline = (typeof _getChatMode === 'function') && _getChatMode(npcId) === 'offline';
@@ -22433,7 +22626,8 @@ const npc = _wxGetChatTargetMeta(npcId);
             // AbortError 静默（error 为 null）
             if (result.error){
               try{ _markPendingChatReply(npcId, { status:'pending', lastError:String(result.error), lastTryAt:Date.now(), source:'chat_request_fail' }); }catch(_e){}
-              try{ toast(_classifyRecoverableChatError(result.error) ? '连接中断，回到页面后会自动补发' : result.error); }catch(e){}
+              try{ if (_classifyRecoverableChatError(result.error)) _schedulePendingChatReplyRecovery('send_fail_retry', 1200, npcId); }catch(_e){}
+              try{ toast(_classifyRecoverableChatError(result.error) ? '连接中断，正在自动重试回复' : result.error); }catch(e){}
             }
             return;
           }
@@ -22494,6 +22688,7 @@ const npc = _wxGetChatTargetMeta(npcId);
         }catch(e){
           _hideTypingIndicator();
           try{ _markPendingChatReply(npcId, { status:'pending', lastError:String((e&&e.message)||e||'未知异常'), lastTryAt:Date.now(), source:'chat_exception' }); }catch(_e){}
+          try{ _schedulePendingChatReplyRecovery('chat_exception_retry', 1200, npcId); }catch(_e){}
           // 不崩原则：吞掉异常，不影响后续操作
           try{ if (e && e.name !== 'AbortError') console.warn('[PhoneAI]', e); }catch(_){}
         }
@@ -28281,20 +28476,13 @@ function _getTimelinePendingRange(npcId, mode, maxChunk){
 
     // ★ 思路二：优先用 tailHashes 定位，不依赖位置索引
     if(lastEntry.tailHashes && lastEntry.tailHashes.length > 0){
-      // 在日志里从后往前找能匹配 tailHashes 任意一条的最晚位置
-      var hashSet = {};
-      lastEntry.tailHashes.forEach(function(h){ hashSet[h] = true; });
-      var matchIdx = -1;
-      for(var i = log.length - 1; i >= 0; i--){
-        if(hashSet[_msgHash(log[i])]){
-          matchIdx = i;
-          break;
-        }
-      }
+      // 必须按顺序匹配“末尾连续几条消息”，不能只命中任意一条
+      // 否则一旦后面又出现同一句/同长度消息，就会把中间消息误跳过
+      var matchIdx = _findTailHashSeqEnd(log, lastEntry.tailHashes);
       if(matchIdx >= 0){
-        lastEnd = matchIdx + 1; // 从匹配到的最晚那条之后继续
+        lastEnd = matchIdx + 1; // 从上一块真正的末尾之后继续
       } else {
-        // 所有3条都找不到（消息被删了）→ fallback 到 range 索引
+        // 连续尾指纹找不到（消息被删/改）→ fallback 到 range 索引
         lastEnd = Math.min(lastEntry.range[1] + 1, log.length);
       }
     } else {
@@ -28341,7 +28529,15 @@ function _tlApiClearQueue(){
 }
 
 function _generateSourceHash(msgs){
-  var str = msgs.map(function(m){ return (m.role||'') + ':' + String(m.text||'').length; }).join('|');
+  var str = _safeArr(msgs).map(function(m){
+    return [
+      m && m.role || '',
+      Number(m && m.t || 0),
+      String(m && m.text || ''),
+      m && m.mode || '',
+      m && m.branch || ''
+    ].join('||');
+  }).join('\n---\n');
   var hash = 0;
   for (var i = 0; i < str.length; i++){
     hash = ((hash << 5) - hash) + str.charCodeAt(i);
@@ -28350,9 +28546,15 @@ function _generateSourceHash(msgs){
   return 'h_' + Math.abs(hash).toString(36);
 }
 
-// 对单条消息生成短哈希（用于思路二：末尾3条消息定位）
+// 对单条消息生成短哈希（用于时间线进度定位）
 function _msgHash(m){
-  var str = (m.role||'') + '|' + String(m.text||'').slice(0, 80);
+  var str = [
+    m && m.role || '',
+    Number(m && m.t || 0),
+    String(m && m.text || ''),
+    m && m.mode || '',
+    m && m.branch || ''
+  ].join('|');
   var h = 0;
   for(var i = 0; i < str.length; i++){ h = ((h << 5) - h) + str.charCodeAt(i); h |= 0; }
   return Math.abs(h).toString(36);
@@ -28360,7 +28562,23 @@ function _msgHash(m){
 
 // 生成区间末尾最多3条消息的哈希数组（用于定位总结进度）
 function _tailHashes(msgs){
-  return msgs.slice(-3).map(_msgHash);
+  return _safeArr(msgs).slice(-3).map(_msgHash);
+}
+
+// 在日志中查找“末尾 3 条消息哈希”这段连续序列最后一条的位置
+function _findTailHashSeqEnd(log, tailHashes){
+  var hashes = _safeArr(tailHashes).filter(Boolean);
+  if (!hashes.length) return -1;
+  if (!log || !log.length) return -1;
+  var need = hashes.length;
+  for (var end = log.length - 1; end >= need - 1; end--){
+    var ok = true;
+    for (var k = 0; k < need; k++){
+      if (_msgHash(log[end - need + 1 + k]) !== hashes[k]){ ok = false; break; }
+    }
+    if (ok) return end;
+  }
+  return -1;
 }
 
 // 独立版本的 entry display 重建（供 _generateTimelineEntry 内部去重使用）
@@ -28369,7 +28587,7 @@ function _rebuildEntryDisplayText(entry){
   var s = entry.structured, display = [];
   if (s.storyTime) display.push('⏰ ' + s.storyTime);
   if (s.facts && s.facts.length) display.push('📋 事实：\n' + s.facts.map(function(f){ return '  · ' + f; }).join('\n'));
-  if (s.quotes && s.quotes.length) display.push('💬 原话：\n' + s.quotes.map(function(q){ return '  「' + q + '」'; }).join('\n'));
+  if (s.quotes && s.quotes.length) display.push('💬 原话：\n' + s.quotes.map(function(q){ var v = (q && typeof q === 'object') ? (q.text || q.quote || JSON.stringify(q)) : q; return '  「' + String(v||'') + '」'; }).join('\n'));
   if (s.events && s.events.length) display.push('📌 事件：\n' + s.events.map(function(t){ return '  · ' + t; }).join('\n'));
   else if (s.turning && s.turning.length) display.push('📌 事件：\n' + s.turning.map(function(t){ return '  · ' + t; }).join('\n'));
   if (s.props && s.props.length) display.push('🎒 道具：' + s.props.join('、'));
@@ -28397,7 +28615,8 @@ async function _generateTimelineEntry(npcId, fromIdx, toIdx, mode, opts){
 
   // 消息正文不加时间前缀，日期范围单独作为上下文注入
   var dialogText = selected.map(function(m){
-    return (m.role === 'me' ? '用户' : npc.name) + ': ' + String(m.text||'').slice(0, 300);
+    var _txt = (m && typeof m.text === 'object') ? JSON.stringify(m.text) : String(m && m.text || '');
+    return (m.role === 'me' ? '用户' : npc.name) + ': ' + _txt.slice(0, 300);
   }).join('\n');
 
   // 计算这批消息的真实日期范围
