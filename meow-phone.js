@@ -8997,9 +8997,29 @@ function walletEarn(amount, reason){
           if (extraData.status) entry.status = String(extraData.status);
           if (extraData.relations) entry.relations = String(extraData.relations);
           if (extraData.profile) entry.profile = String(extraData.profile);
+          if (extraData.personality) entry.personality = String(extraData.personality);
+          if (extraData.hobby) entry.hobby = String(extraData.hobby);
+          if (extraData.address) entry.address = String(extraData.address);
+          if (extraData.occupation) entry.occupation = String(extraData.occupation);
         }
         c.list.push(entry);
         saveCandidates(c);
+      }
+
+      function _buildCandidateProfileText(cand){
+        if (!cand || typeof cand !== 'object') return '';
+        const lines = [];
+        const profile = String(cand.profile || '').trim();
+        if (profile) return profile;
+        if (cand.identity) lines.push('身份：' + String(cand.identity).trim());
+        if (cand.occupation) lines.push('职业：' + String(cand.occupation).trim());
+        if (cand.address) lines.push('住址：' + String(cand.address).trim());
+        if (cand.personality) lines.push('性格：' + String(cand.personality).trim());
+        if (cand.hobby) lines.push('爱好：' + String(cand.hobby).trim());
+        if (cand.relations) lines.push('关系：' + String(cand.relations).trim());
+        if (cand.appearance) lines.push('外貌：' + String(cand.appearance).trim());
+        if (cand.status) lines.push('状态：' + String(cand.status).trim());
+        return lines.join('\n');
       }
       function removeCandidateByName(name){
         const c = loadCandidates();
@@ -10593,6 +10613,165 @@ ${lines}
         }catch(e){}
       }
 
+      function _buildAIFriendUserContext(){
+        const parts = [];
+        try{
+          const persona = _readSTPersona();
+          if (persona){
+            if (persona.name) parts.push('用户名称：' + String(persona.name).trim());
+            if (persona.description) parts.push('用户人设：' + String(persona.description).trim().slice(0, 600));
+          }
+        }catch(e){}
+        try{
+          const settings = phoneLoadSettings();
+          if (settings && settings.phoneName) parts.push('小手机昵称：' + String(settings.phoneName).trim());
+        }catch(e){}
+        try{
+          const ctx = meowGetSTCtx();
+          if (ctx && Array.isArray(ctx.chat)){
+            const recent = ctx.chat.filter(function(m){ return m && m.is_user && m.mes; }).slice(-6).map(function(m){ return String(m.mes || '').replace(/\s+/g, ' ').trim().slice(0, 120); }).filter(Boolean);
+            if (recent.length) parts.push('用户最近说过的话：\n- ' + recent.join('\n- '));
+          }
+        }catch(e){}
+        return parts.join('\n\n') || '暂无更多用户资料，请根据当前世界观生成一个自然的新朋友。';
+      }
+
+      function _parseAIFriendCandidate(raw){
+        try{
+          let txt = String(raw || '').trim();
+          if (!txt) return null;
+          txt = txt.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
+          const tries = [txt];
+          const m = txt.match(/\{[\s\S]*\}/);
+          if (m && m[0]) tries.push(m[0]);
+          for (let i = 0; i < tries.length; i++){
+            try{
+              let obj = JSON.parse(tries[i]);
+              if (obj && typeof obj === 'object' && !Array.isArray(obj)){
+                if (obj.friend && typeof obj.friend === 'object') obj = obj.friend;
+                else if (obj.candidate && typeof obj.candidate === 'object') obj = obj.candidate;
+              }
+              if (Array.isArray(obj)) obj = obj[0];
+              if (!obj || typeof obj !== 'object') continue;
+              const out = {
+                name: String(obj.name || obj.nickname || '').trim(),
+                identity: String(obj.identity || '').trim(),
+                occupation: String(obj.occupation || obj.job || obj.profession || '').trim(),
+                address: String(obj.address || obj.location || obj.residence || '').trim(),
+                personality: String(obj.personality || obj.character || '').trim(),
+                hobby: String(obj.hobby || obj.hobbies || obj.interests || '').trim(),
+                relations: String(obj.relations || obj.relationship || obj.relation || '').trim(),
+                appearance: String(obj.appearance || '').trim(),
+                status: String(obj.status || '').trim(),
+                profile: String(obj.profile || '').trim()
+              };
+              if (!out.name) continue;
+              if (!out.profile){
+                const lines = [];
+                if (out.identity) lines.push('身份：' + out.identity);
+                if (out.occupation) lines.push('职业：' + out.occupation);
+                if (out.address) lines.push('住址：' + out.address);
+                if (out.personality) lines.push('性格：' + out.personality);
+                if (out.hobby) lines.push('爱好：' + out.hobby);
+                if (out.relations) lines.push('关系：' + out.relations);
+                if (out.appearance) lines.push('外貌：' + out.appearance);
+                if (out.status) lines.push('状态：' + out.status);
+                out.profile = lines.join('\n');
+              }
+              if (!out.identity){
+                const idParts = [];
+                if (out.occupation) idParts.push('职业：' + out.occupation);
+                if (out.address) idParts.push('住址：' + out.address);
+                out.identity = idParts.join('；');
+              }
+              return out;
+            }catch(e){}
+          }
+        }catch(e){}
+        return null;
+      }
+
+      async function _generateAIFriendCandidate(parentContainer){
+        if (typeof PhoneAI === 'undefined' || !PhoneAI || typeof PhoneAI.chat !== 'function'){
+          try{ toast('AI 模块未就绪'); }catch(e){}
+          return false;
+        }
+        const db = loadContactsDB();
+        const stored = loadCandidates();
+        const existedNames = _uniq([].concat(
+          _safeArr(db.list).map(function(c){ return c && c.name; }),
+          _safeArr(stored.list).map(function(c){ return c && c.name; })
+        )).slice(0, 80);
+
+        let userName = '用户';
+        try{
+          const persona = _readSTPersona();
+          if (persona && persona.name) userName = String(persona.name).trim() || userName;
+          else {
+            const settings = phoneLoadSettings();
+            if (settings && settings.phoneName) userName = String(settings.phoneName).trim() || userName;
+          }
+        }catch(e){}
+
+        const systemPrompt = [
+          '你是 MEOW Phone 的“新的朋友生成器”。',
+          '请根据用户信息和当前世界观，生成 1 个与用户强相关、可以自然出现在通讯录里的新好友候选。',
+          '这个人必须和用户有现实或剧情上的连接，例如：同事、邻居、同学、店主、房东、朋友的朋友、旧识、合作对象。',
+          '名字要自然，不要像系统名、网名、模板名。',
+          '不要与已有联系人重名。',
+          '不要写解释，不要写代码块，只返回一个 JSON 对象。',
+          'JSON 字段：name, identity, occupation, address, personality, hobby, relations, appearance, status, profile'
+        ].join('\n');
+
+        const userPrompt = [
+          '当前用户：' + userName,
+          '',
+          '【用户相关信息】',
+          _buildAIFriendUserContext(),
+          '',
+          '【已有联系人或候选，禁止重名】',
+          existedNames.length ? existedNames.join('、') : '无',
+          '',
+          '请生成 1 个最适合现在加入“新的朋友”的候选。只返回 JSON。'
+        ].join('\n');
+
+        const ret = await PhoneAI.chat({
+          system: systemPrompt,
+          messages: [{ role:'user', content:userPrompt }],
+          temperature: 0.95,
+          maxTokens: 520,
+          timeout: 45,
+          channel: 'background'
+        });
+
+        if (!ret || !ret.ok || !ret.data){
+          try{ toast(ret && ret.error ? ('生成失败：' + ret.error) : '生成失败'); }catch(e){}
+          return false;
+        }
+
+        const cand = _parseAIFriendCandidate(ret.data);
+        if (!cand || !cand.name){
+          try{ toast('AI 返回格式无法解析'); }catch(e){}
+          return false;
+        }
+
+        addCandidate(cand.name, 'ai', {
+          identity: cand.identity,
+          appearance: cand.appearance,
+          status: cand.status,
+          relations: cand.relations,
+          profile: cand.profile,
+          personality: cand.personality,
+          hobby: cand.hobby,
+          address: cand.address,
+          occupation: cand.occupation
+        });
+
+        if (parentContainer) _renderNewFriendsPage(parentContainer);
+        try{ toast('已生成新好友：' + cand.name); }catch(e){}
+        return true;
+      }
+
       // ========== C1: 新的朋友 子页面（四种导入方式 + 候选列表） ==========
       function _renderNewFriendsPage(parentContainer){
         // 合并：持久化候选列表，去掉已是好友的
@@ -10621,6 +10800,7 @@ ${lines}
         html += '<div class="wxContactHeader" data-act="c1ImportWB" style="margin:0;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;"><div class="wxCHIco">'+ _phFlatIcon('📖') +'</div><div class="wxCHName" style="flex:1;">世界书角色导入</div><div class="wxDArrow" style="color:var(--ph-text-dim)">›</div></div>';
         html += '<div class="wxContactHeader" data-act="c1ImportSTCard" style="margin:0;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;"><div class="wxCHIco">'+ _phFlatIcon('🎭') +'</div><div class="wxCHName" style="flex:1;">酒馆角色卡导入</div><div class="wxDArrow" style="color:var(--ph-text-dim)">›</div></div>';
         html += '<div class="wxContactHeader" data-act="c1ImportPersona" style="margin:0;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;"><div class="wxCHIco">'+ _phFlatIcon('👤') +'</div><div class="wxCHName" style="flex:1;">用户人设导入</div><div class="wxDArrow" style="color:var(--ph-text-dim)">›</div></div>';
+        html += '<div class="wxContactHeader" data-act="c1AIFriend" style="margin:0;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;"><div class="wxCHIco">'+ _phFlatIcon('✨') +'</div><div class="wxCHName" style="flex:1;">AI 生成相关好友</div><div class="wxDArrow" style="color:var(--ph-text-dim)">›</div></div>';
         html += '<div class="wxContactHeader" data-act="c1ScanMain" style="margin:0;padding:12px 14px;cursor:pointer;"><div class="wxCHIco">'+ _phFlatIcon('🔍') +'</div><div class="wxCHName" style="flex:1;">主线扫描</div><div class="wxDArrow" style="color:var(--ph-text-dim)">›</div></div>';
         html += '</div>';
 
@@ -10628,13 +10808,18 @@ ${lines}
         if (merged.length){
           html += '<div style="padding:16px 14px 4px;font-size:12px;color:rgba(20,24,28,.4);font-weight:500;display:flex;align-items:center;justify-content:space-between;"><span>候选联系人 (' + merged.length + ')</span><button data-act="wxHideAllCand" style="appearance:none;border:0;background:transparent;color:rgba(20,24,28,.35);font-size:11px;cursor:pointer;">全部清除</button></div>';
           for (const c of merged){
-            const srcTag = c.source === 'worldbook' ? _phFlatIcon('📖') : (c.source === 'stcard' ? _phFlatIcon('🎭') : (c.source === 'persona' ? _phFlatIcon('👤') : (c.source === 'scan' ? _phFlatIcon('🔍') : _phFlatIcon('➕'))));
-            const profileSnip = (c.identity || c.profile || '').slice(0,40);
+            const srcTag = c.source === 'worldbook' ? _phFlatIcon('📖') : (c.source === 'stcard' ? _phFlatIcon('🎭') : (c.source === 'persona' ? _phFlatIcon('👤') : (c.source === 'scan' ? _phFlatIcon('🔍') : (c.source === 'ai' ? _phFlatIcon('✨') : _phFlatIcon('➕')))));
+            const profileText = _buildCandidateProfileText(c);
+            const profileSnip = profileText.slice(0,40);
+            const metaTop = [c.occupation, c.address].filter(Boolean).join('｜');
+            const metaBottom = [c.personality, c.hobby].filter(Boolean).join('｜');
             html += '<div class="wxContactItem" style="display:flex;align-items:center;padding:10px 14px;">';
             html += '<div class="wxCIAvatar" style="background:var(--ph-glass-strong);border:1px solid var(--ph-glass-border);flex-shrink:0;font-size:0;display:flex;align-items:center;justify-content:center;">' + srcTag + '</div>';
             html += '<div style="flex:1;margin-left:10px;overflow:hidden;">';
             html += '<div class="wxCIName" style="font-size:14px;">' + esc(c.name) + '</div>';
-            if (profileSnip) html += '<div style="font-size:11px;color:rgba(20,24,28,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(profileSnip) + '</div>';
+            if (metaTop) html += '<div style="font-size:11px;color:rgba(20,24,28,.46);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;">' + esc(metaTop) + '</div>';
+            else if (profileSnip) html += '<div style="font-size:11px;color:rgba(20,24,28,.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;">' + esc(profileSnip) + '</div>';
+            if (metaBottom) html += '<div style="font-size:11px;color:rgba(20,24,28,.38);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;">' + esc(metaBottom) + '</div>';
             html += '</div>';
             html += '<button data-act="phAcceptCand" data-name="' + esc(c.name) + '" style="appearance:none;border:0;background:var(--ph-accent,var(--ph-accent, #07c160));color:#fff;width:32px;height:32px;border-radius:50%;font-size:18px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px var(--ph-shadow);">+</button>';
             html += '</div>';
@@ -10675,6 +10860,26 @@ ${lines}
           btn.addEventListener('click', ()=> _doPersonaImport(parentContainer));
         });
 
+        // C1: AI 生成一个与 user 相关的新好友
+        parentContainer.querySelectorAll('[data-act="c1AIFriend"]').forEach(btn=>{
+          btn.addEventListener('click', async ()=>{
+            if (btn.dataset.busy === '1') return;
+            const oldHtml = btn.innerHTML;
+            btn.dataset.busy = '1';
+            btn.style.pointerEvents = 'none';
+            btn.innerHTML = '<div class="wxCHIco">' + _phFlatIcon('✨') + '</div><div class="wxCHName" style="flex:1;">生成中…</div><div class="wxDArrow" style="color:var(--ph-text-dim)">···</div>';
+            try{
+              await _generateAIFriendCandidate(parentContainer);
+            }finally{
+              if (btn.isConnected){
+                btn.dataset.busy = '0';
+                btn.style.pointerEvents = '';
+                btn.innerHTML = oldHtml;
+              }
+            }
+          });
+        });
+
         // C1: 主线扫描（已限制 ≤ 5）
         parentContainer.querySelectorAll('[data-act="c1ScanMain"]').forEach(btn=>{
           btn.addEventListener('click', ()=>{
@@ -10700,7 +10905,7 @@ ${lines}
             const cand = _safeArr(loadCandidates().list).find(x => x.name === n.trim());
             addOrUpdateNPC({
               name: n.trim(), alias: [],
-              profile: (cand && cand.profile) || '',
+              profile: _buildCandidateProfileText(cand),
               source: (cand && cand.source) || '',
               identity: (cand && cand.identity) || '',
               appearance: (cand && cand.appearance) || '',
@@ -11896,10 +12101,75 @@ ${lines}
       }
       function _saveStickerPacks(d){ phoneSetG('sticker_packs_v1', d); }
 
+      function _openStickerCharGroupPicker(container){
+        try{
+          root.querySelectorAll('.wxConfirmOverlay').forEach(function(o){ o.remove(); });
+          const contacts = _safeArr(loadContactsDB().list).filter(function(c){ return c && (c.name || c.id); });
+          if (!contacts.length){ try{ toast('通讯录没有联系人'); }catch(e){} return; }
+
+          const packs = _loadStickerPacks();
+          const overlay = doc.createElement('div');
+          overlay.className = 'wxConfirmOverlay';
+
+          let html = `<div class="wxConfirmBox" style="min-width:280px;max-width:320px;width:calc(100% - 36px);text-align:left;max-height:78vh;overflow:hidden;display:flex;flex-direction:column;">
+            <div style="font-weight:700;font-size:15px;color:var(--ph-text);margin-bottom:8px;">选择好友创建专属表情包</div>
+            <div style="font-size:12px;color:var(--ph-text-sub);margin-bottom:12px;line-height:1.5;">直接从现有好友里选一个，立刻建立对应的专属表情分组。</div>
+            <div style="display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow:auto;padding-right:2px;">`;
+
+          contacts.forEach(function(c){
+            const cid = String(c.id || c.name || '');
+            const cname = String(c.name || c.id || '未命名');
+            const existed = !!((packs.charGroups || {})[cid]);
+            const av = phoneGetAvatar(cid);
+            const avatarHtml = av
+              ? `<img src="${esc(av)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;"/>`
+              : esc((c.avatar || cname || '?').charAt(0));
+            html += `<button data-act="stkCgPickOne" data-cid="${esc(cid)}" data-cname="${esc(cname)}" style="appearance:none;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.92);border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left;">
+              <div style="width:34px;height:34px;border-radius:10px;overflow:hidden;flex-shrink:0;background:rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;font-size:15px;color:rgba(20,24,28,.72);">${avatarHtml}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:var(--ph-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(cname)}</div>
+                <div style="font-size:11px;color:var(--ph-text-sub);margin-top:2px;">${existed ? '已创建专属分组，点此进入' : '创建新的专属分组'}</div>
+              </div>
+              <div style="font-size:11px;color:${existed ? 'var(--ph-accent, #07c160)' : 'rgba(20,24,28,.4)'};font-weight:600;flex-shrink:0;">${existed ? '进入' : '创建'}</div>
+            </button>`;
+          });
+
+          html += `</div>
+            <div style="display:flex;gap:10px;margin-top:14px;">
+              <button data-act="stkCgPickCancel" style="flex:1;padding:10px 0;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.78);color:var(--ph-text);font-size:13px;cursor:pointer;">取消</button>
+            </div>
+          </div>`;
+          overlay.innerHTML = html;
+          root.appendChild(overlay);
+
+          overlay.addEventListener('click', function(e){ if (e.target === overlay) overlay.remove(); });
+          overlay.querySelector('[data-act="stkCgPickCancel"]')?.addEventListener('click', function(){ overlay.remove(); });
+          overlay.querySelectorAll('[data-act="stkCgPickOne"]').forEach(function(btn){
+            btn.addEventListener('click', function(){
+              const cid = String(btn.getAttribute('data-cid') || '').trim();
+              const cname = String(btn.getAttribute('data-cname') || '').trim() || cid;
+              if (!cid) return;
+              const nextPacks = _loadStickerPacks();
+              if (!nextPacks.charGroups) nextPacks.charGroups = {};
+              const existed = !!nextPacks.charGroups[cid];
+              if (!nextPacks.charGroups[cid]) nextPacks.charGroups[cid] = [];
+              _saveStickerPacks(nextPacks);
+              container.__stickerGroup = 'cg_' + cid;
+              overlay.remove();
+              try{ toast(existed ? '已进入「' + cname + '」专属分组' : '已创建「' + cname + '」专属分组'); }catch(e){}
+              _renderStickersPage(container);
+            });
+          });
+        }catch(e){
+          console.warn('[MEOW][Sticker] open picker error:', e);
+          try{ toast('打开好友列表失败'); }catch(_e){}
+        }
+      }
+
       function _renderStickersPage(container){
         const packs = _loadStickerPacks();
         // 已有专属分组
-        const _cgKeys = Object.keys(packs.charGroups||{}).filter(function(k){ return _safeArr((packs.charGroups||{})[k]).length > 0; });
+        const _cgKeys = Object.keys(packs.charGroups||{});
         const _cgContacts = _safeArr(loadContactsDB().list);
         const _cgGroups = _cgKeys.map(function(cid){
           const _nc = _cgContacts.find(function(c){ return c.id===cid||c.name===cid; }) || { name: cid };
@@ -11966,21 +12236,7 @@ ${lines}
         container.querySelectorAll('[data-act="stkGroup"]').forEach(b => b.addEventListener('click',()=>{
           const _gk = b.getAttribute('data-gkey');
           if (_gk === '__newcg__'){
-            // 新建角色专属分组
-            const _ncCList = _safeArr(loadContactsDB().list);
-            if (!_ncCList.length){ try{toast('通讯录没有联系人');}catch(e){} return; }
-            const _ncNames = _ncCList.map(function(c){ return c.name||c.id; }).join('、');
-            const _ncSel = prompt('输入要建立专属表情的角色名：\n可选：' + _ncNames);
-            if (!_ncSel || !_ncSel.trim()) return;
-            const _ncFound = _ncCList.find(function(c){ return (c.name||'')=== _ncSel.trim()||(c.id||'')===_ncSel.trim(); });
-            const _ncId = _ncFound ? (_ncFound.id||_ncFound.name||_ncSel.trim()) : _ncSel.trim();
-            const _ncPacks = _loadStickerPacks();
-            if (!_ncPacks.charGroups) _ncPacks.charGroups = {};
-            if (!_ncPacks.charGroups[_ncId]) _ncPacks.charGroups[_ncId] = [];
-            _saveStickerPacks(_ncPacks);
-            container.__stickerGroup = 'cg_' + _ncId;
-            try{toast('已创建「'+_ncSel.trim()+'」专属分组，上传表情后即可在聊天中使用');}catch(e){}
-            _renderStickersPage(container);
+            _openStickerCharGroupPicker(container);
             return;
           }
           container.__stickerGroup = _gk;
