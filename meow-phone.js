@@ -6620,8 +6620,16 @@ function buildHTML(){
                 _openSceneEditor(offNid);
               }
             } else {
-              // ★ 退出线下时：后台静默总结剩余未总结消息
-              _tlSilentSummaryIfNeeded(offNid, 'offline');
+              // ★ 退出线下时：检查是否有未总结内容，有则弹选项
+              var _exitPending = _getPendingForNpc(offNid, 'offline');
+              var _hasUnsummarized = _exitPending && (_exitPending.toIdx - _exitPending.fromIdx + 1) >= 3;
+              if (_hasUnsummarized){
+                // 弹出选项浮层（手机框内风格）
+                _showExitSummaryDialog(offNid);
+                renderChatDetail(offNid);
+                try{ toast('💬 已切换到在线模式'); }catch(e){}
+                return;
+              }
             }
             renderChatDetail(offNid);
             try{ toast(newMode === 'offline' ? '☕ 已切换到线下模式' : '💬 已切换到在线模式'); }catch(e){}
@@ -23291,17 +23299,14 @@ const npc = _wxGetChatTargetMeta(npcId);
           var ce = _loadCharExtra(npcId);
           if (ce.autoSummary){
             var curMode = _normChatMode(_getChatMode(npcId));
-            // ★ 线上线下分别用各自的N
-            var everyN = curMode === 'offline'
-              ? Math.max(5, ce.autoSumEveryOffline || 30)
-              : Math.max(5, ce.autoSumEvery || 20);
-            // 用 _getTimelinePendingRange 检查是否有足够的未总结消息
-            var pending = _getTimelinePendingRange(npcId, curMode, everyN);
-            if (pending && (pending.toIdx - pending.fromIdx + 1) >= everyN){
-              console.log('[AutoSum] 触发: 待总结 #'+(pending.fromIdx+1)+'~'+(pending.toIdx+1));
-              setTimeout(function(){
-                _triggerAutoSummary(npcId, curMode);
-              }, 2000);
+            // ★ 线下模式不走自动触发（只走切场景/退出线下），避免重复总结
+            if (curMode !== 'offline'){
+              var everyN = Math.max(5, ce.autoSumEvery || 20);
+              var pending = _getTimelinePendingRange(npcId, curMode, everyN);
+              if (pending && (pending.toIdx - pending.fromIdx + 1) >= everyN){
+                console.log('[AutoSum] 触发(线上): 待总结 #'+(pending.fromIdx+1)+'~'+(pending.toIdx+1));
+                setTimeout(function(){ _triggerAutoSummary(npcId, curMode); }, 2000);
+              }
             }
           }
         }catch(e){}
@@ -26916,26 +26921,70 @@ function _saveSceneData(npcId, data){
   _phSave('scene_'+String(npcId), data);
 }
 
+// ★ 显示退出线下时的总结选项弹框（手机框内风格）
+function _showExitSummaryDialog(npcId){
+  var ov = doc.createElement('div');
+  ov.style.cssText = 'position:absolute;inset:0;z-index:9999;display:flex;align-items:flex-end;padding:0 0 80px;justify-content:center;';
+  ov.innerHTML = '<div style="width:calc(100% - 28px);background:var(--ph-glass,rgba(255,255,255,.95));backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:16px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.08));padding:16px 14px 12px;box-shadow:0 4px 24px rgba(0,0,0,.12);">'
+    + '<div style="font-size:13px;font-weight:600;color:var(--ph-text,rgba(20,24,28,.88));margin-bottom:4px;">剧情记录</div>'
+    + '<div style="font-size:11px;color:var(--ph-text-sub,rgba(20,24,28,.45));margin-bottom:12px;">本次线下有未总结的消息，需要现在记录吗？</div>'
+    + '<div style="display:flex;gap:8px;">'
+    + '<button data-el="exitSumLater" style="flex:1;padding:9px;border-radius:10px;border:1px solid var(--ph-glass-border,rgba(0,0,0,.08));background:var(--ph-glass,rgba(255,255,255,.9));font-size:12px;color:var(--ph-text-sub,rgba(20,24,28,.5));cursor:pointer;">下次再总结</button>'
+    + '<button data-el="exitSumNow" style="flex:2;padding:9px;border-radius:10px;border:0;background:var(--ph-accent,#07c160);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">退出并总结</button>'
+    + '</div></div>';
+
+  var phoneEl = root;
+  if (phoneEl) phoneEl.appendChild(ov);
+
+  ov.querySelector('[data-el="exitSumLater"]').addEventListener('click', function(){
+    ov.remove();
+  });
+  ov.querySelector('[data-el="exitSumNow"]').addEventListener('click', function(){
+    ov.remove();
+    _tlSilentSummaryIfNeeded(npcId, 'offline');
+  });
+}
+
+// ★ 静默总结（切场景触发），带手机框内可见进度提示
 async function _tlSilentSummaryIfNeeded(npcId, mode){
   try{
     var apiCfg = PhoneAI._getConfig('background');
     if (!apiCfg.endpoint || !apiCfg.key) return;
     var pending = _getPendingForNpc(npcId, mode);
     if (!pending || (pending.toIdx - pending.fromIdx + 1) < 3) return;
-    console.log('[TL] 场景切换后台总结', pending.toIdx-pending.fromIdx+1, '条');
-    try{ toast('📋 场景切换，正在后台记录…'); }catch(e){}
+    var _cnt = pending.toIdx - pending.fromIdx + 1;
+    console.log('[TL] 触发总结', _cnt, '条');
+
+    // 在手机框内右下角显示进度小标签
+    var _tag = null;
+    try{
+      _tag = doc.createElement('div');
+      _tag.style.cssText = 'position:absolute;bottom:64px;right:10px;z-index:9990;background:var(--ph-glass,rgba(255,255,255,.92));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--ph-glass-border,rgba(0,0,0,.08));border-radius:20px;padding:5px 10px;font-size:10px;color:var(--ph-text-sub,rgba(20,24,28,.5));display:flex;align-items:center;gap:5px;box-shadow:0 2px 10px rgba(0,0,0,.08);pointer-events:none;';
+      _tag.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:var(--ph-accent,#07c160);animation:meowPulse 1s infinite;flex-shrink:0;"></span><span>正在记录剧情…</span>';
+      if (root) root.appendChild(_tag);
+    }catch(e){}
+
     await _generateTimelineEntry(npcId, pending.fromIdx, pending.toIdx, mode, { silent: true });
-  }catch(e){ console.warn('[TL] 静默总结失败:', e); }
+
+    // 成功后更新提示
+    try{
+      if (_tag){
+        _tag.innerHTML = '<span style="color:var(--ph-accent,#07c160);">✓</span><span>剧情已记录</span>';
+        _tag.style.pointerEvents = 'none';
+        setTimeout(function(){ try{ _tag.remove(); }catch(e){} }, 2500);
+      }
+    }catch(e){}
+  }catch(e){
+    console.warn('[TL] 总结失败:', e);
+    try{ if(_tag) _tag.remove(); }catch(e2){}
+  }
 }
 
 function _getPendingForNpc(npcId, mode){
+  // 总量全取（不限条数），用 endTs 精准定位起点
   try{
-    var ce = _loadCharExtra(npcId);
     var tm = _normChatMode(mode || 'offline');
-    if(ce.tlTimeMode !== false){
-      return _getTimelinePendingRangeByTime(npcId, tm, ce.tlGapMinutes || 60, Math.max(5, ce.autoSumEveryOffline || 30));
-    }
-    return _getTimelinePendingRange(npcId, tm, Math.max(5, ce.autoSumEveryOffline || 30));
+    return _getTimelinePendingRange(npcId, tm, 99999);
   }catch(e){ return null; }
 }
 
